@@ -1460,7 +1460,7 @@
         <div class="footer-stats" aria-label="Contadores de La Terraza">
           <div class="stat-pill" title="Visitas a la página">
             <span class="stat-icon" aria-hidden="true">👁</span>
-            <strong id="visitCounter">951</strong>
+            <strong id="visitCounter">630</strong>
             <span>Visitas</span>
           </div>
 
@@ -1538,6 +1538,9 @@
     </div>
 
   </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
 
   <script>
     function setupModal(openId, closeId, modalId) {
@@ -1698,44 +1701,124 @@
 
       const baseVisits = 951;
       const baseLikes = 630;
-      const visitsKey = 'laTerrazaTotalVisits';
-      const likesKey = 'laTerrazaTotalLikes';
-      const likedKey = 'laTerrazaUserLiked';
+      const likedKey = 'laTerrazaUserLikedGlobal';
+      const formatNumber = (value) => Number(value || 0).toLocaleString('es-CO');
 
-      let storedVisits = Number(localStorage.getItem(visitsKey));
-      let storedLikes = Number(localStorage.getItem(likesKey));
+      const setLocalFallback = () => {
+        let storedVisits = Number(localStorage.getItem('laTerrazaTotalVisitsFallback'));
+        let storedLikes = Number(localStorage.getItem('laTerrazaTotalLikesFallback'));
 
-      if (!Number.isFinite(storedVisits) || storedVisits < baseVisits) {
-        storedVisits = baseVisits - 1;
+        if (!Number.isFinite(storedVisits) || storedVisits < baseVisits) {
+          storedVisits = baseVisits;
+        }
+
+        if (!Number.isFinite(storedLikes) || storedLikes < baseLikes) {
+          storedLikes = baseLikes;
+        }
+
+        storedVisits += 1;
+        localStorage.setItem('laTerrazaTotalVisitsFallback', String(storedVisits));
+        localStorage.setItem('laTerrazaTotalLikesFallback', String(storedLikes));
+
+        visitCounter.textContent = formatNumber(storedVisits);
+        likeCounter.textContent = formatNumber(storedLikes);
+
+        if (localStorage.getItem(likedKey) === 'true') {
+          likeButton.classList.add('liked');
+          likeButton.setAttribute('aria-label', 'Ya diste me gusta a La Terraza');
+        }
+
+        likeButton.addEventListener('click', (event) => {
+          event.stopPropagation();
+          if (localStorage.getItem(likedKey) === 'true') return;
+          storedLikes += 1;
+          localStorage.setItem('laTerrazaTotalLikesFallback', String(storedLikes));
+          localStorage.setItem(likedKey, 'true');
+          likeCounter.textContent = formatNumber(storedLikes);
+          likeButton.classList.add('liked');
+          likeButton.setAttribute('aria-label', 'Ya diste me gusta a La Terraza');
+        });
+      };
+
+      if (typeof firebase === 'undefined') {
+        setLocalFallback();
+        return;
       }
 
-      storedVisits += 1;
-      localStorage.setItem(visitsKey, String(storedVisits));
+      const firebaseConfig = {
+        apiKey: "AIzaSyBRF5F14_x0UO15P47VQ93076u5xuxOa5w",
+        authDomain: "la-terraza-1b2cd.firebaseapp.com",
+        databaseURL: "https://la-terraza-1b2cd-default-rtdb.firebaseio.com",
+        projectId: "la-terraza-1b2cd",
+        storageBucket: "la-terraza-1b2cd.firebasestorage.app",
+        messagingSenderId: "782430879234",
+        appId: "1:782430879234:web:bc67c04057647b99b3b11b"
+      };
 
-      if (!Number.isFinite(storedLikes) || storedLikes < baseLikes) {
-        storedLikes = baseLikes;
-        localStorage.setItem(likesKey, String(storedLikes));
+      try {
+        if (!firebase.apps.length) {
+          firebase.initializeApp(firebaseConfig);
+        }
+
+        const database = firebase.database();
+        const visitsRef = database.ref('stats/visits');
+        const likesRef = database.ref('stats/likes');
+
+        visitsRef.transaction((currentValue) => {
+          if (typeof currentValue !== 'number' || currentValue < baseVisits) {
+            return baseVisits + 1;
+          }
+          return currentValue + 1;
+        });
+
+        likesRef.transaction((currentValue) => {
+          if (typeof currentValue !== 'number' || currentValue < baseLikes) {
+            return baseLikes;
+          }
+          return currentValue;
+        });
+
+        visitsRef.on('value', (snapshot) => {
+          const value = snapshot.val();
+          visitCounter.textContent = formatNumber(typeof value === 'number' ? value : baseVisits);
+        });
+
+        likesRef.on('value', (snapshot) => {
+          const value = snapshot.val();
+          likeCounter.textContent = formatNumber(typeof value === 'number' ? value : baseLikes);
+        });
+
+        if (localStorage.getItem(likedKey) === 'true') {
+          likeButton.classList.add('liked');
+          likeButton.setAttribute('aria-label', 'Ya diste me gusta a La Terraza');
+        }
+
+        likeButton.addEventListener('click', (event) => {
+          event.stopPropagation();
+
+          if (localStorage.getItem(likedKey) === 'true') return;
+
+          likeButton.disabled = true;
+
+          likesRef.transaction((currentValue) => {
+            if (typeof currentValue !== 'number' || currentValue < baseLikes) {
+              return baseLikes + 1;
+            }
+            return currentValue + 1;
+          }, (error, committed) => {
+            likeButton.disabled = false;
+
+            if (error || !committed) return;
+
+            localStorage.setItem(likedKey, 'true');
+            likeButton.classList.add('liked');
+            likeButton.setAttribute('aria-label', 'Ya diste me gusta a La Terraza');
+          });
+        });
+      } catch (error) {
+        console.warn('No se pudo conectar con Firebase. Se usará contador local.', error);
+        setLocalFallback();
       }
-
-      const alreadyLiked = localStorage.getItem(likedKey) === 'true';
-      if (alreadyLiked) {
-        likeButton.classList.add('liked');
-        likeButton.setAttribute('aria-label', 'Ya diste me gusta a La Terraza');
-      }
-
-      visitCounter.textContent = storedVisits.toLocaleString('es-CO');
-      likeCounter.textContent = storedLikes.toLocaleString('es-CO');
-
-      likeButton.addEventListener('click', () => {
-        if (localStorage.getItem(likedKey) === 'true') return;
-
-        storedLikes += 1;
-        localStorage.setItem(likesKey, String(storedLikes));
-        localStorage.setItem(likedKey, 'true');
-        likeCounter.textContent = storedLikes.toLocaleString('es-CO');
-        likeButton.classList.add('liked');
-        likeButton.setAttribute('aria-label', 'Ya diste me gusta a La Terraza');
-      });
     }
 
     setupFooterCounters();
