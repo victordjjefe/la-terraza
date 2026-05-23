@@ -1,0 +1,1745 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>La Terraza Podcast Show</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #050010;
+      color: #ffffff;
+      overflow-x: hidden;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .page {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top left, rgba(153, 0, 255, 0.45), transparent 35%),
+        radial-gradient(circle at top right, rgba(255, 225, 0, 0.18), transparent 28%),
+        linear-gradient(180deg, #060012 0%, #12002d 45%, #050010 100%);
+    }
+
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 6%;
+      background: rgba(5, 0, 16, 0.88);
+      border-bottom: 1px solid rgba(186, 85, 255, 0.45);
+      backdrop-filter: blur(12px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .brand img {
+      width: 84px;
+      height: auto;
+      filter: drop-shadow(0 0 12px rgba(190, 0, 255, 0.8));
+    }
+
+    .brand span {
+      color: #ffe600;
+    }
+
+    .menu {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .menu a,
+    .menu button {
+      color: #f5f5f5;
+      opacity: 0.92;
+    }
+
+    .menu a:hover,
+    .menu button:hover {
+      color: #ffe600;
+    }
+
+    .menu button {
+      border: 1px solid rgba(255, 230, 0, 0.25);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 10px 16px;
+      border-radius: 999px;
+      font: inherit;
+      font-weight: 900;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: 0.25s ease;
+    }
+
+    .menu button:hover {
+      background: rgba(255, 230, 0, 0.1);
+      border-color: rgba(255, 230, 0, 0.55);
+      transform: translateY(-2px);
+    }
+
+
+
+    .header-radio-player {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 360px;
+      padding: 9px 13px;
+      border-radius: 999px;
+      border: 2px solid rgba(255, 230, 0, 0.65);
+      background:
+        radial-gradient(circle at top left, rgba(179, 0, 255, 0.60), transparent 35%),
+        linear-gradient(135deg, rgba(20, 0, 45, 0.98), rgba(91, 0, 150, 0.95));
+      box-shadow: 0 0 26px rgba(179, 0, 255, 0.42), 0 0 18px rgba(255, 230, 0, 0.14);
+      color: #ffffff;
+    }
+
+    .header-radio-btn {
+      width: 38px;
+      height: 38px;
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #fff200, #ffb700);
+      color: #160018;
+      font-size: 18px;
+      font-weight: 1000;
+      cursor: pointer;
+      box-shadow: 0 0 18px rgba(255, 230, 0, 0.28);
+      transition: 0.25s ease;
+    }
+
+    .header-radio-btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.08);
+    }
+
+    .header-radio-text {
+      min-width: 0;
+      line-height: 1.2;
+    }
+
+    .header-radio-text strong {
+      display: block;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 1000;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .header-radio-bars {
+      display: flex;
+      align-items: end;
+      gap: 3px;
+      height: 26px;
+      margin-left: auto;
+    }
+
+    .header-radio-bars i {
+      width: 4px;
+      height: 9px;
+      border-radius: 999px;
+      background: #ffe600;
+      box-shadow: 0 0 10px rgba(255, 230, 0, 0.55);
+      animation: headerRadioBars 0.9s ease-in-out infinite;
+      animation-play-state: paused;
+    }
+
+    .header-radio-player.is-playing .header-radio-bars i {
+      animation-play-state: running;
+    }
+
+    .header-radio-bars i:nth-child(2) { animation-delay: 0.12s; }
+    .header-radio-bars i:nth-child(3) { animation-delay: 0.24s; }
+    .header-radio-bars i:nth-child(4) { animation-delay: 0.36s; }
+    .header-radio-bars i:nth-child(5) { animation-delay: 0.48s; }
+
+    @keyframes headerRadioBars {
+      0%, 100% { height: 8px; }
+      50% { height: 26px; }
+    }
+
+    .header-radio-player audio {
+      display: none;
+    }
+
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 13px 22px;
+      border-radius: 12px;
+      border: none;
+      font-size: 14px;
+      font-weight: 900;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: 0.25s ease;
+    }
+
+    .btn-yellow {
+      background: linear-gradient(135deg, #fff200, #ffb700);
+      color: #160018;
+      box-shadow: 0 0 22px rgba(255, 230, 0, 0.28);
+    }
+
+    .btn-purple {
+      background: linear-gradient(135deg, #7a18ff, #b300ff);
+      color: #ffffff;
+      box-shadow: 0 0 22px rgba(179, 0, 255, 0.35);
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.08);
+    }
+
+    .hero {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: center;
+      min-height: 720px;
+      padding: 70px 6% 50px;
+      overflow: hidden;
+      border-bottom: 1px solid rgba(186, 85, 255, 0.45);
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(5,0,16,0.96) 0%, rgba(5,0,16,0.82) 36%, rgba(5,0,16,0.18) 100%),
+        url("portada.png") center center / cover no-repeat;
+      opacity: 0.96;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 70% 20%, rgba(255, 255, 255, 0.10), transparent 25%);
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      max-width: 610px;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      margin-bottom: 18px;
+      padding: 9px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 230, 0, 0.5);
+      background: rgba(255, 230, 0, 0.08);
+      color: #ffe600;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      font-size: clamp(48px, 7vw, 88px);
+      line-height: 0.94;
+      text-transform: uppercase;
+      font-weight: 1000;
+      text-shadow: 0 0 24px rgba(145, 0, 255, 0.65);
+    }
+
+    h1 span {
+      color: #ffe600;
+      display: block;
+    }
+
+    .hero-content p {
+      margin: 24px 0 30px;
+      max-width: 560px;
+      font-size: 18px;
+      line-height: 1.6;
+      color: #e8ddff;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    .hero-logo-float {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    .hero-logo-float img {
+      width: min(430px, 86%);
+      filter: drop-shadow(0 0 30px rgba(190, 0, 255, 0.95));
+      animation: floatLogo 4s ease-in-out infinite;
+    }
+
+    @keyframes floatLogo {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-12px); }
+    }
+
+    .section {
+      padding: 72px 6%;
+    }
+
+    .section-title {
+      text-align: center;
+      margin-bottom: 34px;
+    }
+
+    .section-title small {
+      color: #ffe600;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .section-title h2 {
+      margin-top: 12px;
+      font-size: clamp(34px, 4vw, 52px);
+      text-transform: uppercase;
+      font-weight: 1000;
+    }
+
+    .section-title h2 span {
+      color: #ffe600;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 22px;
+    }
+
+    .card {
+      display: block;
+      width: 100%;
+      border: 1px solid rgba(189, 72, 255, 0.7);
+      font-family: inherit;
+      text-align: left;
+      color: inherit;
+      cursor: pointer;
+      overflow: hidden;
+      border-radius: 24px;
+      background: rgba(18, 0, 45, 0.72);
+      box-shadow: 0 0 22px rgba(124, 0, 255, 0.22);
+      transition: 0.25s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      filter: brightness(1.08);
+    }
+
+    .card-img {
+      height: 180px;
+      background-size: cover;
+      background-position: center;
+      border-bottom: 1px solid rgba(189, 72, 255, 0.65);
+    }
+
+    .card-content {
+      padding: 20px;
+    }
+
+    .card h3 {
+      margin-bottom: 10px;
+      color: #ffffff;
+      font-size: 18px;
+      text-transform: uppercase;
+      font-weight: 1000;
+    }
+
+    .card p {
+      color: #d9ccff;
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    .img-interview {
+      background-image: linear-gradient(rgba(50,0,90,.1), rgba(10,0,20,.25)), url("imgentrevistas.png");
+    }
+
+    .img-kids {
+      background-image: linear-gradient(rgba(50,0,90,.05), rgba(10,0,20,.22)), url("regalos.png");
+    }
+
+    .img-sports {
+      background-image: linear-gradient(rgba(50,0,90,.05), rgba(10,0,20,.22)), url("guachafita.png");
+    }
+
+    .img-bingo {
+      background-image: linear-gradient(rgba(50,0,90,.05), rgba(10,0,20,.22)), url("bingo.png");
+    }
+
+    .img-radio {
+      background-image: linear-gradient(rgba(50,0,90,.04), rgba(10,0,20,.12)), url("imgradio.png");
+      background-size: cover;
+      background-position: center;
+    }
+
+
+    .sponsors-section {
+      padding-top: 16px;
+    }
+
+    .sponsors-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 24px;
+      max-width: 980px;
+      margin: 0 auto;
+    }
+
+    .sponsor-card {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 22px;
+      align-items: center;
+      padding: 22px;
+      border-radius: 28px;
+      border: 1px solid rgba(189, 72, 255, 0.65);
+      background:
+        radial-gradient(circle at top right, rgba(255, 230, 0, 0.12), transparent 26%),
+        linear-gradient(145deg, rgba(18, 0, 45, 0.88), rgba(5, 0, 16, 0.92));
+      box-shadow: 0 0 28px rgba(124, 0, 255, 0.22);
+      overflow: hidden;
+    }
+
+    .sponsor-logo {
+      width: 150px;
+      height: 150px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 24px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      overflow: hidden;
+    }
+
+    .sponsor-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      padding: 10px;
+    }
+
+    .sponsor-info h3 {
+      margin-bottom: 8px;
+      color: #ffffff;
+      font-size: 22px;
+      text-transform: uppercase;
+      font-weight: 1000;
+    }
+
+    .sponsor-info p {
+      margin-bottom: 16px;
+      color: #d9ccff;
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    .sponsor-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .btn-whatsapp {
+      background: #25D366;
+      color: #06140a;
+      box-shadow: 0 0 18px rgba(37, 211, 102, 0.26);
+    }
+
+    .btn-instagram {
+      background: linear-gradient(135deg, #f9ce34 0%, #ee2a7b 45%, #6228d7 100%);
+      color: #ffffff;
+      box-shadow: 0 0 18px rgba(238, 42, 123, 0.25);
+    }
+
+    .feature {
+      display: grid;
+      grid-template-columns: 0.9fr 1.1fr;
+      gap: 32px;
+      align-items: center;
+      padding: 40px;
+      border-radius: 34px;
+      border: 1px solid rgba(189, 72, 255, 0.6);
+      background:
+        linear-gradient(90deg, rgba(10,0,30,0.92), rgba(30,0,65,0.65)),
+        url("regalos.png") center / cover no-repeat;
+      box-shadow: 0 0 40px rgba(124, 0, 255, 0.25);
+      overflow: hidden;
+    }
+
+    .feature h2 {
+      font-size: clamp(34px, 5vw, 58px);
+      line-height: 1;
+      text-transform: uppercase;
+      font-weight: 1000;
+    }
+
+    .feature h2 span {
+      color: #ffe600;
+      display: block;
+    }
+
+    .feature p {
+      margin: 22px 0;
+      max-width: 520px;
+      color: #eadfff;
+      line-height: 1.7;
+      font-size: 17px;
+    }
+
+    .feature-logo {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .feature-logo img {
+      width: min(420px, 100%);
+      filter: drop-shadow(0 0 24px rgba(186, 85, 255, 0.85));
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+
+    .banner {
+      min-height: 360px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 34px;
+      border-radius: 32px;
+      border: 1px solid rgba(189, 72, 255, 0.55);
+      background-size: cover;
+      background-position: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .banner::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, transparent 0%, rgba(5,0,16,0.96) 75%);
+    }
+
+    .banner > * {
+      position: relative;
+      z-index: 2;
+    }
+
+    .banner h3 {
+      font-size: 38px;
+      text-transform: uppercase;
+      font-weight: 1000;
+      color: #ffe600;
+      margin-bottom: 12px;
+    }
+
+    .banner p {
+      color: #ede6ff;
+      line-height: 1.5;
+      margin-bottom: 18px;
+    }
+
+    .sports-banner {
+      background-image: url("guachafita.png");
+    }
+
+    .bingo-banner {
+      background-image: url("bingo.png");
+    }
+
+    .footer-cta {
+      padding: 36px 6%;
+      background: linear-gradient(90deg, #6f00ff, #24004b);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .footer-cta h2 {
+      text-transform: uppercase;
+      font-size: 30px;
+      font-weight: 1000;
+    }
+
+    .footer-cta h2 span {
+      color: #ffe600;
+    }
+
+    .socials {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .socials a {
+      width: 58px;
+      height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      text-decoration: none;
+      transition: all 0.25s ease;
+      box-shadow: 0 0 18px rgba(179, 0, 255, 0.22);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .socials a svg {
+      width: 28px;
+      height: 28px;
+    }
+
+    .socials a:hover {
+      transform: translateY(-4px) scale(1.06);
+      box-shadow: 0 0 24px rgba(255, 230, 0, 0.35), 0 0 30px rgba(179, 0, 255, 0.35);
+    }
+
+    .social-fb {
+      background: #1877f2;
+    }
+
+    .social-yt {
+      background: #ff0000;
+    }
+
+    .social-ig {
+      background: linear-gradient(135deg, #f9ce34 0%, #ee2a7b 45%, #6228d7 100%);
+    }
+
+    .social-tt {
+      background: #000000;
+    }
+
+    footer {
+      padding: 44px 6% 28px;
+      background: #050010;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 0.9fr 1fr 1.45fr 1fr;
+      gap: 34px;
+      margin-bottom: 36px;
+      align-items: flex-start;
+    }
+
+    .footer-grid > div {
+      text-align: center;
+    }
+
+    footer img {
+      width: 180px;
+      filter: drop-shadow(0 0 18px rgba(166, 0, 255, 0.65));
+    }
+
+    footer h4 {
+      margin-bottom: 14px;
+      color: #ffe600;
+      text-transform: uppercase;
+      font-size: 14px;
+    }
+
+    footer p,
+    footer li {
+      color: #cfc3ef;
+      list-style: none;
+      line-height: 1.8;
+      font-size: 14px;
+    }
+
+    footer li a {
+      color: #cfc3ef;
+      transition: 0.25s ease;
+    }
+
+    footer li a:hover {
+      color: #ffe600;
+      padding-left: 4px;
+    }
+
+    .footer-contact-list {
+      display: grid;
+      gap: 12px;
+      max-width: 360px;
+      margin: 0 auto;
+      text-align: left;
+    }
+
+    .footer-contact-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 12px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+      font-size: 14px;
+      line-height: 1.35;
+      transition: 0.25s ease;
+    }
+
+    .footer-contact-link:hover {
+      transform: translateY(-2px);
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 230, 0, 0.35);
+    }
+
+    .footer-contact-link svg {
+      width: 24px;
+      height: 24px;
+      flex: 0 0 auto;
+    }
+
+    .footer-contact-link strong {
+      display: block;
+      color: #ffe600;
+      font-size: 13px;
+      text-transform: uppercase;
+    }
+
+    .footer-contact-link span {
+      display: block;
+      color: #e7dcff;
+    }
+
+    .footer-socials {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .footer-socials a {
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.16);
+      box-shadow: 0 0 16px rgba(179, 0, 255, 0.22);
+      transition: 0.25s ease;
+    }
+
+    .footer-socials a:hover {
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: 0 0 22px rgba(255, 230, 0, 0.3), 0 0 26px rgba(179, 0, 255, 0.32);
+    }
+
+    .footer-socials svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    .copy {
+      padding-top: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      color: #9487b5;
+      font-size: 13px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+
+    .footer-stats {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .stat-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      min-height: 38px;
+      padding: 9px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 230, 0, 0.26);
+      background: rgba(255, 255, 255, 0.06);
+      color: #ffffff;
+      box-shadow: 0 0 16px rgba(179, 0, 255, 0.20);
+      font-family: inherit;
+      font-size: 13px;
+      line-height: 1;
+    }
+
+    .stat-pill strong {
+      color: #ffe600;
+      font-size: 15px;
+      font-weight: 1000;
+    }
+
+    .stat-icon {
+      font-size: 15px;
+      filter: drop-shadow(0 0 6px rgba(255, 230, 0, 0.35));
+    }
+
+    .like-counter-btn {
+      cursor: pointer;
+      transition: 0.25s ease;
+    }
+
+    .like-counter-btn:hover {
+      transform: translateY(-2px);
+      background: rgba(255, 230, 0, 0.11);
+      border-color: rgba(255, 230, 0, 0.45);
+    }
+
+    .like-counter-btn.liked {
+      border-color: rgba(255, 0, 100, 0.55);
+      background: rgba(255, 0, 100, 0.12);
+    }
+
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 22px;
+      background: rgba(3, 0, 10, 0.78);
+      backdrop-filter: blur(12px);
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-box {
+      position: relative;
+      width: min(720px, 100%);
+      border-radius: 32px;
+      border: 1px solid rgba(255, 230, 0, 0.35);
+      background:
+        radial-gradient(circle at top right, rgba(255, 230, 0, 0.16), transparent 32%),
+        radial-gradient(circle at bottom left, rgba(174, 0, 255, 0.35), transparent 34%),
+        linear-gradient(145deg, rgba(18, 0, 45, 0.98), rgba(5, 0, 16, 0.98));
+      box-shadow: 0 0 45px rgba(174, 0, 255, 0.45), 0 0 22px rgba(255, 230, 0, 0.14);
+      padding: 34px;
+      overflow: hidden;
+    }
+
+    .modal-box::before {
+      content: "";
+      position: absolute;
+      inset: -2px;
+      border-radius: 32px;
+      background: linear-gradient(135deg, rgba(255,230,0,0.3), transparent, rgba(179,0,255,0.5));
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    .modal-content {
+      position: relative;
+      z-index: 2;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      z-index: 3;
+      width: 38px;
+      height: 38px;
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+      color: #ffffff;
+      font-size: 24px;
+      cursor: pointer;
+    }
+
+    .modal-kicker {
+      display: inline-block;
+      margin-bottom: 14px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(255, 230, 0, 0.12);
+      border: 1px solid rgba(255, 230, 0, 0.35);
+      color: #ffe600;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+    }
+
+    .modal-box h3 {
+      margin-bottom: 16px;
+      font-size: clamp(30px, 5vw, 46px);
+      line-height: 1;
+      text-transform: uppercase;
+      font-weight: 1000;
+    }
+
+    .modal-box h3 span {
+      color: #ffe600;
+    }
+
+    .modal-box p {
+      color: #eadfff;
+      font-size: 17px;
+      line-height: 1.75;
+      margin-bottom: 16px;
+    }
+
+    .modal-highlight {
+      margin: 20px 0 26px;
+      padding: 18px;
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      color: #ffffff;
+      line-height: 1.6;
+    }
+
+    .modal-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    @media (max-width: 980px) {
+      .menu {
+        display: flex;
+        gap: 10px;
+        font-size: 11px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .audio-player {
+        width: 300px;
+      }
+
+      .hero,
+      .feature,
+      .split,
+      .footer-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        min-height: 620px;
+        padding-top: 48px;
+      }
+
+      .hero::before {
+        background:
+          linear-gradient(180deg, rgba(5,0,16,0.90), rgba(5,0,16,0.52)),
+          url("portada.png") center center / cover no-repeat;
+      }
+
+      .hero-logo-float img {
+        width: min(300px, 78%);
+      }
+
+      .cards {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .sponsor-card {
+        grid-template-columns: 130px 1fr;
+      }
+
+      .sponsor-logo {
+        width: 130px;
+        height: 130px;
+      }
+
+      .footer-cta {
+        flex-direction: column;
+        text-align: center;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .navbar {
+        padding: 12px 5%;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .menu {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+
+
+      .audio-player {
+        order: 3;
+        width: 100%;
+        max-width: 420px;
+      }
+
+      .brand img {
+        width: 70px;
+      }
+
+      .brand strong {
+        font-size: 12px;
+      }
+
+
+      .hero,
+      .section {
+        padding-left: 5%;
+        padding-right: 5%;
+      }
+
+      .cards {
+        grid-template-columns: 1fr;
+      }
+
+      .sponsors-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .sponsor-card {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+
+      .sponsor-logo {
+        margin: 0 auto;
+      }
+
+      .sponsor-actions {
+        justify-content: center;
+      }
+
+      .feature,
+      .banner {
+        padding: 26px;
+      }
+
+      .banner h3 {
+        font-size: 32px;
+      }
+
+      .modal-box {
+        padding: 28px 22px;
+      }
+
+
+      .copy {
+        justify-content: center;
+        text-align: center;
+      }
+
+      .footer-stats {
+        width: 100%;
+        order: -1;
+      }
+    }
+
+    @media (max-width: 1200px) {
+      .navbar {
+        flex-wrap: wrap;
+        gap: 14px;
+      }
+
+      .menu {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .header-radio-player {
+        min-width: 330px;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .menu {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .header-radio-player {
+        order: 3;
+        width: 100%;
+        min-width: 0;
+        max-width: 460px;
+        border-radius: 22px;
+      }
+
+      .header-radio-btn {
+      width: 38px;
+      height: 38px;
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #fff200, #ffb700);
+      color: #160018;
+      font-size: 18px;
+      font-weight: 1000;
+      cursor: pointer;
+      box-shadow: 0 0 18px rgba(255, 230, 0, 0.28);
+      transition: 0.25s ease;
+    }
+
+
+
+    .img-radio {
+      background-image: linear-gradient(rgba(50,0,90,.04), rgba(10,0,20,.18)), url("imgradio.png") !important;
+      background-size: cover !important;
+      background-position: center !important;
+    }
+
+    .img-radio::before,
+    .img-radio::after {
+      display: none !important;
+      content: none !important;
+    }
+
+  </style>
+</head>
+
+<body>
+  <div class="page">
+
+    <header class="navbar">
+      <a href="#inicio" class="brand">
+        <img src="terraza-logo.png" alt="Logo La Terraza Podcast Show" />
+        <strong>La <span>Terraza</span> Podcast Show</strong>
+      </a>
+
+      <nav class="menu">
+        <button type="button" id="openMissionModal">Misión</button>
+        <button type="button" id="openVisionModal">Visión</button>
+
+        <div class="header-radio-player" id="headerRadioPlayer">
+          <button class="header-radio-btn" type="button" id="headerRadioBtn" aria-label="Reproducir Disco La Terraza">▶</button>
+          <div class="header-radio-text">
+            <strong>Disco La Terraza</strong>
+          </div>
+          <div class="header-radio-bars" aria-hidden="true">
+            <i></i><i></i><i></i><i></i><i></i>
+          </div>
+          <audio id="headerRadioAudio" preload="auto" loop>
+            <source src="disco-terraza.mp3" type="audio/mpeg">
+            <source src="disco-terraza" type="audio/mpeg">
+            Tu navegador no permite reproducir este audio.
+          </audio>
+        </div>
+      </nav>
+
+      <a class="btn btn-yellow" href="#contacto">Contactar</a>
+    </header>
+
+    <section class="hero" id="inicio">
+      <div class="hero-content">
+        <span class="eyebrow">Podcast • Show • Comunidad • Deporte • Entretenimiento</span>
+
+        <h1>Donde las voces <span>crean historias</span></h1>
+
+        <p>
+          Un espacio de conversación, entretenimiento y comunidad donde cada invitado tiene la oportunidad de compartir su historia, su talento, su proyecto y su visión. También impulsamos iniciativas sociales, deporte y dinámicas virtuales que conectan con nuestra audiencia.
+        </p>
+</div>
+
+      <div class="hero-logo-float">
+        <img src="terraza-logo.png" alt="La Terraza Podcast Show" />
+      </div>
+    </section>
+
+    <section class="section" id="programas">
+      <div class="section-title">
+        <small>Contenido principal</small>
+        <h2>¿Qué <span>hacemos?</span></h2>
+      </div>
+
+      <div class="cards">
+        <a class="card" href="https://youtube.com/playlist?list=PL9LqeTsGSwzjwVp4iwjqpVA61pwkVb5jf&si=kix3QEfSoA4diIUC" target="_blank" rel="noopener noreferrer">
+          <div class="card-img img-interview"></div>
+          <div class="card-content">
+            <h3>Entrevistas</h3>
+            <p>Conversaciones reales con invitados, talentos, emprendedores, líderes y personas con historias que merecen ser contadas.</p>
+          </div>
+        </a>
+
+        <a class="card" href="https://www.facebook.com/reel/1428783758950746" target="_blank" rel="noopener noreferrer">
+          <div class="card-img img-kids"></div>
+          <div class="card-content">
+            <h3>Apoyo social</h3>
+            <p>Actividades de solidaridad, ayudas comunitarias y entregas especiales para compartir esperanza con quienes más lo necesitan.</p>
+          </div>
+        </a>
+
+        <a class="card" href="https://www.youtube.com/watch?v=jlhIcLdE6uU&list=PLg9TgsN53mnWc4fXN5Fxlz2iujPHqiMIl" target="_blank" rel="noopener noreferrer">
+          <div class="card-img img-sports"></div>
+          <div class="card-content">
+            <h3>La Guachafita del Deporte</h3>
+            <p>Opinión, análisis, actualidad deportiva, invitados y conversación con sabor popular.</p>
+          </div>
+        </a>
+
+        <a class="card" href="https://wa.me/573234370590?text=Hola%2C%20bienvenidos%20a%20Bingo%20en%20La%20Terraza.%20Quiero%20informaci%C3%B3n%20para%20participar%20de%20manera%20virtual%20o%20presencial%2C%20y%20tambi%C3%A9n%20me%20interesa%20conocer%20sobre%20la%20animaci%C3%B3n%20de%20eventos%2C%20fiestas%20empresariales%20y%20actividades%20especiales." target="_blank" rel="noopener noreferrer">
+          <div class="card-img img-bingo"></div>
+          <div class="card-content">
+            <h3>Bingo virtual y presencial</h3>
+            <p>Participa en nuestro bingo de manera virtual o presencial. También animamos eventos, fiestas empresariales y actividades especiales con diversión para todos.</p>
+          </div>
+        </a>
+
+        <a class="card" href="https://www.colombia.com/radio/la-terraza-radio-cali-5937" target="_blank" rel="noopener noreferrer">
+          <div class="card-img img-radio"></div>
+          <div class="card-content">
+            <h3>Radio online</h3>
+            <p>Escucha La Terraza Radio Cali, nuestra señal online con música, información, noticias y transmisiones deportivas.</p>
+          </div>
+        </a>
+      </div>
+    </section>
+
+
+    <section class="section sponsors-section" id="patrocinadores">
+      <div class="section-title">
+        <small>Aliados y marcas amigas</small>
+        <h2>Nuestros <span>patrocinadores</span></h2>
+      </div>
+
+      <div class="sponsors-grid">
+        <article class="sponsor-card">
+          <div class="sponsor-logo">
+            <img src="esv.png" alt="Logo ESV" />
+          </div>
+          <div class="sponsor-info">
+            <h3>Equiservicios del Valle</h3>
+            <p>Marca patrocinadora de La Terraza. Contáctalos por WhatsApp o visita su red social oficial.</p>
+            <div class="sponsor-actions">
+              <a class="btn btn-whatsapp" href="https://wa.me/573154328960?text=Hola%2C%20vengo%20desde%20La%20Terraza%20Podcast%20Show%20y%20quiero%20recibir%20informaci%C3%B3n." target="_blank" rel="noopener noreferrer">WhatsApp</a>
+              <a class="btn btn-instagram" href="https://www.instagram.com/equiserviciosdelvalle/" target="_blank" rel="noopener noreferrer">Instagram</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="sponsor-card">
+          <div class="sponsor-logo">
+            <img src="susurros.png" alt="Logo Susurros" />
+          </div>
+          <div class="sponsor-info">
+            <h3>Íntimos Susurros</h3>
+            <p>Marca patrocinadora de La Terraza. Contáctalos por WhatsApp o visita su red social oficial.</p>
+            <div class="sponsor-actions">
+              <a class="btn btn-whatsapp" href="https://wa.me/573168095689?text=Hola%2C%20vengo%20desde%20La%20Terraza%20Podcast%20Show%20y%20quiero%20recibir%20informaci%C3%B3n." target="_blank" rel="noopener noreferrer">WhatsApp</a>
+              <a class="btn btn-instagram" href="https://www.instagram.com/intimos_susurros/" target="_blank" rel="noopener noreferrer">Instagram</a>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="nosotros">
+      <div class="feature">
+        <div>
+          <span class="eyebrow">Labor social</span>
+
+          <h2>Trabajamos por <span>nuestra comunidad</span></h2>
+
+          <p>
+            En La Terraza creemos en el poder de la comunicación, la solidaridad y el entretenimiento. Por eso mezclamos entrevistas, deporte, apoyo social y dinámicas virtuales en un mismo proyecto digital.
+          </p>
+
+          <button class="btn btn-yellow" type="button" id="openSocialModal">Conoce más</button>
+        </div>
+
+        <div class="feature-logo">
+          <img src="terraza-logo.png" alt="Logo La Terraza" />
+        </div>
+      </div>
+    </section>
+
+    <section class="section split">
+      <article class="banner sports-banner" id="deporte">
+        <h3>La Guachafita del Deporte</h3>
+        <p>Noticias, resultados, análisis y entrevistas del mundo deportivo.</p>
+        <a class="btn btn-purple" href="https://www.youtube.com/watch?v=jlhIcLdE6uU&list=PLg9TgsN53mnWc4fXN5Fxlz2iujPHqiMIl" target="_blank" rel="noopener noreferrer">Ver programa</a>
+      </article>
+
+      <article class="banner bingo-banner" id="bingo">
+        <h3>Bingo virtual y presencial</h3>
+        <p>Disfruta del bingo en línea o en vivo con nosotros. Además, animamos eventos, fiestas empresariales y celebraciones especiales con mucha diversión.</p>
+        <a class="btn btn-yellow" href="https://wa.me/573234370590?text=Hola%2C%20bienvenidos%20a%20Bingo%20en%20La%20Terraza.%20Quiero%20informaci%C3%B3n%20para%20participar%20de%20manera%20virtual%20o%20presencial%2C%20y%20tambi%C3%A9n%20me%20interesa%20conocer%20sobre%20la%20animaci%C3%B3n%20de%20eventos%2C%20fiestas%20empresariales%20y%20actividades%20especiales." target="_blank" rel="noopener noreferrer">Escríbenos por WhatsApp</a>
+      </article>
+    </section>
+
+    <section class="footer-cta" id="contacto">
+      <div>
+        <h2>Sé parte de nuestra <span>comunidad</span></h2>
+        <p>Síguenos en redes y no te pierdas entrevistas, bingos, deporte y actividades sociales.</p>
+      </div>
+
+      <div class="socials">
+        <a class="social-fb" href="https://www.facebook.com/laterrazapodcastshow" target="_blank" rel="noopener noreferrer" aria-label="Facebook La Terraza Podcast Show">
+          <svg viewBox="0 0 24 24" fill="white" aria-hidden="true">
+            <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073c0 6.019 4.388 11.009 10.125 11.927v-8.437H7.078v-3.49h3.047V9.413c0-3.007 1.792-4.669 4.533-4.669 1.313 0 2.686.236 2.686.236v2.953H15.83c-1.49 0-1.955.931-1.955 1.887v2.266h3.328l-.532 3.49h-2.796V24C19.612 23.082 24 18.092 24 12.073z"/>
+          </svg>
+        </a>
+
+        <a class="social-yt" href="https://www.youtube.com/@laterrazacali" target="_blank" rel="noopener noreferrer" aria-label="YouTube La Terraza Cali">
+          <svg viewBox="0 0 24 24" fill="white" aria-hidden="true">
+            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.135C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.376.506A3.016 3.016 0 0 0 .502 6.186C0 8.067 0 12 0 12s0 3.933.502 5.814a3.016 3.016 0 0 0 2.122 2.135c1.871.506 9.376.506 9.376.506s7.505 0 9.376-.506a3.016 3.016 0 0 0 2.122-2.135C24 15.933 24 12 24 12s0-3.933-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+          </svg>
+        </a>
+
+        <a class="social-ig" href="https://www.instagram.com/laterrazapodcastshow/" target="_blank" rel="noopener noreferrer" aria-label="Instagram La Terraza Podcast Show">
+          <svg viewBox="0 0 24 24" fill="white" aria-hidden="true">
+            <path d="M7.75 2h8.5A5.756 5.756 0 0 1 22 7.75v8.5A5.756 5.756 0 0 1 16.25 22h-8.5A5.756 5.756 0 0 1 2 16.25v-8.5A5.756 5.756 0 0 1 7.75 2zm0 1.8A3.954 3.954 0 0 0 3.8 7.75v8.5a3.954 3.954 0 0 0 3.95 3.95h8.5a3.954 3.954 0 0 0 3.95-3.95v-8.5a3.954 3.954 0 0 0-3.95-3.95h-8.5zm8.95 1.35a1.2 1.2 0 1 1-1.2 1.2 1.2 1.2 0 0 1 1.2-1.2zM12 6.865A5.135 5.135 0 1 1 6.865 12 5.141 5.141 0 0 1 12 6.865zm0 1.8A3.335 3.335 0 1 0 15.335 12 3.339 3.339 0 0 0 12 8.665z"/>
+          </svg>
+        </a>
+
+        <a class="social-tt" href="https://www.tiktok.com/@laterrazapodcast_cali" target="_blank" rel="noopener noreferrer" aria-label="TikTok La Terraza Podcast Cali">
+          <svg viewBox="0 0 24 24" fill="white" aria-hidden="true">
+            <path d="M19.589 6.686a4.793 4.793 0 0 1-3.77-1.88v8.295a7.004 7.004 0 1 1-7.004-7.004c.274 0 .546.019.814.056v3.45a3.553 3.553 0 0 0-.814-.094 3.592 3.592 0 1 0 3.592 3.592V0h3.412a4.8 4.8 0 0 0 4.77 4.087z"/>
+          </svg>
+        </a>
+      </div>
+    </section>
+
+    <footer>
+      <div class="footer-grid">
+        <div>
+          <img src="terraza-logo.png" alt="La Terraza Podcast Show" />
+        </div>
+
+        <div>
+          <h4>Programas</h4>
+          <ul>
+            <li>
+              <a href="https://youtube.com/playlist?list=PL9LqeTsGSwzjwVp4iwjqpVA61pwkVb5jf&si=kix3QEfSoA4diIUC" target="_blank" rel="noopener noreferrer">Entrevistas</a>
+            </li>
+            <li>
+              <a href="https://www.facebook.com/reel/1428783758950746" target="_blank" rel="noopener noreferrer">Apoyo social</a>
+            </li>
+            <li>
+              <a href="https://www.youtube.com/watch?v=jlhIcLdE6uU&list=PLg9TgsN53mnWc4fXN5Fxlz2iujPHqiMIl" target="_blank" rel="noopener noreferrer">La Guachafita del Deporte</a>
+            </li>
+            <li>
+              <a href="https://wa.me/573234370590?text=Hola%2C%20bienvenidos%20a%20Bingo%20en%20La%20Terraza.%20Quiero%20informaci%C3%B3n%20para%20participar%20de%20manera%20virtual%20o%20presencial%2C%20y%20tambi%C3%A9n%20me%20interesa%20conocer%20sobre%20la%20animaci%C3%B3n%20de%20eventos%2C%20fiestas%20empresariales%20y%20actividades%20especiales." target="_blank" rel="noopener noreferrer">Bingo virtual y presencial</a>
+            </li>
+            <li>
+              <a href="https://www.colombia.com/radio/la-terraza-radio-cali-5937" target="_blank" rel="noopener noreferrer">Radio online</a>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <h4>Contacto</h4>
+          <div class="footer-contact-list">
+            <a class="footer-contact-link" href="https://wa.me/573234370590?text=Hola%20V%C3%ADctor%20R.%2C%20productor%20general%20de%20medios%20digitales%20de%20La%20Terraza%20Podcast%20Show.%20Quiero%20recibir%20informaci%C3%B3n." target="_blank" rel="noopener noreferrer">
+              <svg viewBox="0 0 24 24" fill="#25D366" aria-hidden="true">
+                <path d="M20.52 3.48A11.86 11.86 0 0 0 12.08 0C5.5 0 .16 5.34.16 11.92c0 2.1.55 4.16 1.6 5.97L0 24l6.26-1.64a11.9 11.9 0 0 0 5.82 1.48h.01c6.57 0 11.92-5.34 11.92-11.92 0-3.18-1.24-6.17-3.49-8.44zM12.09 21.82h-.01a9.88 9.88 0 0 1-5.04-1.38l-.36-.21-3.71.97.99-3.62-.23-.37a9.86 9.86 0 0 1-1.51-5.29c0-5.46 4.44-9.9 9.91-9.9a9.84 9.84 0 0 1 7 2.9 9.84 9.84 0 0 1 2.9 7c0 5.46-4.45 9.9-9.94 9.9zm5.43-7.41c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.95 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.39-1.48-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.61-.92-2.21-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.22 3.08c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.63.71.23 1.36.2 1.87.12.57-.09 1.76-.72 2.01-1.41.25-.7.25-1.29.17-1.41-.07-.13-.27-.2-.57-.35z"/>
+              </svg>
+              <span><strong>323 437 0590</strong>Víctor R. — Productor General de Medios Digitales</span>
+            </a>
+
+            <a class="footer-contact-link" href="https://wa.me/573168003218?text=Hola%20Jhon%20F.%2C%20director%20general%20de%20La%20Terraza%20Podcast%20Show.%20Quiero%20recibir%20informaci%C3%B3n." target="_blank" rel="noopener noreferrer">
+              <svg viewBox="0 0 24 24" fill="#25D366" aria-hidden="true">
+                <path d="M20.52 3.48A11.86 11.86 0 0 0 12.08 0C5.5 0 .16 5.34.16 11.92c0 2.1.55 4.16 1.6 5.97L0 24l6.26-1.64a11.9 11.9 0 0 0 5.82 1.48h.01c6.57 0 11.92-5.34 11.92-11.92 0-3.18-1.24-6.17-3.49-8.44zM12.09 21.82h-.01a9.88 9.88 0 0 1-5.04-1.38l-.36-.21-3.71.97.99-3.62-.23-.37a9.86 9.86 0 0 1-1.51-5.29c0-5.46 4.44-9.9 9.91-9.9a9.84 9.84 0 0 1 7 2.9 9.84 9.84 0 0 1 2.9 7c0 5.46-4.45 9.9-9.94 9.9zm5.43-7.41c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.95 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.39-1.48-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.61-.92-2.21-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.22 3.08c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.63.71.23 1.36.2 1.87.12.57-.09 1.76-.72 2.01-1.41.25-.7.25-1.29.17-1.41-.07-.13-.27-.2-.57-.35z"/>
+              </svg>
+              <span><strong>316 800 3218</strong>Jhon F. — Director General</span>
+            </a>
+
+            <a class="footer-contact-link" href="mailto:laterrazacali@gmail.com?subject=Contacto%20La%20Terraza%20Podcast%20Show" target="_blank" rel="noopener noreferrer">
+              <svg viewBox="0 0 24 24" fill="#ffe600" aria-hidden="true">
+                <path d="M20 4H4C2.9 4 2.01 4.9 2.01 6L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/>
+              </svg>
+              <span><strong>Correo</strong>laterrazacali@gmail.com</span>
+            </a>
+          </div>
+        </div>
+
+        <div>
+          <h4>Redes sociales</h4>
+          <div class="footer-socials">
+            <a class="social-fb" href="https://www.facebook.com/laterrazapodcastshow" target="_blank" rel="noopener noreferrer" aria-label="Facebook La Terraza Podcast Show">
+              <svg viewBox="0 0 24 24" fill="white" aria-hidden="true">
+                <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073c0 6.019 4.388 11.009 10.125 11.927v-8.437H7.078v-3.49h3.047V9.413c0-3.007 1.792-4.669 4.533-4.669 1.313 0 2.686.236 2.686.236v2.953H15.83c-1.49 0-1.955.931-1.955 1.887v2.266h3.328l-.532 3.49h-2.796V24C19.612 23.082 24 18.092 24 12.073z"/>
+              </svg>
+            </a>
+
+            <a class="social-yt" href="https://www.youtube.com/@laterrazacali" target="_blank" rel="noopener noreferrer" aria-label="YouTube La Terraza Cali">
+              <svg viewBox="0 0 24 24" fill="white" aria-hidden="true">
+                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.135C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.376.506A3.016 3.016 0 0 0 .502 6.186C0 8.067 0 12 0 12s0 3.933.502 5.814a3.016 3.016 0 0 0 2.122 2.135c1.871.506 9.376.506 9.376.506s7.505 0 9.376-.506a3.016 3.016 0 0 0 2.122-2.135C24 15.933 24 12 24 12s0-3.933-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+              </svg>
+            </a>
+
+            <a class="social-ig" href="https://www.instagram.com/laterrazapodcastshow/" target="_blank" rel="noopener noreferrer" aria-label="Instagram La Terraza Podcast Show">
+              <svg viewBox="0 0 24 24" fill="white" aria-hidden="true">
+                <path d="M7.75 2h8.5A5.756 5.756 0 0 1 22 7.75v8.5A5.756 5.756 0 0 1 16.25 22h-8.5A5.756 5.756 0 0 1 2 16.25v-8.5A5.756 5.756 0 0 1 7.75 2zm0 1.8A3.954 3.954 0 0 0 3.8 7.75v8.5a3.954 3.954 0 0 0 3.95 3.95h8.5a3.954 3.954 0 0 0 3.95-3.95v-8.5a3.954 3.954 0 0 0-3.95-3.95h-8.5zm8.95 1.35a1.2 1.2 0 1 1-1.2 1.2 1.2 1.2 0 0 1 1.2-1.2zM12 6.865A5.135 5.135 0 1 1 6.865 12 5.141 5.141 0 0 1 12 6.865zm0 1.8A3.335 3.335 0 1 0 15.335 12 3.339 3.339 0 0 0 12 8.665z"/>
+              </svg>
+            </a>
+
+            <a class="social-tt" href="https://www.tiktok.com/@laterrazapodcast_cali" target="_blank" rel="noopener noreferrer" aria-label="TikTok La Terraza Podcast Cali">
+              <svg viewBox="0 0 24 24" fill="white" aria-hidden="true">
+                <path d="M19.589 6.686a4.793 4.793 0 0 1-3.77-1.88v8.295a7.004 7.004 0 1 1-7.004-7.004c.274 0 .546.019.814.056v3.45a3.553 3.553 0 0 0-.814-.094 3.592 3.592 0 1 0 3.592 3.592V0h3.412a4.8 4.8 0 0 0 4.77 4.087z"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="copy">
+        <span>© 2026 La Terraza Podcast Show. Todos los derechos reservados.</span>
+
+        <div class="footer-stats" aria-label="Contadores de La Terraza">
+          <div class="stat-pill" title="Visitas a la página">
+            <span class="stat-icon" aria-hidden="true">👁</span>
+            <strong id="visitCounter">951</strong>
+            <span>Visitas</span>
+          </div>
+
+          <button class="stat-pill like-counter-btn" id="likeButton" type="button" aria-label="Dar me gusta a La Terraza">
+            <span class="stat-icon" aria-hidden="true">❤</span>
+            <strong id="likeCounter">630</strong>
+            <span>Me gusta</span>
+          </button>
+        </div>
+
+        <span>Diseñado para redes, comunidad y entretenimiento.</span>
+      </div>
+    </footer>
+
+    <div class="modal-overlay" id="missionModal" aria-hidden="true">
+      <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="missionModalTitle">
+        <button class="modal-close" type="button" id="closeMissionModal" aria-label="Cerrar ventana">×</button>
+        <div class="modal-content">
+          <span class="modal-kicker">Nuestra misión</span>
+          <h3 id="missionModalTitle">Comunicar, conectar y <span>servir a la comunidad</span></h3>
+          <p>
+            La misión de La Terraza Podcast Show es crear un espacio abierto, humano y cercano donde las personas puedan compartir sus historias, talentos, proyectos y experiencias a través de entrevistas, entretenimiento, deporte y contenido digital con identidad propia.
+          </p>
+          <p>
+            Además de informar y entretener, buscamos generar impacto positivo mediante actividades sociales, apoyo comunitario y acciones solidarias que acompañen a quienes más lo necesitan.
+          </p>
+          <div class="modal-highlight">
+            Nuestra misión es usar la comunicación como una herramienta para visibilizar historias, unir personas y transformar momentos en oportunidades de inspiración, ayuda y crecimiento colectivo.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="visionModal" aria-hidden="true">
+      <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="visionModalTitle">
+        <button class="modal-close" type="button" id="closeVisionModal" aria-label="Cerrar ventana">×</button>
+        <div class="modal-content">
+          <span class="modal-kicker">Nuestra visión</span>
+          <h3 id="visionModalTitle">Ser una plataforma referente de <span>historias, entretenimiento y acción social</span></h3>
+          <p>
+            La visión de La Terraza Podcast Show es consolidarse como una plataforma digital reconocida por su contenido auténtico, su cercanía con la gente y su capacidad de proyectar voces, talentos, emprendimientos e iniciativas que merecen ser escuchadas.
+          </p>
+          <p>
+            Queremos crecer como medio de comunicación comunitario y digital, fortalecer nuestras entrevistas, ampliar nuestros programas deportivos y de entretenimiento, y seguir desarrollando actividades sociales que dejen una huella positiva.
+          </p>
+          <div class="modal-highlight">
+            Aspiramos a que La Terraza sea un punto de encuentro para la cultura, el deporte, la solidaridad, el entretenimiento y las historias que construyen comunidad.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="socialModal" aria-hidden="true">
+      <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="socialModalTitle">
+        <button class="modal-close" type="button" id="closeSocialModal" aria-label="Cerrar ventana">×</button>
+        <div class="modal-content">
+          <span class="modal-kicker">Compromiso social</span>
+          <h3 id="socialModalTitle">Más que entrevistas: <span>una misión comunitaria</span></h3>
+          <p>
+            La Terraza Podcast Show nació como un espacio para escuchar historias, promover talentos y conectar con la gente. Pero nuestro propósito va más allá del entretenimiento: también queremos aportar a la comunidad y acompañar a quienes más lo necesitan.
+          </p>
+          <p>
+            En Navidad hemos realizado entregas de regalos a niños de escasos recursos, llevando alegría, esperanza y un momento especial a familias que merecen ser visibilizadas y apoyadas. Esta labor ha sido reconocida por diferentes personas y también fue destacada en un noticiero, lo que nos impulsa a seguir creciendo con responsabilidad y corazón.
+          </p>
+          <div class="modal-highlight">
+            Nuestro objetivo es seguir uniendo comunicación, entretenimiento y solidaridad para crear proyectos que inspiren, ayuden y dejen una huella positiva en la comunidad.
+          </div>
+          <div class="modal-actions">
+            <a class="btn btn-yellow" href="https://wa.me/573168003218?text=Hola%20Jhon%20F.%2C%20director%20de%20La%20Terraza%20Podcast%20Show.%20Quiero%20conocer%20m%C3%A1s%20sobre%20la%20labor%20social%20del%20programa%20y%20c%C3%B3mo%20puedo%20apoyar%20o%20contactarlos." target="_blank" rel="noopener noreferrer">
+              Contáctanos: Jhon F., director
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function setupModal(openId, closeId, modalId) {
+      const openButton = document.getElementById(openId);
+      const closeButton = document.getElementById(closeId);
+      const modal = document.getElementById(modalId);
+
+      if (!openButton || !closeButton || !modal) return;
+
+      openButton.addEventListener('click', () => {
+        modal.classList.add('active');
+        modal.setAttribute('aria-hidden', 'false');
+      });
+
+      closeButton.addEventListener('click', () => {
+        modal.classList.remove('active');
+        modal.setAttribute('aria-hidden', 'true');
+      });
+
+      modal.addEventListener('click', (event) => {
+        if (event.target === modal) {
+          modal.classList.remove('active');
+          modal.setAttribute('aria-hidden', 'true');
+        }
+      });
+    }
+
+    setupModal('openSocialModal', 'closeSocialModal', 'socialModal');
+    setupModal('openMissionModal', 'closeMissionModal', 'missionModal');
+    setupModal('openVisionModal', 'closeVisionModal', 'visionModal');
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        document.querySelectorAll('.modal-overlay.active').forEach((modal) => {
+          modal.classList.remove('active');
+          modal.setAttribute('aria-hidden', 'true');
+        });
+      }
+    });
+
+    const headerRadioPlayer = document.getElementById('headerRadioPlayer');
+    const headerRadioBtn = document.getElementById('headerRadioBtn');
+    const headerRadioAudio = document.getElementById('headerRadioAudio');
+    if (headerRadioPlayer && headerRadioBtn && headerRadioAudio) {
+      const radioSources = [
+        'disco-terraza.mp3',
+        './disco-terraza.mp3',
+        'disco-terraza',
+        './disco-terraza'
+      ];
+
+      let currentSourceIndex = 0;
+      let userStartedAudio = false;
+      let autoAttemptInProgress = false;
+
+      function setRadioSource(index) {
+        currentSourceIndex = index;
+        headerRadioAudio.src = radioSources[currentSourceIndex];
+        headerRadioAudio.load();
+      }
+      function setRadioStatus(text) { }
+
+      function setPlayingState(isPlaying) {
+        headerRadioPlayer.classList.toggle('is-playing', isPlaying);
+        headerRadioBtn.textContent = isPlaying ? '⏸' : '▶';
+        headerRadioBtn.setAttribute('aria-label', isPlaying ? 'Pausar Disco La Terraza' : 'Reproducir Disco La Terraza');
+        setRadioStatus('');
+      }
+
+      async function tryPlaySource(index, fromUserGesture = false) {
+        if (index >= radioSources.length) {
+          setPlayingState(false);
+          setRadioStatus('');
+          return false;
+        }
+
+        setRadioSource(index);
+
+        try {
+          await headerRadioAudio.play();
+          userStartedAudio = true;
+          setPlayingState(true);
+          removeAutoStartEvents();
+          return true;
+        } catch (error) {
+          const blockedByBrowser = error && error.name === 'NotAllowedError';
+
+          if (blockedByBrowser && !fromUserGesture) {
+            setPlayingState(false);
+            setRadioStatus('');
+            return false;
+          }
+
+          return tryPlaySource(index + 1, fromUserGesture);
+        }
+      }
+
+      function actionComesFromRadioPlayer(event) {
+        return event && event.target && event.target.closest && event.target.closest('#headerRadioPlayer');
+      }
+
+      async function startAudioFromFirstAction(event) {
+        if (actionComesFromRadioPlayer(event)) return;
+        if (userStartedAudio || autoAttemptInProgress || !headerRadioAudio.paused) return;
+
+        autoAttemptInProgress = true;
+        setRadioStatus('');
+        await tryPlaySource(currentSourceIndex, true);
+        autoAttemptInProgress = false;
+      }
+
+      function addAutoStartEvents() {
+        window.addEventListener('click', startAudioFromFirstAction);
+        window.addEventListener('touchstart', startAudioFromFirstAction, { passive: true });
+      }
+
+      function removeAutoStartEvents() {
+        window.removeEventListener('click', startAudioFromFirstAction);
+        window.removeEventListener('touchstart', startAudioFromFirstAction);
+      }
+
+      headerRadioBtn.addEventListener('click', async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (autoAttemptInProgress) return;
+
+        if (headerRadioAudio.paused) {
+          setRadioStatus('');
+          await tryPlaySource(currentSourceIndex, true);
+        } else {
+          headerRadioAudio.pause();
+          setPlayingState(false);
+        }
+      });
+
+      headerRadioAudio.addEventListener('ended', () => setPlayingState(false));
+      headerRadioAudio.addEventListener('pause', () => {
+        if (!headerRadioAudio.ended) setPlayingState(false);
+      });
+      headerRadioAudio.addEventListener('play', () => setPlayingState(true));
+      headerRadioAudio.addEventListener('error', () => {
+        if (headerRadioAudio.paused) {
+          setRadioStatus('');
+        }
+      });
+
+      addAutoStartEvents();
+    }
+
+
+    function setupFooterCounters() {
+      const visitCounter = document.getElementById('visitCounter');
+      const likeCounter = document.getElementById('likeCounter');
+      const likeButton = document.getElementById('likeButton');
+
+      if (!visitCounter || !likeCounter || !likeButton) return;
+
+      const baseVisits = 951;
+      const baseLikes = 630;
+      const visitsKey = 'laTerrazaTotalVisits';
+      const likesKey = 'laTerrazaTotalLikes';
+      const likedKey = 'laTerrazaUserLiked';
+
+      let storedVisits = Number(localStorage.getItem(visitsKey));
+      let storedLikes = Number(localStorage.getItem(likesKey));
+
+      if (!Number.isFinite(storedVisits) || storedVisits < baseVisits) {
+        storedVisits = baseVisits - 1;
+      }
+
+      storedVisits += 1;
+      localStorage.setItem(visitsKey, String(storedVisits));
+
+      if (!Number.isFinite(storedLikes) || storedLikes < baseLikes) {
+        storedLikes = baseLikes;
+        localStorage.setItem(likesKey, String(storedLikes));
+      }
+
+      const alreadyLiked = localStorage.getItem(likedKey) === 'true';
+      if (alreadyLiked) {
+        likeButton.classList.add('liked');
+        likeButton.setAttribute('aria-label', 'Ya diste me gusta a La Terraza');
+      }
+
+      visitCounter.textContent = storedVisits.toLocaleString('es-CO');
+      likeCounter.textContent = storedLikes.toLocaleString('es-CO');
+
+      likeButton.addEventListener('click', () => {
+        if (localStorage.getItem(likedKey) === 'true') return;
+
+        storedLikes += 1;
+        localStorage.setItem(likesKey, String(storedLikes));
+        localStorage.setItem(likedKey, 'true');
+        likeCounter.textContent = storedLikes.toLocaleString('es-CO');
+        likeButton.classList.add('liked');
+        likeButton.setAttribute('aria-label', 'Ya diste me gusta a La Terraza');
+      });
+    }
+
+    setupFooterCounters();
+
+  </script>
+</body>
+</html>
