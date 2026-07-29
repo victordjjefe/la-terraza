@@ -63,7 +63,6 @@
     }
     .card-title { font-size: 0.9rem; font-weight: 700; color: var(--primary); margin-bottom: 12px; }
 
-    /* CONTADOR Y BANNER DE RESERVA */
     .timer-banner {
       background: #fffbe3;
       border: 1px solid var(--warning);
@@ -174,7 +173,6 @@
     <h1>LA TERRAZA BINGO</h1>
   </header>
 
-  <!-- PANTALLA CUANDO LAS VENTAS NO ESTÁN HABILITADAS / O NO CONFIGURADO -->
   <div id="disabled-screen" class="main-content hidden">
     <div class="card" style="text-align: center; padding: 30px 16px;">
       <img src="pagos.png" alt="Aún no disponible" class="banner-img" style="margin-bottom: 16px;" onerror="this.style.display='none'">
@@ -186,7 +184,6 @@
     </div>
   </div>
 
-  <!-- CONTENIDO PRINCIPAL DE COMPRA -->
   <div id="enabled-screen">
     <div class="banner-container">
       <img src="pagos.png" alt="Métodos de Pago" class="banner-img" onerror="this.style.display='none'">
@@ -200,7 +197,6 @@
 
     <main class="main-content">
 
-      <!-- TEMPORIZADOR GLOBAL DE RESERVA -->
       <div id="reservation-timer-box" class="timer-banner hidden">
         <b>¡Tienes tablas reservadas!</b>
         <p style="margin-top:2px;">Tiempo restante para completar la compra:</p>
@@ -258,7 +254,6 @@
           </label>
         </div>
 
-        <!-- MÓDULO ASIGNACIÓN MÚLTIPLE -->
         <div id="multi-assign-box" class="hidden" style="border-top: 1px dashed var(--border-color); padding-top: 12px;">
           
           <div id="assign-inputs-container">
@@ -315,7 +310,7 @@
         <button class="btn btn-primary" id="btn-finish-order">FINALIZAR COMPRA</button>
       </div>
 
-      <!-- PASO 4: CONFIRMACIÓN + BOTÓN VOLVER A COMPRAR -->
+      <!-- PASO 4: CONFIRMACIÓN -->
       <div id="step-4" class="card hidden" style="text-align: center;">
         <div style="font-size: 2.5rem; color: var(--success); margin-bottom: 8px;">✓</div>
         <div class="card-title" style="font-size: 1.1rem; justify-content: center;">PEDIDO RECIBIDO</div>
@@ -342,7 +337,7 @@
   } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
   // ==========================================
-  // CONFIGURACIÓN DE FIREBASE
+  // PEGA AQUÍ TUS CLAVES REALES DE FIREBASE
   // ==========================================
   const firebaseConfig = {
     apiKey: "YOUR_API_KEY",
@@ -555,7 +550,7 @@
   }
 
   async function handleTimerExpiration() {
-    alert(' Tu tiempo de reserva (5 minutos) ha expirado. Las tablas han sido liberadas.');
+    alert('Tu tiempo de reserva (5 minutos) ha expirado. Las tablas han sido liberadas.');
     await releaseCurrentReservations();
     resetToStep1();
   }
