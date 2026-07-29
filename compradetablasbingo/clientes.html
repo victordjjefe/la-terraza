@@ -797,13 +797,10 @@
 
       // 2. Cambiar tablas de RESERVADA a VENDIDA en Firestore
       for (const code of selectedTables) {
-        await updateDoc(doc(db, 'tablas', code), {
-          status: 'VENDIDA',
-          reservedUntil: null,
-          reservedBy: null,
-          pedido: orderId
-        });
-      }
+       await updateDoc(doc(db, 'tablas', code), {
+  status: 'RESERVADA',
+  pedido: orderId
+});
 
       // 3. Mostrar pantalla final
       document.getElementById('reservation-timer-box').classList.add('hidden');
