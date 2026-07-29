@@ -103,7 +103,7 @@
 
     .summary-box { background: #f8fafc; border-radius: var(--radius-sm); padding: 12px; font-size: 0.85rem; }
     .summary-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
-    .summary-total { font-weight: 700; font-size: 1rem; color: var(--primary); border-top: 1px solid var(--border-color); pt: 6px; margin-top: 6px; }
+    .summary-total { font-weight: 700; font-size: 1rem; color: var(--primary); border-top: 1px solid var(--border-color); padding-top: 6px; margin-top: 6px; }
 
     .form-group { margin-bottom: 10px; }
     .form-group label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; }
@@ -174,14 +174,14 @@
     <h1>LA TERRAZA BINGO</h1>
   </header>
 
-  <!-- PANTALLA CUANDO LAS VENTAS NO ESTÁN HABILITADAS -->
+  <!-- PANTALLA CUANDO LAS VENTAS NO ESTÁN HABILITADAS / O NO CONFIGURADO -->
   <div id="disabled-screen" class="main-content hidden">
     <div class="card" style="text-align: center; padding: 30px 16px;">
       <img src="pagos.png" alt="Aún no disponible" class="banner-img" style="margin-bottom: 16px;" onerror="this.style.display='none'">
       <div style="font-size: 2.5rem; margin-bottom: 8px;">⏳</div>
-      <div class="card-title" style="font-size: 1.1rem; color: var(--danger); justify-content: center;">COMPRAS NO DISPONIBLES</div>
-      <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-top: 8px;">
-        Aún no se habilita la página para la compra de tablas. <br>Por favor, vuelve a intentarlo más tarde o consulta con los organizadores.
+      <div class="card-title" id="disabled-message-title" style="font-size: 1.1rem; color: var(--danger); justify-content: center;">COMPRAS NO DISPONIBLES</div>
+      <p id="disabled-message-body" style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-top: 8px;">
+        Las ventas de tablas aún no están habilitadas.
       </p>
     </div>
   </div>
@@ -337,11 +337,13 @@
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
   import { 
-    getFirestore, doc, getDoc, setDoc, updateDoc, collection, 
-    onSnapshot, runTransaction, getDocs, query, orderBy, limit 
+    getFirestore, doc, setDoc, updateDoc, collection, 
+    onSnapshot, runTransaction, getDocs 
   } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
-  // CONFIGURACIÓN DE FIREBASE (Reemplazar con sus credenciales de Firebase Console)
+  // ==========================================
+  // CONFIGURACIÓN DE FIREBASE
+  // ==========================================
   const firebaseConfig = {
     apiKey: "YOUR_API_KEY",
     authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
@@ -354,7 +356,6 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  // Identificador único temporal de este cliente en el navegador
   let myClientId = sessionStorage.getItem('ltb_client_id');
   if (!myClientId) {
     myClientId = 'cli_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
@@ -372,31 +373,34 @@
   let timerInterval = null;
   let reservationEndTime = null;
 
-  // Escuchar configuración del evento
   function listenConfig() {
     onSnapshot(doc(db, 'configuracion', 'evento'), (docSnap) => {
-      if (docSnap.exists()) {
-        config = docSnap.data();
-        if (!config.enabled) {
-          document.getElementById('enabled-screen').classList.add('hidden');
-          document.getElementById('disabled-screen').classList.remove('hidden');
-          return;
-        } else {
-          document.getElementById('enabled-screen').classList.remove('hidden');
-          document.getElementById('disabled-screen').classList.add('hidden');
-        }
-
-        document.getElementById('info-fecha').textContent = config.fecha || '--';
-        document.getElementById('info-hora').textContent = config.hora || '--';
-        document.getElementById('info-valor').textContent = (config.valor || 0).toLocaleString();
-      } else {
+      if (!docSnap.exists()) {
         document.getElementById('enabled-screen').classList.add('hidden');
         document.getElementById('disabled-screen').classList.remove('hidden');
+        document.getElementById('disabled-message-title').textContent = "SIN CONFIGURACIÓN";
+        document.getElementById('disabled-message-body').textContent = "El evento todavía no está configurado";
+        return;
       }
+
+      config = docSnap.data();
+      if (config.enabled === false) {
+        document.getElementById('enabled-screen').classList.add('hidden');
+        document.getElementById('disabled-screen').classList.remove('hidden');
+        document.getElementById('disabled-message-title').textContent = "COMPRAS NO DISPONIBLES";
+        document.getElementById('disabled-message-body').textContent = "Las ventas de tablas aún no están habilitadas";
+        return;
+      }
+
+      document.getElementById('enabled-screen').classList.remove('hidden');
+      document.getElementById('disabled-screen').classList.add('hidden');
+
+      document.getElementById('info-fecha').textContent = config.fecha || '--';
+      document.getElementById('info-hora').textContent = config.hora || '--';
+      document.getElementById('info-valor').textContent = (config.valor || 0).toLocaleString();
     });
   }
 
-  // Escuchar tablas disponibles y reservadas por mí en tiempo real
   function listenTables() {
     onSnapshot(collection(db, 'tablas'), (snapshot) => {
       allTablesData = [];
@@ -404,7 +408,6 @@
 
       snapshot.forEach(docSnap => {
         const data = docSnap.data();
-        // Verificar expiración de reservas antiguas en cliente
         if (data.status === 'RESERVADA' && data.reservedUntil && data.reservedUntil <= now) {
           data.status = 'DISPONIBLE';
         }
@@ -420,14 +423,12 @@
     container.innerHTML = '';
     const now = Date.now();
 
-    // Ordenar tablas por código (T001, T002, etc.)
     allTablesData.sort((a,b) => a.code.localeCompare(b.code, undefined, {numeric: true, sensitivity: 'base'}));
 
     allTablesData.forEach(t => {
       const isReservedByMe = selectedTables.includes(t.code);
       const isExpired = t.reservedUntil && t.reservedUntil <= now;
 
-      // Si está vendida, o reservada por otro usuario no expirada, NO mostrar
       if (t.status === 'VENDIDA') return;
       if (t.status === 'RESERVADA' && t.reservedBy !== myClientId && !isExpired) return;
 
@@ -448,19 +449,18 @@
     const index = selectedTables.indexOf(code);
 
     if (index > -1) {
-      // DESSELECCIONAR: Liberar la tabla inmediatamente en Firestore
       selectedTables.splice(index, 1);
       try {
         await updateDoc(doc(db, 'tablas', code), {
           status: 'DISPONIBLE',
           reservedUntil: null,
-          reservedBy: null
+          reservedBy: null,
+          pedido: null
         });
       } catch (err) {
         console.error("Error al desseleccionar tabla:", err);
       }
     } else {
-      // SELECCIONAR: Transacción atómica para evitar colisión de compra
       if (selectedTables.length >= 10) {
         alert('Máximo puedes seleccionar 10 tablas.');
         return;
@@ -480,7 +480,7 @@
           const isExpired = tData.reservedUntil && tData.reservedUntil <= now;
 
           if (tData.status === 'VENDIDA' || (tData.status === 'RESERVADA' && tData.reservedBy !== myClientId && !isExpired)) {
-            return false; // Ya no disponible
+            return false;
           }
 
           if (selectedTables.length === 0 || !reservationEndTime) {
@@ -555,7 +555,7 @@
   }
 
   async function handleTimerExpiration() {
-    alert('⏱️ Tu tiempo de reserva (5 minutos) ha expirado. Las tablas han sido liberadas.');
+    alert(' Tu tiempo de reserva (5 minutos) ha expirado. Las tablas han sido liberadas.');
     await releaseCurrentReservations();
     resetToStep1();
   }
@@ -568,14 +568,12 @@
     for (const code of tablesToRelease) {
       try {
         const tRef = doc(db, 'tablas', code);
-        const tSnap = await getDoc(tRef);
-        if (tSnap.exists() && tSnap.data().reservedBy === myClientId) {
-          await updateDoc(tRef, {
-            status: 'DISPONIBLE',
-            reservedUntil: null,
-            reservedBy: null
-          });
-        }
+        await updateDoc(tRef, {
+          status: 'DISPONIBLE',
+          reservedUntil: null,
+          reservedBy: null,
+          pedido: null
+        });
       } catch (err) {
         console.error("Error liberando reserva:", err);
       }
@@ -665,12 +663,9 @@
 
     assignments.push({
       nombre: name,
-      name: name,
       ciudad: city,
-      address: city,
       whatsapp: phone,
-      tablas: selectedChips,
-      tables: selectedChips
+      tablas: selectedChips
     });
 
     pendingTablesToAssign = pendingTablesToAssign.filter(t => !selectedChips.includes(t));
@@ -704,12 +699,9 @@
     if (mode === 'self') {
       assignments = [{
         nombre: buyerName,
-        name: buyerName,
         ciudad: buyerAddress,
-        address: buyerAddress,
         whatsapp: buyerPhone,
-        tablas: [...selectedTables],
-        tables: [...selectedTables]
+        tablas: [...selectedTables]
       }];
     }
 
@@ -756,7 +748,6 @@
     try {
       clearInterval(timerInterval);
 
-      // Obtener el consecutivo de pedido desde Firestore
       const pedidosSnap = await getDocs(collection(db, 'pedidos'));
       const orderCount = pedidosSnap.size + 1;
       const orderId = String(orderCount).padStart(5, '0');
@@ -767,42 +758,26 @@
 
       const newOrder = {
         id: orderId,
-        cliente: {
-          name: buyerName,
-          address: buyerAddress,
-          whatsapp: buyerPhone
-        },
-        client: {
-          name: buyerName,
-          address: buyerAddress,
-          whatsapp: buyerPhone
-        },
+        cliente: buyerName,
         telefono: buyerPhone,
         direccion: buyerAddress,
         tablas: selectedTables,
-        tables: selectedTables,
         total: selectedTables.length * (config ? config.valor : 0),
         comprobante: proofBase64,
-        proof: proofBase64,
-        estado: 'Pendiente pago',
-        status: 'Pendiente pago',
         fecha: new Date().toLocaleString(),
-        createdAt: new Date().toLocaleString(),
-        asignaciones: assignments,
-        assignments: assignments
+        estado: 'PENDIENTE PAGO',
+        asignaciones: assignments
       };
 
-      // 1. Guardar en Firestore colección 'pedidos'
       await setDoc(doc(db, 'pedidos', orderId), newOrder);
 
-      // 2. Cambiar tablas de RESERVADA a VENDIDA en Firestore
       for (const code of selectedTables) {
-       await updateDoc(doc(db, 'tablas', code), {
-  status: 'RESERVADA',
-  pedido: orderId
-});
+        await updateDoc(doc(db, 'tablas', code), {
+          status: 'RESERVADA',
+          pedido: orderId
+        });
+      }
 
-      // 3. Mostrar pantalla final
       document.getElementById('reservation-timer-box').classList.add('hidden');
       document.getElementById('step-3').classList.add('hidden');
       document.getElementById('step-4').classList.remove('hidden');
@@ -831,7 +806,6 @@
 
   document.getElementById('btn-restart').addEventListener('click', volverAComprar);
 
-  // Inicializar listeners
   listenConfig();
   listenTables();
 </script>
