@@ -1,3 +1,2182 @@
+
+Conversación con Gemini
+Copia y pega este texto completo en la otra IA junto con los dos archivos HTML:
+
+
+
+Necesito que modifiques estos dos archivos HTML completos que adjunto: configuracion.html y clientes.html.
+
+
+
+IMPORTANTE: No quiero explicaciones ni fragmentos de código. Necesito que me devuelvas los DOS archivos HTML completos listos para reemplazar los actuales.
+
+
+
+CONTEXTO DEL PROYECTO:
+
+Tengo un sistema de compra de tablas de bingo llamado LA TERRAZA BINGO. Actualmente funciona con localStorage, pero necesito migrarlo a Firebase Firestore porque habrá muchos clientes comprando al mismo tiempo.
+
+
+
+La página estará publicada en:
+
+laterrazacalipodcast.top/compradetablasbingo
+
+
+
+OBJETIVO:
+
+Convertir el sistema actual de localStorage a Firebase Firestore manteniendo exactamente el diseño, estilos, textos, botones y funcionamiento actual.
+
+
+
+NO cambiar:
+
+- Diseño visual.
+
+- Colores.
+
+- Estructura HTML.
+
+- Nombres de archivos.
+
+- Formato de tablas.
+
+- Flujo de compra.
+
+
+
+LAS TABLAS TIENEN FORMATO FIJO Y NO SE PUEDE CAMBIAR:
+
+T001
+
+T002
+
+T003
+
+...
+
+T5000
+
+
+
+NO usar T0001 ni cambiar la numeración.
+
+
+
+La lógica debe funcionar así:
+
+
+
+1. CONFIGURACION.HTML (ADMINISTRADOR)
+
+
+
+Debe seguir siendo el panel administrador.
+
+
+
+Debe conservar:
+
+- Configuración del evento.
+
+- Métricas.
+
+- Gestión de pedidos.
+
+- Confirmar pagos.
+
+- Cancelar pedidos.
+
+- Cierre de bingo.
+
+
+
+Actualmente usa localStorage. Debe migrarse completamente a Firebase Firestore.
+
+
+
+Cuando el administrador coloque:
+
+
+
+Desde: 1
+
+Hasta: 5000
+
+
+
+y presione:
+
+"Guardar Cambios y Generar Tablas"
+
+
+
+Debe crear automáticamente en Firestore:
+
+
+
+T001
+
+T002
+
+T003
+
+...
+
+T5000
+
+
+
+No crear tablas manualmente.
+
+
+
+Si una tabla ya existe:
+
+- conservarla.
+
+- no borrar estados vendidos.
+
+- no borrar reservas activas.
+
+
+
+ESTRUCTURA FIRESTORE:
+
+
+
+Colección:
+
+configuracion
+
+
+
+Documento:
+
+evento
+
+
+
+Campos:
+
+enabled
+
+fecha
+
+hora
+
+valor
+
+desde
+
+hasta
+
+
+
+
+
+Colección:
+
+tablas
+
+
+
+Cada documento será una tabla.
+
+
+
+Ejemplo:
+
+
+
+tablas
+
+└── T001
+
+
+
+Campos:
+
+
+
+code:
+
+"T001"
+
+
+
+status:
+
+DISPONIBLE
+
+RESERVADA
+
+VENDIDA
+
+
+
+reservedUntil:
+
+fecha/hora de vencimiento
+
+
+
+reservedBy:
+
+identificador temporal del cliente
+
+
+
+pedido:
+
+id del pedido
+
+
+
+
+
+Colección:
+
+pedidos
+
+
+
+Cada compra debe guardar:
+
+
+
+id
+
+cliente
+
+telefono
+
+direccion
+
+tablas compradas
+
+total
+
+comprobante
+
+estado
+
+fecha
+
+asignaciones
+
+
+
+Estados:
+
+
+
+Pendiente pago
+
+Pago confirmado
+
+Cancelado
+
+
+
+
+
+2. CLIENTES.HTML (PÁGINA DE COMPRA)
+
+
+
+Debe conectarse a Firebase Firestore.
+
+
+
+Debe dejar de usar localStorage.
+
+
+
+Cuando un cliente entre:
+
+
+
+Debe consultar las tablas desde Firestore.
+
+
+
+Debe mostrar únicamente tablas:
+
+
+
+DISPONIBLE
+
+
+
+No mostrar:
+
+
+
+RESERVADA
+
+VENDIDA
+
+
+
+
+
+SISTEMA DE RESERVA:
+
+
+
+Cuando un cliente seleccione una tabla:
+
+
+
+Ejemplo:
+
+
+
+T001
+
+
+
+Debe cambiar inmediatamente en Firestore:
+
+
+
+DISPONIBLE
+
+
+
+a:
+
+
+
+RESERVADA
+
+
+
+Guardar:
+
+
+
+reservedUntil = fecha actual + 5 minutos
+
+
+
+reservedBy = identificador temporal del cliente
+
+
+
+
+
+IMPORTANTE:
+
+
+
+Si otro cliente entra al mismo tiempo:
+
+
+
+NO debe poder ver ni comprar esa tabla.
+
+
+
+La tabla reservada debe desaparecer para los demás usuarios.
+
+
+
+
+
+Si pasan 5 minutos y no termina la compra:
+
+
+
+Liberar automáticamente:
+
+
+
+RESERVADA
+
+
+
+a:
+
+
+
+DISPONIBLE
+
+
+
+
+
+Si finaliza la compra:
+
+
+
+Cambiar:
+
+
+
+RESERVADA
+
+
+
+a:
+
+
+
+VENDIDA
+
+
+
+
+
+Guardar el pedido completo en Firestore.
+
+
+
+
+
+FIREBASE:
+
+
+
+Usar Firebase SDK modular:
+
+
+
+firebase/app
+
+firebase/firestore
+
+
+
+Agregar la configuración Firebase correctamente dentro de los archivos.
+
+
+
+
+
+SEGURIDAD:
+
+
+
+Crear reglas Firestore adecuadas.
+
+
+
+Los clientes pueden:
+
+- Leer tablas disponibles.
+
+- Crear pedidos.
+
+
+
+Los clientes NO pueden:
+
+- Cambiar estados manualmente.
+
+- Marcar tablas como vendidas.
+
+
+
+La administración debe quedar protegida.
+
+
+
+
+
+ENTREGA FINAL:
+
+
+
+Devuélveme solamente:
+
+
+
+1. configuracion.html completo funcionando.
+
+2. clientes.html completo funcionando.
+
+
+
+No entregues:
+
+- fragmentos.
+
+- ejemplos.
+
+- explicaciones.
+
+- pasos.
+
+
+
+Necesito archivos completos listos para subir al dominio:
+
+
+
+laterrazacalipodcast.top/compradetablasbingo
+
+Python
+config_html = """<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LA TERRAZA BINGO - Panel Administrador</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-body: #f1f5f9;
+      --surface: #ffffff;
+      --primary: #0f172a;
+      --primary-accent: #1e293b;
+      --accent-gold: #d97706;
+      --accent-gold-hover: #b45309;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+    body { background-color: var(--bg-body); color: var(--text-main); display: flex; justify-content: center; min-height: 100vh; }
+    
+    .app-container {
+      width: 100%;
+      max-width: 480px;
+      background: var(--surface);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+    }
+
+    .header {
+      background: linear-gradient(135deg, var(--primary), var(--primary-accent));
+      color: #fff;
+      padding: 20px;
+      text-align: center;
+      border-bottom: 3px solid var(--accent-gold);
+    }
+    .header h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: 1px; color: var(--accent-gold); }
+    .header p { font-size: 0.8rem; color: #94a3b8; margin-top: 4px; }
+
+    .main-content { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 20px; }
+
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; }
+    .form-control {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .form-control:focus { border-color: var(--accent-gold); box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.15); }
+    .form-row { display: flex; gap: 8px; }
+    .form-row .form-group { flex: 1; }
+
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f8fafc;
+      padding: 10px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      margin-bottom: 12px;
+    }
+    .toggle-label { font-size: 0.8rem; font-weight: 700; color: var(--primary); }
+
+    .btn {
+      width: 100%;
+      padding: 10px 16px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.2s;
+    }
+    .btn-primary { background: var(--accent-gold); color: #fff; }
+    .btn-primary:hover { background: var(--accent-gold-hover); }
+    .btn-dark { background: var(--primary); color: #fff; }
+    .btn-sm { padding: 6px 10px; font-size: 0.75rem; width: auto; }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-danger { background: var(--danger); color: #fff; }
+
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .metric-card {
+      background: var(--bg-body);
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      border-left: 4px solid var(--border-color);
+    }
+    .metric-card.total { border-color: var(--primary); }
+    .metric-card.disp { border-color: var(--success); }
+    .metric-card.vend { border-color: var(--danger); }
+    .metric-val { font-size: 1.2rem; font-weight: 700; }
+    .metric-lbl { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
+
+    .search-box { margin-bottom: 12px; }
+    .order-item {
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      margin-bottom: 8px;
+      background: #fff;
+    }
+    .order-header { display: flex; justify-content: space-between; font-weight: 700; font-size: 0.85rem; margin-bottom: 6px; }
+    .order-info { font-size: 0.78rem; color: var(--text-muted); line-height: 1.4; }
+    .order-badges { display: flex; gap: 4px; flex-wrap: wrap; margin: 6px 0; }
+    .badge { font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
+    .badge-pending { background: #fef3c7; color: #92400e; }
+    .badge-confirmed { background: #d1fae5; color: #065f46; }
+    .badge-cancelled { background: #fee2e2; color: #991b1b; }
+
+    .assignment-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+      font-size: 0.75rem;
+      color: #334155;
+      flex-wrap: wrap;
+    }
+    .table-check-btn {
+      background-color: var(--success);
+      color: #ffffff;
+      border: none;
+      padding: 3px 7px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background-color 0.2s, opacity 0.2s;
+    }
+    .table-check-btn.processed {
+      background-color: var(--danger);
+      cursor: not-allowed;
+      opacity: 0.8;
+    }
+
+    .modal {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 100;
+    }
+    .modal-content {
+      background: #fff;
+      border-radius: var(--radius-md);
+      padding: 16px;
+      max-width: 400px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-content img { width: 100%; border-radius: var(--radius-sm); margin-top: 8px; }
+
+    .tab-bar { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 12px; }
+    .tab-item { flex: 1; text-align: center; padding: 8px; font-size: 0.8rem; font-weight: 600; cursor: pointer; color: var(--text-muted); }
+    .tab-item.active { color: var(--accent-gold); border-bottom: 2px solid var(--accent-gold); }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+  <header class="header">
+    <h1>LA TERRAZA BINGO</h1>
+    <p>Panel de Control Administrador</p>
+  </header>
+
+  <main class="main-content">
+    <div class="tab-bar">
+      <div class="tab-item active" id="tab-btn-config">Configuración</div>
+      <div class="tab-item" id="tab-btn-pedidos">Pedidos</div>
+    </div>
+
+    <!-- SECCIÓN CONFIGURACIÓN -->
+    <div id="tab-config">
+      <div class="card" style="margin-bottom: 16px;">
+        <div class="card-title">Ajustes del Evento</div>
+        <form id="form-config">
+          
+          <div class="toggle-container">
+            <span class="toggle-label">Estado de Ventas de Tablas:</span>
+            <label style="display:flex; align-items:center; gap:6px; font-size:0.8rem; font-weight:700; cursor:pointer;">
+              <input type="checkbox" id="cfg-enabled" style="width:18px; height:18px; accent-color:var(--accent-gold);">
+              <span id="cfg-enabled-text">Habilitadas</span>
+            </label>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Fecha del Bingo</label>
+              <input type="date" id="cfg-fecha" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label>Hora</label>
+              <input type="time" id="cfg-hora" class="form-control" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Valor por Tabla ($)</label>
+            <input type="number" id="cfg-valor" class="form-control" placeholder="10000" min="0" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Rango Desde</label>
+              <input type="number" id="cfg-desde" class="form-control" placeholder="1" min="1" required>
+            </div>
+            <div class="form-group">
+              <label>Rango Hasta</label>
+              <input type="number" id="cfg-hasta" class="form-control" placeholder="5000" min="1" required>
+            </div>
+          </div>
+          <button type="submit" id="btn-submit-config" class="btn btn-primary" style="margin-top: 8px;">Guardar Cambios y Generar Tablas</button>
+        </form>
+      </div>
+
+      <div class="card" style="margin-bottom: 16px;">
+        <div class="card-title">Métricas de Tablas</div>
+        <div class="metrics-grid">
+          <div class="metric-card total">
+            <div class="metric-val" id="m-total">0</div>
+            <div class="metric-lbl">Total Tablas</div>
+          </div>
+          <div class="metric-card disp">
+            <div class="metric-val" id="m-disp">0</div>
+            <div class="metric-lbl">Disponibles</div>
+          </div>
+          <div class="metric-card vend">
+            <div class="metric-val" id="m-vend">0</div>
+            <div class="metric-lbl">Vendidas</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="border-color: #fca5a5; background: #fff5f5;">
+        <div class="card-title" style="color: var(--danger);">Cierre de Evento</div>
+        <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:12px; line-height: 1.4;">
+          Borra absolutamente toda la información, tablas generadas y pedidos registrados para reiniciar el bingo.
+        </p>
+        <button class="btn btn-danger" id="btn-cerrar-bingo">Cerrar Bingo</button>
+      </div>
+    </div>
+
+    <!-- SECCIÓN PEDIDOS -->
+    <div id="tab-pedidos" style="display: none;">
+      <div class="card">
+        <div class="card-title">Gestión de Pedidos</div>
+        <div class="search-box">
+          <input type="text" id="search-input" class="form-control" placeholder="Buscar por pedido, nombre o whatsapp...">
+        </div>
+        <div class="form-group">
+          <select id="filter-status" class="form-control">
+            <option value="TODOS">Todos los estados</option>
+            <option value="Pendiente pago">Pendiente pago</option>
+            <option value="Pago confirmado">Pago confirmado</option>
+            <option value="Cancelado">Cancelado</option>
+          </select>
+        </div>
+        <div id="orders-list"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- MODAL COMPROBANTE -->
+<div id="modal-proof" class="modal">
+  <div class="modal-content">
+    <div class="card-title">
+      Comprobante de Pago
+      <button class="btn btn-sm btn-dark" id="btn-close-modal">✕</button>
+    </div>
+    <div id="modal-proof-body"></div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+  import { 
+    getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, 
+    collection, getDocs, onSnapshot, writeBatch, query, where 
+  } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+
+  // CONFIGURACIÓN DE FIREBASE (Reemplazar con sus credenciales de Firebase Console)
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  let allOrders = [];
+  let allTables = [];
+
+  function formatTableCode(num) {
+    if (num < 1000) {
+      return 'T' + String(num).padStart(3, '0');
+    }
+    return 'T' + String(num);
+  }
+
+  function updateEnabledLabel() {
+    const isChecked = document.getElementById('cfg-enabled').checked;
+    document.getElementById('cfg-enabled-text').textContent = isChecked ? 'Habilitadas' : 'Deshabilitadas';
+  }
+
+  document.getElementById('cfg-enabled').addEventListener('change', updateEnabledLabel);
+
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-config').style.display = 'none';
+    document.getElementById('tab-pedidos').style.display = 'none';
+    
+    if (tab === 'config') {
+      document.getElementById('tab-btn-config').classList.add('active');
+      document.getElementById('tab-config').style.display = 'block';
+    } else {
+      document.getElementById('tab-btn-pedidos').classList.add('active');
+      document.getElementById('tab-pedidos').style.display = 'block';
+      renderOrders();
+    }
+  }
+
+  document.getElementById('tab-btn-config').addEventListener('click', () => switchTab('config'));
+  document.getElementById('tab-btn-pedidos').addEventListener('click', () => switchTab('pedidos'));
+
+  // Cargar configuración inicial desde Firestore
+  async function loadInitialConfig() {
+    try {
+      const docRef = doc(db, 'configuracion', 'evento');
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const cfg = docSnap.data();
+        document.getElementById('cfg-enabled').checked = cfg.enabled !== undefined ? cfg.enabled : true;
+        document.getElementById('cfg-fecha').value = cfg.fecha || '';
+        document.getElementById('cfg-hora').value = cfg.hora || '';
+        document.getElementById('cfg-valor').value = cfg.valor || '';
+        document.getElementById('cfg-desde').value = cfg.desde || 1;
+        document.getElementById('cfg-hasta').value = cfg.hasta || 5000;
+      } else {
+        document.getElementById('cfg-enabled').checked = true;
+      }
+      updateEnabledLabel();
+    } catch (err) {
+      console.error("Error cargando configuración:", err);
+    }
+  }
+
+  // Escuchar cambios en las tablas para métricas
+  function listenTables() {
+    onSnapshot(collection(db, 'tablas'), (snapshot) => {
+      allTables = [];
+      snapshot.forEach(docSnap => {
+        allTables.push(docSnap.data());
+      });
+      loadMetrics();
+    });
+  }
+
+  function loadMetrics() {
+    const total = allTables.length;
+    const disp = allTables.filter(t => t.status === 'DISPONIBLE').length;
+    const vend = allTables.filter(t => t.status === 'VENDIDA').length;
+
+    document.getElementById('m-total').textContent = total;
+    document.getElementById('m-disp').textContent = disp;
+    document.getElementById('m-vend').textContent = vend;
+  }
+
+  // Guardar configuración y generar tablas
+  document.getElementById('form-config').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btn-submit-config');
+    btn.disabled = true;
+    btn.textContent = "Procesando...";
+
+    try {
+      const enabled = document.getElementById('cfg-enabled').checked;
+      const fecha = document.getElementById('cfg-fecha').value;
+      const hora = document.getElementById('cfg-hora').value;
+      const valor = parseFloat(document.getElementById('cfg-valor').value);
+      const desde = parseInt(document.getElementById('cfg-desde').value);
+      const hasta = parseInt(document.getElementById('cfg-hasta').value);
+
+      if (desde >= hasta) {
+        alert('El rango "Hasta" debe ser mayor que "Desde".');
+        btn.disabled = false;
+        btn.textContent = "Guardar Cambios y Generar Tablas";
+        return;
+      }
+
+      // 1. Guardar doc de configuración
+      await setDoc(doc(db, 'configuracion', 'evento'), {
+        enabled, fecha, hora, valor, desde, hasta
+      });
+
+      // 2. Obtener tablas existentes para no sobreescribir estados ni reservas
+      const existingSnapshot = await getDocs(collection(db, 'tablas'));
+      const existingMap = new Map();
+      existingSnapshot.forEach(docSnap => {
+        existingMap.set(docSnap.id, docSnap.data());
+      });
+
+      // 3. Generar en lotes de 500 (límite de batch en Firestore)
+      let batch = writeBatch(db);
+      let count = 0;
+
+      for (let i = desde; i <= hasta; i++) {
+        const code = formatTableCode(i);
+        if (!existingMap.has(code)) {
+          const tableRef = doc(db, 'tablas', code);
+          batch.set(tableRef, {
+            code: code,
+            status: 'DISPONIBLE'
+          });
+          count++;
+
+          if (count === 500) {
+            await batch.commit();
+            batch = writeBatch(db);
+            count = 0;
+          }
+        }
+      }
+
+      if (count > 0) {
+        await batch.commit();
+      }
+
+      alert('Configuración y tablas actualizadas correctamente.');
+    } catch (err) {
+      console.error("Error guardando configuración:", err);
+      alert("Error al guardar la configuración: " + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Guardar Cambios y Generar Tablas";
+    }
+  });
+
+  // Escuchar pedidos en tiempo real
+  function listenOrders() {
+    onSnapshot(collection(db, 'pedidos'), (snapshot) => {
+      allOrders = [];
+      snapshot.forEach(docSnap => {
+        allOrders.push({ firestoreId: docSnap.id, ...docSnap.data() });
+      });
+      renderOrders();
+    });
+  }
+
+  function renderOrders() {
+    filterOrders();
+  }
+
+  function filterOrders() {
+    const queryStr = document.getElementById('search-input').value.toLowerCase();
+    const statusFilter = document.getElementById('filter-status').value;
+    const container = document.getElementById('orders-list');
+    container.innerHTML = '';
+
+    const filtered = allOrders.filter(o => {
+      const clientName = o.cliente?.name || o.client?.name || '';
+      const clientPhone = o.cliente?.whatsapp || o.client?.whatsapp || o.telefono || '';
+      const matchQuery = String(o.id || '').toLowerCase().includes(queryStr) || 
+                         clientName.toLowerCase().includes(queryStr) || 
+                         clientPhone.includes(queryStr);
+      const matchStatus = statusFilter === 'TODOS' || o.estado === statusFilter || o.status === statusFilter;
+      return matchQuery && matchStatus;
+    });
+
+    if (filtered.length === 0) {
+      container.innerHTML = '<p style="font-size:0.8rem; color:var(--text-muted); text-align:center;">No se encontraron pedidos.</p>';
+      return;
+    }
+
+    // Ordenar de más reciente a más antiguo
+    filtered.sort((a,b) => (b.fecha || b.createdAt || '').localeCompare(a.fecha || a.createdAt || ''));
+
+    filtered.forEach(o => {
+      const currentStatus = o.estado || o.status || 'Pendiente pago';
+      let badgeClass = 'badge-pending';
+      if (currentStatus === 'Pago confirmado') badgeClass = 'badge-confirmed';
+      if (currentStatus === 'Cancelado') badgeClass = 'badge-cancelled';
+
+      const el = document.createElement('div');
+      el.className = 'order-item';
+      
+      const processedList = o.processedTables || [];
+      const assignedTableCodes = new Set();
+      let assignHtml = '';
+
+      const tableList = o.tablas || o.tables || [];
+      const clientObj = o.cliente || o.client || {};
+
+      if (o.asignaciones && o.asignaciones.length > 0) {
+        o.asignaciones.forEach(a => {
+          let buttonsForPerson = '';
+          const aTables = a.tablas || a.tables || [];
+          aTables.forEach(tableCode => {
+            assignedTableCodes.add(tableCode);
+            const isProcessed = processedList.includes(tableCode);
+            const processedClass = isProcessed ? 'processed' : '';
+            const disabledAttr = isProcessed ? 'disabled' : '';
+
+            buttonsForPerson += `
+              <button class="table-check-btn ${processedClass}" ${disabledAttr} data-order="${o.firestoreId}" data-code="${tableCode}">
+                ${tableCode}
+              </button>
+            `;
+          });
+
+          assignHtml += `
+            <div class="assignment-row">
+              <span>• <b>${a.nombre || a.name}</b> (${a.whatsapp}):</span>
+              ${buttonsForPerson}
+            </div>
+          `;
+        });
+      }
+
+      const unassignedTables = tableList.filter(tCode => !assignedTableCodes.has(tCode));
+      if (unassignedTables.length > 0) {
+        let unassignedButtons = '';
+        unassignedTables.forEach(tableCode => {
+          const isProcessed = processedList.includes(tableCode);
+          const processedClass = isProcessed ? 'processed' : '';
+          const disabledAttr = isProcessed ? 'disabled' : '';
+
+          unassignedButtons += `
+            <button class="table-check-btn ${processedClass}" ${disabledAttr} data-order="${o.firestoreId}" data-code="${tableCode}">
+              ${tableCode}
+            </button>
+          `;
+        });
+
+        assignHtml += `
+          <div class="assignment-row" style="margin-top: 6px;">
+            <span>• <b>Sin asignación individual:</b></span>
+            ${unassignedButtons}
+          </div>
+        `;
+      }
+
+      el.innerHTML = `
+        <div class="order-header">
+          <span>Pedido #${o.id}</span>
+          <span>$${(o.total || 0).toLocaleString()}</span>
+        </div>
+        <div class="order-badges">
+          <span class="badge ${badgeClass}">${currentStatus}</span>
+        </div>
+        <div class="order-info">
+          <div><b>Cliente:</b> ${clientObj.name || ''} (${clientObj.whatsapp || o.telefono || ''})</div>
+          <div><b>Fecha/Hora:</b> ${o.fecha || o.createdAt || ''}</div>
+          <div style="margin-top:6px;"><b>Asignaciones de Tablas (${tableList.length}):</b>${assignHtml}</div>
+        </div>
+        <div style="margin-top:8px; display:flex; gap:6px;">
+          ${(o.comprobante || o.proof) ? `<button class="btn btn-sm btn-dark btn-view-proof" data-order="${o.firestoreId}">Ver Comprobante</button>` : ''}
+          <button class="btn btn-sm btn-success btn-confirm-order" data-order="${o.firestoreId}">Confirmar</button>
+          <button class="btn btn-sm btn-danger btn-cancel-order" data-order="${o.firestoreId}">Cancelar</button>
+        </div>
+      `;
+
+      // Event listeners para los botones internos
+      el.querySelectorAll('.table-check-btn:not(.processed)').forEach(btn => {
+        btn.addEventListener('click', () => markTableAsProcessed(btn.dataset.order, btn.dataset.code));
+      });
+      el.querySelectorAll('.btn-view-proof').forEach(btn => {
+        btn.addEventListener('click', () => viewProof(btn.dataset.order));
+      });
+      el.querySelectorAll('.btn-confirm-order').forEach(btn => {
+        btn.addEventListener('click', () => updateOrderStatus(btn.dataset.order, 'Pago confirmado'));
+      });
+      el.querySelectorAll('.btn-cancel-order').forEach(btn => {
+        btn.addEventListener('click', () => updateOrderStatus(btn.dataset.order, 'Cancelado'));
+      });
+
+      container.appendChild(el);
+    });
+  }
+
+  document.getElementById('search-input').addEventListener('keyup', filterOrders);
+  document.getElementById('filter-status').addEventListener('change', filterOrders);
+
+  async function markTableAsProcessed(orderDocId, tableCode) {
+    try {
+      const orderRef = doc(db, 'pedidos', orderDocId);
+      const orderSnap = await getDoc(orderRef);
+      if (!orderSnap.exists()) return;
+
+      const data = orderSnap.data();
+      const processed = data.processedTables || [];
+      if (!processed.includes(tableCode)) {
+        processed.push(tableCode);
+        await updateDoc(orderRef, { processedTables: processed });
+      }
+    } catch (err) {
+      console.error("Error marcando tabla procesada:", err);
+    }
+  }
+
+  async function updateOrderStatus(orderDocId, newStatus) {
+    try {
+      const orderRef = doc(db, 'pedidos', orderDocId);
+      const orderSnap = await getDoc(orderRef);
+      if (!orderSnap.exists()) return;
+
+      const orderData = orderSnap.data();
+      await updateDoc(orderRef, { 
+        estado: newStatus,
+        status: newStatus 
+      });
+
+      const tables = orderData.tablas || orderData.tables || [];
+      const batch = writeBatch(db);
+
+      tables.forEach(code => {
+        const tRef = doc(db, 'tablas', code);
+        if (newStatus === 'Pago confirmado') {
+          batch.update(tRef, { status: 'VENDIDA' });
+        } else if (newStatus === 'Cancelado') {
+          batch.update(tRef, { status: 'DISPONIBLE', reservedUntil: null, reservedBy: null });
+        }
+      });
+
+      await batch.commit();
+    } catch (err) {
+      console.error("Error actualizando estado del pedido:", err);
+      alert("Error al actualizar estado del pedido: " + err.message);
+    }
+  }
+
+  function viewProof(orderDocId) {
+    const order = allOrders.find(o => o.firestoreId === orderDocId);
+    if (!order) return;
+    const proofImg = order.comprobante || order.proof;
+    if (!proofImg) return;
+
+    const body = document.getElementById('modal-proof-body');
+    const clientName = order.cliente?.name || order.client?.name || '';
+    body.innerHTML = `
+      <p style="font-size:0.8rem; color:var(--text-muted);">Pedido #${order.id} - ${clientName}</p>
+      <img src="${proofImg}" alt="Comprobante de Pago">
+    `;
+    document.getElementById('modal-proof').style.display = 'flex';
+  }
+
+  document.getElementById('btn-close-modal').addEventListener('click', () => {
+    document.getElementById('modal-proof').style.display = 'none';
+  });
+
+  async function cerrarBingo() {
+    const confirmacion = confirm("¿Desea borrar todos los datos del evento, tablas y pedidos?");
+    if (!confirmacion) return;
+
+    try {
+      // 1. Borrar doc configuracion/evento
+      await deleteDoc(doc(db, 'configuracion', 'evento'));
+
+      // 2. Borrar colección tablas en lotes
+      const tablasSnap = await getDocs(collection(db, 'tablas'));
+      let batch = writeBatch(db);
+      let count = 0;
+      tablasSnap.forEach(d => {
+        batch.delete(d.ref);
+        count++;
+        if (count === 500) {
+          batch.commit();
+          batch = writeBatch(db);
+          count = 0;
+        }
+      });
+      if (count > 0) await batch.commit();
+
+      // 3. Borrar colección pedidos en lotes
+      const pedidosSnap = await getDocs(collection(db, 'pedidos'));
+      batch = writeBatch(db);
+      count = 0;
+      pedidosSnap.forEach(d => {
+        batch.delete(d.ref);
+        count++;
+        if (count === 500) {
+          batch.commit();
+          batch = writeBatch(db);
+          count = 0;
+        }
+      });
+      if (count > 0) await batch.commit();
+
+      document.getElementById('form-config').reset();
+      document.getElementById('cfg-enabled').checked = true;
+      updateEnabledLabel();
+      document.getElementById('orders-list').innerHTML = '';
+      document.getElementById('m-total').textContent = '0';
+      document.getElementById('m-disp').textContent = '0';
+      document.getElementById('m-vend').textContent = '0';
+
+      alert("Todos los datos del bingo se han borrado correctamente en Firestore.");
+    } catch (err) {
+      console.error("Error al cerrar bingo:", err);
+      alert("Error al borrar datos: " + err.message);
+    }
+  }
+
+  document.getElementById('btn-cerrar-bingo').addEventListener('click', cerrarBingo);
+
+  // Inicializar listeners y datos
+  loadInitialConfig();
+  listenTables();
+  listenOrders();
+</script>
+</body>
+</html>"""
+
+with open("configuracion.html", "w", encoding="utf-8") as f:
+    f.write(config_html)
+
+print("configuracion.html created successfully.")
+
+Salida de código
+configuracion.html created successfully.
+
+Python
+clientes_html = """<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LA TERRAZA BINGO - Compra de Tablas</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-body: #f8fafc;
+      --surface: #ffffff;
+      --primary: #0f172a;
+      --primary-accent: #1e293b;
+      --accent-gold: #d97706;
+      --accent-gold-hover: #b45309;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+    body { background-color: var(--bg-body); color: var(--text-main); display: flex; justify-content: center; min-height: 100vh; }
+    
+    .app-container {
+      width: 100%;
+      max-width: 480px;
+      background: var(--surface);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .header {
+      background: linear-gradient(135deg, var(--primary), var(--primary-accent));
+      color: #fff;
+      padding: 20px;
+      text-align: center;
+      border-bottom: 3px solid var(--accent-gold);
+    }
+    .header h1 { font-size: 1.3rem; font-weight: 700; color: var(--accent-gold); letter-spacing: 1px; }
+
+    .banner-container { text-align: center; padding: 16px; background: #fff; border-bottom: 1px solid var(--border-color); }
+    .banner-img { max-width: 100%; height: auto; max-height: 140px; border-radius: var(--radius-sm); object-fit: contain; }
+    .hero-title { font-size: 1.1rem; font-weight: 700; color: var(--primary); margin-top: 8px; }
+    .event-info { font-size: 0.8rem; color: var(--text-muted); margin-top: 6px; display: flex; flex-direction: column; gap: 4px; align-items: center; }
+
+    .main-content { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 16px; }
+
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+    .card-title { font-size: 0.9rem; font-weight: 700; color: var(--primary); margin-bottom: 12px; }
+
+    /* CONTADOR Y BANNER DE RESERVA */
+    .timer-banner {
+      background: #fffbe3;
+      border: 1px solid var(--warning);
+      border-radius: var(--radius-sm);
+      padding: 10px;
+      text-align: center;
+      margin-bottom: 12px;
+      font-size: 0.82rem;
+      color: #78350f;
+    }
+    .timer-clock {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--danger);
+      margin-top: 2px;
+    }
+
+    .tables-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+      gap: 6px;
+      padding: 4px;
+    }
+    .btn-table {
+      padding: 8px 4px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+      background: #f8fafc;
+      color: var(--text-main);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .btn-table.selected { background: var(--accent-gold); color: #fff; border-color: var(--accent-gold); }
+
+    .summary-box { background: #f8fafc; border-radius: var(--radius-sm); padding: 12px; font-size: 0.85rem; }
+    .summary-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+    .summary-total { font-weight: 700; font-size: 1rem; color: var(--primary); border-top: 1px solid var(--border-color); pt: 6px; margin-top: 6px; }
+
+    .form-group { margin-bottom: 10px; }
+    .form-group label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; }
+    .form-control {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      outline: none;
+    }
+    .form-control:focus { border-color: var(--accent-gold); }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.2s;
+    }
+    .btn-primary { background: var(--accent-gold); color: #fff; }
+    .btn-primary:hover { background: var(--accent-gold-hover); }
+    .btn-dark { background: var(--primary); color: #fff; }
+
+    .radio-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+    .radio-option {
+      border: 1px solid var(--border-color);
+      padding: 10px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .assign-chip-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .chip {
+      padding: 6px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      background: #f1f5f9;
+    }
+    .chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    .payment-box {
+      background: #f8fafc;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      margin-bottom: 16px;
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+  <header class="header">
+    <h1>LA TERRAZA BINGO</h1>
+  </header>
+
+  <!-- PANTALLA CUANDO LAS VENTAS NO ESTÁN HABILITADAS -->
+  <div id="disabled-screen" class="main-content hidden">
+    <div class="card" style="text-align: center; padding: 30px 16px;">
+      <img src="pagos.png" alt="Aún no disponible" class="banner-img" style="margin-bottom: 16px;" onerror="this.style.display='none'">
+      <div style="font-size: 2.5rem; margin-bottom: 8px;">⏳</div>
+      <div class="card-title" style="font-size: 1.1rem; color: var(--danger); justify-content: center;">COMPRAS NO DISPONIBLES</div>
+      <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-top: 8px;">
+        Aún no se habilita la página para la compra de tablas. <br>Por favor, vuelve a intentarlo más tarde o consulta con los organizadores.
+      </p>
+    </div>
+  </div>
+
+  <!-- CONTENIDO PRINCIPAL DE COMPRA -->
+  <div id="enabled-screen">
+    <div class="banner-container">
+      <img src="pagos.png" alt="Métodos de Pago" class="banner-img" onerror="this.style.display='none'">
+      <div class="hero-title">COMPRA TUS TABLAS DIGITALES</div>
+      <div class="event-info">
+        <span>📅 El bingo será el: <b id="info-fecha">--</b></span>
+        <span>⏰ Hora: <b id="info-hora">--</b></span>
+        <span>💵 Valor tabla: <b>$<span id="info-valor">0</span></b></span>
+      </div>
+    </div>
+
+    <main class="main-content">
+
+      <!-- TEMPORIZADOR GLOBAL DE RESERVA -->
+      <div id="reservation-timer-box" class="timer-banner hidden">
+        <b>¡Tienes tablas reservadas!</b>
+        <p style="margin-top:2px;">Tiempo restante para completar la compra:</p>
+        <div id="timer-display" class="timer-clock">05:00</div>
+      </div>
+
+      <!-- PASO 1: SELECCIÓN -->
+      <div id="step-1" class="card">
+        <div class="card-title">1. Selecciona tus tablas (Máximo 10)</div>
+        <div class="tables-grid" id="tables-container"></div>
+        
+        <div class="summary-box" style="margin-top: 12px;">
+          <div class="summary-row">
+            <span>Tablas seleccionadas:</span>
+            <span id="summary-tables" style="font-weight: 700;">Ninguna</span>
+          </div>
+          <div class="summary-row">
+            <span>Cantidad:</span>
+            <span id="summary-qty">0</span>
+          </div>
+          <div class="summary-row summary-total">
+            <span>Total:</span>
+            <span id="summary-total">$0</span>
+          </div>
+        </div>
+
+        <button id="btn-to-step-2" class="btn btn-primary" style="margin-top: 12px;" disabled>Continuar</button>
+      </div>
+
+      <!-- PASO 2: DATOS DEL COMPRADOR Y ASIGNACIÓN -->
+      <div id="step-2" class="card hidden">
+        <div class="card-title">2. Datos del Comprador Principal</div>
+        <div class="form-group">
+          <label>Nombre y Apellido</label>
+          <input type="text" id="buyer-name" class="form-control" placeholder="Ej: Juan Pérez">
+        </div>
+        <div class="form-group">
+          <label>Ciudad / Barrio / Referencia</label>
+          <input type="text" id="buyer-address" class="form-control" placeholder="Ej: Cali - El Limonar">
+        </div>
+        <div class="form-group">
+          <label>WhatsApp</label>
+          <input type="tel" id="buyer-phone" class="form-control" placeholder="Ej: 3001234567">
+        </div>
+
+        <div class="card-title" style="margin-top: 16px;">¿Cómo desea asignar sus tablas?</div>
+        <div class="radio-group">
+          <label class="radio-option">
+            <input type="radio" name="assign_type" value="self" checked id="radio-assign-self">
+            Todas las tablas a mi nombre
+          </label>
+          <label class="radio-option">
+            <input type="radio" name="assign_type" value="others" id="radio-assign-others">
+            Asignar tablas a otras personas
+          </label>
+        </div>
+
+        <!-- MÓDULO ASIGNACIÓN MÚLTIPLE -->
+        <div id="multi-assign-box" class="hidden" style="border-top: 1px dashed var(--border-color); padding-top: 12px;">
+          
+          <div id="assign-inputs-container">
+            <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:8px;">
+              Selecciona las tablas para asignar a una persona:
+            </p>
+            <div id="assign-chips" class="assign-chip-grid"></div>
+
+            <div class="form-group">
+              <label>Nombre y Apellido</label>
+              <input type="text" id="assign-name" class="form-control" placeholder="Ej: María Gómez">
+            </div>
+            <div class="form-group">
+              <label>Ciudad / Barrio / Referencia</label>
+              <input type="text" id="assign-city" class="form-control" placeholder="Ej: Cali - San Fernando">
+            </div>
+            <div class="form-group">
+              <label>WhatsApp</label>
+              <input type="tel" id="assign-phone" class="form-control" placeholder="Ej: 3158765432">
+            </div>
+            <button class="btn btn-dark" id="btn-save-assignment" style="margin-bottom: 8px;">Guardar Asignación</button>
+          </div>
+          
+          <div id="assignment-status" style="font-size:0.8rem; font-weight:700; color:var(--accent-gold); margin-top: 6px;"></div>
+        </div>
+
+        <button class="btn btn-primary" id="btn-to-step-3" style="margin-top: 12px;">Siguiente</button>
+      </div>
+
+      <!-- PASO 3: INSTRUCCIONES DE PAGO Y COMPROBANTE -->
+      <div id="step-3" class="card hidden">
+        <div class="card-title">3. Realiza tu Pago</div>
+        
+        <div class="payment-box">
+          <p style="font-size:0.8rem; color:var(--text-main); margin-bottom: 6px; line-height: 1.4;">
+            Realiza el pago por <b>Nequi</b>, <b>Daviplata</b> o <b>Llave</b> a nombre de <b>Víctor Rosas</b>:
+          </p>
+          <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; border: 1px solid var(--border-color); padding: 8px 12px; border-radius: var(--radius-sm); margin-top: 8px;">
+            <span style="font-size: 1.05rem; font-weight: 700; color: var(--accent-gold);" id="phone-number">3234370590</span>
+            <button type="button" class="btn btn-dark" id="btn-copy-number" style="width: auto; padding: 6px 12px; font-size: 0.75rem;">Copiar</button>
+          </div>
+          <div id="copy-feedback" style="font-size:0.75rem; color: var(--success); font-weight: 700; margin-top: 6px; display: none;">
+            ✓ Número copiado
+          </div>
+        </div>
+
+        <div class="card-title" style="font-size: 0.85rem;">Subir Comprobante de Pago</div>
+        <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px;">
+          Adjunta una captura de pantalla o foto del pago realizado.
+        </p>
+        <div class="form-group">
+          <input type="file" id="proof-file" accept="image/*" class="form-control">
+        </div>
+        <button class="btn btn-primary" id="btn-finish-order">FINALIZAR COMPRA</button>
+      </div>
+
+      <!-- PASO 4: CONFIRMACIÓN + BOTÓN VOLVER A COMPRAR -->
+      <div id="step-4" class="card hidden" style="text-align: center;">
+        <div style="font-size: 2.5rem; color: var(--success); margin-bottom: 8px;">✓</div>
+        <div class="card-title" style="font-size: 1.1rem; justify-content: center;">PEDIDO RECIBIDO</div>
+        <p id="order-number-display" style="font-weight:700; color:var(--accent-gold); margin-bottom: 8px;"></p>
+        <p style="font-size:0.85rem; color:var(--text-main); margin-bottom: 12px;">
+          Tablas asignadas: <br><b id="assigned-tables-display"></b>
+        </p>
+        <div style="background: #f1f5f9; padding: 12px; border-radius: var(--radius-sm); font-size: 0.78rem; color: var(--text-muted); margin-bottom: 16px;">
+          Las tablas digitales y el enlace de transmisión serán enviados una vez confirmado el pago.
+        </div>
+        
+        <button class="btn btn-primary" id="btn-restart">Volver a comprar</button>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+  import { 
+    getFirestore, doc, getDoc, setDoc, updateDoc, collection, 
+    onSnapshot, runTransaction, getDocs, query, orderBy, limit 
+  } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+
+  // CONFIGURACIÓN DE FIREBASE (Reemplazar con sus credenciales de Firebase Console)
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // Identificador único temporal de este cliente en el navegador
+  let myClientId = sessionStorage.getItem('ltb_client_id');
+  if (!myClientId) {
+    myClientId = 'cli_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
+    sessionStorage.setItem('ltb_client_id', myClientId);
+  }
+
+  let config = null;
+  let selectedTables = [];
+  let assignments = [];
+  let pendingTablesToAssign = [];
+  let proofBase64 = null;
+  let allTablesData = [];
+
+  const HOLD_TIME_MINUTES = 5;
+  let timerInterval = null;
+  let reservationEndTime = null;
+
+  // Escuchar configuración del evento
+  function listenConfig() {
+    onSnapshot(doc(db, 'configuracion', 'evento'), (docSnap) => {
+      if (docSnap.exists()) {
+        config = docSnap.data();
+        if (!config.enabled) {
+          document.getElementById('enabled-screen').classList.add('hidden');
+          document.getElementById('disabled-screen').classList.remove('hidden');
+          return;
+        } else {
+          document.getElementById('enabled-screen').classList.remove('hidden');
+          document.getElementById('disabled-screen').classList.add('hidden');
+        }
+
+        document.getElementById('info-fecha').textContent = config.fecha || '--';
+        document.getElementById('info-hora').textContent = config.hora || '--';
+        document.getElementById('info-valor').textContent = (config.valor || 0).toLocaleString();
+      } else {
+        document.getElementById('enabled-screen').classList.add('hidden');
+        document.getElementById('disabled-screen').classList.remove('hidden');
+      }
+    });
+  }
+
+  // Escuchar tablas disponibles y reservadas por mí en tiempo real
+  function listenTables() {
+    onSnapshot(collection(db, 'tablas'), (snapshot) => {
+      allTablesData = [];
+      const now = Date.now();
+
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        // Verificar expiración de reservas antiguas en cliente
+        if (data.status === 'RESERVADA' && data.reservedUntil && data.reservedUntil <= now) {
+          data.status = 'DISPONIBLE';
+        }
+        allTablesData.push(data);
+      });
+
+      renderTables();
+    });
+  }
+
+  function renderTables() {
+    const container = document.getElementById('tables-container');
+    container.innerHTML = '';
+    const now = Date.now();
+
+    // Ordenar tablas por código (T001, T002, etc.)
+    allTablesData.sort((a,b) => a.code.localeCompare(b.code, undefined, {numeric: true, sensitivity: 'base'}));
+
+    allTablesData.forEach(t => {
+      const isReservedByMe = selectedTables.includes(t.code);
+      const isExpired = t.reservedUntil && t.reservedUntil <= now;
+
+      // Si está vendida, o reservada por otro usuario no expirada, NO mostrar
+      if (t.status === 'VENDIDA') return;
+      if (t.status === 'RESERVADA' && t.reservedBy !== myClientId && !isExpired) return;
+
+      const btn = document.createElement('button');
+      btn.className = 'btn-table';
+      btn.textContent = t.code;
+
+      if (isReservedByMe) {
+        btn.classList.add('selected');
+      }
+
+      btn.onclick = () => toggleTableSelection(t.code);
+      container.appendChild(btn);
+    });
+  }
+
+  async function toggleTableSelection(code) {
+    const index = selectedTables.indexOf(code);
+
+    if (index > -1) {
+      // DESSELECCIONAR: Liberar la tabla inmediatamente en Firestore
+      selectedTables.splice(index, 1);
+      try {
+        await updateDoc(doc(db, 'tablas', code), {
+          status: 'DISPONIBLE',
+          reservedUntil: null,
+          reservedBy: null
+        });
+      } catch (err) {
+        console.error("Error al desseleccionar tabla:", err);
+      }
+    } else {
+      // SELECCIONAR: Transacción atómica para evitar colisión de compra
+      if (selectedTables.length >= 10) {
+        alert('Máximo puedes seleccionar 10 tablas.');
+        return;
+      }
+
+      try {
+        const success = await runTransaction(db, async (transaction) => {
+          const tRef = doc(db, 'tablas', code);
+          const tDoc = await transaction.get(tRef);
+
+          if (!tDoc.exists()) {
+            throw new Error("La tabla no existe.");
+          }
+
+          const tData = tDoc.data();
+          const now = Date.now();
+          const isExpired = tData.reservedUntil && tData.reservedUntil <= now;
+
+          if (tData.status === 'VENDIDA' || (tData.status === 'RESERVADA' && tData.reservedBy !== myClientId && !isExpired)) {
+            return false; // Ya no disponible
+          }
+
+          if (selectedTables.length === 0 || !reservationEndTime) {
+            reservationEndTime = Date.now() + (HOLD_TIME_MINUTES * 60 * 1000);
+          }
+
+          transaction.update(tRef, {
+            status: 'RESERVADA',
+            reservedUntil: reservationEndTime,
+            reservedBy: myClientId
+          });
+
+          return true;
+        });
+
+        if (success) {
+          selectedTables.push(code);
+        } else {
+          alert(`La tabla ${code} ya ha sido reservada o comprada por otra persona.`);
+        }
+      } catch (err) {
+        console.error("Error al seleccionar tabla:", err);
+        alert("Ocurrió un error al reservar la tabla.");
+      }
+    }
+
+    if (selectedTables.length > 0) {
+      startReservationTimer();
+      document.getElementById('reservation-timer-box').classList.remove('hidden');
+    } else {
+      clearInterval(timerInterval);
+      reservationEndTime = null;
+      document.getElementById('reservation-timer-box').classList.add('hidden');
+    }
+
+    updateSummary();
+    renderTables();
+  }
+
+  function updateSummary() {
+    const qty = selectedTables.length;
+    const total = qty * (config ? config.valor : 0);
+
+    document.getElementById('summary-tables').textContent = qty > 0 ? selectedTables.join(', ') : 'Ninguna';
+    document.getElementById('summary-qty').textContent = qty;
+    document.getElementById('summary-total').textContent = `$${total.toLocaleString()}`;
+
+    document.getElementById('btn-to-step-2').disabled = qty === 0;
+  }
+
+  function startReservationTimer() {
+    clearInterval(timerInterval);
+
+    function updateDisplay() {
+      const remainingMs = reservationEndTime - Date.now();
+
+      if (remainingMs <= 0) {
+        clearInterval(timerInterval);
+        handleTimerExpiration();
+        return;
+      }
+
+      const totalSeconds = Math.floor(remainingMs / 1000);
+      const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+      const seconds = String(totalSeconds % 60).padStart(2, '0');
+
+      document.getElementById('timer-display').textContent = `${minutes}:${seconds}`;
+    }
+
+    updateDisplay();
+    timerInterval = setInterval(updateDisplay, 1000);
+  }
+
+  async function handleTimerExpiration() {
+    alert('⏱️ Tu tiempo de reserva (5 minutos) ha expirado. Las tablas han sido liberadas.');
+    await releaseCurrentReservations();
+    resetToStep1();
+  }
+
+  async function releaseCurrentReservations() {
+    if (selectedTables.length === 0) return;
+    const tablesToRelease = [...selectedTables];
+    selectedTables = [];
+
+    for (const code of tablesToRelease) {
+      try {
+        const tRef = doc(db, 'tablas', code);
+        const tSnap = await getDoc(tRef);
+        if (tSnap.exists() && tSnap.data().reservedBy === myClientId) {
+          await updateDoc(tRef, {
+            status: 'DISPONIBLE',
+            reservedUntil: null,
+            reservedBy: null
+          });
+        }
+      } catch (err) {
+        console.error("Error liberando reserva:", err);
+      }
+    }
+  }
+
+  function resetToStep1() {
+    clearInterval(timerInterval);
+    reservationEndTime = null;
+    selectedTables = [];
+    assignments = [];
+    pendingTablesToAssign = [];
+    proofBase64 = null;
+
+    document.getElementById('reservation-timer-box').classList.add('hidden');
+    document.getElementById('step-2').classList.add('hidden');
+    document.getElementById('step-3').classList.add('hidden');
+    document.getElementById('step-4').classList.add('hidden');
+    document.getElementById('step-1').classList.remove('hidden');
+
+    updateSummary();
+    renderTables();
+  }
+
+  function goToStep2() {
+    document.getElementById('step-1').classList.add('hidden');
+    document.getElementById('step-2').classList.remove('hidden');
+    pendingTablesToAssign = [...selectedTables];
+  }
+
+  document.getElementById('btn-to-step-2').addEventListener('click', goToStep2);
+
+  function toggleAssignMode() {
+    const mode = document.querySelector('input[name="assign_type"]:checked').value;
+    const box = document.getElementById('multi-assign-box');
+    
+    if (mode === 'others') {
+      box.classList.remove('hidden');
+      renderAssignChips();
+    } else {
+      box.classList.add('hidden');
+    }
+  }
+
+  document.getElementById('radio-assign-self').addEventListener('change', toggleAssignMode);
+  document.getElementById('radio-assign-others').addEventListener('change', toggleAssignMode);
+
+  function renderAssignChips() {
+    const container = document.getElementById('assign-chips');
+    const inputsBox = document.getElementById('assign-inputs-container');
+    const statusBox = document.getElementById('assignment-status');
+    
+    container.innerHTML = '';
+
+    if (pendingTablesToAssign.length === 0) {
+      inputsBox.classList.add('hidden');
+      statusBox.innerHTML = '<span style="color:var(--success);">✓ ¡Todas las tablas han sido asignadas!</span>';
+    } else {
+      inputsBox.classList.remove('hidden');
+      pendingTablesToAssign.forEach(code => {
+        const chip = document.createElement('div');
+        chip.className = 'chip';
+        chip.textContent = code;
+        chip.onclick = () => chip.classList.toggle('active');
+        container.appendChild(chip);
+      });
+      statusBox.textContent = `Faltan asignar ${pendingTablesToAssign.length} tablas.`;
+    }
+  }
+
+  function saveAssignment() {
+    const name = document.getElementById('assign-name').value.trim();
+    const city = document.getElementById('assign-city').value.trim();
+    const phone = document.getElementById('assign-phone').value.trim();
+
+    const selectedChips = Array.from(document.querySelectorAll('#assign-chips .chip.active')).map(el => el.textContent);
+
+    if (!name || !city || !phone) {
+      alert('Por favor complete los datos de la persona asignada.');
+      return;
+    }
+
+    if (selectedChips.length === 0) {
+      alert('Selecciona al menos una tabla para asignar.');
+      return;
+    }
+
+    assignments.push({
+      nombre: name,
+      name: name,
+      ciudad: city,
+      address: city,
+      whatsapp: phone,
+      tablas: selectedChips,
+      tables: selectedChips
+    });
+
+    pendingTablesToAssign = pendingTablesToAssign.filter(t => !selectedChips.includes(t));
+
+    document.getElementById('assign-name').value = '';
+    document.getElementById('assign-city').value = '';
+    document.getElementById('assign-phone').value = '';
+
+    renderAssignChips();
+  }
+
+  document.getElementById('btn-save-assignment').addEventListener('click', saveAssignment);
+
+  function goToStep3() {
+    const buyerName = document.getElementById('buyer-name').value.trim();
+    const buyerAddress = document.getElementById('buyer-address').value.trim();
+    const buyerPhone = document.getElementById('buyer-phone').value.trim();
+
+    if (!buyerName || !buyerAddress || !buyerPhone) {
+      alert('Complete los datos del comprador principal.');
+      return;
+    }
+
+    const mode = document.querySelector('input[name="assign_type"]:checked').value;
+
+    if (mode === 'others' && pendingTablesToAssign.length > 0) {
+      alert(`Faltan asignar ${pendingTablesToAssign.length} tablas.`);
+      return;
+    }
+
+    if (mode === 'self') {
+      assignments = [{
+        nombre: buyerName,
+        name: buyerName,
+        ciudad: buyerAddress,
+        address: buyerAddress,
+        whatsapp: buyerPhone,
+        tablas: [...selectedTables],
+        tables: [...selectedTables]
+      }];
+    }
+
+    document.getElementById('step-2').classList.add('hidden');
+    document.getElementById('step-3').classList.remove('hidden');
+  }
+
+  document.getElementById('btn-to-step-3').addEventListener('click', goToStep3);
+
+  function copiarNumero() {
+    const num = "3234370590";
+    navigator.clipboard.writeText(num).then(() => {
+      const feedback = document.getElementById('copy-feedback');
+      feedback.style.display = 'block';
+      setTimeout(() => { feedback.style.display = 'none'; }, 2500);
+    }).catch(() => {
+      alert("Número: 3234370590");
+    });
+  }
+
+  document.getElementById('btn-copy-number').addEventListener('click', copiarNumero);
+
+  document.getElementById('proof-file').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        proofBase64 = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  async function finishOrder() {
+    if (!proofBase64) {
+      alert('Por favor suba el comprobante de pago.');
+      return;
+    }
+
+    const btn = document.getElementById('btn-finish-order');
+    btn.disabled = true;
+    btn.textContent = "Procesando pedido...";
+
+    try {
+      clearInterval(timerInterval);
+
+      // Obtener el consecutivo de pedido desde Firestore
+      const pedidosSnap = await getDocs(collection(db, 'pedidos'));
+      const orderCount = pedidosSnap.size + 1;
+      const orderId = String(orderCount).padStart(5, '0');
+
+      const buyerName = document.getElementById('buyer-name').value.trim();
+      const buyerAddress = document.getElementById('buyer-address').value.trim();
+      const buyerPhone = document.getElementById('buyer-phone').value.trim();
+
+      const newOrder = {
+        id: orderId,
+        cliente: {
+          name: buyerName,
+          address: buyerAddress,
+          whatsapp: buyerPhone
+        },
+        client: {
+          name: buyerName,
+          address: buyerAddress,
+          whatsapp: buyerPhone
+        },
+        telefono: buyerPhone,
+        direccion: buyerAddress,
+        tablas: selectedTables,
+        tables: selectedTables,
+        total: selectedTables.length * (config ? config.valor : 0),
+        comprobante: proofBase64,
+        proof: proofBase64,
+        estado: 'Pendiente pago',
+        status: 'Pendiente pago',
+        fecha: new Date().toLocaleString(),
+        createdAt: new Date().toLocaleString(),
+        asignaciones: assignments,
+        assignments: assignments
+      };
+
+      // 1. Guardar en Firestore colección 'pedidos'
+      await setDoc(doc(db, 'pedidos', orderId), newOrder);
+
+      // 2. Cambiar tablas de RESERVADA a VENDIDA en Firestore
+      for (const code of selectedTables) {
+        await updateDoc(doc(db, 'tablas', code), {
+          status: 'VENDIDA',
+          reservedUntil: null,
+          reservedBy: null,
+          pedido: orderId
+        });
+      }
+
+      // 3. Mostrar pantalla final
+      document.getElementById('reservation-timer-box').classList.add('hidden');
+      document.getElementById('step-3').classList.add('hidden');
+      document.getElementById('step-4').classList.remove('hidden');
+
+      document.getElementById('order-number-display').textContent = `Pedido #${orderId}`;
+      document.getElementById('assigned-tables-display').textContent = selectedTables.join(', ');
+    } catch (err) {
+      console.error("Error al finalizar pedido:", err);
+      alert("Error al guardar el pedido en Firestore: " + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "FINALIZAR COMPRA";
+    }
+  }
+
+  document.getElementById('btn-finish-order').addEventListener('click', finishOrder);
+
+  function volverAComprar() {
+    document.getElementById('proof-file').value = '';
+    document.getElementById('buyer-name').value = '';
+    document.getElementById('buyer-address').value = '';
+    document.getElementById('buyer-phone').value = '';
+    
+    resetToStep1();
+  }
+
+  document.getElementById('btn-restart').addEventListener('click', volverAComprar);
+
+  // Inicializar listeners
+  listenConfig();
+  listenTables();
+</script>
+</body>
+</html>"""
+
+with open("clientes.html", "w", encoding="utf-8") as f:
+    f.write(clientes_html)
+
+print("clientes.html created successfully.")
+
+Salida de código
+clientes.html created successfully.
+
+Se han generado correctamente los dos archivos HTML completos migrados a Firebase Firestore, manteniendo exactamente la estructura, estilos, flujo y nombres solicitados:
+
+configuracion.html: 
+Icono de HTML
+configuracion
+ HTML 
+Abierto
+
+clientes.html: 
+Icono de HTML
+clientes
+ HTML 
+Abierto
+
+Resumen de Cambios e Integración en Firebase Firestore:
+Estructura en Firestore:
+
+Colección configuracion / Documento evento: Almacena enabled, fecha, hora, valor, desde, hasta.
+
+Colección tablas: Cada documento usa el identificador exacto de la tabla (T001, T002, ..., T5000). Al presionar "Guardar Cambios y Generar Tablas", se conservan las tablas existentes con sus estados (VENDIDA, RESERVADA).
+
+Colección pedidos: Registra las compras con su id consecutivo (00001), datos del cliente, arreglo de tablas compradas, total, comprobante en base64, asignaciones y estado (Pendiente pago, Pago confirmado, Cancelado).
+
+Sistema de Reservas en Tiempo Real (clientes.html):
+
+Utiliza transacciones atómicas para que cuando un cliente seleccione una tabla (T001), esta pase a RESERVADA con un reservedUntil de 5 minutos y un reservedBy único.
+
+Si otro cliente está en línea, la tabla desaparece inmediatamente de sus opciones disponibles.
+
+Si transcurren los 5 minutos sin completar la compra, la reserva se libera a DISPONIBLE.
+
+Al finalizar la compra con el comprobante, el estado de las tablas cambia directamente a VENDIDA.
+
+Configuración de Firebase:
+Ambos archivos incluyen el SDK modular de Firebase v10 y la estructura lista donde solo requieres colocar tus credenciales de la consola de Firebase (apiKey, authDomain, projectId, etc.).
+
+
+
+
+Gemini es una IA y puede cometer errores.
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -227,7 +2406,7 @@
           </div>
         </div>
 
-        <button id="btn-to-step-2" class="btn btn-primary" style="margin-top: 12px;" onclick="goToStep2()" disabled>Continuar</button>
+        <button id="btn-to-step-2" class="btn btn-primary" style="margin-top: 12px;" disabled>Continuar</button>
       </div>
 
       <!-- PASO 2: DATOS DEL COMPRADOR Y ASIGNACIÓN -->
@@ -249,11 +2428,11 @@
         <div class="card-title" style="margin-top: 16px;">¿Cómo desea asignar sus tablas?</div>
         <div class="radio-group">
           <label class="radio-option">
-            <input type="radio" name="assign_type" value="self" checked onchange="toggleAssignMode()">
+            <input type="radio" name="assign_type" value="self" checked id="radio-assign-self">
             Todas las tablas a mi nombre
           </label>
           <label class="radio-option">
-            <input type="radio" name="assign_type" value="others" onchange="toggleAssignMode()">
+            <input type="radio" name="assign_type" value="others" id="radio-assign-others">
             Asignar tablas a otras personas
           </label>
         </div>
@@ -279,13 +2458,13 @@
               <label>WhatsApp</label>
               <input type="tel" id="assign-phone" class="form-control" placeholder="Ej: 3158765432">
             </div>
-            <button class="btn btn-dark" onclick="saveAssignment()" style="margin-bottom: 8px;">Guardar Asignación</button>
+            <button class="btn btn-dark" id="btn-save-assignment" style="margin-bottom: 8px;">Guardar Asignación</button>
           </div>
           
           <div id="assignment-status" style="font-size:0.8rem; font-weight:700; color:var(--accent-gold); margin-top: 6px;"></div>
         </div>
 
-        <button class="btn btn-primary" onclick="goToStep3()" style="margin-top: 12px;">Siguiente</button>
+        <button class="btn btn-primary" id="btn-to-step-3" style="margin-top: 12px;">Siguiente</button>
       </div>
 
       <!-- PASO 3: INSTRUCCIONES DE PAGO Y COMPROBANTE -->
@@ -298,7 +2477,7 @@
           </p>
           <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; border: 1px solid var(--border-color); padding: 8px 12px; border-radius: var(--radius-sm); margin-top: 8px;">
             <span style="font-size: 1.05rem; font-weight: 700; color: var(--accent-gold);" id="phone-number">3234370590</span>
-            <button type="button" class="btn btn-dark" onclick="copiarNumero()" style="width: auto; padding: 6px 12px; font-size: 0.75rem;">Copiar</button>
+            <button type="button" class="btn btn-dark" id="btn-copy-number" style="width: auto; padding: 6px 12px; font-size: 0.75rem;">Copiar</button>
           </div>
           <div id="copy-feedback" style="font-size:0.75rem; color: var(--success); font-weight: 700; margin-top: 6px; display: none;">
             ✓ Número copiado
@@ -312,7 +2491,7 @@
         <div class="form-group">
           <input type="file" id="proof-file" accept="image/*" class="form-control">
         </div>
-        <button class="btn btn-primary" onclick="finishOrder()">FINALIZAR COMPRA</button>
+        <button class="btn btn-primary" id="btn-finish-order">FINALIZAR COMPRA</button>
       </div>
 
       <!-- PASO 4: CONFIRMACIÓN + BOTÓN VOLVER A COMPRAR -->
@@ -327,92 +2506,109 @@
           Las tablas digitales y el enlace de transmisión serán enviados una vez confirmado el pago.
         </div>
         
-        <button class="btn btn-primary" onclick="volverAComprar()">Volver a comprar</button>
+        <button class="btn btn-primary" id="btn-restart">Volver a comprar</button>
       </div>
 
     </main>
   </div>
 </div>
 
-<script>
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+  import { 
+    getFirestore, doc, getDoc, setDoc, updateDoc, collection, 
+    onSnapshot, runTransaction, getDocs, query, orderBy, limit 
+  } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+
+  // CONFIGURACIÓN DE FIREBASE (Reemplazar con sus credenciales de Firebase Console)
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // Identificador único temporal de este cliente en el navegador
+  let myClientId = sessionStorage.getItem('ltb_client_id');
+  if (!myClientId) {
+    myClientId = 'cli_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
+    sessionStorage.setItem('ltb_client_id', myClientId);
+  }
+
   let config = null;
   let selectedTables = [];
   let assignments = [];
   let pendingTablesToAssign = [];
   let proofBase64 = null;
+  let allTablesData = [];
 
-  // CONTROL DEL TEMPORIZADOR DE RESERVA DE ESTE CLIENTE
   const HOLD_TIME_MINUTES = 5;
   let timerInterval = null;
   let reservationEndTime = null;
 
-  const DB = {
-    getConfig: () => JSON.parse(localStorage.getItem('ltb_config')) || null,
-    getTables: () => JSON.parse(localStorage.getItem('ltb_tables')) || [],
-    setTables: (data) => localStorage.setItem('ltb_tables', JSON.stringify(data)),
-    getOrders: () => JSON.parse(localStorage.getItem('ltb_orders')) || [],
-    setOrders: (data) => localStorage.setItem('ltb_orders', JSON.stringify(data))
-  };
+  // Escuchar configuración del evento
+  function listenConfig() {
+    onSnapshot(doc(db, 'configuracion', 'evento'), (docSnap) => {
+      if (docSnap.exists()) {
+        config = docSnap.data();
+        if (!config.enabled) {
+          document.getElementById('enabled-screen').classList.add('hidden');
+          document.getElementById('disabled-screen').classList.remove('hidden');
+          return;
+        } else {
+          document.getElementById('enabled-screen').classList.remove('hidden');
+          document.getElementById('disabled-screen').classList.add('hidden');
+        }
 
-  // Libera de LocalStorage cualquier tabla cuyo tiempo expiró
-  function cleanupExpiredReservations() {
-    let tables = DB.getTables();
-    let updated = false;
-    const now = Date.now();
-
-    tables.forEach(t => {
-      if (t.status === 'RESERVADA' && t.reservedUntil && t.reservedUntil <= now) {
-        t.status = 'DISPONIBLE';
-        delete t.reservedUntil;
-        updated = true;
+        document.getElementById('info-fecha').textContent = config.fecha || '--';
+        document.getElementById('info-hora').textContent = config.hora || '--';
+        document.getElementById('info-valor').textContent = (config.valor || 0).toLocaleString();
+      } else {
+        document.getElementById('enabled-screen').classList.add('hidden');
+        document.getElementById('disabled-screen').classList.remove('hidden');
       }
     });
-
-    if (updated) {
-      DB.setTables(tables);
-    }
   }
 
-  function initApp() {
-    config = DB.getConfig();
+  // Escuchar tablas disponibles y reservadas por mí en tiempo real
+  function listenTables() {
+    onSnapshot(collection(db, 'tablas'), (snapshot) => {
+      allTablesData = [];
+      const now = Date.now();
 
-    if (!config || config.enabled === false) {
-      document.getElementById('enabled-screen').classList.add('hidden');
-      document.getElementById('disabled-screen').classList.remove('hidden');
-      return;
-    } else {
-      document.getElementById('enabled-screen').classList.remove('hidden');
-      document.getElementById('disabled-screen').classList.add('hidden');
-    }
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        // Verificar expiración de reservas antiguas en cliente
+        if (data.status === 'RESERVADA' && data.reservedUntil && data.reservedUntil <= now) {
+          data.status = 'DISPONIBLE';
+        }
+        allTablesData.push(data);
+      });
 
-    document.getElementById('info-fecha').textContent = config.fecha || '--';
-    document.getElementById('info-hora').textContent = config.hora || '--';
-    document.getElementById('info-valor').textContent = (config.valor || 0).toLocaleString();
-
-    cleanupExpiredReservations();
-    renderTables();
-
-    // Sincronizar periódicamente las reservas expiradas en segundo plano
-    setInterval(() => {
-      cleanupExpiredReservations();
-      if (!document.getElementById('step-1').classList.contains('hidden')) {
-        renderTables();
-      }
-    }, 5000);
+      renderTables();
+    });
   }
 
   function renderTables() {
-    cleanupExpiredReservations();
     const container = document.getElementById('tables-container');
     container.innerHTML = '';
-    const tables = DB.getTables();
+    const now = Date.now();
 
-    tables.forEach(t => {
-      // Si la tabla está reservada por otro cliente o vendida, no se muestra
+    // Ordenar tablas por código (T001, T002, etc.)
+    allTablesData.sort((a,b) => a.code.localeCompare(b.code, undefined, {numeric: true, sensitivity: 'base'}));
+
+    allTablesData.forEach(t => {
       const isReservedByMe = selectedTables.includes(t.code);
-      if ((t.status === 'VENDIDA' || t.status === 'RESERVADA') && !isReservedByMe) {
-        return;
-      }
+      const isExpired = t.reservedUntil && t.reservedUntil <= now;
+
+      // Si está vendida, o reservada por otro usuario no expirada, NO mostrar
+      if (t.status === 'VENDIDA') return;
+      if (t.status === 'RESERVADA' && t.reservedBy !== myClientId && !isExpired) return;
 
       const btn = document.createElement('button');
       btn.className = 'btn-table';
@@ -427,49 +2623,69 @@
     });
   }
 
-  function toggleTableSelection(code) {
-    cleanupExpiredReservations();
-    let tables = DB.getTables();
-    let targetTable = tables.find(x => x.code === code);
-
+  async function toggleTableSelection(code) {
     const index = selectedTables.indexOf(code);
 
     if (index > -1) {
-      // DESSELECCIONAR: Liberar la tabla inmediatamente en LocalStorage
+      // DESSELECCIONAR: Liberar la tabla inmediatamente en Firestore
       selectedTables.splice(index, 1);
-      if (targetTable && targetTable.status === 'RESERVADA') {
-        targetTable.status = 'DISPONIBLE';
-        delete targetTable.reservedUntil;
-        DB.setTables(tables);
+      try {
+        await updateDoc(doc(db, 'tablas', code), {
+          status: 'DISPONIBLE',
+          reservedUntil: null,
+          reservedBy: null
+        });
+      } catch (err) {
+        console.error("Error al desseleccionar tabla:", err);
       }
     } else {
-      // SELECCIONAR: Verificar si sigue disponible
-      if (targetTable && targetTable.status !== 'DISPONIBLE') {
-        alert(`La tabla ${code} ya ha sido reservada o comprada por otra persona.`);
-        renderTables();
-        return;
-      }
-
+      // SELECCIONAR: Transacción atómica para evitar colisión de compra
       if (selectedTables.length >= 10) {
         alert('Máximo puedes seleccionar 10 tablas.');
         return;
       }
 
-      // Si es la primera tabla que selecciona, iniciamos o extendemos el reloj de 5 minutos
-      if (selectedTables.length === 0 || !reservationEndTime) {
-        reservationEndTime = Date.now() + (HOLD_TIME_MINUTES * 60 * 1000);
-      }
+      try {
+        const success = await runTransaction(db, async (transaction) => {
+          const tRef = doc(db, 'tablas', code);
+          const tDoc = await transaction.get(tRef);
 
-      // Reservar INMEDIATAMENTE en LocalStorage
-      selectedTables.push(code);
-      if (targetTable) {
-        targetTable.status = 'RESERVADA';
-        targetTable.reservedUntil = reservationEndTime;
-        DB.setTables(tables);
+          if (!tDoc.exists()) {
+            throw new Error("La tabla no existe.");
+          }
+
+          const tData = tDoc.data();
+          const now = Date.now();
+          const isExpired = tData.reservedUntil && tData.reservedUntil <= now;
+
+          if (tData.status === 'VENDIDA' || (tData.status === 'RESERVADA' && tData.reservedBy !== myClientId && !isExpired)) {
+            return false; // Ya no disponible
+          }
+
+          if (selectedTables.length === 0 || !reservationEndTime) {
+            reservationEndTime = Date.now() + (HOLD_TIME_MINUTES * 60 * 1000);
+          }
+
+          transaction.update(tRef, {
+            status: 'RESERVADA',
+            reservedUntil: reservationEndTime,
+            reservedBy: myClientId
+          });
+
+          return true;
+        });
+
+        if (success) {
+          selectedTables.push(code);
+        } else {
+          alert(`La tabla ${code} ya ha sido reservada o comprada por otra persona.`);
+        }
+      } catch (err) {
+        console.error("Error al seleccionar tabla:", err);
+        alert("Ocurrió un error al reservar la tabla.");
       }
     }
 
-    // Gestionar el temporizador visible
     if (selectedTables.length > 0) {
       startReservationTimer();
       document.getElementById('reservation-timer-box').classList.remove('hidden');
@@ -517,23 +2733,32 @@
     timerInterval = setInterval(updateDisplay, 1000);
   }
 
-  function handleTimerExpiration() {
+  async function handleTimerExpiration() {
     alert('⏱️ Tu tiempo de reserva (5 minutos) ha expirado. Las tablas han sido liberadas.');
-    releaseCurrentReservations();
+    await releaseCurrentReservations();
     resetToStep1();
   }
 
-  function releaseCurrentReservations() {
+  async function releaseCurrentReservations() {
     if (selectedTables.length === 0) return;
-    let tables = DB.getTables();
-    selectedTables.forEach(code => {
-      let t = tables.find(x => x.code === code);
-      if (t && t.status === 'RESERVADA') {
-        t.status = 'DISPONIBLE';
-        delete t.reservedUntil;
+    const tablesToRelease = [...selectedTables];
+    selectedTables = [];
+
+    for (const code of tablesToRelease) {
+      try {
+        const tRef = doc(db, 'tablas', code);
+        const tSnap = await getDoc(tRef);
+        if (tSnap.exists() && tSnap.data().reservedBy === myClientId) {
+          await updateDoc(tRef, {
+            status: 'DISPONIBLE',
+            reservedUntil: null,
+            reservedBy: null
+          });
+        }
+      } catch (err) {
+        console.error("Error liberando reserva:", err);
       }
-    });
-    DB.setTables(tables);
+    }
   }
 
   function resetToStep1() {
@@ -555,28 +2780,12 @@
   }
 
   function goToStep2() {
-    cleanupExpiredReservations();
-    let tables = DB.getTables();
-
-    // Confirmar que sigan en estado RESERVADA por nosotros
-    let lostTables = selectedTables.filter(code => {
-      let t = tables.find(x => x.code === code);
-      return !t || t.status !== 'RESERVADA';
-    });
-
-    if (lostTables.length > 0) {
-      alert(`Atención: Las tablas ${lostTables.join(', ')} ya expiraron o fueron tomadas.`);
-      selectedTables = selectedTables.filter(code => !lostTables.includes(code));
-      if (selectedTables.length === 0) {
-        resetToStep1();
-        return;
-      }
-    }
-
     document.getElementById('step-1').classList.add('hidden');
     document.getElementById('step-2').classList.remove('hidden');
     pendingTablesToAssign = [...selectedTables];
   }
+
+  document.getElementById('btn-to-step-2').addEventListener('click', goToStep2);
 
   function toggleAssignMode() {
     const mode = document.querySelector('input[name="assign_type"]:checked').value;
@@ -589,6 +2798,9 @@
       box.classList.add('hidden');
     }
   }
+
+  document.getElementById('radio-assign-self').addEventListener('change', toggleAssignMode);
+  document.getElementById('radio-assign-others').addEventListener('change', toggleAssignMode);
 
   function renderAssignChips() {
     const container = document.getElementById('assign-chips');
@@ -631,9 +2843,12 @@
     }
 
     assignments.push({
-      name,
-      city,
+      nombre: name,
+      name: name,
+      ciudad: city,
+      address: city,
       whatsapp: phone,
+      tablas: selectedChips,
       tables: selectedChips
     });
 
@@ -645,6 +2860,8 @@
 
     renderAssignChips();
   }
+
+  document.getElementById('btn-save-assignment').addEventListener('click', saveAssignment);
 
   function goToStep3() {
     const buyerName = document.getElementById('buyer-name').value.trim();
@@ -665,9 +2882,12 @@
 
     if (mode === 'self') {
       assignments = [{
+        nombre: buyerName,
         name: buyerName,
-        city: buyerAddress,
+        ciudad: buyerAddress,
+        address: buyerAddress,
         whatsapp: buyerPhone,
+        tablas: [...selectedTables],
         tables: [...selectedTables]
       }];
     }
@@ -675,6 +2895,8 @@
     document.getElementById('step-2').classList.add('hidden');
     document.getElementById('step-3').classList.remove('hidden');
   }
+
+  document.getElementById('btn-to-step-3').addEventListener('click', goToStep3);
 
   function copiarNumero() {
     const num = "3234370590";
@@ -687,6 +2909,8 @@
     });
   }
 
+  document.getElementById('btn-copy-number').addEventListener('click', copiarNumero);
+
   document.getElementById('proof-file').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (file) {
@@ -698,56 +2922,85 @@
     }
   });
 
-  function finishOrder() {
+  async function finishOrder() {
     if (!proofBase64) {
       alert('Por favor suba el comprobante de pago.');
       return;
     }
 
-    // Detener temporizador
-    clearInterval(timerInterval);
+    const btn = document.getElementById('btn-finish-order');
+    btn.disabled = true;
+    btn.textContent = "Procesando pedido...";
 
-    // 1. Guardar la orden realizada
-    const orders = DB.getOrders();
-    const orderId = String(orders.length + 1).padStart(5, '0');
+    try {
+      clearInterval(timerInterval);
 
-    const newOrder = {
-      id: orderId,
-      client: {
-        name: document.getElementById('buyer-name').value,
-        address: document.getElementById('buyer-address').value,
-        whatsapp: document.getElementById('buyer-phone').value
-      },
-      tables: selectedTables,
-      total: selectedTables.length * config.valor,
-      assignments: assignments,
-      proof: proofBase64,
-      status: 'Pendiente pago',
-      createdAt: new Date().toLocaleString()
-    };
+      // Obtener el consecutivo de pedido desde Firestore
+      const pedidosSnap = await getDocs(collection(db, 'pedidos'));
+      const orderCount = pedidosSnap.size + 1;
+      const orderId = String(orderCount).padStart(5, '0');
 
-    orders.push(newOrder);
-    DB.setOrders(orders);
+      const buyerName = document.getElementById('buyer-name').value.trim();
+      const buyerAddress = document.getElementById('buyer-address').value.trim();
+      const buyerPhone = document.getElementById('buyer-phone').value.trim();
 
-    // 2. Cambiar de RESERVADA a VENDIDA
-    let tables = DB.getTables();
-    selectedTables.forEach(code => {
-      let t = tables.find(x => x.code === code);
-      if (t) {
-        t.status = 'VENDIDA';
-        delete t.reservedUntil;
+      const newOrder = {
+        id: orderId,
+        cliente: {
+          name: buyerName,
+          address: buyerAddress,
+          whatsapp: buyerPhone
+        },
+        client: {
+          name: buyerName,
+          address: buyerAddress,
+          whatsapp: buyerPhone
+        },
+        telefono: buyerPhone,
+        direccion: buyerAddress,
+        tablas: selectedTables,
+        tables: selectedTables,
+        total: selectedTables.length * (config ? config.valor : 0),
+        comprobante: proofBase64,
+        proof: proofBase64,
+        estado: 'Pendiente pago',
+        status: 'Pendiente pago',
+        fecha: new Date().toLocaleString(),
+        createdAt: new Date().toLocaleString(),
+        asignaciones: assignments,
+        assignments: assignments
+      };
+
+      // 1. Guardar en Firestore colección 'pedidos'
+      await setDoc(doc(db, 'pedidos', orderId), newOrder);
+
+      // 2. Cambiar tablas de RESERVADA a VENDIDA en Firestore
+      for (const code of selectedTables) {
+        await updateDoc(doc(db, 'tablas', code), {
+          status: 'VENDIDA',
+          reservedUntil: null,
+          reservedBy: null,
+          pedido: orderId
+        });
       }
-    });
-    DB.setTables(tables);
 
-    // 3. Mostrar pantalla final
-    document.getElementById('reservation-timer-box').classList.add('hidden');
-    document.getElementById('step-3').classList.add('hidden');
-    document.getElementById('step-4').classList.remove('hidden');
+      // 3. Mostrar pantalla final
+      document.getElementById('reservation-timer-box').classList.add('hidden');
+      document.getElementById('step-3').classList.add('hidden');
+      document.getElementById('step-4').classList.remove('hidden');
 
-    document.getElementById('order-number-display').textContent = `Pedido #${orderId}`;
-    document.getElementById('assigned-tables-display').textContent = selectedTables.join(', ');
+      document.getElementById('order-number-display').textContent = `Pedido #${orderId}`;
+      document.getElementById('assigned-tables-display').textContent = selectedTables.join(', ');
+    } catch (err) {
+      console.error("Error al finalizar pedido:", err);
+      alert("Error al guardar el pedido en Firestore: " + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "FINALIZAR COMPRA";
+    }
   }
+
+  document.getElementById('btn-finish-order').addEventListener('click', finishOrder);
 
   function volverAComprar() {
     document.getElementById('proof-file').value = '';
@@ -758,7 +3011,13 @@
     resetToStep1();
   }
 
-  window.onload = initApp;
+  document.getElementById('btn-restart').addEventListener('click', volverAComprar);
+
+  // Inicializar listeners
+  listenConfig();
+  listenTables();
 </script>
 </body>
 </html>
+clientes.html
+Mostrando clientes.html.
