@@ -427,6 +427,46 @@
     .img-bingo { background-image: linear-gradient(rgba(50,0,90,.05), rgba(10,0,20,.22)), url("bingo.png"); }
     .img-radio { background-image: linear-gradient(rgba(50,0,90,.04), rgba(10,0,20,.12)), url("imgradio.png"); background-size: cover; background-position: center; }
 
+    /* Panel o Cuadro de Acceso al Módulo de Clientes de Bingo */
+    .bingo-access-panel {
+      max-width: 980px;
+      margin: 20px auto 0;
+      padding: 30px;
+      border-radius: 28px;
+      border: 2px solid rgba(255, 230, 0, 0.6);
+      background:
+        radial-gradient(circle at top right, rgba(255, 230, 0, 0.15), transparent 30%),
+        linear-gradient(135deg, rgba(30, 0, 65, 0.95), rgba(10, 0, 30, 0.98));
+      box-shadow: 0 0 35px rgba(255, 230, 0, 0.25), 0 0 25px rgba(179, 0, 255, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      cursor: pointer;
+      transition: 0.3s ease;
+      text-decoration: none;
+    }
+
+    .bingo-access-panel:hover {
+      transform: translateY(-4px);
+      border-color: #ffe600;
+      box-shadow: 0 0 45px rgba(255, 230, 0, 0.4), 0 0 30px rgba(179, 0, 255, 0.5);
+    }
+
+    .bingo-access-info h3 {
+      font-size: 26px;
+      text-transform: uppercase;
+      font-weight: 1000;
+      color: #ffe600;
+      margin-bottom: 8px;
+    }
+
+    .bingo-access-info p {
+      color: #e8ddff;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
     .sponsors-section { padding-top: 16px; }
 
     .sponsors-grid {
@@ -841,83 +881,6 @@
       background: rgba(255, 0, 100, 0.12);
     }
 
-    /* Estilos del Módulo de Clientes / Compras para Bingo */
-    .clientes-section {
-      padding: 50px 6%;
-      background: rgba(12, 0, 30, 0.95);
-      border-top: 1px solid rgba(186, 85, 255, 0.45);
-      border-bottom: 1px solid rgba(186, 85, 255, 0.45);
-    }
-
-    .clientes-container {
-      max-width: 900px;
-      margin: 0 auto;
-      background: rgba(20, 0, 48, 0.85);
-      border: 1px solid rgba(255, 230, 0, 0.3);
-      border-radius: 24px;
-      padding: 30px;
-      box-shadow: 0 0 30px rgba(124, 0, 255, 0.3);
-    }
-
-    .form-group {
-      margin-bottom: 20px;
-    }
-
-    .form-group label {
-      display: block;
-      margin-bottom: 8px;
-      color: #ffe600;
-      font-weight: bold;
-      text-transform: uppercase;
-      font-size: 13px;
-    }
-
-    .form-control {
-      width: 100%;
-      padding: 12px 16px;
-      border-radius: 12px;
-      border: 1px solid rgba(186, 85, 255, 0.5);
-      background: rgba(5, 0, 16, 0.8);
-      color: #ffffff;
-      font-size: 15px;
-      font-family: inherit;
-    }
-
-    .form-control:focus {
-      outline: none;
-      border-color: #ffe600;
-      box-shadow: 0 0 10px rgba(255, 230, 0, 0.3);
-    }
-
-    .clientes-tabla-wrapper {
-      margin-top: 30px;
-      overflow-x: auto;
-    }
-
-    .clientes-tabla {
-      width: 100%;
-      border-collapse: collapse;
-      text-align: left;
-    }
-
-    .clientes-tabla th, .clientes-tabla td {
-      padding: 12px 15px;
-      border-bottom: 1px solid rgba(186, 85, 255, 0.2);
-      font-size: 14px;
-    }
-
-    .clientes-tabla th {
-      background: rgba(111, 0, 255, 0.3);
-      color: #ffe600;
-      text-transform: uppercase;
-      font-size: 12px;
-      letter-spacing: 1px;
-    }
-
-    .clientes-tabla tr:hover {
-      background: rgba(255, 255, 255, 0.03);
-    }
-
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -1011,16 +974,6 @@
       margin-bottom: 16px;
     }
 
-    .modal-highlight {
-      margin: 20px 0 26px;
-      padding: 18px;
-      border-radius: 22px;
-      border: 1px solid rgba(255,255,255,0.12);
-      background: rgba(255,255,255,0.06);
-      color: #ffffff;
-      line-height: 1.6;
-    }
-
     .modal-actions {
       display: flex;
       flex-wrap: wrap;
@@ -1055,6 +1008,10 @@
       .sponsor-logo {
         width: 130px;
         height: 130px;
+      }
+      .bingo-access-panel {
+        flex-direction: column;
+        text-align: center;
       }
       .footer-cta {
         flex-direction: column;
@@ -1165,46 +1122,20 @@
       </div>
     </section>
 
-    <!-- Sección de Clientes / Compra de Tablas (Bingo) Integrada -->
-    <section class="clientes-section" id="clientes">
+    <!-- Panel / Cuadro de Acceso Directo al Módulo de Clientes de Bingo -->
+    <section class="section" id="modulo-bingo">
       <div class="section-title">
-        <small>Módulo de Usuarios</small>
-        <h2>Registro de <span>Clientes y Tablas</span></h2>
+        <small>Acceso rápido</small>
+        <h2>Módulo de <span>Bingo La Terraza</span></h2>
       </div>
 
-      <div class="clientes-container">
-        <form id="formClienteBingo">
-          <div class="form-group">
-            <label for="nombreCliente">Nombre Completo</label>
-            <input type="text" id="nombreCliente" class="form-control" placeholder="Ingrese su nombre y apellido" required>
-          </div>
-          <div class="form-group">
-            <label for="telefonoCliente">Teléfono / WhatsApp</label>
-            <input type="tel" id="telefonoCliente" class="form-control" placeholder="Ej: 3234370590" required>
-          </div>
-          <div class="form-group">
-            <label for="cantidadTablas">Cantidad de Tablas</label>
-            <input type="number" id="cantidadTablas" class="form-control" min="1" value="1" required>
-          </div>
-          <button type="submit" class="btn btn-yellow" style="width: 100%;">Registrar y Guardar Tabla</button>
-        </form>
-
-        <div class="clientes-tabla-wrapper">
-          <table class="clientes-tabla">
-            <thead>
-              <tr>
-                <th>Cliente</th>
-                <th>Teléfono</th>
-                <th>Tablas</th>
-                <th>Fecha</th>
-              </tr>
-            </thead>
-            <tbody id="listaClientesBody">
-              <!-- Se llena dinámicamente con LocalStorage -->
-            </tbody>
-          </table>
+      <a href="https://laterrazacalipodcast.top/compradetablasbingo/clientes.html" class="bingo-access-panel" target="_blank" rel="noopener noreferrer">
+        <div class="bingo-access-info">
+          <h3>Panel de Clientes y Tablas</h3>
+          <p>Presiona aquí para ingresar al sistema de registro y compra de tablas para nuestro bingo interactivo.</p>
         </div>
-      </div>
+        <span class="btn btn-yellow">Ingresar al Módulo</span>
+      </a>
     </section>
 
     <section class="section" id="programas">
@@ -1495,60 +1426,13 @@
     setupModal('openMissionModal', 'closeMissionModal', 'missionModal');
     setupModal('openVisionModal', 'closeVisionModal', 'visionModal');
 
-    // Lógica del módulo de clientes y tablas de bingo usando LocalStorage
-    document.addEventListener('DOMContentLoaded', () => {
-      const formCliente = document.getElementById('formClienteBingo');
-      const listaClientesBody = document.getElementById('listaClientesBody');
-
-      function cargarClientes() {
-        const clientes = JSON.parse(localStorage.getItem('laTerrazaClientesBingo')) || [];
-        listaClientesBody.innerHTML = '';
-        if (clientes.length === 0) {
-          listaClientesBody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#9487b5;">No hay clientes registrados aún.</td></tr>';
-          return;
-        }
-        clientes.forEach(c => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${c.nombre}</td>
-            <td>${c.telefono}</td>
-            <td>${c.tablas}</td>
-            <td>${c.fecha}</td>
-          `;
-          listaClientesBody.appendChild(tr);
-        });
-      }
-
-      if (formCliente) {
-        formCliente.addEventListener('submit', (e) => {
-          e.preventDefault();
-          const nombre = document.getElementById('nombreCliente').value.trim();
-          const telefono = document.getElementById('telefonoCliente').value.trim();
-          const tablas = document.getElementById('cantidadTablas').value;
-          const fecha = new Date().toLocaleDateString('es-CO', { hour: '2-digit', minute: '2-digit' });
-
-          if (!nombre || !telefono || !tablas) return;
-
-          const clientes = JSON.parse(localStorage.getItem('laTerrazaClientesBingo')) || [];
-          clientes.push({ nombre, telefono, tablas, fecha });
-          localStorage.setItem('laTerrazaClientesBingo', JSON.stringify(clientes));
-
-          formCliente.reset();
-          cargarClientes();
-        });
-      }
-
-      cargarClientes();
-    });
-
-    // Reproductor de radio y contadores globales originales
+    // Reproductor de radio
     const headerRadioPlayer = document.getElementById('headerRadioPlayer');
     const headerRadioBtn = document.getElementById('headerRadioBtn');
     const headerRadioAudio = document.getElementById('headerRadioAudio');
     if (headerRadioPlayer && headerRadioBtn && headerRadioAudio) {
       const radioSources = ['disco-terraza.mp3', './disco-terraza.mp3'];
       let currentSourceIndex = 0;
-      let userStartedAudio = false;
 
       function setPlayingState(isPlaying) {
         headerRadioPlayer.classList.toggle('is-playing', isPlaying);
@@ -1560,7 +1444,6 @@
         headerRadioAudio.src = radioSources[index];
         try {
           await headerRadioAudio.play();
-          userStartedAudio = true;
           setPlayingState(true);
         } catch (e) {
           tryPlaySource(index + 1);
