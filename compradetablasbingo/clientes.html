@@ -96,7 +96,7 @@
       color: var(--text-main);
       cursor: pointer;
       text-align: center;
-      transition: all 0.2s;
+      transition: background 0.1s, border-color 0.1s; /* Más rápido */
     }
     .btn-table.selected { background: var(--accent-gold); color: #fff; border-color: var(--accent-gold); }
 
@@ -345,9 +345,6 @@
     onSnapshot, runTransaction, getDocs 
   } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
-  // ==========================================
-  // TUS CLAVES REALES DE FIREBASE
-  // ==========================================
   const firebaseConfig = {
     apiKey: "AIzaSyBRF5F14_x0UOl5P47VQ93O76u5xuxOa5w",
     authDomain: "la-terraza-1b2cd.firebaseapp.com",
@@ -454,65 +451,21 @@
   async function toggleTableSelection(code) {
     const index = selectedTables.indexOf(code);
 
+    // RESPUESTA INSTANTÁNEA (Actualización optimista en pantalla)
     if (index > -1) {
       selectedTables.splice(index, 1);
-      try {
-        await updateDoc(doc(db, 'tablas', code), {
-          status: 'DISPONIBLE',
-          reservedUntil: null,
-          reservedBy: null,
-          pedido: null
-        });
-      } catch (err) {
-        console.error("Error al desseleccionar tabla:", err);
-      }
     } else {
       if (selectedTables.length >= 10) {
         alert('Máximo puedes seleccionar 10 tablas.');
         return;
       }
-
-      try {
-        const success = await runTransaction(db, async (transaction) => {
-          const tRef = doc(db, 'tablas', code);
-          const tDoc = await transaction.get(tRef);
-
-          if (!tDoc.exists()) {
-            throw new Error("La tabla no existe.");
-          }
-
-          const tData = tDoc.data();
-          const now = Date.now();
-          const isExpired = tData.reservedUntil && tData.reservedUntil <= now;
-
-          if (tData.status === 'VENDIDA' || (tData.status === 'RESERVADA' && tData.reservedBy !== myClientId && !isExpired)) {
-            return false;
-          }
-
-          if (selectedTables.length === 0 || !reservationEndTime) {
-            reservationEndTime = Date.now() + (HOLD_TIME_MINUTES * 60 * 1000);
-          }
-
-          transaction.update(tRef, {
-            status: 'RESERVADA',
-            reservedUntil: reservationEndTime,
-            reservedBy: myClientId
-          });
-
-          return true;
-        });
-
-        if (success) {
-          selectedTables.push(code);
-        } else {
-          alert(`La tabla ${code} ya ha sido reservada o comprada por otra persona.`);
-        }
-      } catch (err) {
-        console.error("Error al seleccionar tabla:", err);
-        alert("Ocurrió un error al reservar la tabla.");
+      selectedTables.push(code);
+      if (selectedTables.length === 1 || !reservationEndTime) {
+        reservationEndTime = Date.now() + (HOLD_TIME_MINUTES * 60 * 1000);
       }
     }
 
+    // Actualizamos interfaz de inmediato sin esperar red
     if (selectedTables.length > 0) {
       startReservationTimer();
       document.getElementById('reservation-timer-box').classList.remove('hidden');
@@ -521,9 +474,53 @@
       reservationEndTime = null;
       document.getElementById('reservation-timer-box').classList.add('hidden');
     }
-
     updateSummary();
     renderTables();
+
+    // Sincronización en segundo plano con Firebase
+    try {
+      if (index > -1) {
+        // Fue deseleccionada
+        await updateDoc(doc(db, 'tablas', code), {
+          status: 'DISPONIBLE',
+          reservedUntil: null,
+          reservedBy: null,
+          pedido: null
+        });
+      } else {
+        // Fue seleccionada
+        const success = await runTransaction(db, async (transaction) => {
+          const tRef = doc(db, 'tablas', code);
+          const tDoc = await transaction.get(tRef);
+
+          if (!tDoc.exists()) throw new Error("La tabla no existe.");
+          const tData = tDoc.data();
+          const now = Date.now();
+          const isExpired = tData.reservedUntil && tData.reservedUntil <= now;
+
+          if (tData.status === 'VENDIDA' || (tData.status === 'RESERVADA' && tData.reservedBy !== myClientId && !isExpired)) {
+            return false;
+          }
+
+          transaction.update(tRef, {
+            status: 'RESERVADA',
+            reservedUntil: reservationEndTime,
+            reservedBy: myClientId
+          });
+          return true;
+        });
+
+        if (!success) {
+          // Si falló en la base de datos porque otro la cogió, la quitamos localmente
+          selectedTables = selectedTables.filter(c => c !== code);
+          alert(`La tabla ${code} ya ha sido reservada o comprada por otra persona.`);
+          updateSummary();
+          renderTables();
+        }
+      }
+    } catch (err) {
+      console.error("Error al sincronizar selección:", err);
+    }
   }
 
   function updateSummary() {
@@ -598,11 +595,8 @@
   document.getElementById('btn-cancel-purchase-step2').addEventListener('click', cancelarCompraCompleta);
   document.getElementById('btn-cancel-purchase-step3').addEventListener('click', cancelarCompraCompleta);
 
-  // Liberar automáticamente si el usuario cierra o recarga la pestaña antes de finalizar
   window.addEventListener('beforeunload', () => {
     if (!orderCompleted && selectedTables.length > 0) {
-      // Uso sincrónico / beacon o llamada rápida si el navegador lo permite, 
-      // pero para Firestore web SDK en beforeunload se maneja de forma optimizada:
       selectedTables.forEach(code => {
         try {
           const tRef = doc(db, 'tablas', code);
