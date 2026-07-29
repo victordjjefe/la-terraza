@@ -195,11 +195,54 @@
     .tab-bar { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 12px; }
     .tab-item { flex: 1; text-align: center; padding: 8px; font-size: 0.8rem; font-weight: 600; cursor: pointer; color: var(--text-muted); }
     .tab-item.active { color: var(--accent-gold); border-bottom: 2px solid var(--accent-gold); }
+
+    /* Estilo para la pantalla de inicio de sesión */
+    #login-screen {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--bg-body);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      padding: 16px;
+    }
+    .login-card {
+      background: var(--surface);
+      padding: 24px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      width: 100%;
+      max-width: 380px;
+      box-shadow: var(--shadow-lg);
+    }
   </style>
 </head>
 <body>
 
-<div class="app-container">
+<!-- PANTALLA DE LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="header" style="border-radius: var(--radius-sm); margin-bottom: 16px;">
+      <h1>LA TERRAZA BINGO</h1>
+      <p>Acceso al Panel de Control</p>
+    </div>
+    <form id="form-login">
+      <div class="form-group">
+        <label>Usuario</label>
+        <input type="text" id="login-user" class="form-control" autocomplete="username" required>
+      </div>
+      <div class="form-group">
+        <label>Contraseña</label>
+        <input type="password" id="login-pass" class="form-control" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn btn-primary" style="margin-top: 8px;">Ingresar</button>
+      <p id="login-error" style="color: var(--danger); font-size: 0.75rem; text-align: center; margin-top: 8px; display: none;">Usuario o contraseña incorrectos.</p>
+    </form>
+  </div>
+</div>
+
+<div class="app-container" id="app-wrapper" style="display: none;">
   <header class="header">
     <h1>LA TERRAZA BINGO</h1>
     <p>Panel de Control Administrador</p>
@@ -314,29 +357,47 @@
 
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
-  import { 
-    getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, 
-    collection, getDocs, onSnapshot, writeBatch 
+  import {  
+    getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc,  
+    collection, getDocs, onSnapshot, writeBatch  
   } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
   // ==========================================
-  // PEGA AQUÍ TUS CLAVES REALES DE FIREBASE
+  // CLAVES REALES DE FIREBASE INTACTAS
   // ==========================================
- const firebaseConfig = {
-  apiKey: "AIzaSyBRF5F14_x0UOl5P47VQ93O76u5xuxOa5w",
-  authDomain: "la-terraza-1b2cd.firebaseapp.com",
-  databaseURL: "https://la-terraza-1b2cd-default-rtdb.firebaseio.com",
-  projectId: "la-terraza-1b2cd",
-  storageBucket: "la-terraza-1b2cd.firebasestorage.app",
-  messagingSenderId: "782430879234",
-  appId: "1:782430879234:web:bc67c04057647b99b3b11b"
-};
+  const firebaseConfig = {
+    apiKey: "AIzaSyBRF5F14_x0UOl5P47VQ93O76u5xuxOa5w",
+    authDomain: "la-terraza-1b2cd.firebaseapp.com",
+    databaseURL: "https://la-terraza-1b2cd-default-rtdb.firebaseio.com",
+    projectId: "la-terraza-1b2cd",
+    storageBucket: "la-terraza-1b2cd.firebasestorage.app",
+    messagingSenderId: "782430879234",
+    appId: "1:782430879234:web:bc67c04057647b99b3b11b"
+  };
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
   let allOrders = [];
   let allTables = [];
+
+  // Lógica de Autenticación con sugerencias del navegador (autocomplete habilitado)
+  document.getElementById('form-login').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const userVal = document.getElementById('login-user').value.trim();
+    const passVal = document.getElementById('login-pass').value.trim();
+    const errorMsg = document.getElementById('login-error');
+
+    if (userVal === 'laterraza' && passVal === '189304') {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app-wrapper').style.display = 'flex';
+      loadInitialConfig();
+      listenTables();
+      listenOrders();
+    } else {
+      errorMsg.style.display = 'block';
+    }
+  });
 
   function formatTableCode(num) {
     if (num < 1000) {
@@ -752,10 +813,6 @@
   }
 
   document.getElementById('btn-cerrar-bingo').addEventListener('click', cerrarBingo);
-
-  loadInitialConfig();
-  listenTables();
-  listenOrders();
 </script>
 </body>
 </html>
