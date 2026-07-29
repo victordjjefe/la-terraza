@@ -228,25 +228,25 @@
           <div class="form-row">
             <div class="form-group">
               <label>Fecha del Bingo</label>
-              <input type="date" id="cfg-fecha" class="form-control" required>
+              <input type="text" id="cfg-fecha" class="form-control" placeholder="30/07/2026" required>
             </div>
             <div class="form-group">
               <label>Hora</label>
-              <input type="time" id="cfg-hora" class="form-control" required>
+              <input type="text" id="cfg-hora" class="form-control" placeholder="10:41" required>
             </div>
           </div>
           <div class="form-group">
             <label>Valor por Tabla ($)</label>
-            <input type="number" id="cfg-valor" class="form-control" placeholder="10000" min="0" required>
+            <input type="number" id="cfg-valor" class="form-control" placeholder="3000" min="0" required>
           </div>
           <div class="form-row">
             <div class="form-group">
               <label>Rango Desde</label>
-              <input type="number" id="cfg-desde" class="form-control" placeholder="1" min="1" required>
+              <input type="number" id="cfg-desde" class="form-control" value="1" min="1" required>
             </div>
             <div class="form-group">
               <label>Rango Hasta</label>
-              <input type="number" id="cfg-hasta" class="form-control" placeholder="5000" min="1" required>
+              <input type="number" id="cfg-hasta" class="form-control" value="5000" min="1" required>
             </div>
           </div>
           <button type="submit" id="btn-submit-config" class="btn btn-primary" style="margin-top: 8px;">Guardar Cambios y Generar Tablas</button>
@@ -290,9 +290,9 @@
         <div class="form-group">
           <select id="filter-status" class="form-control">
             <option value="TODOS">Todos los estados</option>
-            <option value="Pendiente pago">Pendiente pago</option>
-            <option value="Pago confirmado">Pago confirmado</option>
-            <option value="Cancelado">Cancelado</option>
+            <option value="PENDIENTE PAGO">PENDIENTE PAGO</option>
+            <option value="CONFIRMADO">CONFIRMADO</option>
+            <option value="CANCELADO">CANCELADO</option>
           </select>
         </div>
         <div id="orders-list"></div>
@@ -316,10 +316,12 @@
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
   import { 
     getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, 
-    collection, getDocs, onSnapshot, writeBatch, query, where 
+    collection, getDocs, onSnapshot, writeBatch 
   } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
-  // CONFIGURACIÓN DE FIREBASE (Reemplazar con sus credenciales de Firebase Console)
+  // ==========================================
+  // CONFIGURACIÓN DE FIREBASE
+  // ==========================================
   const firebaseConfig = {
     apiKey: "YOUR_API_KEY",
     authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
@@ -367,7 +369,6 @@
   document.getElementById('tab-btn-config').addEventListener('click', () => switchTab('config'));
   document.getElementById('tab-btn-pedidos').addEventListener('click', () => switchTab('pedidos'));
 
-  // Cargar configuración inicial desde Firestore
   async function loadInitialConfig() {
     try {
       const docRef = doc(db, 'configuracion', 'evento');
@@ -378,8 +379,8 @@
         document.getElementById('cfg-fecha').value = cfg.fecha || '';
         document.getElementById('cfg-hora').value = cfg.hora || '';
         document.getElementById('cfg-valor').value = cfg.valor || '';
-        document.getElementById('cfg-desde').value = cfg.desde || 1;
-        document.getElementById('cfg-hasta').value = cfg.hasta || 5000;
+        document.getElementById('cfg-desde').value = 1;
+        document.getElementById('cfg-hasta').value = cfg.tablasHabilitadas || 5000;
       } else {
         document.getElementById('cfg-enabled').checked = true;
       }
@@ -389,7 +390,6 @@
     }
   }
 
-  // Escuchar cambios en las tablas para métricas
   function listenTables() {
     onSnapshot(collection(db, 'tablas'), (snapshot) => {
       allTables = [];
@@ -410,7 +410,6 @@
     document.getElementById('m-vend').textContent = vend;
   }
 
-  // Guardar configuración y generar tablas
   document.getElementById('form-config').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = document.getElementById('btn-submit-config');
@@ -419,8 +418,8 @@
 
     try {
       const enabled = document.getElementById('cfg-enabled').checked;
-      const fecha = document.getElementById('cfg-fecha').value;
-      const hora = document.getElementById('cfg-hora').value;
+      const fecha = document.getElementById('cfg-fecha').value.trim();
+      const hora = document.getElementById('cfg-hora').value.trim();
       const valor = parseFloat(document.getElementById('cfg-valor').value);
       const desde = parseInt(document.getElementById('cfg-desde').value);
       const hasta = parseInt(document.getElementById('cfg-hasta').value);
@@ -432,19 +431,21 @@
         return;
       }
 
-      // 1. Guardar doc de configuración
       await setDoc(doc(db, 'configuracion', 'evento'), {
-        enabled, fecha, hora, valor, desde, hasta
+        nombre: "LA TERRAZA BINGO",
+        enabled: enabled,
+        fecha: fecha,
+        hora: hora,
+        valor: valor,
+        tablasHabilitadas: hasta
       });
 
-      // 2. Obtener tablas existentes para no sobreescribir estados ni reservas
       const existingSnapshot = await getDocs(collection(db, 'tablas'));
       const existingMap = new Map();
       existingSnapshot.forEach(docSnap => {
         existingMap.set(docSnap.id, docSnap.data());
       });
 
-      // 3. Generar en lotes de 500 (límite de batch en Firestore)
       let batch = writeBatch(db);
       let count = 0;
 
@@ -454,7 +455,10 @@
           const tableRef = doc(db, 'tablas', code);
           batch.set(tableRef, {
             code: code,
-            status: 'DISPONIBLE'
+            status: 'DISPONIBLE',
+            reservedUntil: null,
+            reservedBy: null,
+            pedido: null
           });
           count++;
 
@@ -480,7 +484,6 @@
     }
   });
 
-  // Escuchar pedidos en tiempo real
   function listenOrders() {
     onSnapshot(collection(db, 'pedidos'), (snapshot) => {
       allOrders = [];
@@ -502,12 +505,12 @@
     container.innerHTML = '';
 
     const filtered = allOrders.filter(o => {
-      const clientName = o.cliente?.name || o.client?.name || '';
-      const clientPhone = o.cliente?.whatsapp || o.client?.whatsapp || o.telefono || '';
+      const clientName = typeof o.cliente === 'string' ? o.cliente : (o.cliente?.name || '');
+      const clientPhone = o.telefono || o.cliente?.whatsapp || '';
       const matchQuery = String(o.id || '').toLowerCase().includes(queryStr) || 
                          clientName.toLowerCase().includes(queryStr) || 
                          clientPhone.includes(queryStr);
-      const matchStatus = statusFilter === 'TODOS' || o.estado === statusFilter || o.status === statusFilter;
+      const matchStatus = statusFilter === 'TODOS' || o.estado === statusFilter;
       return matchQuery && matchStatus;
     });
 
@@ -516,14 +519,13 @@
       return;
     }
 
-    // Ordenar de más reciente a más antiguo
-    filtered.sort((a,b) => (b.fecha || b.createdAt || '').localeCompare(a.fecha || a.createdAt || ''));
+    filtered.sort((a,b) => (b.fecha || '').localeCompare(a.fecha || ''));
 
     filtered.forEach(o => {
-      const currentStatus = o.estado || o.status || 'Pendiente pago';
+      const currentStatus = o.estado || 'PENDIENTE PAGO';
       let badgeClass = 'badge-pending';
-      if (currentStatus === 'Pago confirmado') badgeClass = 'badge-confirmed';
-      if (currentStatus === 'Cancelado') badgeClass = 'badge-cancelled';
+      if (currentStatus === 'CONFIRMADO') badgeClass = 'badge-confirmed';
+      if (currentStatus === 'CANCELADO') badgeClass = 'badge-cancelled';
 
       const el = document.createElement('div');
       el.className = 'order-item';
@@ -532,13 +534,13 @@
       const assignedTableCodes = new Set();
       let assignHtml = '';
 
-      const tableList = o.tablas || o.tables || [];
-      const clientObj = o.cliente || o.client || {};
+      const tableList = o.tablas || [];
+      const clientName = typeof o.cliente === 'string' ? o.cliente : (o.cliente?.name || 'Cliente');
 
       if (o.asignaciones && o.asignaciones.length > 0) {
         o.asignaciones.forEach(a => {
           let buttonsForPerson = '';
-          const aTables = a.tablas || a.tables || [];
+          const aTables = a.tablas || [];
           aTables.forEach(tableCode => {
             assignedTableCodes.add(tableCode);
             const isProcessed = processedList.includes(tableCode);
@@ -593,18 +595,18 @@
           <span class="badge ${badgeClass}">${currentStatus}</span>
         </div>
         <div class="order-info">
-          <div><b>Cliente:</b> ${clientObj.name || ''} (${clientObj.whatsapp || o.telefono || ''})</div>
-          <div><b>Fecha/Hora:</b> ${o.fecha || o.createdAt || ''}</div>
+          <div><b>Cliente:</b> ${clientName} (${o.telefono || ''})</div>
+          <div><b>Dirección:</b> ${o.direccion || ''}</div>
+          <div><b>Fecha/Hora:</b> ${o.fecha || ''}</div>
           <div style="margin-top:6px;"><b>Asignaciones de Tablas (${tableList.length}):</b>${assignHtml}</div>
         </div>
         <div style="margin-top:8px; display:flex; gap:6px;">
-          ${(o.comprobante || o.proof) ? `<button class="btn btn-sm btn-dark btn-view-proof" data-order="${o.firestoreId}">Ver Comprobante</button>` : ''}
+          ${o.comprobante ? `<button class="btn btn-sm btn-dark btn-view-proof" data-order="${o.firestoreId}">Ver Comprobante</button>` : ''}
           <button class="btn btn-sm btn-success btn-confirm-order" data-order="${o.firestoreId}">Confirmar</button>
           <button class="btn btn-sm btn-danger btn-cancel-order" data-order="${o.firestoreId}">Cancelar</button>
         </div>
       `;
 
-      // Event listeners para los botones internos
       el.querySelectorAll('.table-check-btn:not(.processed)').forEach(btn => {
         btn.addEventListener('click', () => markTableAsProcessed(btn.dataset.order, btn.dataset.code));
       });
@@ -612,10 +614,10 @@
         btn.addEventListener('click', () => viewProof(btn.dataset.order));
       });
       el.querySelectorAll('.btn-confirm-order').forEach(btn => {
-        btn.addEventListener('click', () => updateOrderStatus(btn.dataset.order, 'Pago confirmado'));
+        btn.addEventListener('click', () => updateOrderStatus(btn.dataset.order, 'CONFIRMADO'));
       });
       el.querySelectorAll('.btn-cancel-order').forEach(btn => {
-        btn.addEventListener('click', () => updateOrderStatus(btn.dataset.order, 'Cancelado'));
+        btn.addEventListener('click', () => updateOrderStatus(btn.dataset.order, 'CANCELADO'));
       });
 
       container.appendChild(el);
@@ -649,20 +651,26 @@
       if (!orderSnap.exists()) return;
 
       const orderData = orderSnap.data();
-      await updateDoc(orderRef, { 
-        estado: newStatus,
-        status: newStatus 
-      });
+      await updateDoc(orderRef, { estado: newStatus });
 
-      const tables = orderData.tablas || orderData.tables || [];
+      const tables = orderData.tablas || [];
       const batch = writeBatch(db);
 
       tables.forEach(code => {
         const tRef = doc(db, 'tablas', code);
-        if (newStatus === 'Pago confirmado') {
-          batch.update(tRef, { status: 'VENDIDA' });
-        } else if (newStatus === 'Cancelado') {
-          batch.update(tRef, { status: 'DISPONIBLE', reservedUntil: null, reservedBy: null });
+        if (newStatus === 'CONFIRMADO') {
+          batch.update(tRef, { 
+            status: 'VENDIDA',
+            reservedUntil: null,
+            reservedBy: null
+          });
+        } else if (newStatus === 'CANCELADO') {
+          batch.update(tRef, { 
+            status: 'DISPONIBLE', 
+            reservedUntil: null, 
+            reservedBy: null,
+            pedido: null
+          });
         }
       });
 
@@ -676,11 +684,11 @@
   function viewProof(orderDocId) {
     const order = allOrders.find(o => o.firestoreId === orderDocId);
     if (!order) return;
-    const proofImg = order.comprobante || order.proof;
+    const proofImg = order.comprobante;
     if (!proofImg) return;
 
     const body = document.getElementById('modal-proof-body');
-    const clientName = order.cliente?.name || order.client?.name || '';
+    const clientName = typeof order.cliente === 'string' ? order.cliente : (order.cliente?.name || '');
     body.innerHTML = `
       <p style="font-size:0.8rem; color:var(--text-muted);">Pedido #${order.id} - ${clientName}</p>
       <img src="${proofImg}" alt="Comprobante de Pago">
@@ -697,10 +705,8 @@
     if (!confirmacion) return;
 
     try {
-      // 1. Borrar doc configuracion/evento
       await deleteDoc(doc(db, 'configuracion', 'evento'));
 
-      // 2. Borrar colección tablas en lotes
       const tablasSnap = await getDocs(collection(db, 'tablas'));
       let batch = writeBatch(db);
       let count = 0;
@@ -715,7 +721,6 @@
       });
       if (count > 0) await batch.commit();
 
-      // 3. Borrar colección pedidos en lotes
       const pedidosSnap = await getDocs(collection(db, 'pedidos'));
       batch = writeBatch(db);
       count = 0;
@@ -747,7 +752,6 @@
 
   document.getElementById('btn-cerrar-bingo').addEventListener('click', cerrarBingo);
 
-  // Inicializar listeners y datos
   loadInitialConfig();
   listenTables();
   listenOrders();
