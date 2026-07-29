@@ -26,7 +26,7 @@
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
-    body { background-color: var(--bg-body); color: var(--text-main); display: flex; justify-content: center; min-height: 100vh; }
+    body { background-color: var(--bg-body); color: var(--text-main); display: flex; justify-content: center; min-height: 100vh; font-size: 1.05rem; }
     
     .app-container {
       width: 100%;
@@ -42,45 +42,45 @@
     .header {
       background: linear-gradient(135deg, var(--primary), var(--primary-accent));
       color: #fff;
-      padding: 20px;
+      padding: 24px;
       text-align: center;
       border-bottom: 3px solid var(--accent-gold);
     }
-    .header h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: 1px; color: var(--accent-gold); }
-    .header p { font-size: 0.8rem; color: #94a3b8; margin-top: 4px; }
+    .header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: 1px; color: var(--accent-gold); }
+    .header p { font-size: 0.9rem; color: #94a3b8; margin-top: 4px; }
 
-    .main-content { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 20px; }
+    .main-content { padding: 20px; flex: 1; display: flex; flex-direction: column; gap: 20px; }
 
     .card {
       background: var(--surface);
       border-radius: var(--radius-md);
       border: 1px solid var(--border-color);
-      padding: 16px;
+      padding: 20px;
       box-shadow: var(--shadow-sm);
     }
     .card-title {
-      font-size: 0.95rem;
+      font-size: 1.15rem;
       font-weight: 700;
       color: var(--primary);
-      margin-bottom: 12px;
+      margin-bottom: 14px;
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
 
-    .form-group { margin-bottom: 12px; }
-    .form-group label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; }
     .form-control {
       width: 100%;
-      padding: 10px 12px;
+      padding: 12px 14px;
       border: 1px solid var(--border-color);
       border-radius: var(--radius-sm);
-      font-size: 0.9rem;
+      font-size: 1rem;
       outline: none;
       transition: all 0.2s;
     }
     .form-control:focus { border-color: var(--accent-gold); box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.15); }
-    .form-row { display: flex; gap: 8px; }
+    .form-row { display: flex; gap: 10px; }
     .form-row .form-group { flex: 1; }
 
     .toggle-container {
@@ -88,20 +88,20 @@
       align-items: center;
       justify-content: space-between;
       background: #f8fafc;
-      padding: 10px 12px;
+      padding: 12px 14px;
       border: 1px solid var(--border-color);
       border-radius: var(--radius-sm);
-      margin-bottom: 12px;
+      margin-bottom: 14px;
     }
-    .toggle-label { font-size: 0.8rem; font-weight: 700; color: var(--primary); }
+    .toggle-label { font-size: 0.95rem; font-weight: 700; color: var(--primary); }
 
     .btn {
       width: 100%;
-      padding: 10px 16px;
+      padding: 12px 16px;
       border: none;
       border-radius: var(--radius-sm);
-      font-weight: 600;
-      font-size: 0.85rem;
+      font-weight: 700;
+      font-size: 1rem;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
@@ -112,35 +112,35 @@
     .btn-primary { background: var(--accent-gold); color: #fff; }
     .btn-primary:hover { background: var(--accent-gold-hover); }
     .btn-dark { background: var(--primary); color: #fff; }
-    .btn-sm { padding: 6px 10px; font-size: 0.75rem; width: auto; }
+    .btn-sm { padding: 8px 12px; font-size: 0.85rem; width: auto; }
     .btn-success { background: var(--success); color: #fff; }
     .btn-danger { background: var(--danger); color: #fff; }
 
-    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
     .metric-card {
       background: var(--bg-body);
-      padding: 12px;
+      padding: 14px;
       border-radius: var(--radius-sm);
       border-left: 4px solid var(--border-color);
     }
     .metric-card.total { border-color: var(--primary); }
     .metric-card.disp { border-color: var(--success); }
     .metric-card.vend { border-color: var(--danger); }
-    .metric-val { font-size: 1.2rem; font-weight: 700; }
-    .metric-lbl { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
+    .metric-val { font-size: 1.4rem; font-weight: 700; }
+    .metric-lbl { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
 
-    .search-box { margin-bottom: 12px; }
+    .search-box { margin-bottom: 14px; }
     .order-item {
       border: 1px solid var(--border-color);
       border-radius: var(--radius-sm);
-      padding: 12px;
-      margin-bottom: 8px;
+      padding: 14px;
+      margin-bottom: 10px;
       background: #fff;
     }
-    .order-header { display: flex; justify-content: space-between; font-weight: 700; font-size: 0.85rem; margin-bottom: 6px; }
-    .order-info { font-size: 0.78rem; color: var(--text-muted); line-height: 1.4; }
-    .order-badges { display: flex; gap: 4px; flex-wrap: wrap; margin: 6px 0; }
-    .badge { font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
+    .order-header { display: flex; justify-content: space-between; font-weight: 700; font-size: 1rem; margin-bottom: 8px; }
+    .order-info { font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; }
+    .order-badges { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
+    .badge { font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
     .badge-pending { background: #fef3c7; color: #92400e; }
     .badge-confirmed { background: #d1fae5; color: #065f46; }
     .badge-cancelled { background: #fee2e2; color: #991b1b; }
@@ -149,8 +149,8 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-top: 4px;
-      font-size: 0.75rem;
+      margin-top: 6px;
+      font-size: 0.85rem;
       color: #334155;
       flex-wrap: wrap;
     }
@@ -158,8 +158,8 @@
       background-color: var(--success);
       color: #ffffff;
       border: none;
-      padding: 3px 7px;
-      font-size: 0.72rem;
+      padding: 5px 9px;
+      font-size: 0.82rem;
       font-weight: 700;
       border-radius: var(--radius-sm);
       cursor: pointer;
@@ -184,17 +184,17 @@
     .modal-content {
       background: #fff;
       border-radius: var(--radius-md);
-      padding: 16px;
+      padding: 20px;
       max-width: 400px;
       width: 100%;
       max-height: 90vh;
       overflow-y: auto;
     }
-    .modal-content img { width: 100%; border-radius: var(--radius-sm); margin-top: 8px; }
+    .modal-content img { width: 100%; border-radius: var(--radius-sm); margin-top: 10px; }
 
-    .tab-bar { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 12px; }
-    .tab-item { flex: 1; text-align: center; padding: 8px; font-size: 0.8rem; font-weight: 600; cursor: pointer; color: var(--text-muted); }
-    .tab-item.active { color: var(--accent-gold); border-bottom: 2px solid var(--accent-gold); }
+    .tab-bar { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 14px; }
+    .tab-item { flex: 1; text-align: center; padding: 10px; font-size: 0.95rem; font-weight: 600; cursor: pointer; color: var(--text-muted); }
+    .tab-item.active { color: var(--accent-gold); border-bottom: 3px solid var(--accent-gold); }
 
     /* Estilo para la pantalla de inicio de sesión */
     #login-screen {
@@ -236,8 +236,8 @@
         <label>Contraseña</label>
         <input type="password" id="login-pass" class="form-control" autocomplete="current-password" required>
       </div>
-      <button type="submit" class="btn btn-primary" style="margin-top: 8px;">Ingresar</button>
-      <p id="login-error" style="color: var(--danger); font-size: 0.75rem; text-align: center; margin-top: 8px; display: none;">Usuario o contraseña incorrectos.</p>
+      <button type="submit" class="btn btn-primary" style="margin-top: 10px;">Ingresar</button>
+      <p id="login-error" style="color: var(--danger); font-size: 0.85rem; text-align: center; margin-top: 10px; display: none;">Usuario o contraseña incorrectos.</p>
     </form>
   </div>
 </div>
@@ -262,8 +262,8 @@
           
           <div class="toggle-container">
             <span class="toggle-label">Estado de Ventas de Tablas:</span>
-            <label style="display:flex; align-items:center; gap:6px; font-size:0.8rem; font-weight:700; cursor:pointer;">
-              <input type="checkbox" id="cfg-enabled" style="width:18px; height:18px; accent-color:var(--accent-gold);">
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.9rem; font-weight:700; cursor:pointer;">
+              <input type="checkbox" id="cfg-enabled" style="width:20px; height:20px; accent-color:var(--accent-gold);">
               <span id="cfg-enabled-text">Habilitadas</span>
             </label>
           </div>
@@ -292,7 +292,7 @@
               <input type="number" id="cfg-hasta" class="form-control" value="5000" min="1" required>
             </div>
           </div>
-          <button type="submit" id="btn-submit-config" class="btn btn-primary" style="margin-top: 8px;">Guardar Cambios y Generar Tablas</button>
+          <button type="submit" id="btn-submit-config" class="btn btn-primary" style="margin-top: 10px;">Guardar Cambios y Generar Tablas</button>
         </form>
       </div>
 
@@ -316,7 +316,7 @@
 
       <div class="card" style="border-color: #fca5a5; background: #fff5f5;">
         <div class="card-title" style="color: var(--danger);">Cierre de Evento</div>
-        <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:12px; line-height: 1.4;">
+        <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:12px; line-height: 1.5;">
           Borra absolutamente toda la información, tablas generadas y pedidos registrados para reiniciar el bingo.
         </p>
         <button class="btn btn-danger" id="btn-cerrar-bingo">Cerrar Bingo</button>
@@ -362,9 +362,6 @@
     collection, getDocs, onSnapshot, writeBatch  
   } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
-  // ==========================================
-  // CLAVES REALES DE FIREBASE INTACTAS
-  // ==========================================
   const firebaseConfig = {
     apiKey: "AIzaSyBRF5F14_x0UOl5P47VQ93O76u5xuxOa5w",
     authDomain: "la-terraza-1b2cd.firebaseapp.com",
@@ -381,7 +378,6 @@
   let allOrders = [];
   let allTables = [];
 
-  // Lógica de Autenticación con sugerencias del navegador (autocomplete habilitado)
   document.getElementById('form-login').addEventListener('submit', (e) => {
     e.preventDefault();
     const userVal = document.getElementById('login-user').value.trim();
@@ -577,7 +573,7 @@
     });
 
     if (filtered.length === 0) {
-      container.innerHTML = '<p style="font-size:0.8rem; color:var(--text-muted); text-align:center;">No se encontraron pedidos.</p>';
+      container.innerHTML = '<p style="font-size:0.9rem; color:var(--text-muted); text-align:center;">No se encontraron pedidos.</p>';
       return;
     }
 
@@ -660,9 +656,9 @@
           <div><b>Cliente:</b> ${clientName} (${o.telefono || ''})</div>
           <div><b>Dirección:</b> ${o.direccion || ''}</div>
           <div><b>Fecha/Hora:</b> ${o.fecha || ''}</div>
-          <div style="margin-top:6px;"><b>Asignaciones de Tablas (${tableList.length}):</b>${assignHtml}</div>
+          <div style="margin-top:8px;"><b>Asignaciones de Tablas (${tableList.length}):</b>${assignHtml}</div>
         </div>
-        <div style="margin-top:8px; display:flex; gap:6px;">
+        <div style="margin-top:10px; display:flex; gap:8px;">
           ${o.comprobante ? `<button class="btn btn-sm btn-dark btn-view-proof" data-order="${o.firestoreId}">Ver Comprobante</button>` : ''}
           <button class="btn btn-sm btn-success btn-confirm-order" data-order="${o.firestoreId}">Confirmar</button>
           <button class="btn btn-sm btn-danger btn-cancel-order" data-order="${o.firestoreId}">Cancelar</button>
@@ -752,7 +748,7 @@
     const body = document.getElementById('modal-proof-body');
     const clientName = typeof order.cliente === 'string' ? order.cliente : (order.cliente?.name || '');
     body.innerHTML = `
-      <p style="font-size:0.8rem; color:var(--text-muted);">Pedido #${order.id} - ${clientName}</p>
+      <p style="font-size:0.9rem; color:var(--text-muted);">Pedido #${order.id} - ${clientName}</p>
       <img src="${proofImg}" alt="Comprobante de Pago">
     `;
     document.getElementById('modal-proof').style.display = 'flex';
