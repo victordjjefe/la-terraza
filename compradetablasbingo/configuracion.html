@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LA TERRAZA BINGO - Panel Administrador</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-body: #f1f5f9;
+      --surface: #ffffff;
+      --primary: #0f172a;
+      --primary-accent: #1e293b;
+      --accent-gold: #d97706;
+      --accent-gold-hover: #b45309;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+    body { background-color: var(--bg-body); color: var(--text-main); display: flex; justify-content: center; min-height: 100vh; }
+    
+    .app-container {
+      width: 100%;
+      max-width: 480px;
+      background: var(--surface);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+    }
+
+    .header {
+      background: linear-gradient(135deg, var(--primary), var(--primary-accent));
+      color: #fff;
+      padding: 20px;
+      text-align: center;
+      border-bottom: 3px solid var(--accent-gold);
+    }
+    .header h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: 1px; color: var(--accent-gold); }
+    .header p { font-size: 0.8rem; color: #94a3b8; margin-top: 4px; }
+
+    .main-content { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 20px; }
+
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; }
+    .form-control {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .form-control:focus { border-color: var(--accent-gold); box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.15); }
+    .form-row { display: flex; gap: 8px; }
+    .form-row .form-group { flex: 1; }
+
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f8fafc;
+      padding: 10px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      margin-bottom: 12px;
+    }
+    .toggle-label { font-size: 0.8rem; font-weight: 700; color: var(--primary); }
+
+    .btn {
+      width: 100%;
+      padding: 10px 16px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.2s;
+    }
+    .btn-primary { background: var(--accent-gold); color: #fff; }
+    .btn-primary:hover { background: var(--accent-gold-hover); }
+    .btn-dark { background: var(--primary); color: #fff; }
+    .btn-sm { padding: 6px 10px; font-size: 0.75rem; width: auto; }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-danger { background: var(--danger); color: #fff; }
+
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .metric-card {
+      background: var(--bg-body);
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      border-left: 4px solid var(--border-color);
+    }
+    .metric-card.total { border-color: var(--primary); }
+    .metric-card.disp { border-color: var(--success); }
+    .metric-card.vend { border-color: var(--danger); }
+    .metric-val { font-size: 1.2rem; font-weight: 700; }
+    .metric-lbl { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
+
+    .search-box { margin-bottom: 12px; }
+    .order-item {
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      margin-bottom: 8px;
+      background: #fff;
+    }
+    .order-header { display: flex; justify-content: space-between; font-weight: 700; font-size: 0.85rem; margin-bottom: 6px; }
+    .order-info { font-size: 0.78rem; color: var(--text-muted); line-height: 1.4; }
+    .order-badges { display: flex; gap: 4px; flex-wrap: wrap; margin: 6px 0; }
+    .badge { font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
+    .badge-pending { background: #fef3c7; color: #92400e; }
+    .badge-confirmed { background: #d1fae5; color: #065f46; }
+    .badge-cancelled { background: #fee2e2; color: #991b1b; }
+
+    .assignment-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+      font-size: 0.75rem;
+      color: #334155;
+      flex-wrap: wrap;
+    }
+    .table-check-btn {
+      background-color: var(--success);
+      color: #ffffff;
+      border: none;
+      padding: 3px 7px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background-color 0.2s, opacity 0.2s;
+    }
+    .table-check-btn.processed {
+      background-color: var(--danger);
+      cursor: not-allowed;
+      opacity: 0.8;
+    }
+
+    .modal {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 100;
+    }
+    .modal-content {
+      background: #fff;
+      border-radius: var(--radius-md);
+      padding: 16px;
+      max-width: 400px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-content img { width: 100%; border-radius: var(--radius-sm); margin-top: 8px; }
+
+    .tab-bar { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 12px; }
+    .tab-item { flex: 1; text-align: center; padding: 8px; font-size: 0.8rem; font-weight: 600; cursor: pointer; color: var(--text-muted); }
+    .tab-item.active { color: var(--accent-gold); border-bottom: 2px solid var(--accent-gold); }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+  <header class="header">
+    <h1>LA TERRAZA BINGO</h1>
+    <p>Panel de Control Administrador</p>
+  </header>
+
+  <main class="main-content">
+    <div class="tab-bar">
+      <div class="tab-item active" onclick="switchTab('config')">Configuración</div>
+      <div class="tab-item" onclick="switchTab('pedidos')">Pedidos</div>
+    </div>
+
+    <!-- SECCIÓN CONFIGURACIÓN -->
+    <div id="tab-config">
+      <div class="card" style="margin-bottom: 16px;">
+        <div class="card-title">Ajustes del Evento</div>
+        <form id="form-config">
+          
+          <div class="toggle-container">
+            <span class="toggle-label">Estado de Ventas de Tablas:</span>
+            <label style="display:flex; align-items:center; gap:6px; font-size:0.8rem; font-weight:700; cursor:pointer;">
+              <input type="checkbox" id="cfg-enabled" onchange="updateEnabledLabel()" style="width:18px; height:18px; accent-color:var(--accent-gold);">
+              <span id="cfg-enabled-text">Habilitadas</span>
+            </label>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Fecha del Bingo</label>
+              <input type="date" id="cfg-fecha" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label>Hora</label>
+              <input type="time" id="cfg-hora" class="form-control" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Valor por Tabla ($)</label>
+            <input type="number" id="cfg-valor" class="form-control" placeholder="10000" min="0" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Rango Desde</label>
+              <input type="number" id="cfg-desde" class="form-control" placeholder="1" min="1" required>
+            </div>
+            <div class="form-group">
+              <label>Rango Hasta</label>
+              <input type="number" id="cfg-hasta" class="form-control" placeholder="100" min="1" required>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary" style="margin-top: 8px;">Guardar Cambios y Generar Tablas</button>
+        </form>
+      </div>
+
+      <div class="card" style="margin-bottom: 16px;">
+        <div class="card-title">Métricas de Tablas</div>
+        <div class="metrics-grid">
+          <div class="metric-card total">
+            <div class="metric-val" id="m-total">0</div>
+            <div class="metric-lbl">Total Tablas</div>
+          </div>
+          <div class="metric-card disp">
+            <div class="metric-val" id="m-disp">0</div>
+            <div class="metric-lbl">Disponibles</div>
+          </div>
+          <div class="metric-card vend">
+            <div class="metric-val" id="m-vend">0</div>
+            <div class="metric-lbl">Vendidas</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="border-color: #fca5a5; background: #fff5f5;">
+        <div class="card-title" style="color: var(--danger);">Cierre de Evento</div>
+        <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:12px; line-height: 1.4;">
+          Borra absolutamente toda la información, tablas generadas y pedidos registrados para reiniciar el bingo.
+        </p>
+        <button class="btn btn-danger" onclick="cerrarBingo()">Cerrar Bingo</button>
+      </div>
+    </div>
+
+    <!-- SECCIÓN PEDIDOS -->
+    <div id="tab-pedidos" style="display: none;">
+      <div class="card">
+        <div class="card-title">Gestión de Pedidos</div>
+        <div class="search-box">
+          <input type="text" id="search-input" class="form-control" placeholder="Buscar por pedido, nombre o whatsapp..." onkeyup="filterOrders()">
+        </div>
+        <div class="form-group">
+          <select id="filter-status" class="form-control" onchange="filterOrders()">
+            <option value="TODOS">Todos los estados</option>
+            <option value="Pendiente pago">Pendiente pago</option>
+            <option value="Pago confirmado">Pago confirmado</option>
+            <option value="Cancelado">Cancelado</option>
+          </select>
+        </div>
+        <div id="orders-list"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- MODAL COMPROBANTE -->
+<div id="modal-proof" class="modal">
+  <div class="modal-content">
+    <div class="card-title">
+      Comprobante de Pago
+      <button class="btn btn-sm btn-dark" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modal-proof-body"></div>
+  </div>
+</div>
+
+<script>
+  const DB = {
+    getConfig: () => JSON.parse(localStorage.getItem('ltb_config')) || null,
+    setConfig: (data) => localStorage.setItem('ltb_config', JSON.stringify(data)),
+    getTables: () => JSON.parse(localStorage.getItem('ltb_tables')) || [],
+    setTables: (data) => localStorage.setItem('ltb_tables', JSON.stringify(data)),
+    getOrders: () => JSON.parse(localStorage.getItem('ltb_orders')) || [],
+    setOrders: (data) => localStorage.setItem('ltb_orders', JSON.stringify(data)),
+    clearAll: () => {
+      localStorage.removeItem('ltb_config');
+      localStorage.removeItem('ltb_tables');
+      localStorage.removeItem('ltb_orders');
+    }
+  };
+
+  function updateEnabledLabel() {
+    const isChecked = document.getElementById('cfg-enabled').checked;
+    document.getElementById('cfg-enabled-text').textContent = isChecked ? 'Habilitadas' : 'Deshabilitadas';
+  }
+
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-config').style.display = 'none';
+    document.getElementById('tab-pedidos').style.display = 'none';
+    
+    if (tab === 'config') {
+      document.querySelectorAll('.tab-item')[0].classList.add('active');
+      document.getElementById('tab-config').style.display = 'block';
+    } else {
+      document.querySelectorAll('.tab-item')[1].classList.add('active');
+      document.getElementById('tab-pedidos').style.display = 'block';
+      renderOrders();
+    }
+  }
+
+  document.getElementById('form-config').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const enabled = document.getElementById('cfg-enabled').checked;
+    const fecha = document.getElementById('cfg-fecha').value;
+    const hora = document.getElementById('cfg-hora').value;
+    const valor = parseFloat(document.getElementById('cfg-valor').value);
+    const desde = parseInt(document.getElementById('cfg-desde').value);
+    const hasta = parseInt(document.getElementById('cfg-hasta').value);
+
+    if (desde >= hasta) {
+      alert('El rango "Hasta" debe ser mayor que "Desde".');
+      return;
+    }
+
+    const config = { enabled, fecha, hora, valor, desde, hasta };
+    DB.setConfig(config);
+
+    let currentTables = DB.getTables();
+    let newTables = [];
+
+    for (let i = desde; i <= hasta; i++) {
+      const code = 'T' + String(i).padStart(3, '0');
+      const existing = currentTables.find(t => t.code === code);
+      if (existing) {
+        newTables.push(existing);
+      } else {
+        newTables.push({ code, status: 'DISPONIBLE' });
+      }
+    }
+
+    DB.setTables(newTables);
+    alert('Configuración y tablas actualizadas correctamente.');
+    loadMetrics();
+  });
+
+  function loadInitialConfig() {
+    const cfg = DB.getConfig();
+    if (cfg) {
+      document.getElementById('cfg-enabled').checked = cfg.enabled !== undefined ? cfg.enabled : true;
+      document.getElementById('cfg-fecha').value = cfg.fecha || '';
+      document.getElementById('cfg-hora').value = cfg.hora || '';
+      document.getElementById('cfg-valor').value = cfg.valor || '';
+      document.getElementById('cfg-desde').value = cfg.desde || 1;
+      document.getElementById('cfg-hasta').value = cfg.hasta || 100;
+    } else {
+      document.getElementById('cfg-enabled').checked = true;
+    }
+    updateEnabledLabel();
+    loadMetrics();
+  }
+
+  function loadMetrics() {
+    const tables = DB.getTables();
+
+    const total = tables.length;
+    const disp = tables.filter(t => t.status === 'DISPONIBLE').length;
+    const vend = tables.filter(t => t.status === 'VENDIDA').length;
+
+    document.getElementById('m-total').textContent = total;
+    document.getElementById('m-disp').textContent = disp;
+    document.getElementById('m-vend').textContent = vend;
+  }
+
+  function renderOrders() {
+    filterOrders();
+  }
+
+  function filterOrders() {
+    const query = document.getElementById('search-input').value.toLowerCase();
+    const statusFilter = document.getElementById('filter-status').value;
+    const orders = DB.getOrders();
+    const container = document.getElementById('orders-list');
+    container.innerHTML = '';
+
+    const filtered = orders.filter(o => {
+      const matchQuery = o.id.toLowerCase().includes(query) || 
+                         o.client.name.toLowerCase().includes(query) || 
+                         o.client.whatsapp.includes(query);
+      const matchStatus = statusFilter === 'TODOS' || o.status === statusFilter;
+      return matchQuery && matchStatus;
+    });
+
+    if (filtered.length === 0) {
+      container.innerHTML = '<p style="font-size:0.8rem; color:var(--text-muted); text-align:center;">No se encontraron pedidos.</p>';
+      return;
+    }
+
+    filtered.reverse().forEach(o => {
+      let badgeClass = 'badge-pending';
+      if (o.status === 'Pago confirmado') badgeClass = 'badge-confirmed';
+      if (o.status === 'Cancelado') badgeClass = 'badge-cancelled';
+
+      const el = document.createElement('div');
+      el.className = 'order-item';
+      
+      const processedList = o.processedTables || [];
+      const assignedTableCodes = new Set();
+      let assignHtml = '';
+
+      if (o.assignments && o.assignments.length > 0) {
+        o.assignments.forEach(a => {
+          let buttonsForPerson = '';
+          a.tables.forEach(tableCode => {
+            assignedTableCodes.add(tableCode);
+            const isProcessed = processedList.includes(tableCode);
+            const processedClass = isProcessed ? 'processed' : '';
+            const disabledAttr = isProcessed ? 'disabled' : '';
+
+            buttonsForPerson += `
+              <button class="table-check-btn ${processedClass}" ${disabledAttr} onclick="markTableAsProcessed('${o.id}', '${tableCode}')">
+                ${tableCode}
+              </button>
+            `;
+          });
+
+          assignHtml += `
+            <div class="assignment-row">
+              <span>• <b>${a.name}</b> (${a.whatsapp}):</span>
+              ${buttonsForPerson}
+            </div>
+          `;
+        });
+      }
+
+      const unassignedTables = o.tables.filter(tCode => !assignedTableCodes.has(tCode));
+      if (unassignedTables.length > 0) {
+        let unassignedButtons = '';
+        unassignedTables.forEach(tableCode => {
+          const isProcessed = processedList.includes(tableCode);
+          const processedClass = isProcessed ? 'processed' : '';
+          const disabledAttr = isProcessed ? 'disabled' : '';
+
+          unassignedButtons += `
+            <button class="table-check-btn ${processedClass}" ${disabledAttr} onclick="markTableAsProcessed('${o.id}', '${tableCode}')">
+              ${tableCode}
+            </button>
+          `;
+        });
+
+        assignHtml += `
+          <div class="assignment-row" style="margin-top: 6px;">
+            <span>• <b>Sin asignación individual:</b></span>
+            ${unassignedButtons}
+          </div>
+        `;
+      }
+
+      el.innerHTML = `
+        <div class="order-header">
+          <span>Pedido #${o.id}</span>
+          <span>$${o.total.toLocaleString()}</span>
+        </div>
+        <div class="order-badges">
+          <span class="badge ${badgeClass}">${o.status}</span>
+        </div>
+        <div class="order-info">
+          <div><b>Cliente:</b> ${o.client.name} (${o.client.whatsapp})</div>
+          <div><b>Fecha/Hora:</b> ${o.createdAt}</div>
+          <div style="margin-top:6px;"><b>Asignaciones de Tablas (${o.tables.length}):</b>${assignHtml}</div>
+        </div>
+        <div style="margin-top:8px; display:flex; gap:6px;">
+          ${o.proof ? `<button class="btn btn-sm btn-dark" onclick="viewProof('${o.id}')">Ver Comprobante</button>` : ''}
+          <button class="btn btn-sm btn-success" onclick="updateOrderStatus('${o.id}', 'Pago confirmado')">Confirmar</button>
+          <button class="btn btn-sm btn-danger" onclick="updateOrderStatus('${o.id}', 'Cancelado')">Cancelar</button>
+        </div>
+      `;
+      container.appendChild(el);
+    });
+  }
+
+  function markTableAsProcessed(orderId, tableCode) {
+    let orders = DB.getOrders();
+    let order = orders.find(o => o.id === orderId);
+
+    if (!order) return;
+
+    if (!order.processedTables) {
+      order.processedTables = [];
+    }
+
+    if (!order.processedTables.includes(tableCode)) {
+      order.processedTables.push(tableCode);
+      DB.setOrders(orders);
+      filterOrders();
+    }
+  }
+
+  function updateOrderStatus(orderId, newStatus) {
+    let orders = DB.getOrders();
+    let tables = DB.getTables();
+    const order = orders.find(o => o.id === orderId);
+
+    if (!order) return;
+    order.status = newStatus;
+
+    order.tables.forEach(code => {
+      const t = tables.find(x => x.code === code);
+      if (t) {
+        if (newStatus === 'Pago confirmado') t.status = 'VENDIDA';
+        if (newStatus === 'Cancelado') t.status = 'DISPONIBLE';
+      }
+    });
+
+    DB.setOrders(orders);
+    DB.setTables(tables);
+    filterOrders();
+    loadMetrics();
+  }
+
+  function viewProof(orderId) {
+    const order = DB.getOrders().find(o => o.id === orderId);
+    if (!order || !order.proof) return;
+
+    const body = document.getElementById('modal-proof-body');
+    body.innerHTML = `
+      <p style="font-size:0.8rem; color:var(--text-muted);">Pedido #${order.id} - ${order.client.name}</p>
+      <img src="${order.proof}" alt="Comprobante de Pago">
+    `;
+    document.getElementById('modal-proof').style.display = 'flex';
+  }
+
+  function closeModal() {
+    document.getElementById('modal-proof').style.display = 'none';
+  }
+
+  function cerrarBingo() {
+    const confirmacion = confirm("¿Desea borrar todos los datos?");
+    if (confirmacion) {
+      DB.clearAll();
+      document.getElementById('form-config').reset();
+      document.getElementById('cfg-enabled').checked = true;
+      updateEnabledLabel();
+      loadMetrics();
+      if (document.getElementById('orders-list')) {
+        document.getElementById('orders-list').innerHTML = '';
+      }
+      alert("Todos los datos del bingo se han borrado correctamente.");
+    }
+  }
+
+  window.onload = () => {
+    loadInitialConfig();
+  };
+</script>
+</body>
+</html>
