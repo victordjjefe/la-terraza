@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LA TERRAZA BINGO - Compra de Tablas</title>
+  
+  <!-- Etiquetas para Miniatura al Compartir Enlace -->
+  <meta property="og:title" content="LA TERRAZA BINGO - Compra de Tablas Digitales">
+  <meta property="og:description" content="¡Compra tus tablas de manera fácil y segura para nuestro gran bingo! Participa y gana.">
+  <meta property="og:image" content="https://raw.githubusercontent.com/victordjjefe/la-terraza/refs/heads/main/compradetablasbingo/pagos.png">
+  <meta property="og:type" content="website">
+
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -96,7 +103,7 @@
       color: var(--text-main);
       cursor: pointer;
       text-align: center;
-      transition: background 0.1s, border-color 0.1s; /* Más rápido */
+      transition: background 0.1s, border-color 0.1s;
     }
     .btn-table.selected { background: var(--accent-gold); color: #fff; border-color: var(--accent-gold); }
 
@@ -451,7 +458,6 @@
   async function toggleTableSelection(code) {
     const index = selectedTables.indexOf(code);
 
-    // RESPUESTA INSTANTÁNEA (Actualización optimista en pantalla)
     if (index > -1) {
       selectedTables.splice(index, 1);
     } else {
@@ -465,7 +471,6 @@
       }
     }
 
-    // Actualizamos interfaz de inmediato sin esperar red
     if (selectedTables.length > 0) {
       startReservationTimer();
       document.getElementById('reservation-timer-box').classList.remove('hidden');
@@ -477,10 +482,8 @@
     updateSummary();
     renderTables();
 
-    // Sincronización en segundo plano con Firebase
     try {
       if (index > -1) {
-        // Fue deseleccionada
         await updateDoc(doc(db, 'tablas', code), {
           status: 'DISPONIBLE',
           reservedUntil: null,
@@ -488,7 +491,6 @@
           pedido: null
         });
       } else {
-        // Fue seleccionada
         const success = await runTransaction(db, async (transaction) => {
           const tRef = doc(db, 'tablas', code);
           const tDoc = await transaction.get(tRef);
@@ -511,7 +513,6 @@
         });
 
         if (!success) {
-          // Si falló en la base de datos porque otro la cogió, la quitamos localmente
           selectedTables = selectedTables.filter(c => c !== code);
           alert(`La tabla ${code} ya ha sido reservada o comprada por otra persona.`);
           updateSummary();
