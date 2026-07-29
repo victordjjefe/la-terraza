@@ -130,6 +130,8 @@
     .btn-primary { background: var(--accent-gold); color: #fff; }
     .btn-primary:hover { background: var(--accent-gold-hover); }
     .btn-dark { background: var(--primary); color: #fff; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover { background: #dc2626; }
 
     .radio-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
     .radio-option {
@@ -280,7 +282,10 @@
           <div id="assignment-status" style="font-size:0.8rem; font-weight:700; color:var(--accent-gold); margin-top: 6px;"></div>
         </div>
 
-        <button class="btn btn-primary" id="btn-to-step-3" style="margin-top: 12px;">Siguiente</button>
+        <div style="display: flex; gap: 8px; margin-top: 12px;">
+          <button class="btn btn-danger" id="btn-cancel-purchase-step2" style="flex: 1;">Cancelar Compra</button>
+          <button class="btn btn-primary" id="btn-to-step-3" style="flex: 2;">Siguiente</button>
+        </div>
       </div>
 
       <!-- PASO 3: INSTRUCCIONES DE PAGO Y COMPROBANTE -->
@@ -307,7 +312,11 @@
         <div class="form-group">
           <input type="file" id="proof-file" accept="image/*" class="form-control">
         </div>
-        <button class="btn btn-primary" id="btn-finish-order">FINALIZAR COMPRA</button>
+        
+        <div style="display: flex; gap: 8px; margin-top: 12px;">
+          <button class="btn btn-danger" id="btn-cancel-purchase-step3" style="flex: 1;">Cancelar Compra</button>
+          <button class="btn btn-primary" id="btn-finish-order" style="flex: 2;">FINALIZAR COMPRA</button>
+        </div>
       </div>
 
       <!-- PASO 4: CONFIRMACIÓN -->
@@ -337,17 +346,17 @@
   } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
   // ==========================================
-  // PEGA AQUÍ TUS CLAVES REALES DE FIREBASE
+  // TUS CLAVES REALES DE FIREBASE
   // ==========================================
-const firebaseConfig = {
-  apiKey: "AIzaSyBRF5F14_x0UOl5P47VQ93O76u5xuxOa5w",
-  authDomain: "la-terraza-1b2cd.firebaseapp.com",
-  databaseURL: "https://la-terraza-1b2cd-default-rtdb.firebaseio.com",
-  projectId: "la-terraza-1b2cd",
-  storageBucket: "la-terraza-1b2cd.firebasestorage.app",
-  messagingSenderId: "782430879234",
-  appId: "1:782430879234:web:bc67c04057647b99b3b11b"
-};
+  const firebaseConfig = {
+    apiKey: "AIzaSyBRF5F14_x0UOl5P47VQ93O76u5xuxOa5w",
+    authDomain: "la-terraza-1b2cd.firebaseapp.com",
+    databaseURL: "https://la-terraza-1b2cd-default-rtdb.firebaseio.com",
+    projectId: "la-terraza-1b2cd",
+    storageBucket: "la-terraza-1b2cd.firebasestorage.app",
+    messagingSenderId: "782430879234",
+    appId: "1:782430879234:web:bc67c04057647b99b3b11b"
+  };
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
@@ -368,6 +377,7 @@ const firebaseConfig = {
   const HOLD_TIME_MINUTES = 5;
   let timerInterval = null;
   let reservationEndTime = null;
+  let orderCompleted = false;
 
   function listenConfig() {
     onSnapshot(doc(db, 'configuracion', 'evento'), (docSnap) => {
@@ -425,7 +435,6 @@ const firebaseConfig = {
       const isReservedByMe = selectedTables.includes(t.code);
       const isExpired = t.reservedUntil && t.reservedUntil <= now;
 
-      // Ocultar si ya está VENDIDA o comprada/apartada por otra persona
       if (t.status === 'VENDIDA') return;
       if (t.status === 'RESERVADA' && t.reservedBy !== myClientId && !isExpired) return;
 
@@ -577,6 +586,37 @@ const firebaseConfig = {
     }
   }
 
+  async function cancelarCompraCompleta() {
+    if (selectedTables.length > 0) {
+      const confirmar = confirm("¿Estás seguro de cancelar la compra? Tus tablas seleccionadas se liberarán de inmediato.");
+      if (!confirmar) return;
+      await releaseCurrentReservations();
+    }
+    resetToStep1();
+  }
+
+  document.getElementById('btn-cancel-purchase-step2').addEventListener('click', cancelarCompraCompleta);
+  document.getElementById('btn-cancel-purchase-step3').addEventListener('click', cancelarCompraCompleta);
+
+  // Liberar automáticamente si el usuario cierra o recarga la pestaña antes de finalizar
+  window.addEventListener('beforeunload', () => {
+    if (!orderCompleted && selectedTables.length > 0) {
+      // Uso sincrónico / beacon o llamada rápida si el navegador lo permite, 
+      // pero para Firestore web SDK en beforeunload se maneja de forma optimizada:
+      selectedTables.forEach(code => {
+        try {
+          const tRef = doc(db, 'tablas', code);
+          updateDoc(tRef, {
+            status: 'DISPONIBLE',
+            reservedUntil: null,
+            reservedBy: null,
+            pedido: null
+          });
+        } catch (e) {}
+      });
+    }
+  });
+
   function resetToStep1() {
     clearInterval(timerInterval);
     reservationEndTime = null;
@@ -584,6 +624,7 @@ const firebaseConfig = {
     assignments = [];
     pendingTablesToAssign = [];
     proofBase64 = null;
+    orderCompleted = false;
 
     document.getElementById('reservation-timer-box').classList.add('hidden');
     document.getElementById('step-2').classList.add('hidden');
@@ -744,6 +785,7 @@ const firebaseConfig = {
 
     try {
       clearInterval(timerInterval);
+      orderCompleted = true;
 
       const pedidosSnap = await getDocs(collection(db, 'pedidos'));
       const orderCount = pedidosSnap.size + 1;
@@ -768,8 +810,6 @@ const firebaseConfig = {
 
       await setDoc(doc(db, 'pedidos', orderId), newOrder);
 
-      // CAMBIO CLAVE: Al finalizar la compra, las tablas pasan automáticamente a 'VENDIDA'
-      // para que desaparezcan de la lista de clientes inmediatamente sin esperar confirmación.
       for (const code of selectedTables) {
         await updateDoc(doc(db, 'tablas', code), {
           status: 'VENDIDA',
@@ -788,6 +828,7 @@ const firebaseConfig = {
     } catch (err) {
       console.error("Error al finalizar pedido:", err);
       alert("Error al guardar el pedido en Firestore: " + err.message);
+      orderCompleted = false;
     } finally {
       btn.disabled = false;
       btn.textContent = "FINALIZAR COMPRA";
