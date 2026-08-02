@@ -593,19 +593,16 @@
     });
   }
 
-  // Función robusta para extraer los datos de quien compró o se le asignó la tabla
+  // Extrae de inmediato los datos del dueño específico de la tabla (usando asignación individual o datos de compra del pedido en tiempo real)
   function getTableOwnerDetails(tableCode) {
     for (let order of allOrders) {
-      // Revisa pedidos confirmados o que tengan tablas ligadas
-      if (order.estado !== 'CONFIRMADO') continue;
-
-      // 1. Revisar sub-asignaciones por nombre de tabla individual
+      // 1. Revisar si hay asignaciones específicas por tabla en este pedido
       if (order.asignaciones && Array.isArray(order.asignaciones)) {
         for (let asig of order.asignaciones) {
           const aTables = asig.tablas || [];
           if (aTables.includes(tableCode)) {
             return {
-              nombre: asig.nombre || asig.name || order.cliente?.name || (typeof order.cliente === 'string' ? order.cliente : 'Sin nombre'),
+              nombre: asig.nombre || asig.name || (typeof order.cliente === 'string' ? order.cliente : (order.cliente?.name || 'Sin nombre')),
               ciudad: order.ciudad || order.cliente?.ciudad || 'N/A',
               barrio: order.barrio || order.cliente?.barrio || 'N/A',
               referencia: order.direccion || order.referencia || order.cliente?.direccion || 'Sin referencia',
@@ -615,10 +612,10 @@
         }
       }
 
-      // 2. Revisar tablas del pedido general
+      // 2. Si no hay asignación separada, se asume que el comprador es el dueño de la tabla
       const generalTables = order.tablas || [];
       if (generalTables.includes(tableCode)) {
-        const clientName = typeof order.cliente === 'string' ? order.cliente : (order.cliente?.name || order.nombre || 'Cliente general');
+        const clientName = typeof order.cliente === 'string' ? order.cliente : (order.cliente?.name || order.nombre || 'Cliente');
         const clientPhone = order.telefono || order.whatsapp || order.cliente?.whatsapp || 'Sin whatsapp';
         const clientCity = order.ciudad || order.cliente?.ciudad || 'N/A';
         const clientNeighborhood = order.barrio || order.cliente?.barrio || 'N/A';
@@ -633,7 +630,7 @@
         };
       }
     }
-    return { nombre: 'Sin asignar (Confirme el pedido)', ciudad: 'N/A', barrio: 'N/A', referencia: 'Sin referencia', whatsapp: '-' };
+    return { nombre: 'Sin dueño asignado', ciudad: 'N/A', barrio: 'N/A', referencia: 'Sin referencia', whatsapp: '-' };
   }
 
   function renderTablesList() {
@@ -662,7 +659,7 @@
     });
 
     if (filtered.length === 0) {
-      container.innerHTML = '<p style="font-size:0.9rem; color:vartext-muted; text-align:center; padding: 10px;">No hay tablas vendidas confirmadas.</p>';
+      container.innerHTML = '<p style="font-size:0.9rem; color:var(--text-muted); text-align:center; padding: 10px;">No hay tablas vendidas registradas.</p>';
       return;
     }
 
@@ -677,7 +674,7 @@
       item.innerHTML = `
         <div class="table-info-details">
           <span><b>Tabla:</b> ${t.code}</span>
-          <span><b>Comprador:</b> ${owner.nombre}</span>
+          <span><b>Dueño:</b> ${owner.nombre}</span>
           <span><b>Ciudad:</b> ${owner.ciudad}</span>
           <span><b>Barrio:</b> ${owner.barrio}</span>
           <span><b>Referencia/Dirección:</b> ${owner.referencia}</span>
