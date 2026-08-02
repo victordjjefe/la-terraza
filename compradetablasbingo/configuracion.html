@@ -172,7 +172,7 @@
       flex: 1;
     }
     .table-status-btn {
-      background-color: var(--danger); /* Por defecto en rojo */
+      background-color: var(--danger);
       color: #ffffff;
       border: none;
       padding: 8px 12px;
@@ -184,7 +184,7 @@
       white-space: nowrap;
     }
     .table-status-btn.passed {
-      background-color: var(--success); /* Cambia a verde al presionarlo */
+      background-color: var(--success);
     }
 
     .modal {
@@ -212,7 +212,6 @@
     .tab-item { flex: 1; text-align: center; padding: 10px; font-size: 0.9rem; font-weight: 600; cursor: pointer; color: var(--text-muted); }
     .tab-item.active { color: var(--accent-gold); border-bottom: 3px solid var(--accent-gold); }
 
-    /* Estilo para la pantalla de inicio de sesión */
     #login-screen {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -345,7 +344,7 @@
       <div class="card">
         <div class="card-title">Tablas Vendidas (Orden Ascendente)</div>
         <div class="search-box">
-          <input type="text" id="search-tables-input" class="form-control" placeholder="Buscar por tabla, nombre o whatsapp...">
+          <input type="text" id="search-tables-input" class="form-control" placeholder="Buscar por tabla, nombre, ciudad, barrio o whatsapp...">
         </div>
         <div class="tables-list-container" id="tables-list-container">
           <!-- Se llenará dinámicamente -->
@@ -522,7 +521,7 @@
       const hasta = parseInt(document.getElementById('cfg-hasta').value);
 
       if (desde >= hasta) {
-        alert('El rango "Hasta" debe ser mayor que "Desde".');
+        alert('El rango "Hasta" debe ser mayor que "Despues".');
         btn.disabled = false;
         btn.textContent = "Guardar Cambios y Generar Tablas";
         return;
@@ -595,41 +594,49 @@
     });
   }
 
-  // Función para extraer con precisión los datos reales de la persona asignada (sea asignación propia o individual)
+  // Copia exacta de los datos que se guardan en el formulario de compra del cliente (Nombre, Ciudad, Barrio, Referencia/Dirección y Whatsapp)
   function getTableOwnerDetails(tableCode) {
     for (let order of allOrders) {
       if (order.estado !== 'CONFIRMADO') continue;
 
-      // 1. Revisar si la tabla está dentro de una asignación específica a otra persona
+      // 1. Revisar si la tabla pertenece a una sub-asignación individual
       if (order.asignaciones && order.asignaciones.length > 0) {
         for (let asig of order.asignaciones) {
           const aTables = asig.tablas || [];
           if (aTables.includes(tableCode)) {
             return {
               nombre: asig.nombre || asig.name || 'Sin nombre',
-              whatsapp: asig.whatsapp || 'Sin whatsapp',
-              referencia: order.id
+              ciudad: order.ciudad || order.cliente?.ciudad || 'N/A',
+              barrio: order.barrio || order.cliente?.barrio || 'N/A',
+              referencia: order.direccion || order.referencia || order.cliente?.direccion || 'Sin referencia',
+              whatsapp: asig.whatsapp || order.telefono || 'Sin whatsapp'
             };
           }
         }
       }
 
-      // 2. Si no tiene sub-asignación, pertenece directamente al cliente comprador del pedido
+      // 2. Si pertenece de forma general al pedido del cliente principal
       const generalTables = order.tablas || [];
       if (generalTables.includes(tableCode)) {
         const clientName = typeof order.cliente === 'string' ? order.cliente : (order.cliente?.name || 'Cliente general');
         const clientPhone = order.telefono || order.cliente?.whatsapp || 'Sin whatsapp';
+        const clientCity = order.ciudad || order.cliente?.ciudad || 'N/A';
+        const clientNeighborhood = order.barrio || order.cliente?.barrio || 'N/A';
+        const clientRef = order.direccion || order.referencia || order.cliente?.direccion || 'Sin referencia';
+
         return {
           nombre: clientName,
-          whatsapp: clientPhone,
-          referencia: order.id
+          ciudad: clientCity,
+          barrio: clientNeighborhood,
+          referencia: clientRef,
+          whatsapp: clientPhone
         };
       }
     }
-    return { nombre: 'Sin asignar', whatsapp: '-', reference: '-' };
+    return { nombre: 'Sin asignar', ciudad: 'N/A', barrio: 'N/A', referencia: 'Sin referencia', whatsapp: '-' };
   }
 
-  // Renderizar únicamente las tablas VENDIDAS ordenadas de forma ascendente con datos reales
+  // Renderizar únicamente las tablas VENDIDAS ordenadas de forma ascendente con datos reales completos (Ciudad, Barrio, Referencia y Whatsapp)
   function renderTablesList() {
     const container = document.getElementById('tables-list-container');
     const queryStr = document.getElementById('search-tables-input').value.toLowerCase();
@@ -648,8 +655,10 @@
       const owner = getTableOwnerDetails(t.code);
       const matchText = t.code.toLowerCase().includes(queryStr) || 
                         owner.nombre.toLowerCase().includes(queryStr) || 
-                        owner.whatsapp.toLowerCase().includes(queryStr) ||
-                        String(owner.referencia).toLowerCase().includes(queryStr);
+                        owner.ciudad.toLowerCase().includes(queryStr) || 
+                        owner.barrio.toLowerCase().includes(queryStr) || 
+                        owner.referencia.toLowerCase().includes(queryStr) || 
+                        owner.whatsapp.toLowerCase().includes(queryStr);
       return matchText;
     });
 
@@ -670,7 +679,9 @@
         <div class="table-info-details">
           <span><b>Tabla:</b> ${t.code}</span>
           <span><b>Asignado a:</b> ${owner.nombre}</span>
-          <span><b>Referencia (Pedido):</b> #${owner.referencia}</span>
+          <span><b>Ciudad:</b> ${owner.ciudad}</span>
+          <span><b>Barrio:</b> ${owner.barrio}</span>
+          <span><b>Referencia/Dirección:</b> ${owner.referencia}</span>
           <span><b>WhatsApp:</b> ${owner.whatsapp}</span>
         </div>
         <button class="${btnClass}" data-code="${t.code}" data-passed="${isPassed}">${btnText}</button>
@@ -746,7 +757,8 @@
         </div>
         <div class="order-info">
           <div><b>Cliente:</b> ${clientName} (${o.telefono || ''})</div>
-          <div><b>Dirección:</b> ${o.direccion || ''}</div>
+          <div><b>Ciudad/Barrio:</b> ${o.ciudad || 'N/A'} / ${o.barrio || 'N/A'}</div>
+          <div><b>Referencia:</b> ${o.direccion || o.referencia || 'N/A'}</div>
           <div><b>Fecha/Hora:</b> ${o.fecha || ''}</div>
           <div><b>Tablas solicitadas:</b> ${tableList.join(', ')}</div>
         </div>
