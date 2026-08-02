@@ -168,10 +168,9 @@
       color: var(--text-main);
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 3px;
       flex: 1;
     }
-    .table-info-details span b { color: var(--primary); }
     .table-status-btn {
       background-color: var(--danger); /* Por defecto en rojo */
       color: #ffffff;
@@ -341,12 +340,12 @@
       </div>
     </div>
 
-    <!-- SECCIÓN LISTADO VENDIDAS (NUEVA) -->
+    <!-- SECCIÓN LISTADO VENDIDAS -->
     <div id="tab-listado" style="display: none;">
       <div class="card">
         <div class="card-title">Tablas Vendidas (Orden Ascendente)</div>
         <div class="search-box">
-          <input type="text" id="search-tables-input" class="form-control" placeholder="Buscar por tabla o nombre de comprador...">
+          <input type="text" id="search-tables-input" class="form-control" placeholder="Buscar por tabla, nombre o whatsapp...">
         </div>
         <div class="tables-list-container" id="tables-list-container">
           <!-- Se llenará dinámicamente -->
@@ -596,49 +595,49 @@
     });
   }
 
-  // Función para obtener los datos de la persona a la que se le asignó una tabla específica
+  // Función para extraer con precisión los datos reales de la persona asignada (sea asignación propia o individual)
   function getTableOwnerDetails(tableCode) {
     for (let order of allOrders) {
       if (order.estado !== 'CONFIRMADO') continue;
 
-      // Buscar en asignaciones individuales si existen
+      // 1. Revisar si la tabla está dentro de una asignación específica a otra persona
       if (order.asignaciones && order.asignaciones.length > 0) {
         for (let asig of order.asignaciones) {
           const aTables = asig.tablas || [];
           if (aTables.includes(tableCode)) {
             return {
               nombre: asig.nombre || asig.name || 'Sin nombre',
-              telefono: asig.whatsapp || order.telefono || 'Sin teléfono',
-              pedidoId: order.id
+              whatsapp: asig.whatsapp || 'Sin whatsapp',
+              referencia: order.id
             };
           }
         }
       }
 
-      // Si está en las tablas generales del pedido y no se encontró asignación específica
+      // 2. Si no tiene sub-asignación, pertenece directamente al cliente comprador del pedido
       const generalTables = order.tablas || [];
       if (generalTables.includes(tableCode)) {
         const clientName = typeof order.cliente === 'string' ? order.cliente : (order.cliente?.name || 'Cliente general');
+        const clientPhone = order.telefono || order.cliente?.whatsapp || 'Sin whatsapp';
         return {
           nombre: clientName,
-          telefono: order.telefono || order.cliente?.whatsapp || 'Sin teléfono',
-          pedidoId: order.id
+          whatsapp: clientPhone,
+          referencia: order.id
         };
       }
     }
-    return { nombre: 'Vendido (Sin asignar detalle)', telefono: '-', pedidoId: '-' };
+    return { nombre: 'Sin asignar', whatsapp: '-', reference: '-' };
   }
 
-  // Renderizar únicamente las tablas VENDIDAS en orden ascendente con sus datos
+  // Renderizar únicamente las tablas VENDIDAS ordenadas de forma ascendente con datos reales
   function renderTablesList() {
     const container = document.getElementById('tables-list-container');
     const queryStr = document.getElementById('search-tables-input').value.toLowerCase();
     container.innerHTML = '';
 
-    // Filtrar solo las tablas que tengan estado 'VENDIDA'
     const soldTables = allTables.filter(t => t.status === 'VENDIDA');
 
-    // Ordenar en orden ascendente por su número
+    // Orden ascendente estricto por número de tabla
     soldTables.sort((a, b) => {
       const numA = parseInt(a.code.replace(/\D/g, '')) || 0;
       const numB = parseInt(b.code.replace(/\D/g, '')) || 0;
@@ -649,7 +648,8 @@
       const owner = getTableOwnerDetails(t.code);
       const matchText = t.code.toLowerCase().includes(queryStr) || 
                         owner.nombre.toLowerCase().includes(queryStr) || 
-                        String(owner.pedidoId).toLowerCase().includes(queryStr);
+                        owner.whatsapp.toLowerCase().includes(queryStr) ||
+                        String(owner.referencia).toLowerCase().includes(queryStr);
       return matchText;
     });
 
@@ -662,15 +662,16 @@
       const owner = getTableOwnerDetails(t.code);
       const isPassed = t.passedToPC === true;
       const btnClass = isPassed ? 'table-status-btn passed' : 'table-status-btn';
-      const btnText = isPassed ? 'Registrado ✓' : 'Pendiente PC';
+      const btnText = isPassed ? 'Registrado ✓' : 'Pendiente';
 
       const item = document.createElement('div');
       item.className = 'table-list-item';
       item.innerHTML = `
         <div class="table-info-details">
-          <span><b>Tabla ${t.code}</b> (Pedido #${owner.pedidoId})</span>
-          <span style="color: var(--text-muted); font-size: 0.85rem;">Comprador/Asignado: <b>${owner.nombre}</b></span>
-          <span style="color: var(--text-muted); font-size: 0.8rem;">Tel: ${owner.telefono}</span>
+          <span><b>Tabla:</b> ${t.code}</span>
+          <span><b>Asignado a:</b> ${owner.nombre}</span>
+          <span><b>Referencia (Pedido):</b> #${owner.referencia}</span>
+          <span><b>WhatsApp:</b> ${owner.whatsapp}</span>
         </div>
         <button class="${btnClass}" data-code="${t.code}" data-passed="${isPassed}">${btnText}</button>
       `;
