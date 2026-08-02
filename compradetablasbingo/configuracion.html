@@ -145,30 +145,38 @@
     .badge-confirmed { background: #d1fae5; color: #065f46; }
     .badge-cancelled { background: #fee2e2; color: #991b1b; }
 
-    .assignment-row {
+    /* Estilos para la nueva lista de tablas en orden ascendente */
+    .tables-list-container {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+    .table-list-item {
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin-top: 6px;
-      font-size: 0.85rem;
-      color: #334155;
-      flex-wrap: wrap;
+      justify-content: space-between;
+      background: #fff;
+      padding: 10px 14px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      font-weight: 600;
     }
-    .table-check-btn {
-      background-color: var(--success);
+    .table-status-btn {
+      background-color: var(--danger); /* Por defecto en rojo */
       color: #ffffff;
       border: none;
-      padding: 5px 9px;
+      padding: 6px 12px;
       font-size: 0.82rem;
       font-weight: 700;
       border-radius: var(--radius-sm);
       cursor: pointer;
-      transition: background-color 0.2s, opacity 0.2s;
+      transition: background-color 0.2s;
     }
-    .table-check-btn.processed {
-      background-color: var(--danger);
-      cursor: not-allowed;
-      opacity: 0.8;
+    .table-status-btn.passed {
+      background-color: var(--success); /* Cambia a verde al presionarlo */
     }
 
     .modal {
@@ -193,7 +201,7 @@
     .modal-content img { width: 100%; border-radius: var(--radius-sm); margin-top: 10px; }
 
     .tab-bar { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 14px; }
-    .tab-item { flex: 1; text-align: center; padding: 10px; font-size: 0.95rem; font-weight: 600; cursor: pointer; color: var(--text-muted); }
+    .tab-item { flex: 1; text-align: center; padding: 10px; font-size: 0.9rem; font-weight: 600; cursor: pointer; color: var(--text-muted); }
     .tab-item.active { color: var(--accent-gold); border-bottom: 3px solid var(--accent-gold); }
 
     /* Estilo para la pantalla de inicio de sesión */
@@ -251,6 +259,7 @@
   <main class="main-content">
     <div class="tab-bar">
       <div class="tab-item active" id="tab-btn-config">Configuración</div>
+      <div class="tab-item" id="tab-btn-listado">Listado</div>
       <div class="tab-item" id="tab-btn-pedidos">Pedidos</div>
     </div>
 
@@ -320,6 +329,19 @@
           Borra absolutamente toda la información, tablas generadas y pedidos registrados para reiniciar el bingo.
         </p>
         <button class="btn btn-danger" id="btn-cerrar-bingo">Cerrar Bingo</button>
+      </div>
+    </div>
+
+    <!-- SECCIÓN LISTADO (NUEVA) -->
+    <div id="tab-listado" style="display: none;">
+      <div class="card">
+        <div class="card-title">Listado de Tablas (Orden Ascendente)</div>
+        <div class="search-box">
+          <input type="text" id="search-tables-input" class="form-control" placeholder="Buscar número de tabla...">
+        </div>
+        <div class="tables-list-container" id="tables-list-container">
+          <!-- Se llenará dinámicamente -->
+        </div>
       </div>
     </div>
 
@@ -412,11 +434,16 @@
   function switchTab(tab) {
     document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
     document.getElementById('tab-config').style.display = 'none';
+    document.getElementById('tab-listado').style.display = 'none';
     document.getElementById('tab-pedidos').style.display = 'none';
     
     if (tab === 'config') {
       document.getElementById('tab-btn-config').classList.add('active');
       document.getElementById('tab-config').style.display = 'block';
+    } else if (tab === 'listado') {
+      document.getElementById('tab-btn-listado').classList.add('active');
+      document.getElementById('tab-listado').style.display = 'block';
+      renderTablesList();
     } else {
       document.getElementById('tab-btn-pedidos').classList.add('active');
       document.getElementById('tab-pedidos').style.display = 'block';
@@ -425,6 +452,7 @@
   }
 
   document.getElementById('tab-btn-config').addEventListener('click', () => switchTab('config'));
+  document.getElementById('tab-btn-listado').addEventListener('click', () => switchTab('listado'));
   document.getElementById('tab-btn-pedidos').addEventListener('click', () => switchTab('pedidos'));
 
   async function loadInitialConfig() {
@@ -455,6 +483,10 @@
         allTables.push(docSnap.data());
       });
       loadMetrics();
+      // Si estamos en la pestaña de listado, actualizar visualización
+      if (document.getElementById('tab-listado').style.display === 'block') {
+        renderTablesList();
+      }
     });
   }
 
@@ -514,6 +546,7 @@
           batch.set(tableRef, {
             code: code,
             status: 'DISPONIBLE',
+            passedToPC: false, // Control de registro contable en PC (rojo/verde)
             reservedUntil: null,
             reservedBy: null,
             pedido: null
@@ -541,6 +574,59 @@
       btn.textContent = "Guardar Cambios y Generar Tablas";
     }
   });
+
+  // Renderizar y filtrar la pestaña de listado en orden ascendente
+  function renderTablesList() {
+    const container = document.getElementById('tables-list-container');
+    const queryStr = document.getElementById('search-tables-input').value.toLowerCase();
+    container.innerHTML = '';
+
+    // Ordenar tablas en orden ascendente según su número o código
+    const sortedTables = [...allTables].sort((a, b) => {
+      const numA = parseInt(a.code.replace(/\D/g, '')) || 0;
+      const numB = parseInt(b.code.replace(/\D/g, '')) || 0;
+      return numA - numB;
+    });
+
+    const filtered = sortedTables.filter(t => t.code.toLowerCase().includes(queryStr));
+
+    if (filtered.length === 0) {
+      container.innerHTML = '<p style="font-size:0.9rem; color:var(--text-muted); text-align:center; padding: 10px;">No se encontraron tablas.</p>';
+      return;
+    }
+
+    filtered.forEach(t => {
+      const isPassed = t.passedToPC === true;
+      const btnClass = isPassed ? 'table-status-btn passed' : 'table-status-btn';
+      const btnText = isPassed ? 'Registrado' : 'Pendiente';
+
+      const item = document.createElement('div');
+      item.className = 'table-list-item';
+      item.innerHTML = `
+        <span>Tabla ${t.code}</span>
+        <button class="${btnClass}" data-code="${t.code}" data-passed="${isPassed}">${btnText}</button>
+      `;
+
+      item.querySelector('button').addEventListener('click', (e) => {
+        const code = e.target.dataset.code;
+        const currentPassed = e.target.dataset.passed === 'true';
+        toggleTablePassedStatus(code, !currentPassed);
+      });
+
+      container.appendChild(item);
+    });
+  }
+
+  document.getElementById('search-tables-input').addEventListener('keyup', renderTablesList);
+
+  async function toggleTablePassedStatus(tableCode, newStatus) {
+    try {
+      const tRef = doc(db, 'tablas', tableCode);
+      await updateDoc(tRef, { passedToPC: newStatus });
+    } catch (err) {
+      console.error("Error actualizando estado de paso a PC:", err);
+    }
+  }
 
   function listenOrders() {
     onSnapshot(collection(db, 'pedidos'), (snapshot) => {
@@ -588,61 +674,8 @@
       const el = document.createElement('div');
       el.className = 'order-item';
       
-      const processedList = o.processedTables || [];
-      const assignedTableCodes = new Set();
-      let assignHtml = '';
-
       const tableList = o.tablas || [];
       const clientName = typeof o.cliente === 'string' ? o.cliente : (o.cliente?.name || 'Cliente');
-
-      if (o.asignaciones && o.asignaciones.length > 0) {
-        o.asignaciones.forEach(a => {
-          let buttonsForPerson = '';
-          const aTables = a.tablas || [];
-          aTables.forEach(tableCode => {
-            assignedTableCodes.add(tableCode);
-            const isProcessed = processedList.includes(tableCode);
-            const processedClass = isProcessed ? 'processed' : '';
-            const disabledAttr = isProcessed ? 'disabled' : '';
-
-            buttonsForPerson += `
-              <button class="table-check-btn ${processedClass}" ${disabledAttr} data-order="${o.firestoreId}" data-code="${tableCode}">
-                ${tableCode}
-              </button>
-            `;
-          });
-
-          assignHtml += `
-            <div class="assignment-row">
-              <span>• <b>${a.nombre || a.name}</b> (${a.whatsapp}):</span>
-              ${buttonsForPerson}
-            </div>
-          `;
-        });
-      }
-
-      const unassignedTables = tableList.filter(tCode => !assignedTableCodes.has(tCode));
-      if (unassignedTables.length > 0) {
-        let unassignedButtons = '';
-        unassignedTables.forEach(tableCode => {
-          const isProcessed = processedList.includes(tableCode);
-          const processedClass = isProcessed ? 'processed' : '';
-          const disabledAttr = isProcessed ? 'disabled' : '';
-
-          unassignedButtons += `
-            <button class="table-check-btn ${processedClass}" ${disabledAttr} data-order="${o.firestoreId}" data-code="${tableCode}">
-              ${tableCode}
-            </button>
-          `;
-        });
-
-        assignHtml += `
-          <div class="assignment-row" style="margin-top: 6px;">
-            <span>• <b>Sin asignación individual:</b></span>
-            ${unassignedButtons}
-          </div>
-        `;
-      }
 
       el.innerHTML = `
         <div class="order-header">
@@ -656,7 +689,7 @@
           <div><b>Cliente:</b> ${clientName} (${o.telefono || ''})</div>
           <div><b>Dirección:</b> ${o.direccion || ''}</div>
           <div><b>Fecha/Hora:</b> ${o.fecha || ''}</div>
-          <div style="margin-top:8px;"><b>Asignaciones de Tablas (${tableList.length}):</b>${assignHtml}</div>
+          <div><b>Tablas solicitadas:</b> ${tableList.join(', ')}</div>
         </div>
         <div style="margin-top:10px; display:flex; gap:8px;">
           ${o.comprobante ? `<button class="btn btn-sm btn-dark btn-view-proof" data-order="${o.firestoreId}">Ver Comprobante</button>` : ''}
@@ -665,9 +698,6 @@
         </div>
       `;
 
-      el.querySelectorAll('.table-check-btn:not(.processed)').forEach(btn => {
-        btn.addEventListener('click', () => markTableAsProcessed(btn.dataset.order, btn.dataset.code));
-      });
       el.querySelectorAll('.btn-view-proof').forEach(btn => {
         btn.addEventListener('click', () => viewProof(btn.dataset.order));
       });
@@ -684,23 +714,6 @@
 
   document.getElementById('search-input').addEventListener('keyup', filterOrders);
   document.getElementById('filter-status').addEventListener('change', filterOrders);
-
-  async function markTableAsProcessed(orderDocId, tableCode) {
-    try {
-      const orderRef = doc(db, 'pedidos', orderDocId);
-      const orderSnap = await getDoc(orderRef);
-      if (!orderSnap.exists()) return;
-
-      const data = orderSnap.data();
-      const processed = data.processedTables || [];
-      if (!processed.includes(tableCode)) {
-        processed.push(tableCode);
-        await updateDoc(orderRef, { processedTables: processed });
-      }
-    } catch (err) {
-      console.error("Error marcando tabla procesada:", err);
-    }
-  }
 
   async function updateOrderStatus(orderDocId, newStatus) {
     try {
@@ -797,6 +810,7 @@
       document.getElementById('cfg-enabled').checked = true;
       updateEnabledLabel();
       document.getElementById('orders-list').innerHTML = '';
+      document.getElementById('tables-list-container').innerHTML = '';
       document.getElementById('m-total').textContent = '0';
       document.getElementById('m-disp').textContent = '0';
       document.getElementById('m-vend').textContent = '0';
