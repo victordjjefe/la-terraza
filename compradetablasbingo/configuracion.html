@@ -145,7 +145,6 @@
     .badge-confirmed { background: #d1fae5; color: #065f46; }
     .badge-cancelled { background: #fee2e2; color: #991b1b; }
 
-    /* Estilos para la lista de tablas vendidas */
     .tables-list-container {
       display: flex;
       flex-direction: column;
@@ -155,7 +154,7 @@
     }
     .table-list-item {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
       background: #fff;
       padding: 12px 14px;
@@ -344,7 +343,7 @@
       <div class="card">
         <div class="card-title">Tablas Vendidas (Orden Ascendente)</div>
         <div class="search-box">
-          <input type="text" id="search-tables-input" class="form-control" placeholder="Buscar por tabla, nombre, ciudad, barrio o whatsapp...">
+          <input type="text" id="search-tables-input" class="form-control" placeholder="Buscar por tabla, nombre, ciudad, barrio o referencia...">
         </div>
         <div class="tables-list-container" id="tables-list-container">
           <!-- Se llenará dinámicamente -->
@@ -521,7 +520,7 @@
       const hasta = parseInt(document.getElementById('cfg-hasta').value);
 
       if (desde >= hasta) {
-        alert('El rango "Hasta" debe ser mayor que "Despues".');
+        alert('El rango "Hasta" debe ser mayor que "Desde".');
         btn.disabled = false;
         btn.textContent = "Guardar Cambios y Generar Tablas";
         return;
@@ -594,12 +593,12 @@
     });
   }
 
-  // Copia exacta de los datos que se guardan en el formulario de compra del cliente (Nombre, Ciudad, Barrio, Referencia/Dirección y Whatsapp)
+  // Captura exacta de los datos proporcionados al hacer la compra (Nombre, Ciudad, Barrio, Referencia y Whatsapp)
   function getTableOwnerDetails(tableCode) {
     for (let order of allOrders) {
       if (order.estado !== 'CONFIRMADO') continue;
 
-      // 1. Revisar si la tabla pertenece a una sub-asignación individual
+      // 1. Revisar sub-asignaciones si existen
       if (order.asignaciones && order.asignaciones.length > 0) {
         for (let asig of order.asignaciones) {
           const aTables = asig.tablas || [];
@@ -615,7 +614,7 @@
         }
       }
 
-      // 2. Si pertenece de forma general al pedido del cliente principal
+      // 2. Revisar tablas del pedido principal general
       const generalTables = order.tablas || [];
       if (generalTables.includes(tableCode)) {
         const clientName = typeof order.cliente === 'string' ? order.cliente : (order.cliente?.name || 'Cliente general');
@@ -636,7 +635,7 @@
     return { nombre: 'Sin asignar', ciudad: 'N/A', barrio: 'N/A', referencia: 'Sin referencia', whatsapp: '-' };
   }
 
-  // Renderizar únicamente las tablas VENDIDAS ordenadas de forma ascendente con datos reales completos (Ciudad, Barrio, Referencia y Whatsapp)
+  // Renderizar las tablas VENDIDAS ordenadas de forma ascendente con su información completa para el registro contable
   function renderTablesList() {
     const container = document.getElementById('tables-list-container');
     const queryStr = document.getElementById('search-tables-input').value.toLowerCase();
@@ -678,7 +677,7 @@
       item.innerHTML = `
         <div class="table-info-details">
           <span><b>Tabla:</b> ${t.code}</span>
-          <span><b>Asignado a:</b> ${owner.nombre}</span>
+          <span><b>Comprador:</b> ${owner.nombre}</span>
           <span><b>Ciudad:</b> ${owner.ciudad}</span>
           <span><b>Barrio:</b> ${owner.barrio}</span>
           <span><b>Referencia/Dirección:</b> ${owner.referencia}</span>
