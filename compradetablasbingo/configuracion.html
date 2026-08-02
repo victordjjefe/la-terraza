@@ -593,32 +593,33 @@
     });
   }
 
-  // Captura exacta de los datos proporcionados al hacer la compra (Nombre, Ciudad, Barrio, Referencia y Whatsapp)
+  // Función robusta para extraer los datos de quien compró o se le asignó la tabla
   function getTableOwnerDetails(tableCode) {
     for (let order of allOrders) {
+      // Revisa pedidos confirmados o que tengan tablas ligadas
       if (order.estado !== 'CONFIRMADO') continue;
 
-      // 1. Revisar sub-asignaciones si existen
-      if (order.asignaciones && order.asignaciones.length > 0) {
+      // 1. Revisar sub-asignaciones por nombre de tabla individual
+      if (order.asignaciones && Array.isArray(order.asignaciones)) {
         for (let asig of order.asignaciones) {
           const aTables = asig.tablas || [];
           if (aTables.includes(tableCode)) {
             return {
-              nombre: asig.nombre || asig.name || 'Sin nombre',
+              nombre: asig.nombre || asig.name || order.cliente?.name || (typeof order.cliente === 'string' ? order.cliente : 'Sin nombre'),
               ciudad: order.ciudad || order.cliente?.ciudad || 'N/A',
               barrio: order.barrio || order.cliente?.barrio || 'N/A',
               referencia: order.direccion || order.referencia || order.cliente?.direccion || 'Sin referencia',
-              whatsapp: asig.whatsapp || order.telefono || 'Sin whatsapp'
+              whatsapp: asig.whatsapp || order.telefono || order.cliente?.whatsapp || 'Sin whatsapp'
             };
           }
         }
       }
 
-      // 2. Revisar tablas del pedido principal general
+      // 2. Revisar tablas del pedido general
       const generalTables = order.tablas || [];
       if (generalTables.includes(tableCode)) {
-        const clientName = typeof order.cliente === 'string' ? order.cliente : (order.cliente?.name || 'Cliente general');
-        const clientPhone = order.telefono || order.cliente?.whatsapp || 'Sin whatsapp';
+        const clientName = typeof order.cliente === 'string' ? order.cliente : (order.cliente?.name || order.nombre || 'Cliente general');
+        const clientPhone = order.telefono || order.whatsapp || order.cliente?.whatsapp || 'Sin whatsapp';
         const clientCity = order.ciudad || order.cliente?.ciudad || 'N/A';
         const clientNeighborhood = order.barrio || order.cliente?.barrio || 'N/A';
         const clientRef = order.direccion || order.referencia || order.cliente?.direccion || 'Sin referencia';
@@ -632,10 +633,9 @@
         };
       }
     }
-    return { nombre: 'Sin asignar', ciudad: 'N/A', barrio: 'N/A', referencia: 'Sin referencia', whatsapp: '-' };
+    return { nombre: 'Sin asignar (Confirme el pedido)', ciudad: 'N/A', barrio: 'N/A', referencia: 'Sin referencia', whatsapp: '-' };
   }
 
-  // Renderizar las tablas VENDIDAS ordenadas de forma ascendente con su información completa para el registro contable
   function renderTablesList() {
     const container = document.getElementById('tables-list-container');
     const queryStr = document.getElementById('search-tables-input').value.toLowerCase();
@@ -662,7 +662,7 @@
     });
 
     if (filtered.length === 0) {
-      container.innerHTML = '<p style="font-size:0.9rem; color:var(--text-muted); text-align:center; padding: 10px;">No hay tablas vendidas registradas.</p>';
+      container.innerHTML = '<p style="font-size:0.9rem; color:vartext-muted; text-align:center; padding: 10px;">No hay tablas vendidas confirmadas.</p>';
       return;
     }
 
