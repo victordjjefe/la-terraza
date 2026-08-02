@@ -145,11 +145,11 @@
     .badge-confirmed { background: #d1fae5; color: #065f46; }
     .badge-cancelled { background: #fee2e2; color: #991b1b; }
 
-    /* Estilos para la nueva lista de tablas en orden ascendente */
+    /* Estilos para la lista de tablas vendidas */
     .tables-list-container {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
       max-height: 60vh;
       overflow-y: auto;
     }
@@ -158,22 +158,31 @@
       align-items: center;
       justify-content: space-between;
       background: #fff;
-      padding: 10px 14px;
+      padding: 12px 14px;
       border: 1px solid var(--border-color);
       border-radius: var(--radius-sm);
-      font-size: 0.95rem;
-      font-weight: 600;
+      gap: 10px;
     }
+    .table-info-details {
+      font-size: 0.9rem;
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex: 1;
+    }
+    .table-info-details span b { color: var(--primary); }
     .table-status-btn {
       background-color: var(--danger); /* Por defecto en rojo */
       color: #ffffff;
       border: none;
-      padding: 6px 12px;
+      padding: 8px 12px;
       font-size: 0.82rem;
       font-weight: 700;
       border-radius: var(--radius-sm);
       cursor: pointer;
       transition: background-color 0.2s;
+      white-space: nowrap;
     }
     .table-status-btn.passed {
       background-color: var(--success); /* Cambia a verde al presionarlo */
@@ -259,7 +268,7 @@
   <main class="main-content">
     <div class="tab-bar">
       <div class="tab-item active" id="tab-btn-config">Configuración</div>
-      <div class="tab-item" id="tab-btn-listado">Listado</div>
+      <div class="tab-item" id="tab-btn-listado">Listado Vendidas</div>
       <div class="tab-item" id="tab-btn-pedidos">Pedidos</div>
     </div>
 
@@ -332,12 +341,12 @@
       </div>
     </div>
 
-    <!-- SECCIÓN LISTADO (NUEVA) -->
+    <!-- SECCIÓN LISTADO VENDIDAS (NUEVA) -->
     <div id="tab-listado" style="display: none;">
       <div class="card">
-        <div class="card-title">Listado de Tablas (Orden Ascendente)</div>
+        <div class="card-title">Tablas Vendidas (Orden Ascendente)</div>
         <div class="search-box">
-          <input type="text" id="search-tables-input" class="form-control" placeholder="Buscar número de tabla...">
+          <input type="text" id="search-tables-input" class="form-control" placeholder="Buscar por tabla o nombre de comprador...">
         </div>
         <div class="tables-list-container" id="tables-list-container">
           <!-- Se llenará dinámicamente -->
@@ -483,7 +492,6 @@
         allTables.push(docSnap.data());
       });
       loadMetrics();
-      // Si estamos en la pestaña de listado, actualizar visualización
       if (document.getElementById('tab-listado').style.display === 'block') {
         renderTablesList();
       }
@@ -546,7 +554,7 @@
           batch.set(tableRef, {
             code: code,
             status: 'DISPONIBLE',
-            passedToPC: false, // Control de registro contable en PC (rojo/verde)
+            passedToPC: false,
             reservedUntil: null,
             reservedBy: null,
             pedido: null
@@ -575,35 +583,95 @@
     }
   });
 
-  // Renderizar y filtrar la pestaña de listado en orden ascendente
+  function listenOrders() {
+    onSnapshot(collection(db, 'pedidos'), (snapshot) => {
+      allOrders = [];
+      snapshot.forEach(docSnap => {
+        allOrders.push({ firestoreId: docSnap.id, ...docSnap.data() });
+      });
+      renderOrders();
+      if (document.getElementById('tab-listado').style.display === 'block') {
+        renderTablesList();
+      }
+    });
+  }
+
+  // Función para obtener los datos de la persona a la que se le asignó una tabla específica
+  function getTableOwnerDetails(tableCode) {
+    for (let order of allOrders) {
+      if (order.estado !== 'CONFIRMADO') continue;
+
+      // Buscar en asignaciones individuales si existen
+      if (order.asignaciones && order.asignaciones.length > 0) {
+        for (let asig of order.asignaciones) {
+          const aTables = asig.tablas || [];
+          if (aTables.includes(tableCode)) {
+            return {
+              nombre: asig.nombre || asig.name || 'Sin nombre',
+              telefono: asig.whatsapp || order.telefono || 'Sin teléfono',
+              pedidoId: order.id
+            };
+          }
+        }
+      }
+
+      // Si está en las tablas generales del pedido y no se encontró asignación específica
+      const generalTables = order.tablas || [];
+      if (generalTables.includes(tableCode)) {
+        const clientName = typeof order.cliente === 'string' ? order.cliente : (order.cliente?.name || 'Cliente general');
+        return {
+          nombre: clientName,
+          telefono: order.telefono || order.cliente?.whatsapp || 'Sin teléfono',
+          pedidoId: order.id
+        };
+      }
+    }
+    return { nombre: 'Vendido (Sin asignar detalle)', telefono: '-', pedidoId: '-' };
+  }
+
+  // Renderizar únicamente las tablas VENDIDAS en orden ascendente con sus datos
   function renderTablesList() {
     const container = document.getElementById('tables-list-container');
     const queryStr = document.getElementById('search-tables-input').value.toLowerCase();
     container.innerHTML = '';
 
-    // Ordenar tablas en orden ascendente según su número o código
-    const sortedTables = [...allTables].sort((a, b) => {
+    // Filtrar solo las tablas que tengan estado 'VENDIDA'
+    const soldTables = allTables.filter(t => t.status === 'VENDIDA');
+
+    // Ordenar en orden ascendente por su número
+    soldTables.sort((a, b) => {
       const numA = parseInt(a.code.replace(/\D/g, '')) || 0;
       const numB = parseInt(b.code.replace(/\D/g, '')) || 0;
       return numA - numB;
     });
 
-    const filtered = sortedTables.filter(t => t.code.toLowerCase().includes(queryStr));
+    const filtered = soldTables.filter(t => {
+      const owner = getTableOwnerDetails(t.code);
+      const matchText = t.code.toLowerCase().includes(queryStr) || 
+                        owner.nombre.toLowerCase().includes(queryStr) || 
+                        String(owner.pedidoId).toLowerCase().includes(queryStr);
+      return matchText;
+    });
 
     if (filtered.length === 0) {
-      container.innerHTML = '<p style="font-size:0.9rem; color:var(--text-muted); text-align:center; padding: 10px;">No se encontraron tablas.</p>';
+      container.innerHTML = '<p style="font-size:0.9rem; color:var(--text-muted); text-align:center; padding: 10px;">No hay tablas vendidas registradas.</p>';
       return;
     }
 
     filtered.forEach(t => {
+      const owner = getTableOwnerDetails(t.code);
       const isPassed = t.passedToPC === true;
       const btnClass = isPassed ? 'table-status-btn passed' : 'table-status-btn';
-      const btnText = isPassed ? 'Registrado' : 'Pendiente';
+      const btnText = isPassed ? 'Registrado ✓' : 'Pendiente PC';
 
       const item = document.createElement('div');
       item.className = 'table-list-item';
       item.innerHTML = `
-        <span>Tabla ${t.code}</span>
+        <div class="table-info-details">
+          <span><b>Tabla ${t.code}</b> (Pedido #${owner.pedidoId})</span>
+          <span style="color: var(--text-muted); font-size: 0.85rem;">Comprador/Asignado: <b>${owner.nombre}</b></span>
+          <span style="color: var(--text-muted); font-size: 0.8rem;">Tel: ${owner.telefono}</span>
+        </div>
         <button class="${btnClass}" data-code="${t.code}" data-passed="${isPassed}">${btnText}</button>
       `;
 
@@ -626,16 +694,6 @@
     } catch (err) {
       console.error("Error actualizando estado de paso a PC:", err);
     }
-  }
-
-  function listenOrders() {
-    onSnapshot(collection(db, 'pedidos'), (snapshot) => {
-      allOrders = [];
-      snapshot.forEach(docSnap => {
-        allOrders.push({ firestoreId: docSnap.id, ...docSnap.data() });
-      });
-      renderOrders();
-    });
   }
 
   function renderOrders() {
