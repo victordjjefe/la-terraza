@@ -680,7 +680,7 @@ const listaConsulta=params.get("tablas") || "1";
 return {
 lista:/^\d+(,\d+)*$/.test(listaConsulta) ? listaConsulta : "1",
 vence:normalizarFecha(params.get("vence") || ""),
-nombre:params.get("nombre") || "",
+nombre:nombreDesdeSlug(params.get("nombre") || ""),
 videoID:params.get("video") || "",
 logo:params.get("logo") || "",
 formato:"consulta",
