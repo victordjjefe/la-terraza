@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LA TERRAZA BINGO - Compra de Tablas</title>
   
-  <!-- Etiquetas para Miniatura al Compartir Enlace -->
   <meta property="og:title" content="LA TERRAZA BINGO - Compra de Tablas Digitales">
   <meta property="og:description" content="¡Compra tus tablas de manera fácil y segura para nuestro gran bingo! Participa y gana.">
   <meta property="og:image" content="https://raw.githubusercontent.com/victordjjefe/la-terraza/refs/heads/main/compradetablasbingo/pagos.png">
@@ -188,7 +187,6 @@
         <div id="timer-display" class="timer-clock">05:00</div>
       </div>
 
-      <!-- TODO EN UNA SOLA PÁGINA -->
       <div class="card">
         <div class="card-title">1. Selecciona tus tablas (Máximo 10)</div>
         <div class="tables-grid" id="tables-container"></div>
@@ -225,7 +223,7 @@
         </div>
       </div>
 
-      <div class="card">
+      <div class="card" id="payment-section-card">
         <div class="card-title">3. Pago y Comprobante (Opcional)</div>
         <div class="payment-box">
           <p style="font-size:0.95rem; color:var(--text-main); margin-bottom: 8px; line-height: 1.4;">
@@ -240,30 +238,26 @@
           </div>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" id="proof-group-container">
           <label>Subir Soporte de Pago (Opcional)</label>
           <input type="file" id="proof-file" accept="image/*" class="form-control">
         </div>
 
-        <div style="display: flex; gap: 10px; margin-top: 14px;">
+        <div style="display: flex; gap: 10px; margin-top: 14px;" id="action-buttons-container">
           <button class="btn btn-danger" id="btn-cancel-purchase" style="flex: 1;">Cancelar</button>
           <button class="btn btn-primary" id="btn-finish-order" style="flex: 2;" disabled>Registrar / Comprar</button>
         </div>
-      </div>
 
-      <!-- PANTALLA DE ÉXITO / CONFIRMACIÓN -->
-      <div id="step-4" class="card hidden" style="text-align: center;">
-        <div style="font-size: 3rem; color: var(--success); margin-bottom: 10px;">✓</div>
-        <div class="card-title" style="font-size: 1.25rem; justify-content: center;">¡REGISTRO EXITOSO!</div>
-        <p id="order-number-display" style="font-size: 1.1rem; font-weight:700; color:var(--accent-gold); margin-bottom: 10px;"></p>
-        <p style="font-size:0.95rem; color:var(--text-main); margin-bottom: 14px;">
-          Tablas registradas: <br><b id="assigned-tables-display" style="font-size: 1.05rem;"></b>
-        </p>
-        <div style="background: #f1f5f9; padding: 14px; border-radius: var(--radius-sm); font-size: 0.9rem; color: var(--text-muted); margin-bottom: 18px; line-height: 1.4;">
-          Tus datos y selección han quedado guardados correctamente.
+        <!-- MENSAJE DE ÉXITO INTEGRADO AHÍ MISMO -->
+        <div id="success-inline-box" class="hidden" style="text-align: center; padding: 10px 0;">
+          <div style="font-size: 2.5rem; color: var(--success); margin-bottom: 6px;">✓</div>
+          <div style="font-size: 1.15rem; font-weight: 700; color: var(--primary); margin-bottom: 6px;">¡REGISTRO EXITOSO!</div>
+          <p id="order-number-display" style="font-size: 1rem; font-weight:700; color:var(--accent-gold); margin-bottom: 6px;"></p>
+          <p style="font-size:0.9rem; color:var(--text-main); margin-bottom: 10px;">
+            Tablas registradas: <b id="assigned-tables-display"></b>
+          </p>
+          <button class="btn btn-primary" id="btn-restart" style="margin-top: 8px;">Hacer otra compra</button>
         </div>
-        
-        <button class="btn btn-primary" id="btn-restart">Hacer otra compra</button>
       </div>
 
     </main>
@@ -547,8 +541,13 @@
     document.getElementById('proof-file').value = '';
 
     document.getElementById('reservation-timer-box').classList.add('hidden');
-    document.getElementById('step-4').classList.add('hidden');
     
+    // Ocultar mensaje de éxito y restaurar controles originales de la tarjeta
+    document.getElementById('success-inline-box').classList.add('hidden');
+    document.getElementById('proof-group-container').classList.remove('hidden');
+    document.getElementById('action-buttons-container').classList.remove('hidden');
+    document.querySelector('#payment-section-card .payment-box').classList.remove('hidden');
+
     updateSummary();
     renderTables();
   }
@@ -628,10 +627,16 @@
       }
 
       document.getElementById('reservation-timer-box').classList.add('hidden');
-      document.getElementById('step-4').classList.remove('hidden');
 
+      // Ocultar campos de pago y mostrar el mensaje de éxito directamente ahí mismo
+      document.querySelector('#payment-section-card .payment-box').classList.add('hidden');
+      document.getElementById('proof-group-container').classList.add('hidden');
+      document.getElementById('action-buttons-container').classList.add('hidden');
+
+      document.getElementById('success-inline-box').classList.remove('hidden');
       document.getElementById('order-number-display').textContent = `Registro #${orderId}`;
       document.getElementById('assigned-tables-display').textContent = selectedTables.join(', ');
+
     } catch (err) {
       console.error("Error al finalizar pedido:", err);
       alert("Error al guardar en Firestore: " + err.message);
