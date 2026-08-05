@@ -140,30 +140,6 @@
     .btn-danger { background: var(--danger); color: #fff; }
     .btn-danger:hover { background: #dc2626; }
 
-    .radio-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
-    .radio-option {
-      border: 1px solid var(--border-color);
-      padding: 12px;
-      border-radius: var(--radius-sm);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 0.95rem;
-      cursor: pointer;
-    }
-
-    .assign-chip-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
-    .chip {
-      padding: 8px 14px;
-      border: 1px solid var(--border-color);
-      border-radius: 20px;
-      font-size: 0.9rem;
-      font-weight: 700;
-      cursor: pointer;
-      background: #f1f5f9;
-    }
-    .chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
-
     .payment-box {
       background: #f8fafc;
       border: 1px solid var(--border-color);
@@ -208,12 +184,12 @@
 
       <div id="reservation-timer-box" class="timer-banner hidden">
         <b>¡Tienes tablas reservadas!</b>
-        <p style="margin-top:4px;">Tiempo restante para completar la compra:</p>
+        <p style="margin-top:4px;">Tiempo restante para completar el registro:</p>
         <div id="timer-display" class="timer-clock">05:00</div>
       </div>
 
-      <!-- PASO 1: SELECCIÓN -->
-      <div id="step-1" class="card">
+      <!-- TODO EN UNA SOLA PÁGINA -->
+      <div class="card">
         <div class="card-title">1. Selecciona tus tablas (Máximo 10)</div>
         <div class="tables-grid" id="tables-container"></div>
         
@@ -231,74 +207,26 @@
             <span id="summary-total">$0</span>
           </div>
         </div>
-
-        <button id="btn-to-step-2" class="btn btn-primary" style="margin-top: 14px;" disabled>Continuar</button>
       </div>
 
-      <!-- PASO 2: DATOS DEL COMPRADOR Y ASIGNACIÓN -->
-      <div id="step-2" class="card hidden">
-        <div class="card-title">2. Datos del Comprador Principal</div>
+      <div class="card">
+        <div class="card-title">2. Datos de Registro</div>
         <div class="form-group">
           <label>Nombre y Apellido</label>
           <input type="text" id="buyer-name" class="form-control" placeholder="Ej: Juan Pérez">
         </div>
         <div class="form-group">
-          <label>Ciudad / Barrio / Referencia</label>
-          <input type="text" id="buyer-address" class="form-control" placeholder="Ej: Cali - El Limonar">
+          <label>Referencia, Ciudad, Barrio</label>
+          <input type="text" id="buyer-address" class="form-control" placeholder="Ej: Cali - El Limonar - Casa 12">
         </div>
         <div class="form-group">
-          <label>WhatsApp</label>
+          <label>Número de WhatsApp</label>
           <input type="tel" id="buyer-phone" class="form-control" placeholder="Ej: 3001234567">
-        </div>
-
-        <div class="card-title" style="margin-top: 18px;">¿Cómo desea asignar sus tablas?</div>
-        <div class="radio-group">
-          <label class="radio-option">
-            <input type="radio" name="assign_type" value="self" checked id="radio-assign-self">
-            Todas las tablas a mi nombre
-          </label>
-          <label class="radio-option">
-            <input type="radio" name="assign_type" value="others" id="radio-assign-others">
-            Asignar tablas a otras personas
-          </label>
-        </div>
-
-        <div id="multi-assign-box" class="hidden" style="border-top: 1px dashed var(--border-color); padding-top: 14px;">
-          
-          <div id="assign-inputs-container">
-            <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:10px;">
-              Selecciona las tablas para asignar a una persona:
-            </p>
-            <div id="assign-chips" class="assign-chip-grid"></div>
-
-            <div class="form-group">
-              <label>Nombre y Apellido</label>
-              <input type="text" id="assign-name" class="form-control" placeholder="Ej: María Gómez">
-            </div>
-            <div class="form-group">
-              <label>Ciudad / Barrio / Referencia</label>
-              <input type="text" id="assign-city" class="form-control" placeholder="Ej: Cali - San Fernando">
-            </div>
-            <div class="form-group">
-              <label>WhatsApp</label>
-              <input type="tel" id="assign-phone" class="form-control" placeholder="Ej: 3158765432">
-            </div>
-            <button class="btn btn-dark" id="btn-save-assignment" style="margin-bottom: 10px;">Guardar Asignación</button>
-          </div>
-          
-          <div id="assignment-status" style="font-size:0.95rem; font-weight:700; color:var(--accent-gold); margin-top: 8px;"></div>
-        </div>
-
-        <div style="display: flex; gap: 10px; margin-top: 14px;">
-          <button class="btn btn-danger" id="btn-cancel-purchase-step2" style="flex: 1;">Cancelar Compra</button>
-          <button class="btn btn-primary" id="btn-to-step-3" style="flex: 2;">Siguiente</button>
         </div>
       </div>
 
-      <!-- PASO 3: INSTRUCCIONES DE PAGO Y COMPROBANTE -->
-      <div id="step-3" class="card hidden">
-        <div class="card-title">3. Realiza tu Pago</div>
-        
+      <div class="card">
+        <div class="card-title">3. Pago y Comprobante (Opcional)</div>
         <div class="payment-box">
           <p style="font-size:0.95rem; color:var(--text-main); margin-bottom: 8px; line-height: 1.4;">
             Realiza el pago por <b>Nequi</b>, <b>Daviplata</b> o <b>Llave</b> a nombre de <b>Víctor Rosas</b>:
@@ -312,33 +240,30 @@
           </div>
         </div>
 
-        <div class="card-title" style="font-size: 1rem;">Subir Comprobante de Pago</div>
-        <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:12px;">
-          Adjunta una captura de pantalla o foto del pago realizado.
-        </p>
         <div class="form-group">
+          <label>Subir Soporte de Pago (Opcional)</label>
           <input type="file" id="proof-file" accept="image/*" class="form-control">
         </div>
-        
+
         <div style="display: flex; gap: 10px; margin-top: 14px;">
-          <button class="btn btn-danger" id="btn-cancel-purchase-step3" style="flex: 1;">Cancelar Compra</button>
-          <button class="btn btn-primary" id="btn-finish-order" style="flex: 2;">FINALIZAR COMPRA</button>
+          <button class="btn btn-danger" id="btn-cancel-purchase" style="flex: 1;">Cancelar</button>
+          <button class="btn btn-primary" id="btn-finish-order" style="flex: 2;" disabled>Registrar / Comprar</button>
         </div>
       </div>
 
-      <!-- PASO 4: CONFIRMACIÓN -->
+      <!-- PANTALLA DE ÉXITO / CONFIRMACIÓN -->
       <div id="step-4" class="card hidden" style="text-align: center;">
         <div style="font-size: 3rem; color: var(--success); margin-bottom: 10px;">✓</div>
-        <div class="card-title" style="font-size: 1.25rem; justify-content: center;">PEDIDO RECIBIDO</div>
+        <div class="card-title" style="font-size: 1.25rem; justify-content: center;">¡REGISTRO EXITOSO!</div>
         <p id="order-number-display" style="font-size: 1.1rem; font-weight:700; color:var(--accent-gold); margin-bottom: 10px;"></p>
         <p style="font-size:0.95rem; color:var(--text-main); margin-bottom: 14px;">
-          Tablas asignadas: <br><b id="assigned-tables-display" style="font-size: 1.05rem;"></b>
+          Tablas registradas: <br><b id="assigned-tables-display" style="font-size: 1.05rem;"></b>
         </p>
         <div style="background: #f1f5f9; padding: 14px; border-radius: var(--radius-sm); font-size: 0.9rem; color: var(--text-muted); margin-bottom: 18px; line-height: 1.4;">
-          Las tablas digitales y el enlace de transmisión serán enviados una vez confirmado el pago.
+          Tus datos y selección han quedado guardados correctamente.
         </div>
         
-        <button class="btn btn-primary" id="btn-restart">Volver a comprar</button>
+        <button class="btn btn-primary" id="btn-restart">Hacer otra compra</button>
       </div>
 
     </main>
@@ -373,8 +298,6 @@
 
   let config = null;
   let selectedTables = [];
-  let assignments = [];
-  let pendingTablesToAssign = [];
   let proofBase64 = null;
   let allTablesData = [];
 
@@ -532,7 +455,7 @@
     document.getElementById('summary-qty').textContent = qty;
     document.getElementById('summary-total').textContent = `$${total.toLocaleString()}`;
 
-    document.getElementById('btn-to-step-2').disabled = qty === 0;
+    document.getElementById('btn-finish-order').disabled = qty === 0;
   }
 
   function startReservationTimer() {
@@ -561,7 +484,7 @@
   async function handleTimerExpiration() {
     alert('Tu tiempo de reserva (5 minutos) ha expirado. Las tablas han sido liberadas.');
     await releaseCurrentReservations();
-    resetToStep1();
+    resetForm();
   }
 
   async function releaseCurrentReservations() {
@@ -586,15 +509,14 @@
 
   async function cancelarCompraCompleta() {
     if (selectedTables.length > 0) {
-      const confirmar = confirm("¿Estás seguro de cancelar la compra? Tus tablas seleccionadas se liberarán de inmediato.");
+      const confirmar = confirm("¿Estás seguro de cancelar? Tus tablas seleccionadas se liberarán de inmediato.");
       if (!confirmar) return;
       await releaseCurrentReservations();
     }
-    resetToStep1();
+    resetForm();
   }
 
-  document.getElementById('btn-cancel-purchase-step2').addEventListener('click', cancelarCompraCompleta);
-  document.getElementById('btn-cancel-purchase-step3').addEventListener('click', cancelarCompraCompleta);
+  document.getElementById('btn-cancel-purchase').addEventListener('click', cancelarCompraCompleta);
 
   window.addEventListener('beforeunload', () => {
     if (!orderCompleted && selectedTables.length > 0) {
@@ -612,137 +534,24 @@
     }
   });
 
-  function resetToStep1() {
+  function resetForm() {
     clearInterval(timerInterval);
     reservationEndTime = null;
     selectedTables = [];
-    assignments = [];
-    pendingTablesToAssign = [];
     proofBase64 = null;
     orderCompleted = false;
 
-    document.getElementById('reservation-timer-box').classList.add('hidden');
-    document.getElementById('step-2').classList.add('hidden');
-    document.getElementById('step-3').classList.add('hidden');
-    document.getElementById('step-4').classList.add('hidden');
-    document.getElementById('step-1').classList.remove('hidden');
+    document.getElementById('buyer-name').value = '';
+    document.getElementById('buyer-address').value = '';
+    document.getElementById('buyer-phone').value = '';
+    document.getElementById('proof-file').value = '';
 
+    document.getElementById('reservation-timer-box').classList.add('hidden');
+    document.getElementById('step-4').classList.add('hidden');
+    
     updateSummary();
     renderTables();
   }
-
-  function goToStep2() {
-    document.getElementById('step-1').classList.add('hidden');
-    document.getElementById('step-2').classList.remove('hidden');
-    pendingTablesToAssign = [...selectedTables];
-  }
-
-  document.getElementById('btn-to-step-2').addEventListener('click', goToStep2);
-
-  function toggleAssignMode() {
-    const mode = document.querySelector('input[name="assign_type"]:checked').value;
-    const box = document.getElementById('multi-assign-box');
-    
-    if (mode === 'others') {
-      box.classList.remove('hidden');
-      renderAssignChips();
-    } else {
-      box.classList.add('hidden');
-    }
-  }
-
-  document.getElementById('radio-assign-self').addEventListener('change', toggleAssignMode);
-  document.getElementById('radio-assign-others').addEventListener('change', toggleAssignMode);
-
-  function renderAssignChips() {
-    const container = document.getElementById('assign-chips');
-    const inputsBox = document.getElementById('assign-inputs-container');
-    const statusBox = document.getElementById('assignment-status');
-    
-    container.innerHTML = '';
-
-    if (pendingTablesToAssign.length === 0) {
-      inputsBox.classList.add('hidden');
-      statusBox.innerHTML = '<span style="color:var(--success);">✓ ¡Todas las tablas han sido asignadas!</span>';
-    } else {
-      inputsBox.classList.remove('hidden');
-      pendingTablesToAssign.forEach(code => {
-        const chip = document.createElement('div');
-        chip.className = 'chip';
-        chip.textContent = code;
-        chip.onclick = () => chip.classList.toggle('active');
-        container.appendChild(chip);
-      });
-      statusBox.textContent = `Faltan asignar ${pendingTablesToAssign.length} tablas.`;
-    }
-  }
-
-  function saveAssignment() {
-    const name = document.getElementById('assign-name').value.trim();
-    const city = document.getElementById('assign-city').value.trim();
-    const phone = document.getElementById('assign-phone').value.trim();
-
-    const selectedChips = Array.from(document.querySelectorAll('#assign-chips .chip.active')).map(el => el.textContent);
-
-    if (!name || !city || !phone) {
-      alert('Por favor complete los datos de la persona asignada.');
-      return;
-    }
-
-    if (selectedChips.length === 0) {
-      alert('Selecciona al menos una tabla para asignar.');
-      return;
-    }
-
-    assignments.push({
-      nombre: name,
-      ciudad: city,
-      whatsapp: phone,
-      tablas: selectedChips
-    });
-
-    pendingTablesToAssign = pendingTablesToAssign.filter(t => !selectedChips.includes(t));
-
-    document.getElementById('assign-name').value = '';
-    document.getElementById('assign-city').value = '';
-    document.getElementById('assign-phone').value = '';
-
-    renderAssignChips();
-  }
-
-  document.getElementById('btn-save-assignment').addEventListener('click', saveAssignment);
-
-  function goToStep3() {
-    const buyerName = document.getElementById('buyer-name').value.trim();
-    const buyerAddress = document.getElementById('buyer-address').value.trim();
-    const buyerPhone = document.getElementById('buyer-phone').value.trim();
-
-    if (!buyerName || !buyerAddress || !buyerPhone) {
-      alert('Complete los datos del comprador principal.');
-      return;
-    }
-
-    const mode = document.querySelector('input[name="assign_type"]:checked').value;
-
-    if (mode === 'others' && pendingTablesToAssign.length > 0) {
-      alert(`Faltan asignar ${pendingTablesToAssign.length} tablas.`);
-      return;
-    }
-
-    if (mode === 'self') {
-      assignments = [{
-        nombre: buyerName,
-        ciudad: buyerAddress,
-        whatsapp: buyerPhone,
-        tablas: [...selectedTables]
-      }];
-    }
-
-    document.getElementById('step-2').classList.add('hidden');
-    document.getElementById('step-3').classList.remove('hidden');
-  }
-
-  document.getElementById('btn-to-step-3').addEventListener('click', goToStep3);
 
   function copiarNumero() {
     const num = "3234370590";
@@ -769,14 +578,23 @@
   });
 
   async function finishOrder() {
-    if (!proofBase64) {
-      alert('Por favor suba el comprobante de pago.');
+    const buyerName = document.getElementById('buyer-name').value.trim();
+    const buyerAddress = document.getElementById('buyer-address').value.trim();
+    const buyerPhone = document.getElementById('buyer-phone').value.trim();
+
+    if (!buyerName || !buyerAddress || !buyerPhone) {
+      alert('Por favor complete su nombre y apellido, referencia/ciudad/barrio y número de WhatsApp.');
+      return;
+    }
+
+    if (selectedTables.length === 0) {
+      alert('Selecciona al menos una tabla.');
       return;
     }
 
     const btn = document.getElementById('btn-finish-order');
     btn.disabled = true;
-    btn.textContent = "Procesando pedido...";
+    btn.textContent = "Registrando...";
 
     try {
       clearInterval(timerInterval);
@@ -786,21 +604,16 @@
       const orderCount = pedidosSnap.size + 1;
       const orderId = String(orderCount).padStart(5, '0');
 
-      const buyerName = document.getElementById('buyer-name').value.trim();
-      const buyerAddress = document.getElementById('buyer-address').value.trim();
-      const buyerPhone = document.getElementById('buyer-phone').value.trim();
-
       const newOrder = {
         id: orderId,
         cliente: buyerName,
         telefono: buyerPhone,
-        direccion: buyerAddress,
+        referencia: buyerAddress,
         tablas: selectedTables,
         total: selectedTables.length * (config ? config.valor : 0),
-        comprobante: proofBase64,
+        comprobante: proofBase64 || null,
         fecha: new Date().toLocaleString(),
-        estado: 'PENDIENTE PAGO',
-        asignaciones: assignments
+        estado: 'PENDIENTE PAGO'
       };
 
       await setDoc(doc(db, 'pedidos', orderId), newOrder);
@@ -815,34 +628,22 @@
       }
 
       document.getElementById('reservation-timer-box').classList.add('hidden');
-      document.getElementById('step-3').classList.add('hidden');
       document.getElementById('step-4').classList.remove('hidden');
 
-      document.getElementById('order-number-display').textContent = `Pedido #${orderId}`;
+      document.getElementById('order-number-display').textContent = `Registro #${orderId}`;
       document.getElementById('assigned-tables-display').textContent = selectedTables.join(', ');
     } catch (err) {
       console.error("Error al finalizar pedido:", err);
-      alert("Error al guardar el pedido en Firestore: " + err.message);
+      alert("Error al guardar en Firestore: " + err.message);
       orderCompleted = false;
     } finally {
       btn.disabled = false;
-      btn.textContent = "FINALIZAR COMPRA";
+      btn.textContent = "Registrar / Comprar";
     }
   }
 
   document.getElementById('btn-finish-order').addEventListener('click', finishOrder);
-
-  function volverAComprar() {
-    document.getElementById('proof-file').value = '';
-    document.getElementById('buyer-name').value = '';
-    document.getElementById('buyer-address').value = '';
-    document.getElementById('buyer-phone').value = '';
-    
-    selectedTables = [];
-    resetToStep1();
-  }
-
-  document.getElementById('btn-restart').addEventListener('click', volverAComprar);
+  document.getElementById('btn-restart').addEventListener('click', resetForm);
 
   listenConfig();
   listenTables();
