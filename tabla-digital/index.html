@@ -152,10 +152,18 @@ color:black;
 box-shadow:0 0 10px #00ff00;
 }
 
-.centro{
+.celda.centro{
 background:#ffd700 !important;
 color:black;
 box-shadow:0 0 15px #ffd700,0 0 25px #ffd700;
+white-space:nowrap;
+font-size:clamp(16px,4.8vw,21px);
+line-height:1;
+}
+
+.celda.centro.centroLargo{
+font-size:clamp(13px,3.9vw,17px);
+letter-spacing:-0.2px;
 }
 
 #bingoAnim{
@@ -784,6 +792,9 @@ d.textContent=valor;
 
 if(i===2 && j===2){
 d.classList.add("centro");
+if(String(valor).length>4){
+d.classList.add("centroLargo");
+}
 estado[i][j]=true;
 }else if(typeof valor==="number"){
 
