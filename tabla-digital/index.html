@@ -222,6 +222,106 @@ box-shadow:0 0 15px rgba(255,215,0,0.4);
 background:rgba(255,255,255,0.03);
 }
 
+/* ===== AVISO DE TABLA INEXISTENTE ===== */
+
+.tablaNoExiste{
+position:fixed;
+inset:0;
+display:none;
+align-items:center;
+justify-content:center;
+padding:20px;
+box-sizing:border-box;
+background:radial-gradient(circle at center,#1a0033 0%,#090014 58%,#000 100%);
+z-index:100000;
+}
+
+.tablaNoExisteCaja{
+width:100%;
+max-width:380px;
+padding:30px 22px;
+box-sizing:border-box;
+text-align:center;
+background:linear-gradient(145deg,rgba(45,20,62,0.98),rgba(4,0,10,0.98));
+border:3px solid #ffd700;
+border-radius:24px;
+box-shadow:0 0 20px rgba(255,215,0,0.65),0 0 55px rgba(255,215,0,0.22);
+animation:entradaTablaNoExiste .45s ease;
+}
+
+.iconoTablaNoExiste{
+width:74px;
+height:74px;
+margin:0 auto 16px;
+display:flex;
+align-items:center;
+justify-content:center;
+border-radius:50%;
+background:rgba(255,215,0,0.12);
+border:2px solid #ffd700;
+font-size:38px;
+box-shadow:0 0 18px rgba(255,215,0,0.35);
+}
+
+.tituloTablaNoExiste{
+margin:0;
+font-size:29px;
+line-height:1.1;
+color:#ffd700;
+text-shadow:0 0 12px rgba(255,215,0,0.65);
+}
+
+.numeroTablaNoExiste{
+display:inline-block;
+margin:17px 0 12px;
+padding:8px 18px;
+border-radius:12px;
+background:#ffd700;
+color:#160020;
+font-size:28px;
+font-weight:900;
+letter-spacing:.5px;
+}
+
+.descripcionTablaNoExiste{
+margin:0 auto;
+max-width:310px;
+font-size:17px;
+line-height:1.45;
+color:#fff;
+}
+
+.rangoTablaNoExiste{
+display:block;
+margin-top:9px;
+color:#ffd700;
+font-weight:bold;
+}
+
+.botonVolverTabla{
+margin-top:23px;
+padding:11px 22px;
+border:0;
+border-radius:12px;
+background:#ffd700;
+color:#160020;
+font-size:15px;
+font-weight:bold;
+cursor:pointer;
+box-shadow:0 0 14px rgba(255,215,0,0.38);
+}
+
+.botonVolverTabla:active{
+transform:scale(.97);
+}
+
+@keyframes entradaTablaNoExiste{
+from{transform:translateY(18px) scale(.94);opacity:0;}
+to{transform:translateY(0) scale(1);opacity:1;}
+}
+
+/* ===== FIN AVISO DE TABLA INEXISTENTE ===== */
+
 .expirado{
 position:fixed;
 top:0;
@@ -335,6 +435,19 @@ allowfullscreen>
 
 <div id="expiradoMsg" class="expirado" style="display:none;">
 ⛔ Esta tabla ha expirado ⛔
+</div>
+
+<div id="tablaNoExiste" class="tablaNoExiste" role="alert" aria-live="assertive">
+<div class="tablaNoExisteCaja">
+<div class="iconoTablaNoExiste">🎱</div>
+<h1 class="tituloTablaNoExiste">Tabla no disponible</h1>
+<div id="numeroTablaInexistente" class="numeroTablaNoExiste"></div>
+<p class="descripcionTablaNoExiste">
+Esta tabla no existe en el sistema.
+<span class="rangoTablaNoExiste">Tablas disponibles: T001 a T5000</span>
+</p>
+<button type="button" class="botonVolverTabla" onclick="volverATablas()">Volver a las tablas</button>
+</div>
 </div>
 
 <div class="contenedor">
@@ -718,7 +831,9 @@ document.querySelector(".contenedor").style.display="none";
 document.querySelector(".videoContainer").style.display="none";
 }
 
-if(!datosEnlace.invalido && vence && vence < hoyStr()){
+const enlaceExpirado=!datosEnlace.invalido && vence && vence < hoyStr();
+
+if(enlaceExpirado){
 document.getElementById("expiradoMsg").style.display="flex";
 document.querySelector(".contenedor").style.display="none";
 document.querySelector(".videoContainer").style.display="none";
@@ -750,12 +865,33 @@ const nombreLogo=datosEnlace.logo
 
 logo.src=baseArchivos()+nombreLogo;
 
+const MAXIMO_TABLAS=5000;
+
+function etiquetaTabla(id){
+return "T"+String(id).padStart(3,"0");
+}
+
+function mostrarTablaNoExiste(id){
+document.getElementById("numeroTablaInexistente").textContent=etiquetaTabla(id);
+document.getElementById("tablaNoExiste").style.display="flex";
+document.querySelector(".contenedor").style.display="none";
+document.querySelector(".videoContainer").style.display="none";
+}
+
+function volverATablas(){
+window.location.href=baseArchivos();
+}
+
 let lista=datosEnlace.lista || "1";
 let ids=lista.split(",").map(n=>parseInt(n,10)).filter(n=>Number.isInteger(n) && n>0);
 
 const contenedor=document.getElementById("tabla");
+const primeraTablaInexistente=ids.find(id=>id>MAXIMO_TABLAS);
 
-if(datosEnlace.invalido){
+if(datosEnlace.invalido || enlaceExpirado){
+ids=[];
+}else if(primeraTablaInexistente){
+mostrarTablaNoExiste(primeraTablaInexistente);
 ids=[];
 }
 
