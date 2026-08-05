@@ -593,46 +593,18 @@
     });
   }
 
-  // Extrae de inmediato los datos del dueño de la tabla (Nombre y Apellido, Ciudad / Barrio / Referencia, WhatsApp)
+  // Extrae de inmediato los datos adaptados al nuevo formato de registro único
   function getTableOwnerDetails(tableCode) {
     for (let order of allOrders) {
-      // 1. Revisar si hay asignaciones específicas de nombres de dueños por tabla en este pedido
-      if (order.asignaciones && Array.isArray(order.asignaciones)) {
-        for (let asig of order.asignaciones) {
-          const aTables = asig.tablas || [];
-          if (aTables.includes(tableCode)) {
-            const ownerName = asig.nombre || asig.name || (typeof order.cliente === 'string' ? order.cliente : (order.cliente?.name || 'Sin nombre'));
-            const ownerWp = asig.whatsapp || order.telefono || order.cliente?.whatsapp || 'Sin whatsapp';
-            const city = order.ciudad || order.cliente?.ciudad || '';
-            const neighborhood = order.barrio || order.cliente?.barrio || '';
-            const refDir = order.direccion || order.referencia || order.cliente?.direccion || '';
-            
-            // Combinado exacto: Ciudad / Barrio / Referencia
-            const combinedInfo = [city, neighborhood, refDir].filter(Boolean).join(' / ') || 'Sin información';
-
-            return {
-              nombre: ownerName,
-              ubicacionRef: combinedInfo,
-              whatsapp: ownerWp
-            };
-          }
-        }
-      }
-
-      // 2. Si no hay asignación independiente, el dueño es el mismo comprador del pedido
       const generalTables = order.tablas || [];
       if (generalTables.includes(tableCode)) {
         const clientName = typeof order.cliente === 'string' ? order.cliente : (order.cliente?.name || order.nombre || 'Cliente');
         const clientPhone = order.telefono || order.whatsapp || order.cliente?.whatsapp || 'Sin whatsapp';
-        const city = order.ciudad || order.cliente?.ciudad || '';
-        const neighborhood = order.barrio || order.cliente?.barrio || '';
-        const refDir = order.direccion || order.referencia || order.cliente?.direccion || '';
-
-        const combinedInfo = [city, neighborhood, refDir].filter(Boolean).join(' / ') || 'Sin información';
+        const refData = order.referencia || order.direccion || order.ciudad || 'Sin información';
 
         return {
           nombre: clientName,
-          ubicacionRef: combinedInfo,
+          ubicacionRef: refData,
           whatsapp: clientPhone
         };
       }
@@ -647,7 +619,6 @@
 
     const soldTables = allTables.filter(t => t.status === 'VENDIDA');
 
-    // Orden ascendente estricto por número de tabla
     soldTables.sort((a, b) => {
       const numA = parseInt(a.code.replace(/\D/g, '')) || 0;
       const numB = parseInt(b.code.replace(/\D/g, '')) || 0;
@@ -680,7 +651,7 @@
         <div class="table-info-details">
           <span><b>Tabla:</b> ${t.code}</span>
           <span><b>Nombre y Apellido:</b> ${owner.nombre}</span>
-          <span><b>Ciudad / Barrio / Referencia:</b> ${owner.ubicacionRef}</span>
+          <span><b>Referencia, Ciudad, Barrio:</b> ${owner.ubicacionRef}</span>
           <span><b>WhatsApp:</b> ${owner.whatsapp}</span>
         </div>
         <button class="${btnClass}" data-code="${t.code}" data-passed="${isPassed}">${btnText}</button>
@@ -728,7 +699,7 @@
     });
 
     if (filtered.length === 0) {
-      container.innerHTML = '<p style="font-size:0.9rem; color:var(--text-muted); text-align:center;">No se encontraron pedidos.</p>';
+      container.innerHTML = '<p style="font-size:0.9rem; color:var(--text-muted); text-align:center;">No se encontraron registros.</p>';
       return;
     }
 
@@ -748,7 +719,7 @@
 
       el.innerHTML = `
         <div class="order-header">
-          <span>Pedido #${o.id}</span>
+          <span>Registro #${o.id}</span>
           <span>$${(o.total || 0).toLocaleString()}</span>
         </div>
         <div class="order-badges">
@@ -756,8 +727,7 @@
         </div>
         <div class="order-info">
           <div><b>Cliente:</b> ${clientName} (${o.telefono || ''})</div>
-          <div><b>Ciudad/Barrio:</b> ${o.ciudad || 'N/A'} / ${o.barrio || 'N/A'}</div>
-          <div><b>Referencia:</b> ${o.direccion || o.referencia || 'N/A'}</div>
+          <div><b>Referencia, Ciudad, Barrio:</b> ${o.referencia || 'N/A'}</div>
           <div><b>Fecha/Hora:</b> ${o.fecha || ''}</div>
           <div><b>Tablas solicitadas:</b> ${tableList.join(', ')}</div>
         </div>
@@ -831,7 +801,7 @@
     const body = document.getElementById('modal-proof-body');
     const clientName = typeof order.cliente === 'string' ? order.cliente : (order.cliente?.name || '');
     body.innerHTML = `
-      <p style="font-size:0.9rem; color:var(--text-muted);">Pedido #${order.id} - ${clientName}</p>
+      <p style="font-size:0.9rem; color:var(--text-muted);">Registro #${order.id} - ${clientName}</p>
       <img src="${proofImg}" alt="Comprobante de Pago">
     `;
     document.getElementById('modal-proof').style.display = 'flex';
