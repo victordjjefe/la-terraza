@@ -417,6 +417,52 @@ height:100%;
 border:none;
 }
 
+
+/* ===== BOTÓN PARA ABRIR LA TRANSMISIÓN EN YOUTUBE ===== */
+
+.accionesYouTube{
+display:none;
+width:100%;
+max-width:900px;
+margin:-3px auto 15px auto;
+text-align:center;
+box-sizing:border-box;
+}
+
+.botonAbrirYouTube{
+display:inline-flex;
+align-items:center;
+justify-content:center;
+width:auto;
+min-height:42px;
+padding:9px 14px;
+box-sizing:border-box;
+border:2px solid #fff;
+border-radius:12px;
+background:#ff0000;
+color:#fff;
+font-size:14px;
+font-weight:800;
+line-height:1.2;
+text-decoration:none;
+box-shadow:0 0 14px rgba(255,0,0,0.45);
+}
+
+.botonAbrirYouTube:active{
+transform:scale(.98);
+}
+
+
+@media(max-width:420px){
+.botonAbrirYouTube{
+font-size:13px;
+padding:9px 12px;
+}
+
+}
+
+/* ===== FIN BOTÓN PARA ABRIR LA TRANSMISIÓN EN YOUTUBE ===== */
+
 </style>
 </head>
 
@@ -430,6 +476,18 @@ title="Transmisión Bingo"
 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
 allowfullscreen>
 </iframe>
+</div>
+
+<div id="accionesYouTube" class="accionesYouTube">
+<a
+id="botonAbrirYouTube"
+class="botonAbrirYouTube"
+href="#"
+target="_blank"
+rel="noopener noreferrer"
+aria-label="Abrir esta transmisión en YouTube para compartirla al televisor">
+📺 Abrir en YouTube para compartir al TV
+</a>
 </div>
 
 
@@ -829,6 +887,7 @@ document.getElementById("expiradoMsg").textContent="⛔ Enlace de tabla inválid
 document.getElementById("expiradoMsg").style.display="flex";
 document.querySelector(".contenedor").style.display="none";
 document.querySelector(".videoContainer").style.display="none";
+document.getElementById("accionesYouTube").style.display="none";
 }
 
 const enlaceExpirado=!datosEnlace.invalido && vence && vence < hoyStr();
@@ -837,6 +896,7 @@ if(enlaceExpirado){
 document.getElementById("expiradoMsg").style.display="flex";
 document.querySelector(".contenedor").style.display="none";
 document.querySelector(".videoContainer").style.display="none";
+document.getElementById("accionesYouTube").style.display="none";
 }
 
 if(nombre){
@@ -844,11 +904,15 @@ document.getElementById("nombreJugador").textContent=
 nombre.toLocaleUpperCase("es-CO");
 }
 
-if(videoID){
+if(videoID && !datosEnlace.invalido && !enlaceExpirado){
 document.getElementById("youtubeFrame").src=
 "https://www.youtube.com/embed/"+videoID;
+document.getElementById("botonAbrirYouTube").href=
+"https://www.youtube.com/watch?v="+encodeURIComponent(videoID);
+document.getElementById("accionesYouTube").style.display="block";
 }else{
 document.querySelector(".videoContainer").style.display="none";
+document.getElementById("accionesYouTube").style.display="none";
 }
 
 function baseArchivos(){
@@ -876,6 +940,7 @@ document.getElementById("numeroTablaInexistente").textContent=etiquetaTabla(id);
 document.getElementById("tablaNoExiste").style.display="flex";
 document.querySelector(".contenedor").style.display="none";
 document.querySelector(".videoContainer").style.display="none";
+document.getElementById("accionesYouTube").style.display="none";
 }
 
 function volverATablas(){
