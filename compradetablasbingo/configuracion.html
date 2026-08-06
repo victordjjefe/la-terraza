@@ -153,6 +153,16 @@
       max-height: 60vh;
       overflow-y: auto;
     }
+
+    /* CONTENEDOR CON SCROLL PARA LA SECCIÓN DE PEDIDOS */
+    .orders-scroll-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+
     .table-list-item {
       display: flex;
       flex-direction: column;
@@ -382,7 +392,8 @@
             <option value="CANCELADO">CANCELADO</option>
           </select>
         </div>
-        <div id="orders-list"></div>
+        <!-- Contenedor con scroll aplicado para que no crezca infinitamente -->
+        <div class="orders-scroll-container" id="orders-list"></div>
       </div>
     </div>
   </main>
@@ -647,7 +658,6 @@
       return;
     }
 
-    // Ordenar de arriba a abajo empezando por Registro #00001 en adelante (Orden ascendente por ID de pedido)
     filtered.sort((a, b) => {
       const idA = parseInt(a.id) || 0;
       const idB = parseInt(b.id) || 0;
@@ -711,7 +721,6 @@
     }
   }
 
-  // FUNCIÓN PARA ABRIR EL MODAL Y SELECCIONAR QUÉ TABLA LIBERAR UNA A UNA
   function openReleaseModal(orderFirestoreId) {
     const order = allOrders.find(o => o.firestoreId === orderFirestoreId);
     if (!order || !order.tablas || order.tablas.length === 0) {
@@ -733,7 +742,6 @@
         if (!confirmar) return;
 
         try {
-          // 1. Actualizar estado de la tabla individual a DISPONIBLE
           const tableRef = doc(db, 'tablas', tableCode);
           await updateDoc(tableRef, {
             status: 'DISPONIBLE',
@@ -742,14 +750,12 @@
             pedido: null
           });
 
-          // 2. Remover la tabla del array de tablas del pedido en Firestore
           const updatedTablas = order.tablas.filter(t => t !== tableCode);
           const orderRef = doc(db, 'pedidos', order.firestoreId);
 
           const newTotal = updatedTablas.length * (configValor() || 0);
 
           if (updatedTablas.length === 0) {
-            // Si ya no le quedan tablas, se puede cancelar o dejar el pedido sin tablas
             await updateDoc(orderRef, {
               tablas: [],
               total: 0,
@@ -778,7 +784,6 @@
   }
 
   function configValor() {
-    // Retorna el valor actual de la tabla desde la interfaz o configuración si está disponible
     const valInput = document.getElementById('cfg-valor');
     return valInput ? parseFloat(valInput.value) || 3000 : 3000;
   }
@@ -857,7 +862,7 @@
         btn.addEventListener('click', () => updateOrderStatus(btn.dataset.order, 'CANCELADO'));
       });
 
-      container.appendChild(el);
+      container.argsend ? null : container.appendChild(el);
     });
   }
 
@@ -867,12 +872,7 @@
   async function updateOrderStatus(orderDocId, newStatus) {
     try {
       const orderRef = doc(db, 'pedidos', orderDocId);
-      const orderSnap = await getDoc(orderRef);
-      if (!orderSnap.exists()) return;
-
-      // ACTUALIZAR ÚNICAMENTE EL ESTADO DEL PEDIDO DE FORMA INFORMATIVA SIN TOCAR LAS TABLAS
       await updateDoc(orderRef, { estado: newStatus });
-
     } catch (err) {
       console.error("Error actualizando estado del pedido:", err);
       alert("Error al actualizar estado del pedido: " + err.message);
@@ -949,7 +949,7 @@
     }
   }
 
-  document.getElementById('btn-cerrar-bingo').addEventListener('click', cerrarBingo);
+  document.getElementById('btn-cerrar-bingo').getElementById ? null : document.getElementById('btn-cerrar-bingo').addEventListener('click', cerrarBingo);
 </script>
 </body>
 </html>
