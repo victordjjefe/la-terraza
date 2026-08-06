@@ -388,8 +388,8 @@
           <select id="filter-status" class="form-control">
             <option value="TODOS">Todos los estados</option>
             <option value="PENDIENTE PAGO">PENDIENTE PAGO</option>
-            <option value="CONFIRMADO">CONFIRMADO</option>
-            <option value="CANCELADO">CANCELADO</option>
+            <option value="PAGADO">PAGADO</option>
+            <option value="RECHAZADO">RECHAZADO</option>
           </select>
         </div>
         <!-- Contenedor con scroll aplicado para que no crezca infinitamente -->
@@ -642,7 +642,7 @@
     const queryStr = document.getElementById('search-tables-input').value.toLowerCase();
     container.innerHTML = '';
 
-    const soldOrders = allOrders.filter(o => o.tablas && o.tablas.length > 0 && o.estado !== 'CANCELADO');
+    const soldOrders = allOrders.filter(o => o.tablas && o.tablas.length > 0 && o.estado !== 'RECHAZADO');
 
     const filtered = soldOrders.filter(o => {
       const clientName = (typeof o.cliente === 'string' ? o.cliente : (o.cliente?.name || '')).toLowerCase();
@@ -759,7 +759,7 @@
             await updateDoc(orderRef, {
               tablas: [],
               total: 0,
-              estado: 'CANCELADO'
+              estado: 'RECHAZADO'
             });
           } else {
             await updateDoc(orderRef, {
@@ -822,8 +822,8 @@
     filtered.forEach(o => {
       const currentStatus = o.estado || 'PENDIENTE PAGO';
       let badgeClass = 'badge-pending';
-      if (currentStatus === 'CONFIRMADO') badgeClass = 'badge-confirmed';
-      if (currentStatus === 'CANCELADO') badgeClass = 'badge-cancelled';
+      if (currentStatus === 'PAGADO') badgeClass = 'badge-confirmed';
+      if (currentStatus === 'RECHAZADO') badgeClass = 'badge-cancelled';
 
       const el = document.createElement('div');
       el.className = 'order-item';
@@ -847,22 +847,22 @@
         </div>
         <div style="margin-top:10px; display:flex; gap:8px;">
           ${o.comprobante ? `<button class="btn btn-sm btn-dark btn-view-proof" data-order="${o.firestoreId}">Ver Comprobante</button>` : ''}
-          <button class="btn btn-sm btn-success btn-confirm-order" data-order="${o.firestoreId}">Confirmar</button>
-          <button class="btn btn-sm btn-danger btn-cancel-order" data-order="${o.firestoreId}">Cancelar</button>
+          <button class="btn btn-sm btn-success btn-pagado-order" data-order="${o.firestoreId}">Pagado</button>
+          <button class="btn btn-sm btn-danger btn-rechazado-order" data-order="${o.firestoreId}">Rechazado</button>
         </div>
       `;
 
       el.querySelectorAll('.btn-view-proof').forEach(btn => {
         btn.addEventListener('click', () => viewProof(btn.dataset.order));
       });
-      el.querySelectorAll('.btn-confirm-order').forEach(btn => {
-        btn.addEventListener('click', () => updateOrderStatus(btn.dataset.order, 'CONFIRMADO'));
+      el.querySelectorAll('.btn-pagado-order').forEach(btn => {
+        btn.addEventListener('click', () => updateOrderStatus(btn.dataset.order, 'PAGADO'));
       });
-      el.querySelectorAll('.btn-cancel-order').forEach(btn => {
-        btn.addEventListener('click', () => updateOrderStatus(btn.dataset.order, 'CANCELADO'));
+      el.querySelectorAll('.btn-rechazado-order').forEach(btn => {
+        btn.addEventListener('click', () => updateOrderStatus(btn.dataset.order, 'RECHAZADO'));
       });
 
-      container.argsend ? null : container.appendChild(el);
+      container.appendChild(el);
     });
   }
 
@@ -872,6 +872,7 @@
   async function updateOrderStatus(orderDocId, newStatus) {
     try {
       const orderRef = doc(db, 'pedidos', orderDocId);
+      // Actualiza únicamente el estado del pedido de forma informativa sin tocar las tablas
       await updateDoc(orderRef, { estado: newStatus });
     } catch (err) {
       console.error("Error actualizando estado del pedido:", err);
@@ -949,7 +950,7 @@
     }
   }
 
-  document.getElementById('btn-cerrar-bingo').getElementById ? null : document.getElementById('btn-cerrar-bingo').addEventListener('click', cerrarBingo);
+  document.getElementById('btn-cerrar-bingo').addEventListener('click', cerrarBingo);
 </script>
 </body>
 </html>
