@@ -245,7 +245,7 @@
         </div>
 
         <div style="display: flex; gap: 10px; margin-top: 14px;" id="action-buttons-container">
-          <button class="btn btn-danger" id="btn-cancel-purchase" style="flex: 1;">Salir / Cancelar</button>
+          <button class="btn btn-danger" id="btn-cancel-purchase" style="flex: 1;">Cancelar</button>
           <button class="btn btn-success" id="btn-finish-order" style="flex: 2;" disabled>Registrar / Comprar</button>
         </div>
       </div>
@@ -261,11 +261,19 @@
         <p style="font-size: 0.95rem; color: var(--text-main); margin-bottom: 20px;">
           Tus tablas registradas son: <b id="assigned-tables-display"></b>
         </p>
-        
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-          <button class="btn btn-success" id="btn-restart">Hacer otra compra</button>
-          <button class="btn btn-danger" id="btn-exit-success">Salir / Cancelar</button>
-        </div>
+        <button class="btn btn-success btn-restart-action" style="margin-top: 8px;">Hacer otra compra</button>
+      </div>
+    </div>
+
+    <!-- PANTALLA DE COMPRA CANCELADA (OCULTA TODO Y MUESTRA EL MENSAJE ELEGANTE) -->
+    <div id="cancelled-exclusive-screen" class="main-content hidden" style="justify-content: center;">
+      <div class="card" style="text-align: center; padding: 35px 20px;">
+        <div style="font-size: 3rem; color: var(--danger); margin-bottom: 8px;">✕</div>
+        <div class="card-title" style="font-size: 1.4rem; justify-content: center; color: var(--danger);">COMPRA CANCELADA</div>
+        <p style="font-size: 1rem; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5;">
+          Su compra ha sido cancelada y las tablas seleccionadas han sido liberadas exitosamente.
+        </p>
+        <button class="btn btn-success btn-restart-action" style="margin-top: 8px;">Hacer otra compra</button>
       </div>
     </div>
 
@@ -509,29 +517,17 @@
     }
   }
 
-  // BOTÓN CANCELAR DURANTE LA SELECCIÓN (Aquí sí libera las tablas seleccionadas)
-  async function cancelarCompraConTablas() {
-    if (selectedTables.length > 0) {
-      const confirmar = confirm("¿Estás seguro de cancelar? Tus tablas seleccionadas se liberarán de inmediato.");
-      if (!confirmar) return;
-      await releaseCurrentReservations();
-    } else {
-      window.close();
-    }
-    resetForm();
+  // BOTÓN CANCELAR DURANTE LA COMPRA: Libera tablas y muestra pantalla limpia de cancelación
+  async function cancelarCompraCompleta() {
+    await releaseCurrentReservations();
+
+    // Ocultar flujo principal y mostrar pantalla exclusiva de cancelación
+    document.getElementById('banner-section').classList.add('hidden');
+    document.getElementById('main-flow-container').classList.add('hidden');
+    document.getElementById('cancelled-exclusive-screen').classList.remove('hidden');
   }
 
-  document.getElementById('btn-cancel-purchase').addEventListener('click', cancelarCompraConTablas);
-
-  // BOTÓN SALIR DESPUÉS DE HABER HECHO EL REGISTRO (Aquí NO libera tablas porque ya se guardaron)
-  function salirDespuesDeRegistro() {
-    window.close();
-    setTimeout(() => {
-      alert("¡Registro completado con éxito! Ya puedes cerrar esta pestaña o navegador de forma segura.");
-    }, 200);
-  }
-
-  document.getElementById('btn-exit-success').addEventListener('click', salirDespuesDeRegistro);
+  document.getElementById('btn-cancel-purchase').addEventListener('click', cancelarCompraCompleta);
 
   window.addEventListener('beforeunload', () => {
     if (!orderCompleted && selectedTables.length > 0) {
@@ -563,8 +559,9 @@
 
     document.getElementById('reservation-timer-box').classList.add('hidden');
     
-    // Mostrar formulario principal y ocultar pantalla de éxito exclusiva
+    // Ocultar pantallas de éxito o cancelación y restaurar el formulario principal
     document.getElementById('success-exclusive-screen').classList.add('hidden');
+    document.getElementById('cancelled-exclusive-screen').classList.add('hidden');
     document.getElementById('banner-section').classList.remove('hidden');
     document.getElementById('main-flow-container').classList.remove('hidden');
 
@@ -667,7 +664,11 @@
   }
 
   document.getElementById('btn-finish-order').addEventListener('click', finishOrder);
-  document.getElementById('btn-restart').addEventListener('click', resetForm);
+  
+  // Asignar evento de reinicio a todos los botones de "Hacer otra compra"
+  document.querySelectorAll('.btn-restart-action').forEach(btn => {
+    btn.addEventListener('click', resetForm);
+  });
 
   listenConfig();
   listenTables();
