@@ -23,6 +23,7 @@
       --text-muted: #64748b;
       --border-color: #e2e8f0;
       --success: #10b981;
+      --success-hover: #059669;
       --warning: #f59e0b;
       --danger: #ef4444;
       --radius-sm: 8px;
@@ -133,8 +134,8 @@
       text-align: center;
       transition: background 0.2s;
     }
-    .btn-primary { background: var(--accent-gold); color: #fff; }
-    .btn-primary:hover { background: var(--accent-gold-hover); }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-success:hover { background: var(--success-hover); }
     .btn-dark { background: var(--primary); color: #fff; }
     .btn-danger { background: var(--danger); color: #fff; }
     .btn-danger:hover { background: #dc2626; }
@@ -169,7 +170,7 @@
   </div>
 
   <div id="enabled-screen">
-    <div class="banner-container">
+    <div class="banner-container" id="banner-section">
       <img src="pagos.png" alt="Métodos de Pago" class="banner-img" onerror="this.style.display='none'">
       <div class="hero-title">COMPRA TUS TABLAS DIGITALES</div>
       <div class="event-info">
@@ -179,7 +180,7 @@
       </div>
     </div>
 
-    <main class="main-content">
+    <main class="main-content" id="main-flow-container">
 
       <div id="reservation-timer-box" class="timer-banner hidden">
         <b>¡Tienes tablas reservadas!</b>
@@ -187,7 +188,7 @@
         <div id="timer-display" class="timer-clock">05:00</div>
       </div>
 
-      <div class="card">
+      <div class="card" id="card-tables-section">
         <div class="card-title">1. Selecciona tus tablas (Máximo 10)</div>
         <div class="tables-grid" id="tables-container"></div>
         
@@ -207,7 +208,7 @@
         </div>
       </div>
 
-      <div class="card">
+      <div class="card" id="card-buyer-section">
         <div class="card-title">2. Datos de Registro</div>
         <div class="form-group">
           <label>Nombre y Apellido</label>
@@ -244,23 +245,30 @@
         </div>
 
         <div style="display: flex; gap: 10px; margin-top: 14px;" id="action-buttons-container">
-          <button class="btn btn-danger" id="btn-cancel-purchase" style="flex: 1;">Cancelar</button>
-          <button class="btn btn-primary" id="btn-finish-order" style="flex: 2;" disabled>Registrar / Comprar</button>
-        </div>
-
-        <!-- MENSAJE DE ÉXITO INTEGRADO AHÍ MISMO -->
-        <div id="success-inline-box" class="hidden" style="text-align: center; padding: 10px 0;">
-          <div style="font-size: 2.5rem; color: var(--success); margin-bottom: 6px;">✓</div>
-          <div style="font-size: 1.15rem; font-weight: 700; color: var(--primary); margin-bottom: 6px;">¡REGISTRO EXITOSO!</div>
-          <p id="order-number-display" style="font-size: 1rem; font-weight:700; color:var(--accent-gold); margin-bottom: 6px;"></p>
-          <p style="font-size:0.9rem; color:var(--text-main); margin-bottom: 10px;">
-            Tablas registradas: <b id="assigned-tables-display"></b>
-          </p>
-          <button class="btn btn-primary" id="btn-restart" style="margin-top: 8px;">Hacer otra compra</button>
+          <button class="btn btn-danger btn-exit-page" style="flex: 1;">Salir / Cancelar</button>
+          <button class="btn btn-success" id="btn-finish-order" style="flex: 2;" disabled>Registrar / Comprar</button>
         </div>
       </div>
 
     </main>
+
+    <!-- MENSAJE DE ÉXITO EXCLUSIVO (OCULTA TODO LO DEMÁS AL REGISTRAR) -->
+    <div id="success-exclusive-screen" class="main-content hidden" style="justify-content: center;">
+      <div class="card" style="text-align: center; padding: 35px 20px;">
+        <div style="font-size: 3rem; color: var(--success); margin-bottom: 8px;">✓</div>
+        <div class="card-title" style="font-size: 1.4rem; justify-content: center; color: var(--success);">¡REGISTRO EXITOSO!</div>
+        <p id="order-number-display" style="font-size: 1.1rem; font-weight: 700; color: var(--accent-gold); margin-bottom: 8px;"></p>
+        <p style="font-size: 0.95rem; color: var(--text-main); margin-bottom: 20px;">
+          Tus tablas registradas son: <b id="assigned-tables-display"></b>
+        </p>
+        
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <button class="btn btn-success" id="btn-restart">Hacer otra compra</button>
+          <button class="btn btn-danger btn-exit-page">Salir / Cancelar</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -501,16 +509,25 @@
     }
   }
 
-  async function cancelarCompraCompleta() {
+  async function salirOCancelar() {
     if (selectedTables.length > 0) {
-      const confirmar = confirm("¿Estás seguro de cancelar? Tus tablas seleccionadas se liberarán de inmediato.");
+      const confirmar = confirm("¿Estás seguro de salir? Tus tablas seleccionadas se liberarán.");
       if (!confirmar) return;
       await releaseCurrentReservations();
     }
-    resetForm();
+    
+    // Intentar cerrar la pestaña del navegador
+    window.close();
+    
+    // Si el navegador bloquea el cierre automático por seguridad, mostrar mensaje informativo amigable
+    setTimeout(() => {
+      alert("Puedes cerrar esta pestaña o navegador con total tranquilidad de manera manual.");
+    }, 300);
   }
 
-  document.getElementById('btn-cancel-purchase').addEventListener('click', cancelarCompraCompleta);
+  document.querySelectorAll('.btn-exit-page').forEach(btn => {
+    btn.addEventListener('click', salirOCancelar);
+  });
 
   window.addEventListener('beforeunload', () => {
     if (!orderCompleted && selectedTables.length > 0) {
@@ -542,11 +559,10 @@
 
     document.getElementById('reservation-timer-box').classList.add('hidden');
     
-    // Ocultar mensaje de éxito y restaurar controles originales de la tarjeta
-    document.getElementById('success-inline-box').classList.add('hidden');
-    document.getElementById('proof-group-container').classList.remove('hidden');
-    document.getElementById('action-buttons-container').classList.remove('hidden');
-    document.querySelector('#payment-section-card .payment-box').classList.remove('hidden');
+    // Mostrar formulario principal y ocultar pantalla de éxito exclusiva
+    document.getElementById('success-exclusive-screen').classList.add('hidden');
+    document.getElementById('banner-section').classList.remove('hidden');
+    document.getElementById('main-flow-container').classList.remove('hidden');
 
     updateSummary();
     renderTables();
@@ -628,12 +644,11 @@
 
       document.getElementById('reservation-timer-box').classList.add('hidden');
 
-      // Ocultar campos de pago y mostrar el mensaje de éxito directamente ahí mismo
-      document.querySelector('#payment-section-card .payment-box').classList.add('hidden');
-      document.getElementById('proof-group-container').classList.add('hidden');
-      document.getElementById('action-buttons-container').classList.add('hidden');
+      // OCULTAR TODO EL CONTENIDO Y MOSTRAR ÚNICAMENTE EL MENSAJE DE ÉXITO EXCLUSIVO
+      document.getElementById('banner-section').classList.add('hidden');
+      document.getElementById('main-flow-container').classList.add('hidden');
+      document.getElementById('success-exclusive-screen').classList.remove('hidden');
 
-      document.getElementById('success-inline-box').classList.remove('hidden');
       document.getElementById('order-number-display').textContent = `Registro #${orderId}`;
       document.getElementById('assigned-tables-display').textContent = selectedTables.join(', ');
 
