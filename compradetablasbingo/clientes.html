@@ -226,6 +226,11 @@
 
       <div class="card" id="payment-section-card">
         <div class="card-title">3. Pago y Comprobante (Opcional)</div>
+        
+        <div style="background: #eff6ff; border: 1px solid #3b82f6; border-radius: var(--radius-sm); padding: 12px; margin-bottom: 14px; font-size: 0.9rem; color: #1e40af; line-height: 1.4;">
+          💡 <b>¡Aviso importante!</b> Puedes terminar tu registro <b>sin realizar el pago ni subir el comprobante aún</b>. Haz clic en "Registrar / Comprar" para apartar tu número de tabla de inmediato, y podrás hacer el pago después o compartirlo por WhatsApp.
+        </div>
+
         <div class="payment-box">
           <p style="font-size:0.95rem; color:var(--text-main); margin-bottom: 8px; line-height: 1.4;">
             Realiza el pago por <b>Nequi</b>, <b>Daviplata</b> o <b>Llave</b> a nombre de <b>Víctor Rosas</b>:
@@ -517,11 +522,9 @@
     }
   }
 
-  // BOTÓN CANCELAR DURANTE LA COMPRA: Libera tablas y muestra pantalla limpia de cancelación
   async function cancelarCompraCompleta() {
     await releaseCurrentReservations();
 
-    // Ocultar flujo principal y mostrar pantalla exclusiva de cancelación
     document.getElementById('banner-section').classList.add('hidden');
     document.getElementById('main-flow-container').classList.add('hidden');
     document.getElementById('cancelled-exclusive-screen').classList.remove('hidden');
@@ -559,7 +562,6 @@
 
     document.getElementById('reservation-timer-box').classList.add('hidden');
     
-    // Ocultar pantallas de éxito o cancelación y restaurar el formulario principal
     document.getElementById('success-exclusive-screen').classList.add('hidden');
     document.getElementById('cancelled-exclusive-screen').classList.add('hidden');
     document.getElementById('banner-section').classList.remove('hidden');
@@ -645,7 +647,6 @@
 
       document.getElementById('reservation-timer-box').classList.add('hidden');
 
-      // OCULTAR TODO EL CONTENIDO Y MOSTRAR ÚNICAMENTE EL MENSAJE DE ÉXITO EXCLUSIVO
       document.getElementById('banner-section').classList.add('hidden');
       document.getElementById('main-flow-container').classList.add('hidden');
       document.getElementById('success-exclusive-screen').classList.remove('hidden');
@@ -665,7 +666,6 @@
 
   document.getElementById('btn-finish-order').addEventListener('click', finishOrder);
   
-  // Asignar evento de reinicio a todos los botones de "Hacer otra compra"
   document.querySelectorAll('.btn-restart-action').forEach(btn => {
     btn.addEventListener('click', resetForm);
   });
