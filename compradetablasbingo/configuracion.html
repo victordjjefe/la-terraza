@@ -143,8 +143,9 @@
     .order-badges { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
     .badge { font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
     .badge-pending { background: #fef3c7; color: #92400e; }
-    .badge-confirmed { background: #d1fae5; color: #065f46; }
-    .badge-cancelled { background: #fee2e2; color: #991b1b; }
+    .badge-pagado { background: #d1fae5; color: #065f46; }
+    .badge-rechazado { background: #fee2e2; color: #991b1b; }
+    .badge-cancelled { background: #e2e8f0; color: #475569; }
 
     .tables-list-container {
       display: flex;
@@ -154,7 +155,6 @@
       overflow-y: auto;
     }
 
-    /* CONTENEDOR CON SCROLL PARA LA SECCIÓN DE PEDIDOS */
     .orders-scroll-container {
       display: flex;
       flex-direction: column;
@@ -390,6 +390,7 @@
             <option value="PENDIENTE PAGO">PENDIENTE PAGO</option>
             <option value="PAGADO">PAGADO</option>
             <option value="RECHAZADO">RECHAZADO</option>
+            <option value="CANCELADO">CANCELADO</option>
           </select>
         </div>
         <!-- Contenedor con scroll aplicado para que no crezca infinitamente -->
@@ -636,13 +637,14 @@
     });
   }
 
-  // RENDERIZAR LISTADO AGRUPADO EN ORDEN DE REGISTRO DE ARRIBA A ABAJO (#00001 EN ADELANTE)
+  // RENDERIZAR LISTADO AGRUPADO: Muestra siempre las tablas sin importar el estado del pedido (para poder revisarlas y liberarlas)
   function renderTablesList() {
     const container = document.getElementById('tables-list-container');
     const queryStr = document.getElementById('search-tables-input').value.toLowerCase();
     container.innerHTML = '';
 
-    const soldOrders = allOrders.filter(o => o.tablas && o.tablas.length > 0 && o.estado !== 'RECHAZADO');
+    // Muestra todos los pedidos que contengan tablas (independientemente de si está pagado o rechazado)
+    const soldOrders = allOrders.filter(o => o.tablas && o.tablas.length > 0);
 
     const filtered = soldOrders.filter(o => {
       const clientName = (typeof o.cliente === 'string' ? o.cliente : (o.cliente?.name || '')).toLowerCase();
@@ -721,6 +723,7 @@
     }
   }
 
+  // FUNCIÓN PARA LIBERAR TABLAS Y CAMBIAR AUTOMÁTICAMENTE A CANCELADO SI QUEDA VACÍO
   function openReleaseModal(orderFirestoreId) {
     const order = allOrders.find(o => o.firestoreId === orderFirestoreId);
     if (!order || !order.tablas || order.tablas.length === 0) {
@@ -756,10 +759,11 @@
           const newTotal = updatedTablas.length * (configValor() || 0);
 
           if (updatedTablas.length === 0) {
+            // SI QUEDA SIN TABLAS, CAMBIA AUTOMÁTICAMENTE A CANCELADO
             await updateDoc(orderRef, {
               tablas: [],
               total: 0,
-              estado: 'RECHAZADO'
+              estado: 'CANCELADO'
             });
           } else {
             await updateDoc(orderRef, {
@@ -822,14 +826,27 @@
     filtered.forEach(o => {
       const currentStatus = o.estado || 'PENDIENTE PAGO';
       let badgeClass = 'badge-pending';
-      if (currentStatus === 'PAGADO') badgeClass = 'badge-confirmed';
-      if (currentStatus === 'RECHAZADO') badgeClass = 'badge-cancelled';
+      if (currentStatus === 'PAGADO') badgeClass = 'badge-pagado';
+      if (currentStatus === 'RECHAZADO') badgeClass = 'badge-rechazado';
+      if (currentStatus === 'CANCELADO') badgeClass = 'badge-cancelled';
 
       const el = document.createElement('div');
       el.className = 'order-item';
       
       const tableList = o.tablas || [];
       const clientName = typeof o.cliente === 'string' ? o.cliente : (o.cliente?.name || 'Cliente');
+
+      // SI EL PEDIDO QUEDA SIN TABLAS (VACÍO), SE MUESTRA COMO CANCELADO AUTOMÁTICAMENTE Y SIN BOTONES DE PAGADO/RECHAZADO
+      let actionButtonsHTML = '';
+      if (tableList.length === 0) {
+        actionButtonsHTML = `<span style="font-size: 0.85rem; color: var(--text-muted); font-style: italic;">Registro sin tablas (Cancelado automáticamente)</span>`;
+      } else {
+        if (o.comprobante) {
+          actionButtonsHTML += `<button class="btn btn-sm btn-dark btn-view-proof" data-order="${o.firestoreId}">Ver Comprobante</button>`;
+        }
+        actionButtonsHTML += `<button class="btn btn-sm btn-success btn-pagado-order" data-order="${o.firestoreId}">Pagado</button>`;
+        actionButtonsHTML += `<button class="btn btn-sm btn-danger btn-rechazado-order" data-order="${o.firestoreId}">Rechazado</button>`;
+      }
 
       el.innerHTML = `
         <div class="order-header">
@@ -843,12 +860,10 @@
           <div><b>Cliente:</b> ${clientName} (${o.telefono || ''})</div>
           <div><b>Referencia, Ciudad, Barrio:</b> ${o.referencia || 'N/A'}</div>
           <div><b>Fecha/Hora:</b> ${o.fecha || ''}</div>
-          <div><b>Tablas solicitadas:</b> ${tableList.join(', ')}</div>
+          <div><b>Tablas solicitadas:</b> ${tableList.length > 0 ? tableList.join(', ') : '<span style="color:var(--danger); font-style:italic;">Ninguna (Liberadas)</span>'}</div>
         </div>
-        <div style="margin-top:10px; display:flex; gap:8px;">
-          ${o.comprobante ? `<button class="btn btn-sm btn-dark btn-view-proof" data-order="${o.firestoreId}">Ver Comprobante</button>` : ''}
-          <button class="btn btn-sm btn-success btn-pagado-order" data-order="${o.firestoreId}">Pagado</button>
-          <button class="btn btn-sm btn-danger btn-rechazado-order" data-order="${o.firestoreId}">Rechazado</button>
+        <div style="margin-top:10px; display:flex; gap:8px; align-items:center;">
+          ${actionButtonsHTML}
         </div>
       `;
 
@@ -872,7 +887,6 @@
   async function updateOrderStatus(orderDocId, newStatus) {
     try {
       const orderRef = doc(db, 'pedidos', orderDocId);
-      // Actualiza únicamente el estado del pedido de forma informativa sin tocar las tablas
       await updateDoc(orderRef, { estado: newStatus });
     } catch (err) {
       console.error("Error actualizando estado del pedido:", err);
