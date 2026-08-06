@@ -115,6 +115,7 @@
     .btn-sm { padding: 8px 12px; font-size: 0.85rem; width: auto; }
     .btn-success { background: var(--success); color: #fff; }
     .btn-danger { background: var(--danger); color: #fff; }
+    .btn-warning { background: var(--warning); color: #fff; }
 
     .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
     .metric-card {
@@ -169,6 +170,11 @@
       gap: 4px;
       flex: 1;
     }
+    .action-buttons-group {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
     .table-status-btn {
       background-color: var(--danger);
       color: #ffffff;
@@ -179,11 +185,22 @@
       border-radius: var(--radius-sm);
       cursor: pointer;
       transition: background-color 0.2s;
-      align-self: flex-start;
     }
     .table-status-btn.passed {
       background-color: var(--success);
     }
+    .table-release-btn {
+      background-color: var(--warning);
+      color: #ffffff;
+      border: none;
+      padding: 8px 12px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .table-release-btn:hover { background-color: #d97706; }
 
     .modal {
       position: fixed;
@@ -345,7 +362,7 @@
           <input type="text" id="search-tables-input" class="form-control" placeholder="Buscar por nombre, whatsapp, referencia o tabla...">
         </div>
         <div class="tables-list-container" id="tables-list-container">
-          <!-- Se llenará dinámicamente agrupado -->
+          <!-- Se llenará dinámicamente agrupado en orden ascendente de Registro #00001 en adelante -->
         </div>
       </div>
     </div>
@@ -379,6 +396,22 @@
       <button class="btn btn-sm btn-dark" id="btn-close-modal">✕</button>
     </div>
     <div id="modal-proof-body"></div>
+  </div>
+</div>
+
+<!-- MODAL LIBERAR TABLA INDIVIDUAL -->
+<div id="modal-release-table" class="modal">
+  <div class="modal-content">
+    <div class="card-title">
+      Liberar Tabla Individual
+      <button class="btn btn-sm btn-dark" id="btn-close-release-modal">✕</button>
+    </div>
+    <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 12px;">
+      Selecciona la tabla que deseas liberar de este registro:
+    </p>
+    <div id="release-tables-buttons-container" style="display: flex; flex-direction: column; gap: 8px; max-height: 50vh; overflow-y: auto;">
+      <!-- Botones dinámicos de las tablas del pedido -->
+    </div>
   </div>
 </div>
 
@@ -592,13 +625,12 @@
     });
   }
 
-  // RENDERIZAR LISTADO AGRUPADO POR CADA PEDIDO / CLIENTE
+  // RENDERIZAR LISTADO AGRUPADO EN ORDEN DE REGISTRO DE ARRIBA A ABAJO (#00001 EN ADELANTE)
   function renderTablesList() {
     const container = document.getElementById('tables-list-container');
     const queryStr = document.getElementById('search-tables-input').value.toLowerCase();
     container.innerHTML = '';
 
-    // Filtrar pedidos que tengan tablas vendidas
     const soldOrders = allOrders.filter(o => o.tablas && o.tablas.length > 0 && o.estado !== 'CANCELADO');
 
     const filtered = soldOrders.filter(o => {
@@ -615,7 +647,12 @@
       return;
     }
 
-    filtered.sort((a,b) => (b.fecha || '').localeCompare(a.fecha || ''));
+    // Ordenar de arriba a abajo empezando por Registro #00001 en adelante (Orden ascendente por ID de pedido)
+    filtered.sort((a, b) => {
+      const idA = parseInt(a.id) || 0;
+      const idB = parseInt(b.id) || 0;
+      return idA - idB;
+    });
 
     filtered.forEach(order => {
       const clientName = typeof order.cliente === 'string' ? order.cliente : (order.cliente?.name || 'Cliente');
@@ -623,7 +660,6 @@
       const refData = order.referencia || 'N/A';
       const tablesList = order.tablas || [];
       
-      // Ordenar las tablas numéricamente dentro del grupo
       tablesList.sort((a, b) => {
         const numA = parseInt(a.replace(/\D/g, '')) || 0;
         const numB = parseInt(b.replace(/\D/g, '')) || 0;
@@ -644,13 +680,20 @@
           <span><b>WhatsApp:</b> ${phone}</span>
           <span><b>Tablas (${tablesList.length}):</b> <span style="color:var(--accent-gold); font-weight:700;">${tablesList.join(', ')}</span></span>
         </div>
-        <button class="${btnClass}" data-orderid="${order.firestoreId}" data-passed="${isPassed}">${btnText}</button>
+        <div class="action-buttons-group">
+          <button class="${btnClass}" data-orderid="${order.firestoreId}" data-passed="${isPassed}">${btnText}</button>
+          <button class="table-release-btn" data-orderid="${order.firestoreId}">Liberar Tablas</button>
+        </div>
       `;
 
-      item.querySelector('button').addEventListener('click', (e) => {
+      item.querySelector(`.${btnClass}`).addEventListener('click', (e) => {
         const orderId = e.target.dataset.orderid;
         const currentPassed = e.target.dataset.passed === 'true';
         toggleOrderPassedStatus(orderId, !currentPassed);
+      });
+
+      item.querySelector('.table-release-btn').addEventListener('click', () => {
+        openReleaseModal(order.firestoreId);
       });
 
       container.appendChild(item);
@@ -667,6 +710,82 @@
       console.error("Error actualizando estado del pedido:", err);
     }
   }
+
+  // FUNCIÓN PARA ABRIR EL MODAL Y SELECCIONAR QUÉ TABLA LIBERAR UNA A UNA
+  function openReleaseModal(orderFirestoreId) {
+    const order = allOrders.find(o => o.firestoreId === orderFirestoreId);
+    if (!order || !order.tablas || order.tablas.length === 0) {
+      alert("Este registro no tiene tablas para liberar.");
+      return;
+    }
+
+    const container = document.getElementById('release-tables-buttons-container');
+    container.innerHTML = '';
+
+    order.tablas.forEach(tableCode => {
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-sm btn-danger';
+      btn.textContent = `Liberar tabla ${tableCode}`;
+      btn.style.width = '100%';
+      
+      btn.addEventListener('click', async () => {
+        const confirmar = confirm(`¿Estás seguro de liberar la tabla ${tableCode} del Registro #${order.id}? Quedará disponible nuevamente.`);
+        if (!confirmar) return;
+
+        try {
+          // 1. Actualizar estado de la tabla individual a DISPONIBLE
+          const tableRef = doc(db, 'tablas', tableCode);
+          await updateDoc(tableRef, {
+            status: 'DISPONIBLE',
+            reservedUntil: null,
+            reservedBy: null,
+            pedido: null
+          });
+
+          // 2. Remover la tabla del array de tablas del pedido en Firestore
+          const updatedTablas = order.tablas.filter(t => t !== tableCode);
+          const orderRef = doc(db, 'pedidos', order.firestoreId);
+
+          const newTotal = updatedTablas.length * (configValor() || 0);
+
+          if (updatedTablas.length === 0) {
+            // Si ya no le quedan tablas, se puede cancelar o dejar el pedido sin tablas
+            await updateDoc(orderRef, {
+              tablas: [],
+              total: 0,
+              estado: 'CANCELADO'
+            });
+          } else {
+            await updateDoc(orderRef, {
+              tablas: updatedTablas,
+              total: newTotal
+            });
+          }
+
+          alert(`La tabla ${tableCode} ha sido liberada correctamente.`);
+          document.getElementById('modal-release-table').style.display = 'none';
+          renderTablesList();
+        } catch (err) {
+          console.error("Error al liberar la tabla individual:", err);
+          alert("Error al liberar la tabla: " + err.message);
+        }
+      });
+
+      container.appendChild(btn);
+    });
+
+    document.getElementById('modal-release-table').style.display = 'flex';
+  }
+
+  function configValor() {
+    // Retorna el valor actual de la tabla desde la interfaz o configuración si está disponible
+    const valInput = document.getElementById('cfg-valor');
+    return valInput ? parseFloat(valInput.value) || 3000 : 3000;
+  }
+
+  document.getElementById('btn-close-release-modal').addEventListener('click', () => {
+    document.getElementById('modal-release-table').style.display = 'none';
+  });
 
   function renderOrders() {
     filterOrders();
@@ -693,7 +812,7 @@
       return;
     }
 
-    filtered.sort((a,b) => (b.fecha || '').localeCompare(a.fecha || ''));
+    filtered.sort((a,b) => (parseInt(a.id) || 0) - (parseInt(b.id) || 0));
 
     filtered.forEach(o => {
       const currentStatus = o.estado || 'PENDIENTE PAGO';
