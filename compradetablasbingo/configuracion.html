@@ -870,31 +870,9 @@
       const orderSnap = await getDoc(orderRef);
       if (!orderSnap.exists()) return;
 
-      const orderData = orderSnap.data();
+      // ACTUALIZAR ÚNICAMENTE EL ESTADO DEL PEDIDO DE FORMA INFORMATIVA SIN TOCAR LAS TABLAS
       await updateDoc(orderRef, { estado: newStatus });
 
-      const tables = orderData.tablas || [];
-      const batch = writeBatch(db);
-
-      tables.forEach(code => {
-        const tRef = doc(db, 'tablas', code);
-        if (newStatus === 'CONFIRMADO') {
-          batch.update(tRef, { 
-            status: 'VENDIDA',
-            reservedUntil: null,
-            reservedBy: null
-          });
-        } else if (newStatus === 'CANCELADO') {
-          batch.update(tRef, { 
-            status: 'DISPONIBLE', 
-            reservedUntil: null, 
-            reservedBy: null,
-            pedido: null
-          });
-        }
-      });
-
-      await batch.commit();
     } catch (err) {
       console.error("Error actualizando estado del pedido:", err);
       alert("Error al actualizar estado del pedido: " + err.message);
