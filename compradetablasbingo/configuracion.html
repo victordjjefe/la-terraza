@@ -14,7 +14,7 @@
       --accent-gold: #d97706;
       --accent-gold-hover: #b45309;
       --text-main: #0f172a;
-      --text-muted: #64748b;
+      --text-muted: #334155;
       --border-color: #e2e8f0;
       --success: #10b981;
       --warning: #f59e0b;
@@ -69,7 +69,7 @@
     }
 
     .form-group { margin-bottom: 14px; }
-    .form-group label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; }
+    .form-group label { display: block; font-size: 0.85rem; font-weight: 700; color: var(--text-main); margin-bottom: 6px; text-transform: uppercase; }
     .form-control {
       width: 100%;
       padding: 12px 14px;
@@ -131,15 +131,18 @@
     .metric-lbl { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
 
     .search-box { margin-bottom: 14px; }
+    
+    /* DATOS DE PEDIDOS CLAROS Y EN NEGRITA */
     .order-item {
       border: 1px solid var(--border-color);
       border-radius: var(--radius-sm);
-      padding: 14px;
-      margin-bottom: 10px;
+      padding: 16px;
+      margin-bottom: 12px;
       background: #fff;
+      font-weight: 700;
     }
-    .order-header { display: flex; justify-content: space-between; font-weight: 700; font-size: 1rem; margin-bottom: 8px; }
-    .order-info { font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; }
+    .order-header { display: flex; justify-content: space-between; font-weight: 700; font-size: 1.1rem; margin-bottom: 8px; color: var(--primary); }
+    .order-info { font-size: 0.95rem; color: var(--text-main); line-height: 1.6; font-weight: 700; }
     .order-badges { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
     .badge { font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
     .badge-pending { background: #fef3c7; color: #92400e; }
@@ -151,22 +154,36 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
-      max-height: 60vh;
+      max-height: 65vh;
       overflow-y: auto;
     }
 
     .action-buttons-group {
       display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-      margin-top: 10px;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border-color);
     }
+    
+    .row-status-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: #f8fafc;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+    }
+
     .table-status-btn {
       background-color: var(--danger);
       color: #ffffff;
       border: none;
-      padding: 8px 12px;
-      font-size: 0.82rem;
+      padding: 8px 14px;
+      font-size: 0.85rem;
       font-weight: 700;
       border-radius: var(--radius-sm);
       cursor: pointer;
@@ -175,12 +192,20 @@
     .table-status-btn.passed {
       background-color: var(--success);
     }
+    
+    .status-legend {
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+    .status-legend.unregistered { color: var(--danger); }
+    .status-legend.registered { color: var(--success); }
+
     .table-release-btn {
       background-color: var(--warning);
       color: #ffffff;
       border: none;
       padding: 8px 12px;
-      font-size: 0.82rem;
+      font-size: 0.85rem;
       font-weight: 700;
       border-radius: var(--radius-sm);
       cursor: pointer;
@@ -211,7 +236,7 @@
 
     .tab-bar { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 14px; }
     .tab-item { flex: 1; text-align: center; padding: 10px; font-size: 0.9rem; font-weight: 600; cursor: pointer; color: var(--text-muted); }
-    .tab-item.active { color: var(--accent-gold); border-bottom: 3px solid var(--accent-gold); }
+    .tab-item.active { color: var(--accent-gold); border-bottom: 3px solid var(--accent-gold); font-weight: 700; }
 
     #login-screen {
       position: fixed;
@@ -339,7 +364,7 @@
       </div>
     </div>
 
-    <!-- SECCIÓN PEDIDOS (INCLUYE LOS BOTONES DE MARCAR REGISTRADO Y LIBERAR TABLAS) -->
+    <!-- SECCIÓN PEDIDOS (CON BOTONES DE REGISTRAR Y LEYENDAS CLARAS) -->
     <div id="tab-pedidos" style="display: none;">
       <div class="card">
         <div class="card-title">Gestión de Pedidos</div>
@@ -713,7 +738,11 @@
 
       const isPassed = o.passedToPC === true;
       const btnPassClass = isPassed ? 'table-status-btn passed' : 'table-status-btn';
-      const btnPassText = isPassed ? 'Registrado ✓' : 'Marcar Registrado';
+      
+      // Textos solicitados para el botón y leyenda dinámica
+      const btnPassText = isPassed ? 'Registrada en el sistema' : 'Registrar en el sistema';
+      const legendText = isPassed ? 'Registrada en el sistema' : 'No registrado en el sistema';
+      const legendClass = isPassed ? 'status-legend registered' : 'status-legend unregistered';
 
       let actionButtonsHTML = '';
       if (tableList.length === 0) {
@@ -741,10 +770,13 @@
           <div><b>Tablas (${tableList.length}):</b> <span style="color:var(--accent-gold); font-weight:700;">${tableList.length > 0 ? tableList.join(', ') : 'Ninguna'}</span></div>
         </div>
         <div class="action-buttons-group">
-          <button class="${btnPassClass}" data-orderid="${o.firestoreId}" data-passed="${isPassed}">${btnPassText}</button>
+          <div class="row-status-container">
+            <button class="${btnPassClass}" data-orderid="${o.firestoreId}" data-passed="${isPassed}">${btnPassText}</button>
+            <span class="${legendClass}">${legendText}</span>
+          </div>
           ${tableList.length > 0 ? `<button class="table-release-btn" data-orderid="${o.firestoreId}">Liberar Tablas</button>` : ''}
         </div>
-        <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
+        <div style="margin-top:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
           ${actionButtonsHTML}
         </div>
       `;
@@ -798,7 +830,7 @@
     const body = document.getElementById('modal-proof-body');
     const clientName = typeof order.cliente === 'string' ? order.cliente : (order.cliente?.name || '');
     body.innerHTML = `
-      <p style="font-size:0.9rem; color:var(--text-muted);">Registro #${order.id} - ${clientName}</p>
+      <p style="font-size:0.9rem; color:var(--text-muted); font-weight:700;">Registro #${order.id} - ${clientName}</p>
       <img src="${proofImg}" alt="Comprobante de Pago">
     `;
     document.getElementById('modal-proof').style.display = 'flex';
