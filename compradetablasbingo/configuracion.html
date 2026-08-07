@@ -141,9 +141,23 @@
     .order-header { display: flex; justify-content: space-between; font-weight: 700; font-size: 1rem; margin-bottom: 8px; }
     .order-info { font-size: 0.92rem; color: var(--text-main); line-height: 1.55; font-weight: 600; }
     .order-info b { font-weight: 700; }
-    .system-registration-status { margin-top: 6px; font-size: 0.85rem; font-weight: 700; }
+    .system-registration-status, .payment-status { margin-top: 6px; font-size: 0.85rem; font-weight: 700; }
     .system-registration-status.not-registered { color: var(--danger); }
     .system-registration-status.registered { color: var(--success); }
+    .payment-status.pending { color: #b45309; }
+    .payment-status.paid { color: var(--success); }
+    .payment-status-btn {
+      background-color: var(--warning);
+      color: #ffffff;
+      border: none;
+      padding: 8px 12px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .payment-status-btn.paid { background-color: var(--success); }
     .order-actions { margin-top: 10px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .order-badges { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
     .badge { font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
@@ -750,10 +764,17 @@
         return numA - numB;
       });
       const clientName = typeof o.cliente === 'string' ? o.cliente : (o.cliente?.name || 'Cliente');
+      // Todo pedido nuevo/activo se interpreta como NO REGISTRADO hasta que se marque manualmente.
       const isPassed = o.passedToPC === true;
       const registrationLegend = isPassed ? 'Tablas registradas en el sistema' : 'No registradas en el sistema';
       const registrationClass = isPassed ? 'registered' : 'not-registered';
       const registrationButtonClass = isPassed ? 'table-status-btn passed' : 'table-status-btn';
+
+      // Todo pedido con tablas se interpreta como PAGO PENDIENTE salvo que se haya marcado PAGADO.
+      const isPaid = currentStatus === 'PAGADO';
+      const paymentLegend = isPaid ? 'Pagado' : 'Pago pendiente';
+      const paymentClass = isPaid ? 'paid' : 'pending';
+      const paymentButtonClass = isPaid ? 'payment-status-btn paid' : 'payment-status-btn';
 
       let actionButtonsHTML = '';
       if (tableList.length === 0) {
@@ -762,8 +783,7 @@
         if (o.comprobante) {
           actionButtonsHTML += `<button class="btn btn-sm btn-dark btn-view-proof" data-order="${o.firestoreId}">Ver Comprobante</button>`;
         }
-        actionButtonsHTML += `<button class="btn btn-sm btn-warning btn-pendiente-order" data-order="${o.firestoreId}">Pendiente de pago</button>`;
-        actionButtonsHTML += `<button class="btn btn-sm btn-success btn-pagado-order" data-order="${o.firestoreId}">Pagado</button>`;
+        actionButtonsHTML += `<button class="${paymentButtonClass} btn-payment-status" data-order="${o.firestoreId}" data-status="${currentStatus}">Estado de pago</button>`;
         actionButtonsHTML += `<button class="${registrationButtonClass} btn-register-system" data-order="${o.firestoreId}" data-passed="${isPassed}">Registro en el sistema</button>`;
         actionButtonsHTML += `<button class="table-release-btn btn-release-order" data-order="${o.firestoreId}">Liberar tablas</button>`;
       }
@@ -773,15 +793,14 @@
           <span>Registro #${o.id || ''}</span>
           <span>$${(o.total || 0).toLocaleString()}</span>
         </div>
-        <div class="order-badges">
-          <span class="badge ${badgeClass}">${currentStatus}</span>
-        </div>
+        ${tableList.length === 0 ? `<div class="order-badges"><span class="badge ${badgeClass}">CANCELADO</span></div>` : ''}
         <div class="order-info">
           <div><b>Nombre y Apellido:</b> ${clientName}</div>
           <div><b>WhatsApp:</b> ${o.telefono || ''}</div>
           <div><b>Referencia, Ciudad, Barrio:</b> ${o.referencia || 'N/A'}</div>
           <div><b>Fecha/Hora:</b> ${o.fecha || ''}</div>
           <div><b>Tablas (${tableList.length}):</b> ${tableList.length > 0 ? `<span style="color:var(--accent-gold); font-weight:700;">${tableList.join(', ')}</span>` : '<span style="color:var(--danger); font-style:italic;">Ninguna (Liberadas)</span>'}</div>
+          ${tableList.length > 0 ? `<div class="payment-status ${paymentClass}">${isPaid ? '✓' : '●'} ${paymentLegend}</div>` : ''}
           ${tableList.length > 0 ? `<div class="system-registration-status ${registrationClass}">${isPassed ? '✓' : '●'} ${registrationLegend}</div>` : ''}
         </div>
         <div class="order-actions">
@@ -792,15 +811,30 @@
       el.querySelectorAll('.btn-view-proof').forEach(btn => {
         btn.addEventListener('click', () => viewProof(btn.dataset.order));
       });
-      el.querySelectorAll('.btn-pendiente-order').forEach(btn => {
-        btn.addEventListener('click', () => updateOrderStatus(btn.dataset.order, 'PENDIENTE PAGO'));
-      });
-      el.querySelectorAll('.btn-pagado-order').forEach(btn => {
-        btn.addEventListener('click', () => updateOrderStatus(btn.dataset.order, 'PAGADO'));
+      el.querySelectorAll('.btn-payment-status').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const currentStatus = btn.dataset.status === 'PAGADO' ? 'PAGADO' : 'PENDIENTE PAGO';
+          const newStatus = currentStatus === 'PAGADO' ? 'PENDIENTE PAGO' : 'PAGADO';
+
+          // Para volver de PAGADO a PENDIENTE se exige confirmación de seguridad.
+          if (currentStatus === 'PAGADO') {
+            const confirmar = confirm('¿Estás seguro que deseas cambiar el estado?');
+            if (!confirmar) return;
+          }
+
+          updateOrderStatus(btn.dataset.order, newStatus);
+        });
       });
       el.querySelectorAll('.btn-register-system').forEach(btn => {
         btn.addEventListener('click', () => {
           const currentPassed = btn.dataset.passed === 'true';
+
+          // Para volver de REGISTRADO a NO REGISTRADO se exige confirmación de seguridad.
+          if (currentPassed) {
+            const confirmar = confirm('¿Estás seguro que deseas cambiar el estado?');
+            if (!confirmar) return;
+          }
+
           toggleOrderPassedStatus(btn.dataset.order, !currentPassed);
         });
       });
