@@ -621,15 +621,15 @@
 
     const filtered = soldOrders.filter(o => {
       const clientName = (typeof o.cliente === 'string' ? o.cliente : (o.cliente?.name || '')).toLowerCase();
-      const phone = (o.telefono || '').toLowerCase();
+      const phone = (o.telefono || o.cliente?.whatsapp || '').toLowerCase();
       const ref = (o.referencia || '').toLowerCase();
       const tablesStr = (o.tablas || []).join(', ').toLowerCase();
 
       return queryStr === '' || clientName.includes(queryStr) || phone.includes(queryStr) || ref.includes(queryStr) || tablesStr.includes(queryStr);
     });
 
-    if (filtered.length === '0' || filtered.length === 0) {
-      container.innerHTML = '<p style="font-size:0.9rem; color:var(--text-muted); text-align:center; font-weight:700; padding: 10px;">No hay registros de ventas.</p>';
+    if (filtered.length === 0) {
+      container.innerHTML = '<p style="font-size:0.9rem; color:var(--text-muted); text-align:center; font-weight:700; padding: 20px;">No hay registros de ventas.</p>';
       return;
     }
 
@@ -641,7 +641,7 @@
 
     filtered.forEach(order => {
       const clientName = typeof order.cliente === 'string' ? order.cliente : (order.cliente?.name || 'Cliente');
-      const phone = order.telefono || 'Sin WhatsApp';
+      const phone = order.telefono || order.cliente?.whatsapp || 'Sin WhatsApp';
       const refData = order.referencia || 'N/A';
       const tablesList = order.tablas || [];
       
