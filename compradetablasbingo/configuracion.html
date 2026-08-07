@@ -147,14 +147,6 @@
     .badge-rechazado { background: #fee2e2; color: #991b1b; }
     .badge-cancelled { background: #e2e8f0; color: #475569; }
 
-    .tables-list-container {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      max-height: 60vh;
-      overflow-y: auto;
-    }
-
     .orders-scroll-container {
       display: flex;
       flex-direction: column;
@@ -163,27 +155,11 @@
       overflow-y: auto;
     }
 
-    .table-list-item {
-      display: flex;
-      flex-direction: column;
-      background: #fff;
-      padding: 14px;
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-sm);
-      gap: 8px;
-    }
-    .table-info-details {
-      font-size: 0.9rem;
-      color: var(--text-main);
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      flex: 1;
-    }
     .action-buttons-group {
       display: flex;
       gap: 6px;
       flex-wrap: wrap;
+      margin-top: 10px;
     }
     .table-status-btn {
       background-color: var(--danger);
@@ -291,7 +267,6 @@
   <main class="main-content">
     <div class="tab-bar">
       <div class="tab-item active" id="tab-btn-config">Configuración</div>
-      <div class="tab-item" id="tab-btn-listado">Listado Vendidas</div>
       <div class="tab-item" id="tab-btn-pedidos">Pedidos</div>
     </div>
 
@@ -364,25 +339,12 @@
       </div>
     </div>
 
-    <!-- SECCIÓN LISTADO VENDIDAS (AGRUPADO POR PEDIDOS/CLIENTE) -->
-    <div id="tab-listado" style="display: none;">
-      <div class="card">
-        <div class="card-title">Tablas Agrupadas por Comprador</div>
-        <div class="search-box">
-          <input type="text" id="search-tables-input" class="form-control" placeholder="Buscar por nombre, whatsapp, referencia o tabla...">
-        </div>
-        <div class="tables-list-container" id="tables-list-container">
-          <!-- Se llenará dinámicamente agrupado en orden ascendente de Registro #00001 en adelante -->
-        </div>
-      </div>
-    </div>
-
-    <!-- SECCIÓN PEDIDOS -->
+    <!-- SECCIÓN PEDIDOS (INCLUYE LOS BOTONES DE MARCAR REGISTRADO Y LIBERAR TABLAS) -->
     <div id="tab-pedidos" style="display: none;">
       <div class="card">
         <div class="card-title">Gestión de Pedidos</div>
         <div class="search-box">
-          <input type="text" id="search-input" class="form-control" placeholder="Buscar por pedido, nombre o whatsapp...">
+          <input type="text" id="search-input" class="form-control" placeholder="Buscar por pedido, nombre, whatsapp, referencia o tabla...">
         </div>
         <div class="form-group">
           <select id="filter-status" class="form-control">
@@ -393,7 +355,7 @@
             <option value="CANCELADO">CANCELADO</option>
           </select>
         </div>
-        <!-- Contenedor con scroll aplicado para que no crezca infinitamente -->
+        <!-- Contenedor con scroll aplicado -->
         <div class="orders-scroll-container" id="orders-list"></div>
       </div>
     </div>
@@ -484,16 +446,11 @@
   function switchTab(tab) {
     document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
     document.getElementById('tab-config').style.display = 'none';
-    document.getElementById('tab-listado').style.display = 'none';
     document.getElementById('tab-pedidos').style.display = 'none';
     
     if (tab === 'config') {
       document.getElementById('tab-btn-config').classList.add('active');
       document.getElementById('tab-config').style.display = 'block';
-    } else if (tab === 'listado') {
-      document.getElementById('tab-btn-listado').classList.add('active');
-      document.getElementById('tab-listado').style.display = 'block';
-      renderTablesList();
     } else {
       document.getElementById('tab-btn-pedidos').classList.add('active');
       document.getElementById('tab-pedidos').style.display = 'block';
@@ -502,7 +459,6 @@
   }
 
   document.getElementById('tab-btn-config').addEventListener('click', () => switchTab('config'));
-  document.getElementById('tab-btn-listado').addEventListener('click', () => switchTab('listado'));
   document.getElementById('tab-btn-pedidos').addEventListener('click', () => switchTab('pedidos'));
 
   async function loadInitialConfig() {
@@ -533,9 +489,6 @@
         allTables.push(docSnap.data());
       });
       loadMetrics();
-      if (document.getElementById('tab-listado').style.display === 'block') {
-        renderTablesList();
-      }
     });
   }
 
@@ -631,88 +584,8 @@
         allOrders.push({ firestoreId: docSnap.id, ...docSnap.data() });
       });
       renderOrders();
-      if (document.getElementById('tab-listado').style.display === 'block') {
-        renderTablesList();
-      }
     });
   }
-
-  // RENDERIZAR LISTADO AGRUPADO: Muestra siempre las tablas sin importar el estado del pedido (para poder revisarlas y liberarlas)
-  function renderTablesList() {
-    const container = document.getElementById('tables-list-container');
-    const queryStr = document.getElementById('search-tables-input').value.toLowerCase();
-    container.innerHTML = '';
-
-    // Muestra todos los pedidos que contengan tablas (independientemente de si está pagado o rechazado)
-    const soldOrders = allOrders.filter(o => o.tablas && o.tablas.length > 0);
-
-    const filtered = soldOrders.filter(o => {
-      const clientName = (typeof o.cliente === 'string' ? o.cliente : (o.cliente?.name || '')).toLowerCase();
-      const phone = (o.telefono || '').toLowerCase();
-      const ref = (o.referencia || '').toLowerCase();
-      const tablesStr = (o.tablas || []).join(', ').toLowerCase();
-
-      return clientName.includes(queryStr) || phone.includes(queryStr) || ref.includes(queryStr) || tablesStr.includes(queryStr);
-    });
-
-    if (filtered.length === 0) {
-      container.innerHTML = '<p style="font-size:0.9rem; color:var(--text-muted); text-align:center; padding: 10px;">No hay registros de ventas.</p>';
-      return;
-    }
-
-    filtered.sort((a, b) => {
-      const idA = parseInt(a.id) || 0;
-      const idB = parseInt(b.id) || 0;
-      return idA - idB;
-    });
-
-    filtered.forEach(order => {
-      const clientName = typeof order.cliente === 'string' ? order.cliente : (order.cliente?.name || 'Cliente');
-      const phone = order.telefono || 'Sin WhatsApp';
-      const refData = order.referencia || 'N/A';
-      const tablesList = order.tablas || [];
-      
-      tablesList.sort((a, b) => {
-        const numA = parseInt(a.replace(/\D/g, '')) || 0;
-        const numB = parseInt(b.replace(/\D/g, '')) || 0;
-        return numA - numB;
-      });
-
-      const isPassed = order.passedToPC === true;
-      const btnClass = isPassed ? 'table-status-btn passed' : 'table-status-btn';
-      const btnText = isPassed ? 'Registrado ✓' : 'Marcar Registrado';
-
-      const item = document.createElement('div');
-      item.className = 'table-list-item';
-      item.innerHTML = `
-        <div class="table-info-details">
-          <span><b>Registro #${order.id || ''}</b></span>
-          <span><b>Nombre y Apellido:</b> ${clientName}</span>
-          <span><b>Referencia, Ciudad, Barrio:</b> ${refData}</span>
-          <span><b>WhatsApp:</b> ${phone}</span>
-          <span><b>Tablas (${tablesList.length}):</b> <span style="color:var(--accent-gold); font-weight:700;">${tablesList.join(', ')}</span></span>
-        </div>
-        <div class="action-buttons-group">
-          <button class="${btnClass}" data-orderid="${order.firestoreId}" data-passed="${isPassed}">${btnText}</button>
-          <button class="table-release-btn" data-orderid="${order.firestoreId}">Liberar Tablas</button>
-        </div>
-      `;
-
-      item.querySelector(`.${btnClass}`).addEventListener('click', (e) => {
-        const orderId = e.target.dataset.orderid;
-        const currentPassed = e.target.dataset.passed === 'true';
-        toggleOrderPassedStatus(orderId, !currentPassed);
-      });
-
-      item.querySelector('.table-release-btn').addEventListener('click', () => {
-        openReleaseModal(order.firestoreId);
-      });
-
-      container.appendChild(item);
-    });
-  }
-
-  document.getElementById('search-tables-input').addEventListener('keyup', renderTablesList);
 
   async function toggleOrderPassedStatus(orderFirestoreId, newStatus) {
     try {
@@ -723,7 +596,6 @@
     }
   }
 
-  // FUNCIÓN PARA LIBERAR TABLAS Y CAMBIAR AUTOMÁTICAMENTE A CANCELADO SI QUEDA VACÍO
   function openReleaseModal(orderFirestoreId) {
     const order = allOrders.find(o => o.firestoreId === orderFirestoreId);
     if (!order || !order.tablas || order.tablas.length === 0) {
@@ -755,11 +627,9 @@
 
           const updatedTablas = order.tablas.filter(t => t !== tableCode);
           const orderRef = doc(db, 'pedidos', order.firestoreId);
-
           const newTotal = updatedTablas.length * (configValor() || 0);
 
           if (updatedTablas.length === 0) {
-            // SI QUEDA SIN TABLAS, CAMBIA AUTOMÁTICAMENTE A CANCELADO
             await updateDoc(orderRef, {
               tablas: [],
               total: 0,
@@ -774,7 +644,6 @@
 
           alert(`La tabla ${tableCode} ha sido liberada correctamente.`);
           document.getElementById('modal-release-table').style.display = 'none';
-          renderTablesList();
         } catch (err) {
           console.error("Error al liberar la tabla individual:", err);
           alert("Error al liberar la tabla: " + err.message);
@@ -809,9 +678,15 @@
     const filtered = allOrders.filter(o => {
       const clientName = typeof o.cliente === 'string' ? o.cliente : (o.cliente?.name || '');
       const clientPhone = o.telefono || o.cliente?.whatsapp || '';
+      const clientRef = o.referencia || '';
+      const tablesStr = (o.tablas || []).join(', ');
+
       const matchQuery = String(o.id || '').toLowerCase().includes(queryStr) || 
                          clientName.toLowerCase().includes(queryStr) || 
-                         clientPhone.includes(queryStr);
+                         clientPhone.toLowerCase().includes(queryStr) ||
+                         clientRef.toLowerCase().includes(queryStr) ||
+                         tablesStr.toLowerCase().includes(queryStr);
+
       const matchStatus = statusFilter === 'TODOS' || o.estado === statusFilter;
       return matchQuery && matchStatus;
     });
@@ -836,7 +711,10 @@
       const tableList = o.tablas || [];
       const clientName = typeof o.cliente === 'string' ? o.cliente : (o.cliente?.name || 'Cliente');
 
-      // SI EL PEDIDO QUEDA SIN TABLAS (VACÍO), SE MUESTRA COMO CANCELADO AUTOMÁTICAMENTE Y SIN BOTONES DE PAGADO/RECHAZADO
+      const isPassed = o.passedToPC === true;
+      const btnPassClass = isPassed ? 'table-status-btn passed' : 'table-status-btn';
+      const btnPassText = isPassed ? 'Registrado ✓' : 'Marcar Registrado';
+
       let actionButtonsHTML = '';
       if (tableList.length === 0) {
         actionButtonsHTML = `<span style="font-size: 0.85rem; color: var(--text-muted); font-style: italic;">Registro sin tablas (Cancelado automáticamente)</span>`;
@@ -860,12 +738,29 @@
           <div><b>Cliente:</b> ${clientName} (${o.telefono || ''})</div>
           <div><b>Referencia, Ciudad, Barrio:</b> ${o.referencia || 'N/A'}</div>
           <div><b>Fecha/Hora:</b> ${o.fecha || ''}</div>
-          <div><b>Tablas solicitadas:</b> ${tableList.length > 0 ? tableList.join(', ') : '<span style="color:var(--danger); font-style:italic;">Ninguna (Liberadas)</span>'}</div>
+          <div><b>Tablas (${tableList.length}):</b> <span style="color:var(--accent-gold); font-weight:700;">${tableList.length > 0 ? tableList.join(', ') : 'Ninguna'}</span></div>
         </div>
-        <div style="margin-top:10px; display:flex; gap:8px; align-items:center;">
+        <div class="action-buttons-group">
+          <button class="${btnPassClass}" data-orderid="${o.firestoreId}" data-passed="${isPassed}">${btnPassText}</button>
+          ${tableList.length > 0 ? `<button class="table-release-btn" data-orderid="${o.firestoreId}">Liberar Tablas</button>` : ''}
+        </div>
+        <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
           ${actionButtonsHTML}
         </div>
       `;
+
+      el.querySelector(`.${btnPassClass}`).addEventListener('click', (e) => {
+        const orderId = e.target.dataset.orderid;
+        const currentPassed = e.target.dataset.passed === 'true';
+        toggleOrderPassedStatus(orderId, !currentPassed);
+      });
+
+      const releaseBtn = el.querySelector('.table-release-btn');
+      if (releaseBtn) {
+        releaseBtn.addEventListener('click', () => {
+          openReleaseModal(o.firestoreId);
+        });
+      }
 
       el.querySelectorAll('.btn-view-proof').forEach(btn => {
         btn.addEventListener('click', () => viewProof(btn.dataset.order));
@@ -952,7 +847,6 @@
       document.getElementById('cfg-enabled').checked = true;
       updateEnabledLabel();
       document.getElementById('orders-list').innerHTML = '';
-      document.getElementById('tables-list-container').innerHTML = '';
       document.getElementById('m-total').textContent = '0';
       document.getElementById('m-disp').textContent = '0';
       document.getElementById('m-vend').textContent = '0';
