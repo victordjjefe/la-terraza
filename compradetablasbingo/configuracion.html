@@ -14,7 +14,7 @@
       --accent-gold: #d97706;
       --accent-gold-hover: #b45309;
       --text-main: #0f172a;
-      --text-muted: #334155;
+      --text-muted: #64748b;
       --border-color: #e2e8f0;
       --success: #10b981;
       --warning: #f59e0b;
@@ -69,7 +69,7 @@
     }
 
     .form-group { margin-bottom: 14px; }
-    .form-group label { display: block; font-size: 0.85rem; font-weight: 700; color: var(--text-main); margin-bottom: 6px; text-transform: uppercase; }
+    .form-group label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; }
     .form-control {
       width: 100%;
       padding: 12px 14px;
@@ -131,18 +131,15 @@
     .metric-lbl { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
 
     .search-box { margin-bottom: 14px; }
-    
-    .order-item, .table-list-item {
+    .order-item {
       border: 1px solid var(--border-color);
       border-radius: var(--radius-sm);
-      padding: 16px;
-      margin-bottom: 12px;
+      padding: 14px;
+      margin-bottom: 10px;
       background: #fff;
-      font-weight: 700;
     }
-    .order-header { display: flex; justify-content: space-between; font-weight: 700; font-size: 1.1rem; margin-bottom: 8px; color: var(--primary); }
-    .order-info, .table-info-details { font-size: 0.95rem; color: var(--text-main); line-height: 1.6; font-weight: 700; display: flex; flex-direction: column; gap: 4px; }
-    
+    .order-header { display: flex; justify-content: space-between; font-weight: 700; font-size: 1rem; margin-bottom: 8px; }
+    .order-info { font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; }
     .order-badges { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
     .badge { font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
     .badge-pending { background: #fef3c7; color: #92400e; }
@@ -150,27 +147,50 @@
     .badge-rechazado { background: #fee2e2; color: #991b1b; }
     .badge-cancelled { background: #e2e8f0; color: #475569; }
 
-    .tables-list-container, .orders-scroll-container {
+    .tables-list-container {
       display: flex;
       flex-direction: column;
       gap: 10px;
-      max-height: 65vh;
+      max-height: 60vh;
       overflow-y: auto;
     }
 
+    .orders-scroll-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+
+    .table-list-item {
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      padding: 14px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      gap: 8px;
+    }
+    .table-info-details {
+      font-size: 0.9rem;
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+    }
     .action-buttons-group {
       display: flex;
       gap: 6px;
       flex-wrap: wrap;
-      margin-top: 10px;
     }
-
     .table-status-btn {
       background-color: var(--danger);
       color: #ffffff;
       border: none;
       padding: 8px 12px;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       font-weight: 700;
       border-radius: var(--radius-sm);
       cursor: pointer;
@@ -184,7 +204,7 @@
       color: #ffffff;
       border: none;
       padding: 8px 12px;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       font-weight: 700;
       border-radius: var(--radius-sm);
       cursor: pointer;
@@ -215,7 +235,7 @@
 
     .tab-bar { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 14px; }
     .tab-item { flex: 1; text-align: center; padding: 10px; font-size: 0.9rem; font-weight: 600; cursor: pointer; color: var(--text-muted); }
-    .tab-item.active { color: var(--accent-gold); border-bottom: 3px solid var(--accent-gold); font-weight: 700; }
+    .tab-item.active { color: var(--accent-gold); border-bottom: 3px solid var(--accent-gold); }
 
     #login-screen {
       position: fixed;
@@ -337,21 +357,23 @@
 
       <div class="card" style="border-color: #fca5a5; background: #fff5f5;">
         <div class="card-title" style="color: var(--danger);">Cierre de Evento</div>
-        <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:12px; line-height: 1.5; font-weight: 700;">
+        <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:12px; line-height: 1.5;">
           Borra absolutamente toda la información, tablas generadas y pedidos registrados para reiniciar el bingo.
         </p>
         <button class="btn btn-danger" id="btn-cerrar-bingo">Cerrar Bingo</button>
       </div>
     </div>
 
-    <!-- SECCIÓN LISTADO VENDIDAS -->
+    <!-- SECCIÓN LISTADO VENDIDAS (AGRUPADO POR PEDIDOS/CLIENTE) -->
     <div id="tab-listado" style="display: none;">
       <div class="card">
         <div class="card-title">Tablas Agrupadas por Comprador</div>
         <div class="search-box">
           <input type="text" id="search-tables-input" class="form-control" placeholder="Buscar por nombre, whatsapp, referencia o tabla...">
         </div>
-        <div class="tables-list-container" id="tables-list-container"></div>
+        <div class="tables-list-container" id="tables-list-container">
+          <!-- Se llenará dinámicamente agrupado en orden ascendente de Registro #00001 en adelante -->
+        </div>
       </div>
     </div>
 
@@ -371,6 +393,7 @@
             <option value="CANCELADO">CANCELADO</option>
           </select>
         </div>
+        <!-- Contenedor con scroll aplicado para que no crezca infinitamente -->
         <div class="orders-scroll-container" id="orders-list"></div>
       </div>
     </div>
@@ -395,10 +418,12 @@
       Liberar Tabla Individual
       <button class="btn btn-sm btn-dark" id="btn-close-release-modal">✕</button>
     </div>
-    <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 12px; font-weight: 700;">
+    <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 12px;">
       Selecciona la tabla que deseas liberar de este registro:
     </p>
-    <div id="release-tables-buttons-container" style="display: flex; flex-direction: column; gap: 8px; max-height: 50vh; overflow-y: auto;"></div>
+    <div id="release-tables-buttons-container" style="display: flex; flex-direction: column; gap: 8px; max-height: 50vh; overflow-y: auto;">
+      <!-- Botones dinámicos de las tablas del pedido -->
+    </div>
   </div>
 </div>
 
@@ -539,7 +564,7 @@
       const hasta = parseInt(document.getElementById('cfg-hasta').value);
 
       if (desde >= hasta) {
-        alert('El rango "Hasta" debe ser mayor que "Desde".');
+        alert('El rango "Hasta" debe ser mayor que "Despues".');
         btn.disabled = false;
         btn.textContent = "Guardar Cambios y Generar Tablas";
         return;
@@ -612,24 +637,26 @@
     });
   }
 
+  // RENDERIZAR LISTADO AGRUPADO: Muestra siempre las tablas sin importar el estado del pedido (para poder revisarlas y liberarlas)
   function renderTablesList() {
     const container = document.getElementById('tables-list-container');
-    const queryStr = document.getElementById('search-tables-input').value.toLowerCase().trim();
+    const queryStr = document.getElementById('search-tables-input').value.toLowerCase();
     container.innerHTML = '';
 
+    // Muestra todos los pedidos que contengan tablas (independientemente de si está pagado o rechazado)
     const soldOrders = allOrders.filter(o => o.tablas && o.tablas.length > 0);
 
     const filtered = soldOrders.filter(o => {
       const clientName = (typeof o.cliente === 'string' ? o.cliente : (o.cliente?.name || '')).toLowerCase();
-      const phone = (o.telefono || o.cliente?.whatsapp || '').toLowerCase();
+      const phone = (o.telefono || '').toLowerCase();
       const ref = (o.referencia || '').toLowerCase();
       const tablesStr = (o.tablas || []).join(', ').toLowerCase();
 
-      return queryStr === '' || clientName.includes(queryStr) || phone.includes(queryStr) || ref.includes(queryStr) || tablesStr.includes(queryStr);
+      return clientName.includes(queryStr) || phone.includes(queryStr) || ref.includes(queryStr) || tablesStr.includes(queryStr);
     });
 
     if (filtered.length === 0) {
-      container.innerHTML = '<p style="font-size:0.9rem; color:var(--text-muted); text-align:center; font-weight:700; padding: 20px;">No hay registros de ventas.</p>';
+      container.innerHTML = '<p style="font-size:0.9rem; color:var(--text-muted); text-align:center; padding: 10px;">No hay registros de ventas.</p>';
       return;
     }
 
@@ -641,7 +668,7 @@
 
     filtered.forEach(order => {
       const clientName = typeof order.cliente === 'string' ? order.cliente : (order.cliente?.name || 'Cliente');
-      const phone = order.telefono || order.cliente?.whatsapp || 'Sin WhatsApp';
+      const phone = order.telefono || 'Sin WhatsApp';
       const refData = order.referencia || 'N/A';
       const tablesList = order.tablas || [];
       
@@ -653,7 +680,7 @@
 
       const isPassed = order.passedToPC === true;
       const btnClass = isPassed ? 'table-status-btn passed' : 'table-status-btn';
-      const btnText = isPassed ? 'Registrada en el sistema' : 'Registrar en el sistema';
+      const btnText = isPassed ? 'Registrado ✓' : 'Marcar Registrado';
 
       const item = document.createElement('div');
       item.className = 'table-list-item';
@@ -696,6 +723,7 @@
     }
   }
 
+  // FUNCIÓN PARA LIBERAR TABLAS Y CAMBIAR AUTOMÁTICAMENTE A CANCELADO SI QUEDA VACÍO
   function openReleaseModal(orderFirestoreId) {
     const order = allOrders.find(o => o.firestoreId === orderFirestoreId);
     if (!order || !order.tablas || order.tablas.length === 0) {
@@ -727,9 +755,11 @@
 
           const updatedTablas = order.tablas.filter(t => t !== tableCode);
           const orderRef = doc(db, 'pedidos', order.firestoreId);
+
           const newTotal = updatedTablas.length * (configValor() || 0);
 
           if (updatedTablas.length === 0) {
+            // SI QUEDA SIN TABLAS, CAMBIA AUTOMÁTICAMENTE A CANCELADO
             await updateDoc(orderRef, {
               tablas: [],
               total: 0,
@@ -771,7 +801,7 @@
   }
 
   function filterOrders() {
-    const queryStr = document.getElementById('search-input').value.toLowerCase().trim();
+    const queryStr = document.getElementById('search-input').value.toLowerCase();
     const statusFilter = document.getElementById('filter-status').value;
     const container = document.getElementById('orders-list');
     container.innerHTML = '';
@@ -779,23 +809,15 @@
     const filtered = allOrders.filter(o => {
       const clientName = typeof o.cliente === 'string' ? o.cliente : (o.cliente?.name || '');
       const clientPhone = o.telefono || o.cliente?.whatsapp || '';
-      const clientRef = o.referencia || '';
-      const tablesStr = Array.isArray(o.tablas) ? o.tablas.join(', ') : '';
-      const orderIdStr = String(o.id || '');
-
-      const matchQuery = queryStr === '' || 
-                         orderIdStr.toLowerCase().includes(queryStr) || 
+      const matchQuery = String(o.id || '').toLowerCase().includes(queryStr) || 
                          clientName.toLowerCase().includes(queryStr) || 
-                         clientPhone.toLowerCase().includes(queryStr) ||
-                         clientRef.toLowerCase().includes(queryStr) ||
-                         tablesStr.toLowerCase().includes(queryStr);
-
+                         clientPhone.includes(queryStr);
       const matchStatus = statusFilter === 'TODOS' || o.estado === statusFilter;
       return matchQuery && matchStatus;
     });
 
     if (filtered.length === 0) {
-      container.innerHTML = '<p style="font-size:0.9rem; color:var(--text-muted); text-align:center; font-weight:700; padding: 20px;">No se encontraron registros de pedidos.</p>';
+      container.innerHTML = '<p style="font-size:0.9rem; color:var(--text-muted); text-align:center;">No se encontraron registros.</p>';
       return;
     }
 
@@ -814,6 +836,7 @@
       const tableList = o.tablas || [];
       const clientName = typeof o.cliente === 'string' ? o.cliente : (o.cliente?.name || 'Cliente');
 
+      // SI EL PEDIDO QUEDA SIN TABLAS (VACÍO), SE MUESTRA COMO CANCELADO AUTOMÁTICAMENTE Y SIN BOTONES DE PAGADO/RECHAZADO
       let actionButtonsHTML = '';
       if (tableList.length === 0) {
         actionButtonsHTML = `<span style="font-size: 0.85rem; color: var(--text-muted); font-style: italic;">Registro sin tablas (Cancelado automáticamente)</span>`;
@@ -839,7 +862,7 @@
           <div><b>Fecha/Hora:</b> ${o.fecha || ''}</div>
           <div><b>Tablas solicitadas:</b> ${tableList.length > 0 ? tableList.join(', ') : '<span style="color:var(--danger); font-style:italic;">Ninguna (Liberadas)</span>'}</div>
         </div>
-        <div style="margin-top:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <div style="margin-top:10px; display:flex; gap:8px; align-items:center;">
           ${actionButtonsHTML}
         </div>
       `;
@@ -880,7 +903,7 @@
     const body = document.getElementById('modal-proof-body');
     const clientName = typeof order.cliente === 'string' ? order.cliente : (order.cliente?.name || '');
     body.innerHTML = `
-      <p style="font-size:0.9rem; color:var(--text-muted); font-weight:700;">Registro #${order.id} - ${clientName}</p>
+      <p style="font-size:0.9rem; color:var(--text-muted);">Registro #${order.id} - ${clientName}</p>
       <img src="${proofImg}" alt="Comprobante de Pago">
     `;
     document.getElementById('modal-proof').style.display = 'flex';
