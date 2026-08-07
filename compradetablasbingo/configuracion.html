@@ -564,7 +564,7 @@
       const hasta = parseInt(document.getElementById('cfg-hasta').value);
 
       if (desde >= hasta) {
-        alert('El rango "Hasta" debe ser mayor que "Despues".');
+        alert('El rango "Hasta" debe ser mayor que "Desde".');
         btn.disabled = false;
         btn.textContent = "Guardar Cambios y Generar Tablas";
         return;
@@ -698,7 +698,7 @@
         </div>
       `;
 
-      item.querySelector(`.${btnClass}`).addEventListener('click', (e) => {
+      item.querySelector('.table-status-btn').addEventListener('click', (e) => {
         const orderId = e.target.dataset.orderid;
         const currentPassed = e.target.dataset.passed === 'true';
         toggleOrderPassedStatus(orderId, !currentPassed);
