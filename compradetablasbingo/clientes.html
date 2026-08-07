@@ -618,23 +618,47 @@
       clearInterval(timerInterval);
       orderCompleted = true;
 
+      // Buscar el siguiente consecutivo tomando como base el mayor registro existente.
+      // La creación final se hace dentro de una transacción para impedir que dos
+      // compradores simultáneos reciban el mismo número de registro.
       const pedidosSnap = await getDocs(collection(db, 'pedidos'));
-      const orderCount = pedidosSnap.size + 1;
-      const orderId = String(orderCount).padStart(5, '0');
+      let nextOrderNumber = 1;
 
-      const newOrder = {
-        id: orderId,
-        cliente: buyerName,
-        telefono: buyerPhone,
-        referencia: buyerAddress,
-        tablas: selectedTables,
-        total: selectedTables.length * (config ? config.valor : 0),
-        comprobante: proofBase64 || null,
-        fecha: new Date().toLocaleString(),
-        estado: 'PENDIENTE PAGO'
-      };
+      pedidosSnap.forEach(docSnap => {
+        const n = parseInt(docSnap.id, 10);
+        if (Number.isFinite(n) && n >= nextOrderNumber) {
+          nextOrderNumber = n + 1;
+        }
+      });
 
-      await setDoc(doc(db, 'pedidos', orderId), newOrder);
+      const orderId = await runTransaction(db, async (transaction) => {
+        let candidateNumber = nextOrderNumber;
+
+        while (true) {
+          const candidateId = String(candidateNumber).padStart(5, '0');
+          const candidateRef = doc(db, 'pedidos', candidateId);
+          const candidateSnap = await transaction.get(candidateRef);
+
+          if (!candidateSnap.exists()) {
+            const newOrder = {
+              id: candidateId,
+              cliente: buyerName,
+              telefono: buyerPhone,
+              referencia: buyerAddress,
+              tablas: selectedTables,
+              total: selectedTables.length * (config ? config.valor : 0),
+              comprobante: proofBase64 || null,
+              fecha: new Date().toLocaleString(),
+              estado: 'PENDIENTE PAGO'
+            };
+
+            transaction.set(candidateRef, newOrder);
+            return candidateId;
+          }
+
+          candidateNumber++;
+        }
+      });
 
       for (const code of selectedTables) {
         await updateDoc(doc(db, 'tablas', code), {
