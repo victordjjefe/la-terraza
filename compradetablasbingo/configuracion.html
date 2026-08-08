@@ -416,6 +416,7 @@
             <option value="PENDIENTE PAGO">PENDIENTE PAGO</option>
             <option value="PAGADO">PAGADO</option>
             <option value="CANCELADO">CANCELADO</option>
+            <option value="NO_REGISTRADO_SISTEMA">NO REGISTRADOS EN EL SISTEMA</option>
           </select>
         </div>
         <!-- Contenedor con scroll aplicado para que no crezca infinitamente -->
@@ -543,6 +544,39 @@
     return `${day}/${month}/${year}`;
   }
 
+  function firestoreTimeToInput(value) {
+    if (!value) return '';
+
+    const raw = String(value).trim();
+
+    // Formato que acepta directamente <input type="time">: HH:MM o HH:MM:SS.
+    let match = raw.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+    if (match) {
+      const hours = Number(match[1]);
+      const minutes = Number(match[2]);
+      if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+      }
+    }
+
+    // Compatibilidad con horas guardadas anteriormente como 7:00 PM, 7:00 p. m., etc.
+    const normalized = raw.toUpperCase().replace(/[.\s]/g, '');
+    match = normalized.match(/^(\d{1,2}):(\d{2})(AM|PM)$/);
+    if (match) {
+      let hours = Number(match[1]);
+      const minutes = Number(match[2]);
+      const period = match[3];
+      if (hours >= 1 && hours <= 12 && minutes >= 0 && minutes <= 59) {
+        if (period === 'AM') hours = hours === 12 ? 0 : hours;
+        if (period === 'PM') hours = hours === 12 ? 12 : hours + 12;
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+      }
+    }
+
+    console.warn('Formato de hora no reconocido en configuración:', value);
+    return '';
+  }
+
   async function loadInitialConfig() {
     try {
       const docRef = doc(db, 'configuracion', 'evento');
@@ -552,7 +586,7 @@
         currentTableValue = Number(cfg.valor) || 0;
         document.getElementById('cfg-enabled').checked = cfg.enabled !== undefined ? cfg.enabled : true;
         document.getElementById('cfg-fecha').value = firestoreDateToInput(cfg.fecha);
-        document.getElementById('cfg-hora').value = cfg.hora || '';
+        document.getElementById('cfg-hora').value = firestoreTimeToInput(cfg.hora);
         document.getElementById('cfg-valor').value = cfg.valor ?? '';
         document.getElementById('cfg-desde').value = cfg.rangoDesde ?? 1;
         document.getElementById('cfg-hasta').value = cfg.tablasHabilitadas ?? '';
@@ -822,7 +856,12 @@
                          String(clientPhone).toLowerCase().includes(queryStr) ||
                          reference.toLowerCase().includes(queryStr) ||
                          tablesStr.toLowerCase().includes(queryStr);
-      const matchStatus = statusFilter === 'TODOS' || getEffectiveOrderStatus(o) === statusFilter;
+      let matchStatus;
+      if (statusFilter === 'NO_REGISTRADO_SISTEMA') {
+        matchStatus = (o.tablas || []).length > 0 && o.passedToPC !== true;
+      } else {
+        matchStatus = statusFilter === 'TODOS' || getEffectiveOrderStatus(o) === statusFilter;
+      }
       return matchQuery && matchStatus;
     });
 
