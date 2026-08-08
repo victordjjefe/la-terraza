@@ -610,6 +610,10 @@
       return;
     }
 
+    // Congelamos la selección exacta que se va a comprar para que toda la operación
+    // use el mismo grupo de tablas de principio a fin.
+    const tablesToBuy = [...selectedTables];
+
     const btn = document.getElementById('btn-finish-order');
     btn.disabled = true;
     btn.textContent = "Registrando...";
@@ -618,9 +622,9 @@
       clearInterval(timerInterval);
       orderCompleted = true;
 
-      // Buscar el siguiente consecutivo tomando como base el mayor registro existente.
-      // La creación final se hace dentro de una transacción para impedir que dos
-      // compradores simultáneos reciban el mismo número de registro.
+      // Tomamos como punto de partida el mayor registro existente.
+      // La asignación definitiva del consecutivo y la venta de las tablas se hacen
+      // juntas dentro de UNA sola transacción de Firestore.
       const pedidosSnap = await getDocs(collection(db, 'pedidos'));
       let nextOrderNumber = 1;
 
@@ -633,41 +637,74 @@
 
       const orderId = await runTransaction(db, async (transaction) => {
         let candidateNumber = nextOrderNumber;
+        let candidateId;
+        let candidateRef;
 
+        // Buscar el primer consecutivo libre. Si otra compra simultánea alcanza
+        // a tomarlo, Firestore reintenta automáticamente esta transacción.
         while (true) {
-          const candidateId = String(candidateNumber).padStart(5, '0');
-          const candidateRef = doc(db, 'pedidos', candidateId);
+          candidateId = String(candidateNumber).padStart(5, '0');
+          candidateRef = doc(db, 'pedidos', candidateId);
           const candidateSnap = await transaction.get(candidateRef);
 
-          if (!candidateSnap.exists()) {
-            const newOrder = {
-              id: candidateId,
-              cliente: buyerName,
-              telefono: buyerPhone,
-              referencia: buyerAddress,
-              tablas: selectedTables,
-              total: selectedTables.length * (config ? config.valor : 0),
-              comprobante: proofBase64 || null,
-              fecha: new Date().toLocaleString(),
-              estado: 'PENDIENTE PAGO'
-            };
-
-            transaction.set(candidateRef, newOrder);
-            return candidateId;
-          }
-
+          if (!candidateSnap.exists()) break;
           candidateNumber++;
         }
-      });
 
-      for (const code of selectedTables) {
-        await updateDoc(doc(db, 'tablas', code), {
-          status: 'VENDIDA',
-          reservedUntil: null,
-          reservedBy: null,
-          pedido: orderId
-        });
-      }
+        // Verificar dentro de la misma transacción que todas las tablas siguen
+        // reservadas por este comprador y que la reserva no ha vencido.
+        const tableRefs = tablesToBuy.map(code => doc(db, 'tablas', code));
+        const tableDocs = [];
+
+        for (const tRef of tableRefs) {
+          tableDocs.push(await transaction.get(tRef));
+        }
+
+        const now = Date.now();
+        for (let i = 0; i < tableDocs.length; i++) {
+          const tDoc = tableDocs[i];
+          const code = tablesToBuy[i];
+
+          if (!tDoc.exists()) {
+            throw new Error(`La tabla ${code} ya no existe.`);
+          }
+
+          const tData = tDoc.data();
+          const isExpired = tData.reservedUntil && tData.reservedUntil <= now;
+
+          if (tData.status !== 'RESERVADA' || tData.reservedBy !== myClientId || isExpired) {
+            throw new Error(`La reserva de la tabla ${code} ya no está disponible. Selecciona nuevamente tus tablas.`);
+          }
+        }
+
+        const newOrder = {
+          id: candidateId,
+          cliente: buyerName,
+          telefono: buyerPhone,
+          referencia: buyerAddress,
+          tablas: tablesToBuy,
+          total: tablesToBuy.length * (config ? config.valor : 0),
+          comprobante: proofBase64 || null,
+          fecha: new Date().toLocaleString(),
+          estado: 'PENDIENTE PAGO'
+        };
+
+        // Pedido y tablas vendidas se guardan juntos: si algo falla, no se
+        // confirma ninguna de las dos partes de la compra.
+        transaction.set(candidateRef, newOrder);
+
+        for (let i = 0; i < tableRefs.length; i++) {
+          const tRef = tableRefs[i];
+          transaction.update(tRef, {
+            status: 'VENDIDA',
+            reservedUntil: null,
+            reservedBy: null,
+            pedido: candidateId
+          });
+        }
+
+        return candidateId;
+      });
 
       document.getElementById('reservation-timer-box').classList.add('hidden');
 
@@ -676,12 +713,19 @@
       document.getElementById('success-exclusive-screen').classList.remove('hidden');
 
       document.getElementById('order-number-display').textContent = `Registro #${orderId}`;
-      document.getElementById('assigned-tables-display').textContent = selectedTables.join(', ');
+      document.getElementById('assigned-tables-display').textContent = tablesToBuy.join(', ');
 
     } catch (err) {
       console.error("Error al finalizar pedido:", err);
       alert("Error al guardar en Firestore: " + err.message);
       orderCompleted = false;
+
+      // Si la reserva todavía tiene tiempo, reanudamos el contador visual para
+      // que el comprador pueda intentar nuevamente sin perder la referencia.
+      if (selectedTables.length > 0 && reservationEndTime && reservationEndTime > Date.now()) {
+        startReservationTimer();
+        document.getElementById('reservation-timer-box').classList.remove('hidden');
+      }
     } finally {
       btn.disabled = false;
       btn.textContent = "Registrar / Comprar";
