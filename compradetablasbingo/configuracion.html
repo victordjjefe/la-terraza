@@ -882,36 +882,49 @@
     const confirmacion = confirm("¿Desea borrar todos los datos del evento, tablas y pedidos?");
     if (!confirmacion) return;
 
-    try {
-      await deleteDoc(doc(db, 'configuracion', 'evento'));
+    const btnCerrar = document.getElementById('btn-cerrar-bingo');
+    btnCerrar.disabled = true;
+    const textoOriginal = btnCerrar.textContent;
+    btnCerrar.textContent = "Cerrando bingo...";
 
-      const tablasSnap = await getDocs(collection(db, 'tablas'));
-      let batch = writeBatch(db);
-      let count = 0;
-      tablasSnap.forEach(d => {
-        batch.delete(d.ref);
-        count++;
-        if (count === 500) {
-          batch.commit();
-          batch = writeBatch(db);
-          count = 0;
+    try {
+      // Borrar una colección en bloques y ESPERAR la confirmación de Firebase
+      // antes de continuar con el siguiente bloque.
+      async function borrarSnapshotEnBloques(snapshot) {
+        const docs = snapshot.docs;
+        const LIMITE_BATCH = 500;
+
+        for (let i = 0; i < docs.length; i += LIMITE_BATCH) {
+          const batch = writeBatch(db);
+          docs.slice(i, i + LIMITE_BATCH).forEach(d => batch.delete(d.ref));
+          await batch.commit();
         }
-      });
-      if (count > 0) await batch.commit();
+      }
+
+      // Primero se eliminan todas las tablas y todos los pedidos.
+      const tablasSnap = await getDocs(collection(db, 'tablas'));
+      await borrarSnapshotEnBloques(tablasSnap);
 
       const pedidosSnap = await getDocs(collection(db, 'pedidos'));
-      batch = writeBatch(db);
-      count = 0;
-      pedidosSnap.forEach(d => {
-        batch.delete(d.ref);
-        count++;
-        if (count === 500) {
-          batch.commit();
-          batch = writeBatch(db);
-          count = 0;
-        }
-      });
-      if (count > 0) await batch.commit();
+      await borrarSnapshotEnBloques(pedidosSnap);
+
+      // La configuración se borra al final. Así el evento solo se considera
+      // cerrado cuando las tablas y los pedidos ya terminaron de eliminarse.
+      await deleteDoc(doc(db, 'configuracion', 'evento'));
+
+      // Verificación final: no mostramos éxito hasta confirmar que todo quedó vacío.
+      const [verificacionTablas, verificacionPedidos, verificacionConfig] = await Promise.all([
+        getDocs(collection(db, 'tablas')),
+        getDocs(collection(db, 'pedidos')),
+        getDoc(doc(db, 'configuracion', 'evento'))
+      ]);
+
+      if (!verificacionTablas.empty || !verificacionPedidos.empty || verificacionConfig.exists()) {
+        throw new Error('Firebase todavía reporta datos del bingo. Vuelva a intentar el cierre.');
+      }
+
+      allOrders = [];
+      allTables = [];
 
       document.getElementById('form-config').reset();
       document.getElementById('cfg-enabled').checked = true;
@@ -925,6 +938,9 @@
     } catch (err) {
       console.error("Error al cerrar bingo:", err);
       alert("Error al borrar datos: " + err.message);
+    } finally {
+      btnCerrar.disabled = false;
+      btnCerrar.textContent = textoOriginal;
     }
   }
 
