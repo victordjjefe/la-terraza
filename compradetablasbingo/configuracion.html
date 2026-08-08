@@ -129,6 +129,8 @@
     .metric-card.vend { border-color: var(--danger); }
     .metric-val { font-size: 1.4rem; font-weight: 700; }
     .metric-lbl { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
+    .metric-money { margin-top: 6px; font-size: 0.78rem; font-weight: 700; color: var(--text-main); line-height: 1.25; }
+    .range-help { margin-top: -4px; margin-bottom: 14px; font-size: 0.78rem; color: var(--text-muted); line-height: 1.35; }
 
     .search-box { margin-bottom: 14px; }
     .order-item {
@@ -141,6 +143,21 @@
     .order-header { display: flex; justify-content: space-between; font-weight: 700; font-size: 1rem; margin-bottom: 8px; }
     .order-info { font-size: 0.92rem; color: var(--text-main); line-height: 1.55; font-weight: 600; }
     .order-info b { font-weight: 700; }
+    .related-orders-alert {
+      margin-top: 10px;
+      margin-bottom: 4px;
+      padding: 10px 12px;
+      background: #fffbeb;
+      border: 1px solid #f59e0b;
+      border-left: 4px solid #f59e0b;
+      border-radius: var(--radius-sm);
+      color: #78350f;
+      font-size: 0.86rem;
+      line-height: 1.45;
+    }
+    .related-orders-title { font-weight: 800; margin-bottom: 5px; }
+    .related-order-row { margin-top: 3px; }
+    .related-order-row span { color: #92400e; font-weight: 700; }
     .system-registration-status, .payment-status { margin-top: 6px; font-size: 0.85rem; font-weight: 700; }
     .system-registration-status.not-registered { color: var(--danger); }
     .system-registration-status.registered { color: var(--success); }
@@ -330,27 +347,28 @@
           <div class="form-row">
             <div class="form-group">
               <label>Fecha del Bingo</label>
-              <input type="text" id="cfg-fecha" class="form-control" placeholder="30/07/2026" required>
+              <input type="date" id="cfg-fecha" class="form-control" required>
             </div>
             <div class="form-group">
               <label>Hora</label>
-              <input type="text" id="cfg-hora" class="form-control" placeholder="10:41" required>
+              <input type="time" id="cfg-hora" class="form-control" required>
             </div>
           </div>
           <div class="form-group">
             <label>Valor por Tabla ($)</label>
-            <input type="number" id="cfg-valor" class="form-control" placeholder="3000" min="0" required>
+            <input type="number" id="cfg-valor" class="form-control" placeholder="$ Valor por tabla" min="0" required>
           </div>
           <div class="form-row">
             <div class="form-group">
               <label>Rango Desde</label>
-              <input type="number" id="cfg-desde" class="form-control" value="1" min="1" required>
+              <input type="number" id="cfg-desde" class="form-control" min="1" required>
             </div>
             <div class="form-group">
               <label>Rango Hasta</label>
-              <input type="number" id="cfg-hasta" class="form-control" value="5000" min="1" required>
+              <input type="number" id="cfg-hasta" class="form-control" min="1" required>
             </div>
           </div>
+          <div class="range-help">Define desde qué número hasta qué número estarán habilitadas las tablas.</div>
           <button type="submit" id="btn-submit-config" class="btn btn-primary" style="margin-top: 10px;">Guardar Cambios y Generar Tablas</button>
         </form>
       </div>
@@ -361,14 +379,17 @@
           <div class="metric-card total">
             <div class="metric-val" id="m-total">0</div>
             <div class="metric-lbl">Total Tablas</div>
+            <div class="metric-money" id="m-total-money">$0</div>
           </div>
           <div class="metric-card disp">
             <div class="metric-val" id="m-disp">0</div>
             <div class="metric-lbl">Disponibles</div>
+            <div class="metric-money" id="m-disp-money">$0</div>
           </div>
           <div class="metric-card vend">
             <div class="metric-val" id="m-vend">0</div>
             <div class="metric-lbl">Vendidas</div>
+            <div class="metric-money" id="m-vend-money">$0</div>
           </div>
         </div>
       </div>
@@ -453,6 +474,7 @@
 
   let allOrders = [];
   let allTables = [];
+  let currentTableValue = 0;
 
   document.getElementById('form-login').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -503,22 +525,48 @@
   document.getElementById('tab-btn-config').addEventListener('click', () => switchTab('config'));
   document.getElementById('tab-btn-pedidos').addEventListener('click', () => switchTab('pedidos'));
 
+  function firestoreDateToInput(value) {
+    if (!value) return '';
+    const text = String(value).trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+    const match = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (!match) return '';
+    const [, day, month, year] = match;
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+
+  function inputDateToDisplay(value) {
+    if (!value) return '';
+    const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return value;
+    const [, year, month, day] = match;
+    return `${day}/${month}/${year}`;
+  }
+
   async function loadInitialConfig() {
     try {
       const docRef = doc(db, 'configuracion', 'evento');
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const cfg = docSnap.data();
+        currentTableValue = Number(cfg.valor) || 0;
         document.getElementById('cfg-enabled').checked = cfg.enabled !== undefined ? cfg.enabled : true;
-        document.getElementById('cfg-fecha').value = cfg.fecha || '';
+        document.getElementById('cfg-fecha').value = firestoreDateToInput(cfg.fecha);
         document.getElementById('cfg-hora').value = cfg.hora || '';
-        document.getElementById('cfg-valor').value = cfg.valor || '';
-        document.getElementById('cfg-desde').value = 1;
-        document.getElementById('cfg-hasta').value = cfg.tablasHabilitadas || 5000;
+        document.getElementById('cfg-valor').value = cfg.valor ?? '';
+        document.getElementById('cfg-desde').value = cfg.rangoDesde ?? 1;
+        document.getElementById('cfg-hasta').value = cfg.tablasHabilitadas ?? '';
       } else {
+        currentTableValue = 0;
         document.getElementById('cfg-enabled').checked = true;
+        document.getElementById('cfg-fecha').value = '';
+        document.getElementById('cfg-hora').value = '';
+        document.getElementById('cfg-valor').value = '';
+        document.getElementById('cfg-desde').value = '';
+        document.getElementById('cfg-hasta').value = '';
       }
       updateEnabledLabel();
+      loadMetrics();
     } catch (err) {
       console.error("Error cargando configuración:", err);
     }
@@ -534,14 +582,22 @@
     });
   }
 
+  function formatMoney(value) {
+    return '$' + Math.round(Number(value) || 0).toLocaleString('es-CO');
+  }
+
   function loadMetrics() {
     const total = allTables.length;
     const disp = allTables.filter(t => t.status === 'DISPONIBLE').length;
     const vend = allTables.filter(t => t.status === 'VENDIDA').length;
+    const valor = Number(currentTableValue) || 0;
 
     document.getElementById('m-total').textContent = total;
     document.getElementById('m-disp').textContent = disp;
     document.getElementById('m-vend').textContent = vend;
+    document.getElementById('m-total-money').textContent = formatMoney(total * valor);
+    document.getElementById('m-disp-money').textContent = formatMoney(disp * valor);
+    document.getElementById('m-vend-money').textContent = formatMoney(vend * valor);
   }
 
   document.getElementById('form-config').addEventListener('submit', async (e) => {
@@ -552,7 +608,8 @@
 
     try {
       const enabled = document.getElementById('cfg-enabled').checked;
-      const fecha = document.getElementById('cfg-fecha').value.trim();
+      const fechaInput = document.getElementById('cfg-fecha').value;
+      const fecha = inputDateToDisplay(fechaInput);
       const hora = document.getElementById('cfg-hora').value.trim();
       const valor = parseFloat(document.getElementById('cfg-valor').value);
       const desde = parseInt(document.getElementById('cfg-desde').value);
@@ -571,8 +628,12 @@
         fecha: fecha,
         hora: hora,
         valor: valor,
+        rangoDesde: desde,
         tablasHabilitadas: hasta
       });
+
+      currentTableValue = valor;
+      loadMetrics();
 
       const existingSnapshot = await getDocs(collection(db, 'tablas'));
       const existingMap = new Map();
@@ -721,6 +782,30 @@
     return order.estado === 'PAGADO' ? 'PAGADO' : 'PENDIENTE PAGO';
   }
 
+  function normalizeWhatsapp(value) {
+    const digits = String(value || '').replace(/\D/g, '');
+    // Permite reconocer como el mismo WhatsApp, por ejemplo,
+    // 3001234567 y +57 300 123 4567.
+    return digits.length > 10 ? digits.slice(-10) : digits;
+  }
+
+  function getOrderWhatsapp(order) {
+    return normalizeWhatsapp(order.telefono || order.cliente?.whatsapp || '');
+  }
+
+  function getRelatedOrders(order) {
+    const whatsapp = getOrderWhatsapp(order);
+    if (!whatsapp) return [];
+
+    return allOrders
+      .filter(related => {
+        if (related.firestoreId === order.firestoreId) return false;
+        if (!related.tablas || related.tablas.length === 0) return false;
+        return getOrderWhatsapp(related) === whatsapp;
+      })
+      .sort((a, b) => (parseInt(a.id) || 0) - (parseInt(b.id) || 0));
+  }
+
   function filterOrders() {
     const queryStr = document.getElementById('search-input').value.toLowerCase();
     const statusFilter = document.getElementById('filter-status').value;
@@ -764,6 +849,25 @@
         return numA - numB;
       });
       const clientName = typeof o.cliente === 'string' ? o.cliente : (o.cliente?.name || 'Cliente');
+
+      // Los pedidos relacionados se detectan por WhatsApp, pero NO se mueven ni
+      // se agrupan. Cada tarjeta conserva su posición normal y solo informa qué
+      // otros registros activos pertenecen al mismo cliente.
+      const relatedOrders = getRelatedOrders(o);
+      const relatedOrdersHTML = relatedOrders.length > 0 ? `
+        <div class="related-orders-alert">
+          <div class="related-orders-title">⚠️ CLIENTE CON ${relatedOrders.length === 1 ? 'REGISTRO ADICIONAL' : 'REGISTROS ADICIONALES'}</div>
+          ${relatedOrders.map(related => {
+            const relatedTables = [...(related.tablas || [])].sort((a, b) => {
+              const numA = parseInt(String(a).replace(/\D/g, '')) || 0;
+              const numB = parseInt(String(b).replace(/\D/g, '')) || 0;
+              return numA - numB;
+            });
+            return `<div class="related-order-row"><b>Registro #${related.id || related.firestoreId}:</b> <span>${relatedTables.join(', ')}</span></div>`;
+          }).join('')}
+        </div>
+      ` : '';
+
       // Todo pedido nuevo/activo se interpreta como NO REGISTRADO hasta que se marque manualmente.
       const isPassed = o.passedToPC === true;
       const registrationLegend = isPassed ? 'Tablas registradas en el sistema' : 'No registradas en el sistema';
@@ -800,6 +904,7 @@
           <div><b>Referencia, Ciudad, Barrio:</b> ${o.referencia || 'N/A'}</div>
           <div><b>Fecha/Hora:</b> ${o.fecha || ''}</div>
           <div><b>Tablas (${tableList.length}):</b> ${tableList.length > 0 ? `<span style="color:var(--accent-gold); font-weight:700;">${tableList.join(', ')}</span>` : '<span style="color:var(--danger); font-style:italic;">Ninguna (Liberadas)</span>'}</div>
+          ${tableList.length > 0 ? relatedOrdersHTML : ''}
           ${tableList.length > 0 ? `<div class="payment-status ${paymentClass}">${isPaid ? '✓' : '●'} ${paymentLegend}</div>` : ''}
           ${tableList.length > 0 ? `<div class="system-registration-status ${registrationClass}">${isPassed ? '✓' : '●'} ${registrationLegend}</div>` : ''}
         </div>
@@ -927,12 +1032,16 @@
       allTables = [];
 
       document.getElementById('form-config').reset();
+      currentTableValue = 0;
       document.getElementById('cfg-enabled').checked = true;
+      document.getElementById('cfg-fecha').value = '';
+      document.getElementById('cfg-hora').value = '';
+      document.getElementById('cfg-valor').value = '';
+      document.getElementById('cfg-desde').value = '';
+      document.getElementById('cfg-hasta').value = '';
       updateEnabledLabel();
       document.getElementById('orders-list').innerHTML = '';
-      document.getElementById('m-total').textContent = '0';
-      document.getElementById('m-disp').textContent = '0';
-      document.getElementById('m-vend').textContent = '0';
+      loadMetrics();
 
       alert("Todos los datos del bingo se han borrado correctamente en Firestore.");
     } catch (err) {
