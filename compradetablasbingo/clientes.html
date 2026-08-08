@@ -422,12 +422,9 @@
 
     try {
       if (index > -1) {
-        await updateDoc(doc(db, 'tablas', code), {
-          status: 'DISPONIBLE',
-          reservedUntil: null,
-          reservedBy: null,
-          pedido: null
-        });
+        // Nunca liberamos a ciegas: solo se devuelve a DISPONIBLE si la tabla
+        // sigue RESERVADA por este mismo comprador. Si ya fue VENDIDA, no se toca.
+        await releaseTableIfOwned(code);
       } else {
         const success = await runTransaction(db, async (transaction) => {
           const tRef = doc(db, 'tablas', code);
@@ -502,6 +499,33 @@
     resetForm();
   }
 
+  async function releaseTableIfOwned(code) {
+    const tRef = doc(db, 'tablas', code);
+
+    return runTransaction(db, async (transaction) => {
+      const tDoc = await transaction.get(tRef);
+      if (!tDoc.exists()) return false;
+
+      const tData = tDoc.data();
+
+      // Protección principal contra tablas repetidas:
+      // una tabla VENDIDA, disponible o reservada por otra persona jamás
+      // puede ser liberada desde este navegador.
+      if (tData.status !== 'RESERVADA' || tData.reservedBy !== myClientId) {
+        return false;
+      }
+
+      transaction.update(tRef, {
+        status: 'DISPONIBLE',
+        reservedUntil: null,
+        reservedBy: null,
+        pedido: null
+      });
+
+      return true;
+    });
+  }
+
   async function releaseCurrentReservations() {
     if (selectedTables.length === 0) return;
     const tablesToRelease = [...selectedTables];
@@ -509,13 +533,7 @@
 
     for (const code of tablesToRelease) {
       try {
-        const tRef = doc(db, 'tablas', code);
-        await updateDoc(tRef, {
-          status: 'DISPONIBLE',
-          reservedUntil: null,
-          reservedBy: null,
-          pedido: null
-        });
+        await releaseTableIfOwned(code);
       } catch (err) {
         console.error("Error liberando reserva:", err);
       }
@@ -534,16 +552,12 @@
 
   window.addEventListener('beforeunload', () => {
     if (!orderCompleted && selectedTables.length > 0) {
+      // Es un intento de liberación inmediata al cerrar la página. El navegador
+      // puede interrumpir operaciones de red durante el cierre; si eso ocurre,
+      // el vencimiento de 5 minutos sigue siendo el respaldo. La transacción
+      // evita que una tabla ya VENDIDA vuelva accidentalmente a DISPONIBLE.
       selectedTables.forEach(code => {
-        try {
-          const tRef = doc(db, 'tablas', code);
-          updateDoc(tRef, {
-            status: 'DISPONIBLE',
-            reservedUntil: null,
-            reservedBy: null,
-            pedido: null
-          });
-        } catch (e) {}
+        releaseTableIfOwned(code).catch(() => {});
       });
     }
   });
@@ -705,6 +719,12 @@
 
         return candidateId;
       });
+
+      // Desde este punto Firebase ya confirmó pedido + tablas VENDIDAS.
+      // Limpiamos de inmediato la selección local para que una recarga/cierre
+      // posterior nunca intente liberar estas tablas, incluso si falla la UI.
+      selectedTables = [];
+      reservationEndTime = null;
 
       document.getElementById('reservation-timer-box').classList.add('hidden');
 
