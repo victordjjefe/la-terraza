@@ -263,6 +263,7 @@
         <div style="font-size: 3rem; color: var(--success); margin-bottom: 8px;">✓</div>
         <div class="card-title" style="font-size: 1.4rem; justify-content: center; color: var(--success);">¡REGISTRO EXITOSO!</div>
         <p id="order-number-display" style="font-size: 1.1rem; font-weight: 700; color: var(--accent-gold); margin-bottom: 8px;"></p>
+        <p id="buyer-success-display" style="font-size: 1.05rem; font-weight: 700; color: var(--text-main); margin-bottom: 10px;"></p>
         <p style="font-size: 0.95rem; color: var(--text-main); margin-bottom: 20px;">
           Tus tablas registradas son: <b id="assigned-tables-display"></b>
         </p>
@@ -733,6 +734,7 @@
       document.getElementById('success-exclusive-screen').classList.remove('hidden');
 
       document.getElementById('order-number-display').textContent = `Registro #${orderId}`;
+      document.getElementById('buyer-success-display').textContent = `Hola ${buyerName}, tu registro fue realizado exitosamente.`;
       document.getElementById('assigned-tables-display').textContent = tablesToBuy.join(', ');
 
     } catch (err) {
