@@ -617,10 +617,11 @@
       .toUpperCase();
   }
 
-  // Fuerza la escritura organizada de datos en mayúscula
+  // Normaliza los datos al salir del campo, no mientras escribe.
+  // Esto permite que el usuario pueda usar espacios normalmente entre nombre y apellido.
   ['buyer-name', 'buyer-address'].forEach(id => {
     const input = document.getElementById(id);
-    input.addEventListener('input', () => {
+    input.addEventListener('blur', () => {
       input.value = normalizeText(input.value);
     });
   });
