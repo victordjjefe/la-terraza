@@ -191,6 +191,12 @@
       overflow-y: auto;
     }
 
+    .listing-table-wrapper { overflow-x:auto; max-height:60vh; overflow-y:auto; }
+    .listing-table { width:100%; border-collapse:collapse; font-size:0.88rem; }
+    .listing-table th { background:#f8fafc; padding:10px; text-align:left; border-bottom:1px solid var(--border-color); }
+    .listing-table td { padding:10px; border-bottom:1px solid var(--border-color); vertical-align:top; }
+    .listing-copy-btn { margin-top:12px; }
+
     .orders-scroll-container {
       display: flex;
       flex-direction: column;
@@ -328,6 +334,7 @@
     <div class="tab-bar">
       <div class="tab-item active" id="tab-btn-config">Configuración</div>
       <div class="tab-item" id="tab-btn-pedidos">Pedidos</div>
+      <div class="tab-item" id="tab-btn-listado">Listado</div>
     </div>
 
     <!-- SECCIÓN CONFIGURACIÓN -->
@@ -423,6 +430,23 @@
         <div class="orders-scroll-container" id="orders-list"></div>
       </div>
     </div>
+
+    <!-- SECCIÓN LISTADO -->
+    <div id="tab-listado" style="display: none;">
+      <div class="card">
+        <div class="card-title">Listado de Registros</div>
+        <button class="btn btn-primary listing-copy-btn" id="btn-copy-listado">Copiar Listado</button>
+        <p id="listado-total" style="margin:12px 0; font-size:0.9rem; color:var(--text-muted);"></p>
+        <div class="listing-table-wrapper">
+          <table class="listing-table">
+            <thead>
+              <tr><th>#</th><th>Nombre</th><th>Celular</th><th>Tablas</th></tr>
+            </thead>
+            <tbody id="listado-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </main>
 </div>
 
@@ -512,19 +536,25 @@
     document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
     document.getElementById('tab-config').style.display = 'none';
     document.getElementById('tab-pedidos').style.display = 'none';
+    document.getElementById('tab-listado').style.display = 'none';
     
     if (tab === 'config') {
       document.getElementById('tab-btn-config').classList.add('active');
       document.getElementById('tab-config').style.display = 'block';
-    } else {
+    } else if (tab === 'pedidos') {
       document.getElementById('tab-btn-pedidos').classList.add('active');
       document.getElementById('tab-pedidos').style.display = 'block';
       renderOrders();
+    } else {
+      document.getElementById('tab-btn-listado').classList.add('active');
+      document.getElementById('tab-listado').style.display = 'block';
+      renderListado();
     }
   }
 
   document.getElementById('tab-btn-config').addEventListener('click', () => switchTab('config'));
   document.getElementById('tab-btn-pedidos').addEventListener('click', () => switchTab('pedidos'));
+  document.getElementById('tab-btn-listado').addEventListener('click', () => switchTab('listado'));
 
   function firestoreDateToInput(value) {
     if (!value) return '';
@@ -721,6 +751,7 @@
         allOrders.push({ firestoreId: docSnap.id, ...docSnap.data() });
       });
       renderOrders();
+      renderListado();
     });
   }
 
@@ -804,6 +835,47 @@
 
   document.getElementById('btn-close-release-modal').addEventListener('click', () => {
     document.getElementById('modal-release-table').style.display = 'none';
+  });
+
+  function renderListado() {
+    const tbody = document.getElementById('listado-body');
+    const total = document.getElementById('listado-total');
+    if (!tbody) return;
+
+    const clientes = {};
+
+    allOrders.forEach(order => {
+      const celular = getOrderWhatsapp(order);
+      if (!celular) return;
+      const nombre = typeof order.cliente === 'string' ? order.cliente : (order.cliente?.name || 'Cliente');
+      if (!clientes[celular]) {
+        clientes[celular] = { nombre, celular, tablas: [] };
+      }
+      clientes[celular].tablas.push(...(order.tablas || []));
+    });
+
+    const listado = Object.values(clientes).map(c => ({
+      ...c,
+      tablas: [...new Set(c.tablas)].sort((a,b)=> (parseInt(String(a).replace(/\D/g,''))||0)-(parseInt(String(b).replace(/\D/g,''))||0))
+    }));
+
+    total.textContent = `Total registrados: ${listado.length}`;
+    tbody.innerHTML = listado.map((c,i)=>`
+      <tr>
+        <td>${i+1}</td>
+        <td>${c.nombre}</td>
+        <td>${c.celular}</td>
+        <td>${c.tablas.join(', ')}</td>
+      </tr>`).join('');
+
+    window.currentListadoCopy = listado;
+  }
+
+  document.getElementById('btn-copy-listado').addEventListener('click', async () => {
+    const listado = window.currentListadoCopy || [];
+    const texto = listado.map(c => `${c.nombre}\nTablas: ${c.tablas.join(', ')}`).join('\n\n');
+    await navigator.clipboard.writeText(texto);
+    alert('Listado copiado correctamente.');
   });
 
   function renderOrders() {
