@@ -625,7 +625,6 @@
       if (docSnap.exists()) {
         const cfg = docSnap.data();
         currentTableValue = Number(cfg.valor) || 0;
-        document.getElementById('cfg-enabled').checked = cfg.enabled !== undefined ? cfg.enabled : true;
         document.getElementById('cfg-fecha').value = firestoreDateToInput(cfg.fecha);
         document.getElementById('cfg-hora').value = firestoreTimeToInput(cfg.hora);
         document.getElementById('cfg-venta-desde-fecha').value = firestoreDateToInput(cfg.ventaDesdeFecha);
@@ -637,7 +636,6 @@
         document.getElementById('cfg-hasta').value = cfg.tablasHabilitadas ?? '';
       } else {
         currentTableValue = 0;
-        document.getElementById('cfg-enabled').checked = true;
         document.getElementById('cfg-fecha').value = '';
         document.getElementById('cfg-hora').value = '';
         document.getElementById('cfg-venta-desde-fecha').value = '';
@@ -648,7 +646,6 @@
         document.getElementById('cfg-desde').value = '';
         document.getElementById('cfg-hasta').value = '';
       }
-      updateEnabledLabel();
       loadMetrics();
     } catch (err) {
       console.error("Error cargando configuración:", err);
@@ -690,7 +687,6 @@
     btn.textContent = "Procesando...";
 
     try {
-      const enabled = document.getElementById('cfg-enabled').checked;
       const fechaInput = document.getElementById('cfg-fecha').value;
       const fecha = inputDateToDisplay(fechaInput);
       const hora = document.getElementById('cfg-hora').value.trim();
@@ -1170,7 +1166,6 @@
 
       document.getElementById('form-config').reset();
       currentTableValue = 0;
-      document.getElementById('cfg-enabled').checked = true;
       document.getElementById('cfg-fecha').value = '';
       document.getElementById('cfg-hora').value = '';
         document.getElementById('cfg-venta-desde-fecha').value = '';
@@ -1180,7 +1175,6 @@
       document.getElementById('cfg-valor').value = '';
       document.getElementById('cfg-desde').value = '';
       document.getElementById('cfg-hasta').value = '';
-      updateEnabledLabel();
       document.getElementById('orders-list').innerHTML = '';
       loadMetrics();
 
