@@ -177,6 +177,7 @@
         <span>📅 El bingo será el: <b id="info-fecha">--</b></span>
         <span>⏰ Hora: <b id="info-hora">--</b></span>
         <span>💵 Valor tabla: <b>$<span id="info-valor">0</span></b></span>
+        <span>⏳ Compra disponible: <b id="info-venta-rango">--</b></span>
       </div>
     </div>
 
@@ -333,6 +334,32 @@
       }
 
       config = docSnap.data();
+
+      const convertirFecha = (f,h) => f && h ? new Date(`${f.split('/').reverse().join('-')}T${h}`) : null;
+      const ahora = new Date();
+      const apertura = convertirFecha(config.ventaDesdeFecha, config.ventaDesdeHora);
+      const cierre = convertirFecha(config.ventaHastaFecha, config.ventaHastaHora);
+
+      if (document.getElementById('info-venta-rango')) {
+        document.getElementById('info-venta-rango').textContent = `${config.ventaDesdeFecha || '--'} ${config.ventaDesdeHora || ''} hasta ${config.ventaHastaFecha || '--'} ${config.ventaHastaHora || ''}`;
+      }
+
+      if (cierre && ahora >= cierre) {
+        document.getElementById('enabled-screen').classList.add('hidden');
+        document.getElementById('disabled-screen').classList.remove('hidden');
+        document.getElementById('disabled-message-title').textContent = 'TIEMPO DE COMPRA FINALIZADO';
+        document.getElementById('disabled-message-body').textContent = 'El periodo para adquirir tablas del bingo ha terminado.';
+        return;
+      }
+
+      if (apertura && ahora < apertura) {
+        document.getElementById('enabled-screen').classList.add('hidden');
+        document.getElementById('disabled-screen').classList.remove('hidden');
+        document.getElementById('disabled-message-title').textContent = 'COMPRAS AÚN NO DISPONIBLES';
+        document.getElementById('disabled-message-body').textContent = `Las tablas estarán disponibles desde ${config.ventaDesdeFecha} ${config.ventaDesdeHora}.`;
+        return;
+      }
+
       if (config.enabled === false) {
         document.getElementById('enabled-screen').classList.add('hidden');
         document.getElementById('disabled-screen').classList.remove('hidden');
@@ -627,6 +654,14 @@
   });
 
   async function finishOrder() {
+    if (config && config.ventaHastaFecha && config.ventaHastaHora) {
+      const cierre = new Date(`${config.ventaHastaFecha.split('/').reverse().join('-')}T${config.ventaHastaHora}`);
+      if (new Date() >= cierre) {
+        alert('El tiempo para comprar tablas ha finalizado.');
+        return;
+      }
+    }
+
     const buyerNameInput = document.getElementById('buyer-name');
     const buyerAddressInput = document.getElementById('buyer-address');
     const buyerPhoneInput = document.getElementById('buyer-phone');
