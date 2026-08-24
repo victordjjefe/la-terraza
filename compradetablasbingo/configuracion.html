@@ -617,6 +617,10 @@
         document.getElementById('cfg-enabled').checked = cfg.enabled !== undefined ? cfg.enabled : true;
         document.getElementById('cfg-fecha').value = firestoreDateToInput(cfg.fecha);
         document.getElementById('cfg-hora').value = firestoreTimeToInput(cfg.hora);
+        document.getElementById('cfg-venta-desde-fecha').value = firestoreDateToInput(cfg.ventaDesdeFecha);
+        document.getElementById('cfg-venta-desde-hora').value = firestoreTimeToInput(cfg.ventaDesdeHora);
+        document.getElementById('cfg-venta-hasta-fecha').value = firestoreDateToInput(cfg.ventaHastaFecha);
+        document.getElementById('cfg-venta-hasta-hora').value = firestoreTimeToInput(cfg.ventaHastaHora);
         document.getElementById('cfg-valor').value = cfg.valor ?? '';
         document.getElementById('cfg-desde').value = cfg.rangoDesde ?? 1;
         document.getElementById('cfg-hasta').value = cfg.tablasHabilitadas ?? '';
@@ -625,6 +629,10 @@
         document.getElementById('cfg-enabled').checked = true;
         document.getElementById('cfg-fecha').value = '';
         document.getElementById('cfg-hora').value = '';
+        document.getElementById('cfg-venta-desde-fecha').value = '';
+        document.getElementById('cfg-venta-desde-hora').value = '';
+        document.getElementById('cfg-venta-hasta-fecha').value = '';
+        document.getElementById('cfg-venta-hasta-hora').value = '';
         document.getElementById('cfg-valor').value = '';
         document.getElementById('cfg-desde').value = '';
         document.getElementById('cfg-hasta').value = '';
@@ -675,6 +683,10 @@
       const fechaInput = document.getElementById('cfg-fecha').value;
       const fecha = inputDateToDisplay(fechaInput);
       const hora = document.getElementById('cfg-hora').value.trim();
+      const ventaDesdeFecha = inputDateToDisplay(document.getElementById('cfg-venta-desde-fecha').value);
+      const ventaDesdeHora = document.getElementById('cfg-venta-desde-hora').value.trim();
+      const ventaHastaFecha = inputDateToDisplay(document.getElementById('cfg-venta-hasta-fecha').value);
+      const ventaHastaHora = document.getElementById('cfg-venta-hasta-hora').value.trim();
       const valor = parseFloat(document.getElementById('cfg-valor').value);
       const desde = parseInt(document.getElementById('cfg-desde').value);
       const hasta = parseInt(document.getElementById('cfg-hasta').value);
@@ -693,7 +705,11 @@
         hora: hora,
         valor: valor,
         rangoDesde: desde,
-        tablasHabilitadas: hasta
+        tablasHabilitadas: hasta,
+        ventaDesdeFecha: ventaDesdeFecha,
+        ventaDesdeHora: ventaDesdeHora,
+        ventaHastaFecha: ventaHastaFecha,
+        ventaHastaHora: ventaHastaHora
       });
 
       currentTableValue = valor;
@@ -1147,6 +1163,10 @@
       document.getElementById('cfg-enabled').checked = true;
       document.getElementById('cfg-fecha').value = '';
       document.getElementById('cfg-hora').value = '';
+        document.getElementById('cfg-venta-desde-fecha').value = '';
+        document.getElementById('cfg-venta-desde-hora').value = '';
+        document.getElementById('cfg-venta-hasta-fecha').value = '';
+        document.getElementById('cfg-venta-hasta-hora').value = '';
       document.getElementById('cfg-valor').value = '';
       document.getElementById('cfg-desde').value = '';
       document.getElementById('cfg-hasta').value = '';
