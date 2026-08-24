@@ -343,14 +343,6 @@
         <div class="card-title">Ajustes del Evento</div>
         <form id="form-config">
           
-          <div class="toggle-container">
-            <span class="toggle-label">Estado de Ventas de Tablas:</span>
-            <label style="display:flex; align-items:center; gap:8px; font-size:0.9rem; font-weight:700; cursor:pointer;">
-              <input type="checkbox" id="cfg-enabled" style="width:20px; height:20px; accent-color:var(--accent-gold);">
-              <span id="cfg-enabled-text">Habilitadas</span>
-            </label>
-          </div>
-
           <div class="form-row">
             <div class="form-group">
               <label>Fecha del Bingo</label>
@@ -551,13 +543,6 @@
     return 'T' + String(num);
   }
 
-  function updateEnabledLabel() {
-    const isChecked = document.getElementById('cfg-enabled').checked;
-    document.getElementById('cfg-enabled-text').textContent = isChecked ? 'Habilitadas' : 'Deshabilitadas';
-  }
-
-  document.getElementById('cfg-enabled').addEventListener('change', updateEnabledLabel);
-
   function switchTab(tab) {
     document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
     document.getElementById('tab-config').style.display = 'none';
@@ -726,7 +711,6 @@
 
       await setDoc(doc(db, 'configuracion', 'evento'), {
         nombre: "LA TERRAZA BINGO",
-        enabled: enabled,
         fecha: fecha,
         hora: hora,
         valor: valor,
