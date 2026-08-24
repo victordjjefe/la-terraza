@@ -57,6 +57,21 @@
     .banner-container { text-align: center; padding: 20px; background: #fff; border-bottom: 1px solid var(--border-color); }
     .banner-img { max-width: 100%; height: auto; max-height: 160px; border-radius: var(--radius-sm); object-fit: contain; }
     .hero-title { font-size: 1.3rem; font-weight: 700; color: var(--primary); margin-top: 10px; }
+
+    .event-highlight {
+      background: linear-gradient(135deg, #fff7ed, #fffbeb);
+      border: 2px solid #d97706;
+      border-radius: 16px;
+      padding: 18px;
+      margin-top: 14px;
+      box-shadow: 0 8px 20px rgba(217,119,6,.15);
+    }
+    .event-highlight .event-main-title { font-size: .95rem; font-weight:800; color:#92400e; letter-spacing:.5px; }
+    .event-highlight .event-date { font-size:1.35rem; font-weight:800; color:#0f172a; margin-top:8px; line-height:1.25; }
+    .event-highlight .event-time { font-size:1.15rem; font-weight:800; color:#d97706; margin-top:6px; }
+    .purchase-info { background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px; margin-top:14px; font-size:.9rem; color:#475569; }
+    .purchase-info b { color:#0f172a; }
+
     .event-info { font-size: 1rem; color: var(--text-muted); margin-top: 8px; display: flex; flex-direction: column; gap: 6px; align-items: center; }
 
     .main-content { padding: 20px; flex: 1; display: flex; flex-direction: column; gap: 20px; }
@@ -173,11 +188,15 @@
     <div class="banner-container" id="banner-section">
       <img src="pagos.png" alt="Métodos de Pago" class="banner-img" onerror="this.style.display='none'">
       <div class="hero-title">COMPRA TUS TABLAS DIGITALES</div>
-      <div class="event-info">
-        <span>📅 El bingo será el: <b id="info-fecha">--</b></span>
-        <span>⏰ Hora: <b id="info-hora">--</b></span>
-        <span>💵 Valor tabla: <b>$<span id="info-valor">0</span></b></span>
-        <span>⏳ Compra disponible: <b id="info-venta-rango">--</b></span>
+      <div class="event-highlight">
+        <div class="event-main-title">🎱 GRAN BINGO</div>
+        <div class="event-date" id="info-fecha">--</div>
+        <div class="event-time">⏰ <span id="info-hora">--</span></div>
+      </div>
+      <div class="purchase-info">
+        💵 Valor tabla: <b>$<span id="info-valor">0</span></b><br>
+        🛒 Compra de tablas disponible:<br>
+        <b id="info-venta-rango">--</b>
       </div>
     </div>
 
@@ -337,6 +356,12 @@
 
       const convertirFecha = (f,h) => f && h ? new Date(`${f.split('/').reverse().join('-')}T${h}`) : null;
       const ahora = new Date();
+
+      const fechaBonita = (f) => {
+        if (!f) return '--';
+        const d = new Date(f + 'T00:00:00');
+        return d.toLocaleDateString('es-CO', {weekday:'long', day:'numeric', month:'long', year:'numeric'}).toUpperCase();
+      };
       const apertura = convertirFecha(config.ventaDesdeFecha, config.ventaDesdeHora);
       const cierre = convertirFecha(config.ventaHastaFecha, config.ventaHastaHora);
 
@@ -360,18 +385,11 @@
         return;
       }
 
-      if (config.enabled === false) {
-        document.getElementById('enabled-screen').classList.add('hidden');
-        document.getElementById('disabled-screen').classList.remove('hidden');
-        document.getElementById('disabled-message-title').textContent = "COMPRAS NO DISPONIBLES";
-        document.getElementById('disabled-message-body').textContent = "Las ventas de tablas aún no están habilitadas";
-        return;
-      }
 
       document.getElementById('enabled-screen').classList.remove('hidden');
       document.getElementById('disabled-screen').classList.add('hidden');
 
-      document.getElementById('info-fecha').textContent = config.fecha || '--';
+      document.getElementById('info-fecha').textContent = fechaBonita(config.fecha);
       document.getElementById('info-hora').textContent = config.hora || '--';
       document.getElementById('info-valor').textContent = (config.valor || 0).toLocaleString();
     });
@@ -522,7 +540,7 @@
   }
 
   async function handleTimerExpiration() {
-    alert('Tu tiempo de reserva (5 minutos) ha expirado. Las tablas han sido liberadas.');
+    alert('Tu tiempo de reserva (3 minutos) ha expirado. Las tablas han sido liberadas.');
     await releaseCurrentReservations();
     resetForm();
   }
@@ -656,6 +674,12 @@
   async function finishOrder() {
     if (config) {
       const ahora = new Date();
+
+      const fechaBonita = (f) => {
+        if (!f) return '--';
+        const d = new Date(f + 'T00:00:00');
+        return d.toLocaleDateString('es-CO', {weekday:'long', day:'numeric', month:'long', year:'numeric'}).toUpperCase();
+      };
       if (config.ventaDesdeFecha && config.ventaDesdeHora) {
         const apertura = new Date(`${config.ventaDesdeFecha.split('/').reverse().join('-')}T${config.ventaDesdeHora}`);
         if (ahora < apertura) {
