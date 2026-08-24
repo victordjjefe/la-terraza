@@ -318,7 +318,7 @@
   let proofBase64 = null;
   let allTablesData = [];
 
-  const HOLD_TIME_MINUTES = 5;
+  const HOLD_TIME_MINUTES = 3;
   let timerInterval = null;
   let reservationEndTime = null;
   let orderCompleted = false;
@@ -654,11 +654,21 @@
   });
 
   async function finishOrder() {
-    if (config && config.ventaHastaFecha && config.ventaHastaHora) {
-      const cierre = new Date(`${config.ventaHastaFecha.split('/').reverse().join('-')}T${config.ventaHastaHora}`);
-      if (new Date() >= cierre) {
-        alert('El tiempo para comprar tablas ha finalizado.');
-        return;
+    if (config) {
+      const ahora = new Date();
+      if (config.ventaDesdeFecha && config.ventaDesdeHora) {
+        const apertura = new Date(`${config.ventaDesdeFecha.split('/').reverse().join('-')}T${config.ventaDesdeHora}`);
+        if (ahora < apertura) {
+          alert('La venta de tablas todavía no está disponible.');
+          return;
+        }
+      }
+      if (config.ventaHastaFecha && config.ventaHastaHora) {
+        const cierre = new Date(`${config.ventaHastaFecha.split('/').reverse().join('-')}T${config.ventaHastaHora}`);
+        if (ahora >= cierre) {
+          alert('El tiempo para comprar tablas ha finalizado.');
+          return;
+        }
       }
     }
 
