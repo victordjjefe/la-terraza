@@ -361,8 +361,34 @@
               <input type="time" id="cfg-hora" class="form-control" required>
             </div>
           </div>
+
+          <div class="card" style="background:#f8fafc; margin-bottom:14px; padding:14px;">
+            <div class="card-title" style="font-size:1rem;">Periodo de Venta de Tablas</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Disponible Desde - Fecha</label>
+                <input type="date" id="cfg-venta-desde-fecha" class="form-control">
+              </div>
+              <div class="form-group">
+                <label>Hora</label>
+                <input type="time" id="cfg-venta-desde-hora" class="form-control">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Disponible Hasta - Fecha</label>
+                <input type="date" id="cfg-venta-hasta-fecha" class="form-control">
+              </div>
+              <div class="form-group">
+                <label>Hora</label>
+                <input type="time" id="cfg-venta-hasta-hora" class="form-control">
+              </div>
+            </div>
+            <div class="range-help">Al llegar a la fecha y hora final, las compras se bloquearán automáticamente.</div>
+          </div>
+
           <div class="form-group">
-            <label>Valor por Tabla ($)</label>
+             <label>Valor por Tabla ($)</label>
             <input type="number" id="cfg-valor" class="form-control" placeholder="$ Valor por tabla" min="0" required>
           </div>
           <div class="form-row">
