@@ -205,7 +205,7 @@
       <div id="reservation-timer-box" class="timer-banner hidden">
         <b>¡Tienes tablas reservadas!</b>
         <p style="margin-top:4px;">Tiempo restante para completar el registro:</p>
-        <div id="timer-display" class="timer-clock">05:00</div>
+        <div id="timer-display" class="timer-clock">03:00</div>
       </div>
 
       <div class="card" id="card-tables-section">
@@ -359,8 +359,43 @@
 
       const fechaBonita = (f) => {
         if (!f) return '--';
-        const d = new Date(f + 'T00:00:00');
-        return d.toLocaleDateString('es-CO', {weekday:'long', day:'numeric', month:'long', year:'numeric'}).toUpperCase();
+
+        let d;
+
+        try {
+          if (f.includes('-')) {
+            const partes = f.split('-');
+            d = new Date(Number(partes[0]), Number(partes[1]) - 1, Number(partes[2]));
+          } else if (f.includes('/')) {
+            const partes = f.split('/');
+            d = new Date(Number(partes[2]), Number(partes[1]) - 1, Number(partes[0]));
+          } else {
+            return '--';
+          }
+
+          if (isNaN(d.getTime())) return '--';
+
+          return d.toLocaleDateString('es-CO', {
+            weekday:'long',
+            day:'numeric',
+            month:'long',
+            year:'numeric'
+          }).toUpperCase();
+        } catch(e) {
+          console.error('Error convirtiendo fecha del bingo:', e);
+          return '--';
+        }
+      };
+
+      const horaBonita = (h) => {
+        if (!h) return '--';
+        const partes = h.split(':');
+        if (partes.length < 2) return h;
+        let hora = Number(partes[0]);
+        const minutos = partes[1];
+        const periodo = hora >= 12 ? 'PM' : 'AM';
+        hora = hora % 12 || 12;
+        return `${hora}:${minutos} ${periodo}`;
       };
       const apertura = convertirFecha(config.ventaDesdeFecha, config.ventaDesdeHora);
       const cierre = convertirFecha(config.ventaHastaFecha, config.ventaHastaHora);
@@ -390,7 +425,7 @@
       document.getElementById('disabled-screen').classList.add('hidden');
 
       document.getElementById('info-fecha').textContent = fechaBonita(config.fecha);
-      document.getElementById('info-hora').textContent = config.hora || '--';
+      document.getElementById('info-hora').textContent = horaBonita(config.hora);
       document.getElementById('info-valor').textContent = (config.valor || 0).toLocaleString();
     });
   }
@@ -677,8 +712,43 @@
 
       const fechaBonita = (f) => {
         if (!f) return '--';
-        const d = new Date(f + 'T00:00:00');
-        return d.toLocaleDateString('es-CO', {weekday:'long', day:'numeric', month:'long', year:'numeric'}).toUpperCase();
+
+        let d;
+
+        try {
+          if (f.includes('-')) {
+            const partes = f.split('-');
+            d = new Date(Number(partes[0]), Number(partes[1]) - 1, Number(partes[2]));
+          } else if (f.includes('/')) {
+            const partes = f.split('/');
+            d = new Date(Number(partes[2]), Number(partes[1]) - 1, Number(partes[0]));
+          } else {
+            return '--';
+          }
+
+          if (isNaN(d.getTime())) return '--';
+
+          return d.toLocaleDateString('es-CO', {
+            weekday:'long',
+            day:'numeric',
+            month:'long',
+            year:'numeric'
+          }).toUpperCase();
+        } catch(e) {
+          console.error('Error convirtiendo fecha del bingo:', e);
+          return '--';
+        }
+      };
+
+      const horaBonita = (h) => {
+        if (!h) return '--';
+        const partes = h.split(':');
+        if (partes.length < 2) return h;
+        let hora = Number(partes[0]);
+        const minutos = partes[1];
+        const periodo = hora >= 12 ? 'PM' : 'AM';
+        hora = hora % 12 || 12;
+        return `${hora}:${minutos} ${periodo}`;
       };
       if (config.ventaDesdeFecha && config.ventaDesdeHora) {
         const apertura = new Date(`${config.ventaDesdeFecha.split('/').reverse().join('-')}T${config.ventaDesdeHora}`);
