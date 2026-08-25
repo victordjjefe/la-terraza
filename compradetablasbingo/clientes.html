@@ -164,33 +164,31 @@
     }
 
 
-    .search-client-card {
+    .lookup-card {
       background: linear-gradient(135deg, #fffaf0, #ffffff);
-      border: 1px solid #f3d08a;
+      border: 1px solid #f5d48a;
       border-radius: var(--radius-md);
       padding: 14px;
       box-shadow: var(--shadow-sm);
     }
-    .search-client-title {
-      font-size: 1.05rem;
+    .lookup-title {
+      font-size: 1rem;
       font-weight: 800;
       color: var(--primary);
       margin-bottom: 4px;
     }
-    .search-client-text {
+    .lookup-subtitle {
       font-size: .85rem;
       color: var(--text-muted);
       margin-bottom: 10px;
     }
-    .search-result {
-      margin-top: 12px;
-      background: #f0fdf4;
-      border: 1px solid #86efac;
-      border-radius: var(--radius-sm);
+    .lookup-result {
+      margin-top: 10px;
       padding: 10px;
+      background: #f8fafc;
+      border-radius: var(--radius-sm);
       font-weight: 700;
-      color: #166534;
-      display:none;
+      font-size: .9rem;
     }
 
     .hidden { display: none !important; }
@@ -229,6 +227,18 @@
         <b id="info-venta-rango">--</b>
       </div>
     </div>
+
+
+      <div class="lookup-card">
+        <div class="lookup-title">🔎 ¿Ya registraste tus tablas?</div>
+        <div class="lookup-subtitle">Consulta aquí tus números asignados.</div>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="lookup-input" class="form-control" placeholder="Digita tu nombre o WhatsApp">
+          <button class="btn btn-dark" id="btn-lookup" style="width:auto; padding:12px 14px;">Consultar</button>
+        </div>
+        <div id="lookup-result" class="lookup-result hidden"></div>
+      </div>
+
 
     <main class="main-content" id="main-flow-container">
 
@@ -736,7 +746,7 @@
     });
   });
 
-  async function finishOrder() {
+\n  function normalizeText(value) {\n    return String(value || '')\n      .toLowerCase()\n      .normalize('NFD')\n      .replace(/[\\u0300-\\u036f]/g, '')\n      .replace(/\\s+/g, ' ')\n      .trim();\n  }\n\n  function normalizePhone(value) {\n    return String(value || '').replace(/\\D/g, '').replace(/^57/, '');\n  }\n\n  async function lookupMyTables() {\n    const input = document.getElementById('lookup-input').value.trim();\n    const result = document.getElementById('lookup-result');\n    if (!input) {\n      result.classList.remove('hidden');\n      result.textContent = 'Digite su nombre o WhatsApp para consultar.';\n      return;\n    }\n\n    const searchName = normalizeText(input);\n    const searchPhone = normalizePhone(input);\n    const snap = await getDocs(collection(db, 'pedidos'));\n    let found = null;\n\n    snap.forEach(docSnap => {\n      const p = docSnap.data();\n      const nameMatch = normalizeText(p.cliente) === searchName;\n      const phoneMatch = searchPhone && normalizePhone(p.telefono) === searchPhone;\n      if (nameMatch || phoneMatch) found = p;\n    });\n\n    result.classList.remove('hidden');\n    if (found && found.tablas) {\n      result.innerHTML = `✅ Tus tablas asignadas:<br><br>${found.tablas.join(' - ')}`;\n    } else {\n      result.textContent = 'No encontramos tablas registradas con esos datos.';\n    }\n  }\n\n  document.getElementById('btn-lookup').addEventListener('click', lookupMyTables);\n  document.getElementById('lookup-input').addEventListener('keydown', (e) => {\n    if (e.key === 'Enter') lookupMyTables();\n  });\n\n  async function finishOrder() {
     if (config) {
       const ahora = new Date();
 
@@ -960,71 +970,6 @@
 
   listenConfig();
   listenTables();
-
-  function normalizeSearch(value) {
-    return String(value || '')
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
-  }
-
-  function normalizePhone(value) {
-    return String(value || '').replace(/\D/g, '');
-  }
-
-  async function searchMyTables() {
-    const input = document.getElementById('search-my-tables').value.trim();
-    const result = document.getElementById('search-my-tables-result');
-
-    result.style.display = 'none';
-    if (!input) {
-      alert('Escribe tu nombre o WhatsApp para consultar.');
-      return;
-    }
-
-    const textSearch = normalizeSearch(input);
-    const phoneSearch = normalizePhone(input);
-
-    try {
-      const snap = await getDocs(collection(db, 'pedidos'));
-      let found = null;
-
-      snap.forEach(docSnap => {
-        const data = docSnap.data();
-        const name = normalizeSearch(data.cliente);
-        const phone = normalizePhone(data.telefono);
-
-        if ((textSearch && name === textSearch) || (phoneSearch && phoneSearch.length >= 7 && phone.includes(phoneSearch))) {
-          found = data;
-        }
-      });
-
-      if (!found) {
-        result.textContent = 'No encontramos tablas registradas con esos datos.';
-        result.style.background = '#fff7ed';
-        result.style.borderColor = '#fdba74';
-        result.style.color = '#9a3412';
-      } else {
-        result.innerHTML = `✅ Tus tablas asignadas:<br><br>🎱 ${found.tablas.join(' - ')}`;
-        result.style.background = '#f0fdf4';
-        result.style.borderColor = '#86efac';
-        result.style.color = '#166534';
-      }
-
-      result.style.display = 'block';
-    } catch (error) {
-      console.error('Error buscando tablas:', error);
-      alert('No fue posible realizar la consulta.');
-    }
-  }
-
-  document.getElementById('btn-search-my-tables').addEventListener('click', searchMyTables);
-  document.getElementById('search-my-tables').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') searchMyTables();
-  });
-
 </script>
 </body>
 </html>
