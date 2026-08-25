@@ -163,6 +163,51 @@
       margin-bottom: 16px;
     }
 
+
+    .lookup-card {
+      background: #fff7ed;
+      border: 2px solid var(--accent-gold);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+    }
+    .lookup-card p {
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      line-height: 1.4;
+    }
+    .lookup-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 999;
+    }
+    .lookup-modal.active { display:flex; }
+    .lookup-result {
+      background:#fff;
+      width:100%;
+      max-width:380px;
+      border-radius:16px;
+      padding:22px;
+      text-align:center;
+      box-shadow:var(--shadow-lg);
+    }
+    .lookup-result h3 {
+      color:var(--primary);
+      margin-bottom:12px;
+    }
+    .lookup-tables {
+      font-size:1.3rem;
+      font-weight:800;
+      color:var(--accent-gold);
+      margin:15px 0;
+    }
+
     .hidden { display: none !important; }
   </style>
 </head>
@@ -206,6 +251,14 @@
         <b>¡Tienes tablas reservadas!</b>
         <p style="margin-top:4px;">Tiempo restante para completar el registro:</p>
         <div id="timer-display" class="timer-clock">03:00</div>
+      </div>
+
+
+      <div class="lookup-card">
+        <div class="card-title" style="justify-content:center;">🔎 Ya registraste tus tablas, consúltalas aquí</div>
+        <p>Escribe tu nombre y apellido o tu número de WhatsApp para consultar tus tablas registradas.</p>
+        <input id="lookup-input" class="form-control" placeholder="Nombre completo o WhatsApp">
+        <button class="btn btn-primary" id="btn-lookup" style="margin-top:12px;">Consultar mis tablas</button>
       </div>
 
       <div class="card" id="card-tables-section">
@@ -287,6 +340,7 @@
         <p style="font-size: 0.95rem; color: var(--text-main); margin-bottom: 20px;">
           Tus tablas registradas son: <b id="assigned-tables-display"></b>
         </p>
+        <button class="btn btn-primary" id="btn-success-lookup" style="margin-top: 8px;">Consultar mis tablas nuevamente</button>
         <button class="btn btn-success btn-restart-action" style="margin-top: 8px;">Hacer otra compra</button>
       </div>
     </div>
@@ -299,12 +353,23 @@
         <p style="font-size: 1rem; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5;">
           Su compra ha sido cancelada y las tablas seleccionadas han sido liberadas exitosamente.
         </p>
+        <button class="btn btn-primary" id="btn-success-lookup" style="margin-top: 8px;">Consultar mis tablas nuevamente</button>
         <button class="btn btn-success btn-restart-action" style="margin-top: 8px;">Hacer otra compra</button>
       </div>
     </div>
 
   </div>
 </div>
+
+
+  <div id="lookup-modal" class="lookup-modal">
+    <div class="lookup-result">
+      <h3>Resultado de consulta</h3>
+      <p id="lookup-message"></p>
+      <div class="lookup-tables" id="lookup-tables"></div>
+      <button class="btn btn-dark" id="btn-close-lookup">Cerrar</button>
+    </div>
+  </div>
 
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
@@ -341,6 +406,48 @@
   let timerInterval = null;
   let reservationEndTime = null;
   let orderCompleted = false;
+
+
+  function normalizeText(value) {
+    return String(value || '').toLowerCase().trim().replace(/\s+/g, ' ');
+  }
+
+  async function consultarTablasCliente() {
+    const input = document.getElementById('lookup-input').value.trim();
+
+    if (!input) {
+      alert('Escribe tu nombre completo o WhatsApp para consultar.');
+      return;
+    }
+
+    const search = normalizeText(input);
+    const pedidosSnap = await getDocs(collection(db, 'pedidos'));
+
+    let resultados = [];
+
+    pedidosSnap.forEach(docSnap => {
+      const data = docSnap.data();
+      const nombre = normalizeText(data.cliente);
+      const telefono = String(data.telefono || '').replace(/\D/g,'');
+
+      const coincideNombre = nombre.includes(search);
+      const coincideTelefono = telefono.includes(search.replace(/\D/g,''));
+
+      if (coincideNombre || coincideTelefono) {
+        resultados.push(...(data.tablas || []));
+      }
+    });
+
+    document.getElementById('lookup-modal').classList.add('active');
+
+    if (resultados.length) {
+      document.getElementById('lookup-message').textContent = 'Encontramos tus tablas registradas:';
+      document.getElementById('lookup-tables').textContent = resultados.join(', ');
+    } else {
+      document.getElementById('lookup-message').textContent = 'No encontramos tablas asociadas a estos datos.';
+      document.getElementById('lookup-tables').textContent = '';
+    }
+  }
 
   function listenConfig() {
     onSnapshot(doc(db, 'configuracion', 'evento'), (docSnap) => {
@@ -921,6 +1028,18 @@
       btn.textContent = "Registrar / Comprar";
     }
   }
+
+
+  document.getElementById('btn-lookup').addEventListener('click', consultarTablasCliente);
+
+  document.getElementById('btn-success-lookup').addEventListener('click', () => {
+    document.getElementById('lookup-input').value = document.getElementById('buyer-name').value || '';
+    consultarTablasCliente();
+  });
+
+  document.getElementById('btn-close-lookup').addEventListener('click', () => {
+    document.getElementById('lookup-modal').classList.remove('active');
+  });
 
   document.getElementById('btn-finish-order').addEventListener('click', finishOrder);
   
