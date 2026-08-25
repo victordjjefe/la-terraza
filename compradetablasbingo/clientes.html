@@ -197,11 +197,44 @@
       color:var(--accent-gold);
     }
 
+
+    .initial-loader {
+      position: fixed;
+      inset: 0;
+      background: #ffffff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex-direction:column;
+      z-index:10000;
+      color:#0f172a;
+      font-weight:700;
+      gap:12px;
+    }
+    .initial-loader .spinner {
+      width:42px;
+      height:42px;
+      border:5px solid #e2e8f0;
+      border-top-color:#d97706;
+      border-radius:50%;
+      animation:spin 1s linear infinite;
+    }
+    @keyframes spin {
+      to { transform:rotate(360deg); }
+    }
+
     .hidden { display: none !important; }
 
   </style>
 </head>
 <body>
+
+<div id="initial-loader" class="initial-loader">
+  <div class="spinner"></div>
+  <div>Cargando tablas disponibles...</div>
+</div>
+
+
 
 <div class="app-container">
   <header class="header">
@@ -210,7 +243,7 @@
 
   <div id="disabled-screen" class="main-content hidden">
     <div class="card" style="text-align: center; padding: 30px 16px;">
-      <img src="pagos.png" alt="Aún no disponible" class="banner-img" style="margin-bottom: 16px;" onerror="this.style.display='none'">
+      <img src="pagos.webp" alt="Aún no disponible" class="banner-img" style="margin-bottom: 16px;" onerror="this.style.display='none'">
       <div style="font-size: 2.5rem; margin-bottom: 8px;">⏳</div>
       <div class="card-title" id="disabled-message-title" style="font-size: 1.25rem; color: var(--danger); justify-content: center;">COMPRAS NO DISPONIBLES</div>
       <p id="disabled-message-body" style="font-size: 1rem; color: var(--text-muted); line-height: 1.5; margin-top: 8px;">
@@ -221,7 +254,7 @@
 
   <div id="enabled-screen">
     <div class="banner-container" id="banner-section">
-      <img src="pagos.png" alt="Métodos de Pago" class="banner-img" onerror="this.style.display='none'">
+      <img src="pagos.webp" alt="Métodos de Pago" class="banner-img" onerror="this.style.display='none'">
       <div class="hero-title">COMPRA TUS TABLAS DIGITALES</div>
       <div class="event-highlight">
         <div class="event-main-title">🎱 GRAN BINGO</div>
@@ -557,6 +590,8 @@
       });
 
       renderTables();
+      const loader = document.getElementById('initial-loader');
+      if (loader) loader.style.display = 'none';
     });
   }
 
