@@ -346,7 +346,7 @@
 
         <div class="form-group" id="proof-group-container">
           <label>Subir Soporte de Pago (Opcional)</label>
-          <input type="file" id="proof-file" accept="image/*" class="form-control">
+          <input type="file" id="proof-file" accept="image/*,application/pdf" class="form-control">
         </div>
 
         <div style="display: flex; gap: 10px; margin-top: 14px;" id="action-buttons-container">
@@ -380,32 +380,6 @@
           Su compra ha sido cancelada y las tablas seleccionadas han sido liberadas exitosamente.
         </p>
         <button class="btn btn-success btn-restart-action" style="margin-top: 8px;">Hacer otra compra</button>
-      </div>
-    </div>
-
-    <!-- PANTALLA EXCLUSIVA CUANDO NO HAY TABLAS DISPONIBLES -->
-    <div id="soldout-exclusive-screen" class="main-content hidden" style="justify-content: center;">
-      <div class="card" style="text-align: center; padding: 35px 20px;">
-        <div style="font-size: 3rem; color: var(--danger); margin-bottom: 8px;">🎱</div>
-        <div class="card-title" style="font-size: 1.4rem; justify-content: center; color: var(--danger);">TABLAS AGOTADAS</div>
-        <p style="font-size: 1rem; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5;">
-          En este momento todas las tablas disponibles han sido vendidas.
-          <br><br>
-          Estamos habilitando nuevas tablas. Por favor vuelve a consultar más tarde.
-        </p>
-
-        <div class="lookup-card" style="margin-top:15px;">
-          <div class="card-title" style="justify-content:center;">
-            🔎 ¿Ya registraste tus tablas?
-          </div>
-          <p style="color:var(--text-muted); margin-bottom:12px;">
-            Consulta aquí usando tu nombre completo o número de WhatsApp.
-          </p>
-          <input id="lookup-input-soldout" class="form-control" placeholder="Nombre o WhatsApp">
-          <button class="btn btn-success" id="btn-lookup-soldout" style="margin-top:12px;">
-            Consultar mis tablas
-          </button>
-        </div>
       </div>
     </div>
 
@@ -623,19 +597,16 @@
     const container = document.getElementById('tables-container');
     container.innerHTML = '';
     const now = Date.now();
-    let availableCount = 0;
 
     allTablesData.sort((a,b) => a.code.localeCompare(b.code, undefined, {numeric: true, sensitivity: 'base'}));
 
     allTablesData.forEach(t => {
+      const isReservedByMe = selectedTables.includes(t.code);
       const isExpired = t.reservedUntil && t.reservedUntil <= now;
 
       if (t.status === 'VENDIDA') return;
       if (t.status === 'RESERVADA' && t.reservedBy !== myClientId && !isExpired) return;
 
-      availableCount++;
-
-      const isReservedByMe = selectedTables.includes(t.code);
       const btn = document.createElement('button');
       btn.className = 'btn-table';
       btn.textContent = t.code;
@@ -647,21 +618,6 @@
       btn.onclick = () => toggleTableSelection(t.code);
       container.appendChild(btn);
     });
-
-    const soldout = document.getElementById('soldout-exclusive-screen');
-    if (availableCount === 0) {
-      document.getElementById('banner-section').classList.add('hidden');
-      document.getElementById('main-flow-container').classList.add('hidden');
-      document.getElementById('success-exclusive-screen').classList.add('hidden');
-      document.getElementById('cancelled-exclusive-screen').classList.add('hidden');
-      soldout.classList.remove('hidden');
-    } else {
-      soldout.classList.add('hidden');
-      if (!orderCompleted) {
-        document.getElementById('banner-section').classList.remove('hidden');
-        document.getElementById('main-flow-container').classList.remove('hidden');
-      }
-    }
   }
 
   async function toggleTableSelection(code) {
@@ -849,7 +805,6 @@
     
     document.getElementById('success-exclusive-screen').classList.add('hidden');
     document.getElementById('cancelled-exclusive-screen').classList.add('hidden');
-    document.getElementById('soldout-exclusive-screen').classList.add('hidden');
     document.getElementById('banner-section').classList.remove('hidden');
     document.getElementById('main-flow-container').classList.remove('hidden');
 
@@ -870,14 +825,59 @@
 
   document.getElementById('btn-copy-number').addEventListener('click', copiarNumero);
 
-  document.getElementById('proof-file').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        proofBase64 = evt.target.result;
+  async function compressImageFile(file) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const maxWidth = 1200;
+        const scale = Math.min(1, maxWidth / img.width);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(url);
+        resolve(canvas.toDataURL('image/jpeg', 0.75));
       };
-      reader.readAsDataURL(file);
+      img.onerror = reject;
+      img.src = url;
+    });
+  }
+
+  async function compressPdfFile(file) {
+    const buffer = await file.arrayBuffer();
+    const pdf = await getDocument({data: buffer}).promise;
+    const page = await pdf.getPage(1);
+    const viewport = page.getViewport({scale: 1.5});
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    await page.render({canvasContext: ctx, viewport}).promise;
+    const maxWidth = 1200;
+    const scale = Math.min(1, maxWidth / canvas.width);
+    const out = document.createElement('canvas');
+    out.width = Math.round(canvas.width * scale);
+    out.height = Math.round(canvas.height * scale);
+    out.getContext('2d').drawImage(canvas, 0, 0, out.width, out.height);
+    return out.toDataURL('image/jpeg', 0.75);
+  }
+
+  document.getElementById('proof-file').addEventListener('change', async function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      if (file.type === 'application/pdf') {
+        proofBase64 = await compressPdfFile(file);
+      } else {
+        proofBase64 = await compressImageFile(file);
+      }
+    } catch (error) {
+      console.error('Error procesando comprobante:', error);
+      alert('No fue posible procesar el comprobante. Intente nuevamente con una imagen o PDF.');
+      proofBase64 = null;
     }
   });
 
@@ -1115,13 +1115,6 @@
 
 
   document.getElementById('btn-lookup').addEventListener('click', consultarTablas);
-
-  document.getElementById('btn-lookup-soldout')?.addEventListener('click', () => {
-    const normal = document.getElementById('lookup-input');
-    const sold = document.getElementById('lookup-input-soldout');
-    if (sold && normal) { normal.value = sold.value; }
-    consultarTablas();
-  });
 
   document.getElementById('btn-close-lookup').addEventListener('click',()=>{
     document.getElementById('lookup-modal').classList.remove('active');
