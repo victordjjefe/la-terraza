@@ -452,7 +452,9 @@
     <div id="tab-listado" style="display: none;">
       <div class="card">
         <div class="card-title">Listado de Registros</div>
-        <button class="btn btn-primary listing-copy-btn" id="btn-copy-listado">Copiar Listado</button>
+        <button class="btn btn-primary listing-copy-btn" id="btn-copy-listado">Copiar Listado Completo</button>
+        <button class="btn btn-success listing-copy-btn" id="btn-copy-nombres" style="margin-top:10px;">Copiar Solo Nombres</button>
+        <button class="btn btn-dark listing-copy-btn" id="btn-copy-tablas" style="margin-top:10px;">Copiar Solo Tablas</button>
         <p id="listado-total" style="margin:12px 0; font-size:0.9rem; color:var(--text-muted);"></p>
         <div class="listing-table-wrapper">
           <table class="listing-table">
@@ -895,9 +897,23 @@
 
   document.getElementById('btn-copy-listado').addEventListener('click', async () => {
     const listado = window.currentListadoCopy || [];
-    const texto = listado.map((c, i) => `${i + 1} ${c.nombre} - ${c.tablas.join(', ')}`).join('\n');
+    const texto = listado.map((c, i) => `${i + 1}\t${c.nombre}\t${c.tablas.join(', ')}`).join('\n');
     await navigator.clipboard.writeText(texto);
-    alert('Listado copiado correctamente.');
+    alert('Listado completo copiado.');
+  });
+
+  document.getElementById('btn-copy-nombres').addEventListener('click', async () => {
+    const listado = window.currentListadoCopy || [];
+    const texto = listado.map(c => c.nombre).join('\n');
+    await navigator.clipboard.writeText(texto);
+    alert('Nombres copiados.');
+  });
+
+  document.getElementById('btn-copy-tablas').addEventListener('click', async () => {
+    const listado = window.currentListadoCopy || [];
+    const texto = listado.flatMap(c => c.tablas).join('\n');
+    await navigator.clipboard.writeText(texto);
+    alert('Tablas copiadas.');
   });
 
   function renderOrders() {
