@@ -895,7 +895,7 @@
 
   document.getElementById('btn-copy-listado').addEventListener('click', async () => {
     const listado = window.currentListadoCopy || [];
-    const texto = listado.map(c => `${c.nombre}\nTablas: ${c.tablas.join(', ')}`).join('\n\n');
+    const texto = listado.map((c, i) => `${i + 1} ${c.nombre} - ${c.tablas.join(', ')}`).join('\n');
     await navigator.clipboard.writeText(texto);
     alert('Listado copiado correctamente.');
   });
