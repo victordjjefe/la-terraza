@@ -910,21 +910,21 @@
   });
 
   document.getElementById('btn-copy-tablas-orden').addEventListener('click', async () => {
-    const listado = window.currentListadoCopy || [];
-
     const mapaTablas = {};
 
-    listado.forEach(c => {
-      (c.tablas || []).forEach(tabla => {
-        mapaTablas[tabla] = c.nombre || '';
+    allOrders.forEach(order => {
+      const nombre = typeof order.cliente === 'string' ? order.cliente : (order.cliente?.name || '');
+      const whatsapp = getOrderWhatsapp(order);
+      const referencia = order.referencia || '';
+
+      (order.tablas || []).forEach(tabla => {
+        mapaTablas[tabla] = { nombre, whatsapp, referencia };
       });
     });
 
-    // Toma el rango real de tablas habilitadas en la configuración
     let desde = Number(document.getElementById('cfg-desde')?.value || 1);
     let hasta = Number(document.getElementById('cfg-hasta')?.value || 0);
 
-    // Si no están cargados en inputs, usa las tablas existentes del sistema
     if (!hasta && Array.isArray(allTables) && allTables.length) {
       const numeros = allTables.map(t => Number(String(t.code || '').replace(/\D/g,''))).filter(Boolean);
       desde = Math.min(...numeros);
@@ -935,11 +935,12 @@
 
     for (let i = desde; i <= hasta; i++) {
       const tabla = 'T' + String(i).padStart(3, '0');
-      filas.push(`${tabla}\t${mapaTablas[tabla] || ''}`);
+      const dato = mapaTablas[tabla] || {};
+      filas.push(`${tabla}\t${dato.nombre || ''}\t${dato.referencia || ''}\t${dato.whatsapp || ''}`);
     }
 
     const texto = [
-      'TABLA\tNOMBRE',
+      'TABLA\tNOMBRE\tREFERENCIA\tWHATSAPP',
       ...filas
     ].join('\n');
 
