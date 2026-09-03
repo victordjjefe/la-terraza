@@ -367,7 +367,9 @@
         <p style="font-size: 0.95rem; color: var(--text-main); margin-bottom: 20px;">
           Tus tablas registradas son: <b id="assigned-tables-display"></b>
         </p>
-        <button class="btn btn-primary" onclick="document.getElementById('lookup-input').focus()">Consultar mis tablas</button><button class="btn btn-success btn-restart-action" style="margin-top: 8px;">Hacer otra compra</button>
+        <button class="btn btn-dark" id="btn-copy-receipt-admin" style="margin-bottom:8px;">📋 Copiar comprobante para administrador</button>
+        <button class="btn btn-primary" onclick="document.getElementById('lookup-input').focus()">Consultar mis tablas</button>
+        <button class="btn btn-success btn-restart-action" style="margin-top: 8px;">Hacer otra compra</button>
       </div>
     </div>
 
@@ -1088,6 +1090,35 @@
   document.getElementById('btn-close-lookup').addEventListener('click',()=>{
     document.getElementById('lookup-modal').classList.remove('active');
   });
+
+  function copiarComprobanteAdministrador(){
+    const nombre = document.getElementById('buyer-name').value.trim();
+    const tablas = document.getElementById('assigned-tables-display').textContent.trim();
+    const registro = document.getElementById('order-number-display').textContent.trim();
+
+    const mensaje = `🎉 COMPROBANTE DE COMPRA
+
+${registro}
+
+Cliente:
+${nombre}
+
+Tablas adquiridas:
+${tablas}
+
+Estado:
+TRANSACCIÓN EXITOSA
+
+Gracias por tu compra.`;
+
+    navigator.clipboard.writeText(mensaje).then(()=>{
+      alert('✓ Comprobante copiado. Ahora puedes pegarlo en WhatsApp del administrador.');
+    }).catch(()=>{
+      alert(mensaje);
+    });
+  }
+
+  document.getElementById('btn-copy-receipt-admin').addEventListener('click', copiarComprobanteAdministrador);
 
   document.getElementById('btn-finish-order').addEventListener('click', finishOrder);
   
