@@ -454,7 +454,7 @@
         <div class="card-title">Listado de Registros</div>
         <button class="btn btn-primary listing-copy-btn" id="btn-copy-listado">Copiar Listado Completo</button>
         <button class="btn btn-success listing-copy-btn" id="btn-copy-nombres" style="margin-top:10px;">Copiar Solo Nombres</button>
-        <button class="btn btn-dark listing-copy-btn" id="btn-copy-tablas-orden" style="margin-top:10px;">Copiar Tablas en Orden</button>
+        <button class="btn btn-dark listing-copy-btn" id="btn-copy-tablas-orden" style="margin-top:10px;">Copiar para Sistema Contable</button>
         <p id="listado-total" style="margin:12px 0; font-size:0.9rem; color:var(--text-muted);"></p>
         <div class="listing-table-wrapper">
           <table class="listing-table">
@@ -944,7 +944,7 @@
     ].join('\n');
 
     await navigator.clipboard.writeText(texto);
-    alert('Tablas en orden copiadas.');
+    alert('Datos para sistema contable copiados.');
   });
 
   function renderOrders() {
