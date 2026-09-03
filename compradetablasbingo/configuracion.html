@@ -920,13 +920,27 @@
       });
     });
 
-    const todasLasTablas = Object.keys(mapaTablas).sort((a,b) => {
-      return (parseInt(String(a).replace(/\D/g,'')) || 0) - (parseInt(String(b).replace(/\D/g,'')) || 0);
-    });
+    // Toma el rango real de tablas habilitadas en la configuración
+    let desde = Number(document.getElementById('cfg-desde')?.value || 1);
+    let hasta = Number(document.getElementById('cfg-hasta')?.value || 0);
+
+    // Si no están cargados en inputs, usa las tablas existentes del sistema
+    if (!hasta && Array.isArray(allTables) && allTables.length) {
+      const numeros = allTables.map(t => Number(String(t.code || '').replace(/\D/g,''))).filter(Boolean);
+      desde = Math.min(...numeros);
+      hasta = Math.max(...numeros);
+    }
+
+    const filas = [];
+
+    for (let i = desde; i <= hasta; i++) {
+      const tabla = 'T' + String(i).padStart(3, '0');
+      filas.push(`${tabla}\t${mapaTablas[tabla] || ''}`);
+    }
 
     const texto = [
       'TABLA\tNOMBRE',
-      ...todasLasTablas.map(tabla => `${tabla}\t${mapaTablas[tabla]}`)
+      ...filas
     ].join('\n');
 
     await navigator.clipboard.writeText(texto);
