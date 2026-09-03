@@ -454,7 +454,7 @@
         <div class="card-title">Listado de Registros</div>
         <button class="btn btn-primary listing-copy-btn" id="btn-copy-listado">Copiar Listado Completo</button>
         <button class="btn btn-success listing-copy-btn" id="btn-copy-nombres" style="margin-top:10px;">Copiar Solo Nombres</button>
-        <button class="btn btn-dark listing-copy-btn" id="btn-copy-tablas" style="margin-top:10px;">Copiar Solo Tablas</button>
+        <button class="btn btn-dark listing-copy-btn" id="btn-copy-tablas-orden" style="margin-top:10px;">Copiar Tablas en Orden</button>
         <p id="listado-total" style="margin:12px 0; font-size:0.9rem; color:var(--text-muted);"></p>
         <div class="listing-table-wrapper">
           <table class="listing-table">
@@ -909,11 +909,28 @@
     alert('Nombres copiados.');
   });
 
-  document.getElementById('btn-copy-tablas').addEventListener('click', async () => {
+  document.getElementById('btn-copy-tablas-orden').addEventListener('click', async () => {
     const listado = window.currentListadoCopy || [];
-    const texto = listado.flatMap(c => c.tablas).join('\n');
+
+    const mapaTablas = {};
+
+    listado.forEach(c => {
+      (c.tablas || []).forEach(tabla => {
+        mapaTablas[tabla] = c.nombre || '';
+      });
+    });
+
+    const todasLasTablas = Object.keys(mapaTablas).sort((a,b) => {
+      return (parseInt(String(a).replace(/\D/g,'')) || 0) - (parseInt(String(b).replace(/\D/g,'')) || 0);
+    });
+
+    const texto = [
+      'TABLA\tNOMBRE',
+      ...todasLasTablas.map(tabla => `${tabla}\t${mapaTablas[tabla]}`)
+    ].join('\n');
+
     await navigator.clipboard.writeText(texto);
-    alert('Tablas copiadas.');
+    alert('Tablas en orden copiadas.');
   });
 
   function renderOrders() {
@@ -1116,22 +1133,14 @@
   function viewProof(orderDocId) {
     const order = allOrders.find(o => o.firestoreId === orderDocId);
     if (!order) return;
-    const proofFile = order.comprobante;
-    if (!proofFile) return;
+    const proofImg = order.comprobante;
+    if (!proofImg) return;
 
     const body = document.getElementById('modal-proof-body');
     const clientName = typeof order.cliente === 'string' ? order.cliente : (order.cliente?.name || '');
-
-    let viewer = '';
-    if (proofFile.startsWith('data:application/pdf')) {
-      viewer = `<iframe src="${proofFile}" style="width:100%;height:70vh;border:0;border-radius:8px;"></iframe>`;
-    } else {
-      viewer = `<img src="${proofFile}" alt="Comprobante de Pago" style="width:100%;max-height:70vh;object-fit:contain;border-radius:8px;">`;
-    }
-
     body.innerHTML = `
       <p style="font-size:0.9rem; color:var(--text-muted);">Registro #${order.id} - ${clientName}</p>
-      ${viewer}
+      <img src="${proofImg}" alt="Comprobante de Pago">
     `;
     document.getElementById('modal-proof').style.display = 'flex';
   }
