@@ -380,9 +380,9 @@
         </p>
         <div id="bingo-info-success" style="margin-bottom:12px; font-size:0.95rem; color:var(--text-main);"></div>
         <div id="digital-link-box" style="margin-bottom:12px;"></div>
-        <button class="btn btn-dark" id="btn-copy-digital-link" style="margin-bottom:8px;">📋 Copiar enlace</button>
-        <button class="btn btn-success" id="btn-whatsapp-digital-link" style="margin-bottom:8px;">📲 Enviar enlace por WhatsApp</button>
-        <button class="btn btn-primary" onclick="document.getElementById('lookup-input').focus()">Consultar mis tablas</button>
+        <button class="btn btn-success" id="btn-open-digital-link-success" style="margin-top:14px; margin-bottom:14px;">🎱 ABRIR MIS TABLAS DIGITALES</button>
+        <button class="btn btn-success" id="btn-copy-digital-link" style="margin-bottom:14px;">📋 Copiar enlace</button>
+        <button class="btn btn-success" id="btn-whatsapp-digital-link" style="margin-bottom:14px;">📲 Enviar enlace por WhatsApp</button>
         <button class="btn btn-success btn-restart-action" style="margin-top: 8px;">Hacer otra compra</button>
       </div>
     </div>
@@ -404,10 +404,13 @@
 
 
   <div id="lookup-modal" class="lookup-modal">
-    <div class="lookup-box">
-      <h3>Consulta de tablas</h3>
+    <div class="lookup-box" style="text-align:center;">
+      <h3 id="lookup-title">Consulta de tablas</h3>
       <p id="lookup-message" style="margin-top:12px;"></p>
       <div class="lookup-tables" id="lookup-tables"></div>
+      <div id="lookup-link-box" style="margin-top:14px; margin-bottom:14px;"></div>
+      <button class="btn btn-success" id="btn-copy-lookup-link" style="margin-bottom:14px; display:none;">📋 Copiar enlace</button>
+      <button class="btn btn-success" id="btn-whatsapp-lookup-link" style="margin-bottom:14px; display:none;">📲 Enviar enlace por WhatsApp</button>
       <button class="btn btn-dark" id="btn-close-lookup">Cerrar</button>
     </div>
   </div>
@@ -552,8 +555,8 @@
     document.getElementById('lookup-modal').classList.add('active');
 
     if(tablasEncontradas.length){
-      document.getElementById('lookup-message').innerHTML =
-        '<h3 style="color:#10b981;">TUS TABLAS REGISTRADAS</h3>';
+      document.getElementById('lookup-title').textContent = 'TUS TABLAS REGISTRADAS';
+      document.getElementById('lookup-message').innerHTML = '<b>' + pedidoEncontrado.cliente + '</b><br>Fecha del Bingo: ' + (config?.fecha || '') + '<br>Hora: ' + (config?.hora || '') + '<br><br>🎟️ Tablas asignadas:';
       const tablasUnicas = [...new Set(tablasEncontradas)];
       document.getElementById('lookup-tables').textContent = tablasUnicas.join(', ');
       ultimoLookupEnlace = generarLinkDigitalCliente(tablasUnicas, pedidoEncontrado.cliente, config?.fecha || '', config?.linkTransmision || '');
