@@ -1425,6 +1425,13 @@ function whatsappColombiaFinal(numero){
   if(n.length === 10 && n.startsWith('3')) return '57' + n;
   return n;
 }
+
+function generarWhatsAppColombiaUnico(numero){
+  let n = String(numero || '').replace(/\D/g,'');
+  if(n.startsWith('57') && n.length >= 12) return n;
+  if(n.length === 10 && n.startsWith('3')) return '57' + n;
+  return n;
+}
 </script>
 
 <script>
@@ -1496,6 +1503,24 @@ async function consolidarTablasClienteFinal(telefono, tablasNuevas){
    }
  });
  return [...new Set(tablas)];
+}
+</script>
+
+<script>
+async function obtenerTodasLasTablasClienteRegistro(telefono, tablasNuevas){
+ const tel = String(telefono || '').replace(/\D/g,'');
+ let todas = [...(tablasNuevas || [])];
+ const snapshot = await getDocs(collection(db,'pedidos'));
+
+ snapshot.forEach(docSnap=>{
+   const p = docSnap.data();
+   const tp = String(p.telefono || '').replace(/\D/g,'');
+   if(tp === tel && Array.isArray(p.tablas)){
+     todas.push(...p.tablas);
+   }
+ });
+
+ return [...new Set(todas)];
 }
 </script>
 </body>
