@@ -364,10 +364,13 @@
         <div class="card-title" style="font-size: 1.4rem; justify-content: center; color: var(--success);">¡REGISTRO EXITOSO!</div>
         <p id="order-number-display" style="font-size: 1.1rem; font-weight: 700; color: var(--accent-gold); margin-bottom: 8px;"></p>
         <p id="buyer-success-display" style="font-size: 1.05rem; font-weight: 700; color: var(--text-main); margin-bottom: 10px;"></p>
-        <p style="font-size: 0.95rem; color: var(--text-main); margin-bottom: 20px;">
+        <p style="font-size: 0.95rem; color: var(--text-main); margin-bottom: 10px;">
           Tus tablas registradas son: <b id="assigned-tables-display"></b>
         </p>
-        <button class="btn btn-dark" id="btn-copy-receipt-admin" style="margin-bottom:8px;">📋 Copiar comprobante para administrador</button>
+        <div id="bingo-info-success" style="margin-bottom:12px; font-size:0.95rem; color:var(--text-main);"></div>
+        <div id="digital-link-box" style="margin-bottom:12px;"></div>
+        <button class="btn btn-dark" id="btn-copy-digital-link" style="margin-bottom:8px;">📋 Copiar enlace</button>
+        <button class="btn btn-success" id="btn-whatsapp-digital-link" style="margin-bottom:8px;">📲 Enviar enlace por WhatsApp</button>
         <button class="btn btn-primary" onclick="document.getElementById('lookup-input').focus()">Consultar mis tablas</button>
         <button class="btn btn-success btn-restart-action" style="margin-top: 8px;">Hacer otra compra</button>
       </div>
@@ -394,6 +397,9 @@
       <h3>Consulta de tablas</h3>
       <p id="lookup-message" style="margin-top:12px;"></p>
       <div class="lookup-tables" id="lookup-tables"></div>
+      <div id="lookup-link-box" style="margin:12px 0;"></div>
+      <button class="btn btn-dark" id="btn-copy-lookup-link" style="display:none;margin-bottom:8px;">📋 Copiar enlace</button>
+      <button class="btn btn-success" id="btn-whatsapp-lookup-link" style="display:none;margin-bottom:8px;">📲 Enviar enlace por WhatsApp</button>
       <button class="btn btn-dark" id="btn-close-lookup">Cerrar</button>
     </div>
   </div>
@@ -433,7 +439,66 @@
   let timerInterval = null;
   let reservationEndTime = null;
   let orderCompleted = false;
+  let ultimoEnlaceDigital = '';
+  let ultimoMensajeDigital = '';
+  let ultimoLookupEnlace = '';
+  let ultimoLookupMensaje = '';
+  let ultimoLookupTelefono = '';
 
+
+
+  // Genera el mismo enlace dinámico usado por el sistema contable.
+  // Ejemplo:
+  // tabla-digital/?tablas=14,22&vence=20260902&nombre=cliente&video=ID_YOUTUBE
+  function generarLinkDigitalCliente(tablas, nombre, fecha, linkTransmision){
+
+    const base = 'https://laterrazacalipodcast.top/tabla-digital/';
+
+    // Convierte la fecha del bingo al formato YYYYMMDD
+    let fechaCodigo = '';
+    if(fecha){
+      const f = String(fecha).trim();
+
+      if(f.includes('-')){
+        fechaCodigo = f.replaceAll('-','');
+      }else if(f.includes('/')){
+        const partes = f.split('/');
+        if(partes.length === 3){
+          fechaCodigo = `${partes[2]}${partes[1].padStart(2,'0')}${partes[0].padStart(2,'0')}`;
+        }
+      }
+    }
+
+    // Obtiene únicamente el ID del video de YouTube
+    let videoId = '';
+    if(linkTransmision){
+      const link = String(linkTransmision).trim();
+
+      const match =
+        link.match(/[?&]v=([^&]+)/) ||
+        link.match(/youtu\.be\/([^?&]+)/) ||
+        link.match(/live\/([^?&]+)/);
+
+      if(match){
+        videoId = match[1];
+      }else{
+        videoId = link;
+      }
+    }
+
+    const nombreUrl = String(nombre || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g,'')
+      .replace(/[^a-z0-9]+/g,'-')
+      .replace(/^-+|-+$/g,'');
+
+    const listaTablas = Array.isArray(tablas)
+      ? tablas.map(t => String(t).replace(/^T/i,'')).join(',')
+      : '';
+
+    return `${base}?tablas=${listaTablas}&vence=${fechaCodigo}&nombre=${nombreUrl}&video=${videoId}`;
+  }
 
   function cleanSearch(value){
     return String(value || '').toLowerCase().trim();
@@ -457,6 +522,7 @@
     const snapshot = await getDocs(collection(db,'pedidos'));
 
     let tablasEncontradas = [];
+    let pedidoEncontrado = null;
 
     snapshot.forEach(docSnap=>{
       const pedido = docSnap.data();
@@ -468,6 +534,7 @@
       const coincideTelefono = telefonoBusqueda && telefono.includes(telefonoBusqueda);
 
       if(coincideNombre || coincideTelefono){
+        pedidoEncontrado = pedido;
         if(Array.isArray(pedido.tablas)){
           tablasEncontradas.push(...pedido.tablas);
         }
@@ -476,15 +543,36 @@
 
     document.getElementById('lookup-modal').classList.add('active');
 
-    if(tablasEncontradas.length){
+    const copyBtn = document.getElementById('btn-copy-lookup-link');
+    const waBtn = document.getElementById('btn-whatsapp-lookup-link');
+
+    if(tablasEncontradas.length && pedidoEncontrado){
+      const tablasUnicas = [...new Set(tablasEncontradas)];
       document.getElementById('lookup-message').textContent =
         'Estas son tus tablas registradas:';
-      document.getElementById('lookup-tables').textContent =
-        [...new Set(tablasEncontradas)].join(', ');
+      document.getElementById('lookup-tables').textContent = tablasUnicas.join(', ');
+
+      ultimoLookupEnlace = generarLinkDigitalCliente(
+        tablasUnicas,
+        pedidoEncontrado.cliente,
+        config?.fecha || '',
+        config?.linkTransmision || ''
+      );
+
+      ultimoLookupMensaje = `🎱 LA TERRAZA BINGO\n\n¡Hola ${pedidoEncontrado.cliente}! 👋\n\n✅ Encontramos tus tablas registradas.\n\n🎟️ Tablas asignadas: ${tablasUnicas.join(', ')}\n\n🔗 Tu enlace digital para jugar:\n${ultimoLookupEnlace}\n\n📅 Fecha del Bingo: ${config?.fecha || ''}\n⏰ Hora: ${config?.hora || ''}\n\n💳 Datos de pago:\n📱 Nequi / Daviplata / Llave: 323 437 0590\n\nConserva este mensaje para el día del bingo. 🎉`;
+
+      document.getElementById('lookup-link-box').innerHTML =
+        `<a class="btn btn-success" href="${ultimoLookupEnlace}" target="_blank">🎱 ABRIR MIS TABLAS DIGITALES</a>`;
+      copyBtn.style.display='block';
+      waBtn.style.display='block';
+      ultimoLookupTelefono = cleanPhone(pedidoEncontrado.telefono);
     }else{
       document.getElementById('lookup-message').textContent =
         'No encontramos registros asociados.';
       document.getElementById('lookup-tables').textContent='';
+      document.getElementById('lookup-link-box').innerHTML='';
+      copyBtn.style.display='none';
+      waBtn.style.display='none';
     }
   }
 
@@ -1022,12 +1110,31 @@
           }
         }
 
+        const enlaceDigital = generarLinkDigitalCliente(
+          tablesToBuy,
+          buyerName,
+          config.fecha,
+          config.linkTransmision
+        );
+
         const newOrder = {
           id: candidateId,
           cliente: buyerName,
           telefono: buyerPhone,
           referencia: buyerAddress,
           tablas: tablesToBuy,
+          linkDigital: enlaceDigital,
+          // Datos preparados para sincronización con SISTEMA CONTABLE v34
+          clienteId: 'CLI_' + cleanPhone(buyerPhone),
+          eventoId: 'BINGO_' + String(config?.fecha || '').replace(/\D/g,''),
+          registroContable: generarRegistroContableV34(
+            buyerName,
+            buyerPhone,
+            buyerAddress,
+            tablesToBuy,
+            config?.fecha || '',
+            config?.linkTransmision || ''
+          ),
           total: tablesToBuy.length * (config ? config.valor : 0),
           comprobante: proofBase64 || null,
           fecha: new Date().toLocaleString(),
@@ -1066,6 +1173,10 @@
       document.getElementById('order-number-display').textContent = `Registro #${orderId}`;
       document.getElementById('buyer-success-display').textContent = `Hola ${buyerName}, tu registro fue realizado exitosamente.`;
       document.getElementById('assigned-tables-display').textContent = tablesToBuy.join(', ');
+      ultimoEnlaceDigital = enlaceDigital || '';
+      ultimoMensajeDigital = `🎱 LA TERRAZA BINGO\n\n¡Hola ${buyerName}!\n\n✅ Tu registro fue realizado exitosamente.\n\n🎟️ Tablas asignadas: ${tablesToBuy.join(', ')}\n\n📅 Fecha del Bingo: ${config?.fecha || ''}\n⏰ Hora: ${config?.hora || ''}\n\n🔗 Tu enlace para jugar es:\n${ultimoEnlaceDigital}\n\n💳 Puedes realizar tu pago por:\n📱 Nequi: 323 437 0590\n📱 Daviplata: 323 437 0590\n🔑 Llave: 323 437 0590\n\nDespués de realizar el pago, conserva este mensaje como comprobante de tus tablas.`;
+      document.getElementById('bingo-info-success').innerHTML = `📅 <b>Fecha del Bingo:</b> ${config?.fecha || '--'}<br>⏰ <b>Hora:</b> ${config?.hora || '--'}`;
+      document.getElementById('digital-link-box').innerHTML = enlaceDigital ? `<a class="btn btn-success" href="${enlaceDigital}" target="_blank">🎱 ABRIR MIS TABLAS DIGITALES</a>` : 'Enlace pendiente';
 
     } catch (err) {
       console.error("Error al finalizar pedido:", err);
@@ -1090,6 +1201,27 @@
   document.getElementById('btn-close-lookup').addEventListener('click',()=>{
     document.getElementById('lookup-modal').classList.remove('active');
   });
+
+  function copiarEnlaceDigital(){
+    if(!ultimoMensajeDigital){
+      alert('No hay enlace digital disponible.');
+      return;
+    }
+    navigator.clipboard.writeText(ultimoMensajeDigital).then(()=>{
+      alert('✓ Enlace copiado correctamente.');
+    });
+  }
+
+  function enviarWhatsAppDigital(){
+    if(!ultimoMensajeDigital){
+      alert('No hay enlace digital disponible.');
+      return;
+    }
+    const telefono = cleanPhone(document.getElementById('buyer-phone').value);
+    const destino = telefono ? 'https://wa.me/' + telefono : 'https://wa.me/';
+    const url = destino + '?text=' + encodeURIComponent(ultimoMensajeDigital);
+    window.open(url, '_blank');
+  }
 
   function copiarComprobanteAdministrador(){
     const nombre = document.getElementById('buyer-name').value.trim();
@@ -1118,7 +1250,23 @@ Gracias por tu compra.`;
     });
   }
 
-  document.getElementById('btn-copy-receipt-admin').addEventListener('click', copiarComprobanteAdministrador);
+  const btnCopyLookup = document.getElementById('btn-copy-lookup-link');
+  if(btnCopyLookup){
+    btnCopyLookup.addEventListener('click',()=>{
+      navigator.clipboard.writeText(ultimoLookupMensaje).then(()=>alert('✓ Enlace copiado correctamente.'));
+    });
+  }
+
+  const btnWhatsappLookup = document.getElementById('btn-whatsapp-lookup-link');
+  if(btnWhatsappLookup){
+    btnWhatsappLookup.addEventListener('click',()=>{
+      const destino = ultimoLookupTelefono ? 'https://wa.me/' + ultimoLookupTelefono : 'https://wa.me/';
+      window.open(destino + '?text=' + encodeURIComponent(ultimoLookupMensaje), '_blank');
+    });
+  }
+
+  document.getElementById('btn-copy-digital-link').addEventListener('click', copiarEnlaceDigital);
+  document.getElementById('btn-whatsapp-digital-link').addEventListener('click', enviarWhatsAppDigital);
 
   document.getElementById('btn-finish-order').addEventListener('click', finishOrder);
   
