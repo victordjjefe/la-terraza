@@ -622,6 +622,41 @@
     return String(value || '').replace(/\D/g,'');
   }
 
+
+  function normalizarWhatsAppColombia(numero){
+    let n = cleanPhone(numero);
+    if(n.startsWith('57') && n.length >= 12) return n;
+    if(n.length === 10 && n.startsWith('3')) return '57' + n;
+    return n;
+  }
+
+  // Une las tablas de todas las compras asociadas al mismo WhatsApp.
+  // Las tablas de la compra recién terminada se incluyen primero y los
+  // duplicados se eliminan para que siempre exista un único enlace digital.
+  function consolidarTablasPorTelefono(pedidos, telefonoActual, tablasNuevas){
+    const telefono = normalizarWhatsAppColombia(telefonoActual);
+    const todasLasTablas = [...(Array.isArray(tablasNuevas) ? tablasNuevas : [])];
+
+    (Array.isArray(pedidos) ? pedidos : []).forEach(pedido => {
+      if(normalizarWhatsAppColombia(pedido?.telefono) === telefono && Array.isArray(pedido?.tablas)){
+        todasLasTablas.push(...pedido.tablas);
+      }
+    });
+
+    return [...new Set(todasLasTablas)];
+  }
+
+  async function obtenerTodasLasTablasClienteRegistro(telefonoActual, tablasNuevas){
+    const snapshot = await getDocs(collection(db, 'pedidos'));
+    const pedidos = [];
+
+    snapshot.forEach(docSnap => {
+      pedidos.push(docSnap.data());
+    });
+
+    return consolidarTablasPorTelefono(pedidos, telefonoActual, tablasNuevas);
+  }
+
   async function consultarTablas(){
     const valor = document.getElementById('lookup-input').value.trim();
 
@@ -1284,54 +1319,56 @@
       reservationEndTime = null;
 
       document.getElementById('reservation-timer-box').classList.add('hidden');
-
       document.getElementById('banner-section').classList.add('hidden');
       document.getElementById('main-flow-container').classList.add('hidden');
-      // Consolidar enlace después de confirmar el guardado en Firebase
-        try {
-          const resultadoConsolidado = await buscarTablasClienteConsolidado(
-            buyerPhone,
-            tablesToBuy
-          );
 
-          ultimoEnlaceDigital = generarLinkDigitalCliente(
-            resultadoConsolidado.tablas,
-            buyerName,
-            config?.fecha || '',
-            config?.linkTransmision || ''
-          );
-        } catch(e) {
-          // Si falla la consolidación, conserva el enlace del registro actual
-          try {
- const tablasConsolidadas = await consolidarTablasClienteFinal(buyerPhone, tablesToBuy);
- ultimoEnlaceDigital = generarLinkDigitalCliente(
-   tablasConsolidadas,
-   buyerName,
-   config?.fecha || '',
-   config?.linkTransmision || ''
- );
-} catch(e) {
- ultimoEnlaceDigital = enlaceDigital || '';
-}
-        }
+      // Una vez guardado el pedido actual, recuperamos todos los pedidos del mismo
+      // WhatsApp y generamos UN SOLO enlace con todas sus tablas registradas.
+      let tablasConsolidadas = [...tablesToBuy];
+      try {
+        tablasConsolidadas = await obtenerTodasLasTablasClienteRegistro(
+          buyerPhone,
+          tablesToBuy
+        );
+      } catch (consolidationError) {
+        console.error('No fue posible consolidar compras anteriores:', consolidationError);
+        // La compra ya quedó confirmada. Si Firestore no permite la segunda lectura,
+        // mantenemos disponible el enlace de esta compra en vez de bloquear al usuario.
+      }
 
-        document.getElementById('success-exclusive-screen').classList.remove('hidden');
+      ultimoEnlaceDigital = generarLinkDigitalCliente(
+        tablasConsolidadas,
+        buyerName,
+        config?.fecha || '',
+        config?.linkTransmision || ''
+      );
 
+      document.getElementById('success-exclusive-screen').classList.remove('hidden');
       document.getElementById('order-number-display').textContent = `Registro #${orderId}`;
       document.getElementById('buyer-success-display').textContent = `Hola ${buyerName}, tu registro fue realizado exitosamente.`;
-      document.getElementById('assigned-tables-display').textContent = tablesToBuy.join(', ');
-      try {
- const tablasConsolidadas = await consolidarTablasClienteFinal(buyerPhone, tablesToBuy);
- ultimoEnlaceDigital = generarLinkDigitalCliente(
-   tablasConsolidadas,
-   buyerName,
-   config?.fecha || '',
-   config?.linkTransmision || ''
- );
-} catch(e) {
- ultimoEnlaceDigital = enlaceDigital || '';
-}
-      ultimoMensajeDigital = `🎱 LA TERRAZA BINGO\n\n¡Hola ${buyerName}!\n\n✅ Tu registro fue realizado exitosamente.\n\n🎟️ Tablas asignadas: ${tablesToBuy.join(', ')}\n\n📅 Fecha del Bingo: ${config?.fecha || ''}\n⏰ Hora: ${config?.hora || ''}\n\n🔗 Tu enlace para jugar es:\n${ultimoEnlaceDigital}\n\n💳 Puedes realizar tu pago por:\n📱 Nequi: 323 437 0590\n📱 Daviplata: 323 437 0590\n🔑 Llave: 323 437 0590\n\nDespués de realizar el pago, conserva este mensaje como comprobante de tus tablas.`;
+      document.getElementById('assigned-tables-display').textContent = tablasConsolidadas.join(', ');
+
+      ultimoMensajeDigital = `🎱 LA TERRAZA BINGO
+
+¡Hola ${buyerName}!
+
+✅ Tu registro fue realizado exitosamente.
+
+🎟️ Tablas asignadas: ${tablasConsolidadas.join(', ')}
+
+📅 Fecha del Bingo: ${config?.fecha || ''}
+⏰ Hora: ${config?.hora || ''}
+
+🔗 Tu enlace para jugar es:
+${ultimoEnlaceDigital}
+
+💳 Puedes realizar tu pago por:
+📱 Nequi: 323 437 0590
+📱 Daviplata: 323 437 0590
+🔑 Llave: 323 437 0590
+
+Después de realizar el pago, conserva este mensaje como comprobante de tus tablas.`;
+
       document.getElementById('bingo-info-success').innerHTML = `📅 <b>Fecha del Bingo:</b> ${config?.fecha || '--'}<br>⏰ <b>Hora:</b> ${config?.hora || '--'}`;
       document.getElementById('digital-link-box').innerHTML = ultimoEnlaceDigital ? `<a class="btn btn-success digital-uniform-btn" href="${ultimoEnlaceDigital}" target="_blank">🎱 ABRIR MIS TABLAS DIGITALES</a>` : 'Enlace pendiente';
 
@@ -1360,7 +1397,7 @@
   });
 
   function copiarEnlaceDigital(){
-    if(!ultimoMensajeDigital){
+    if(!ultimoEnlaceDigital){
       alert('No hay enlace digital disponible.');
       return;
     }
@@ -1419,135 +1456,6 @@ Gracias por tu compra.`;
   listenConfig();
   listenTables();
 
-function whatsappColombiaFinal(numero){
-  let n = String(numero || '').replace(/\D/g,'');
-  if(n.startsWith('57') && n.length >= 12) return n;
-  if(n.length === 10 && n.startsWith('3')) return '57' + n;
-  return n;
-}
-
-function generarWhatsAppColombiaUnico(numero){
-  let n = String(numero || '').replace(/\D/g,'');
-  if(n.startsWith('57') && n.length >= 12) return n;
-  if(n.length === 10 && n.startsWith('3')) return '57' + n;
-  return n;
-}
-
-
-  async function buscarTablasClienteConsolidado(telefonoActual, tablasNuevas){
-    const telefono = String(telefonoActual || '').replace(/\D/g,'');
-    const snapshot = await getDocs(collection(db,'pedidos'));
-    let todasLasTablas = [...(tablasNuevas || [])];
-
-    snapshot.forEach(docSnap=>{
-      const pedido = docSnap.data();
-      const telefonoPedido = String(pedido.telefono || '').replace(/\D/g,'');
-
-      if(telefonoPedido === telefono && Array.isArray(pedido.tablas)){
-        todasLasTablas.push(...pedido.tablas);
-      }
-    });
-
-    return {
-      tablas:[...new Set(todasLasTablas)]
-    };
-  }
-
-  async function consolidarTablasClienteFinal(telefono, tablasNuevas){
-    const resultado = await buscarTablasClienteConsolidado(telefono, tablasNuevas);
-    return resultado.tablas;
-  }
-
-</script>
-
-<script>
-async function buscarTablasClienteConsolidado(telefonoActual, tablasNuevas){
-  const telefono = String(telefonoActual || '').replace(/\D/g,'');
-  const snapshot = await getDocs(collection(db,'pedidos'));
-  let todasLasTablas = [...tablasNuevas];
-  let encontrado = false;
-
-  snapshot.forEach(docSnap=>{
-    const pedido = docSnap.data();
-    const telefonoPedido = String(pedido.telefono || '').replace(/\D/g,'');
-
-    if(telefonoPedido === telefono){
-      encontrado = true;
-      if(Array.isArray(pedido.tablas)){
-        todasLasTablas.push(...pedido.tablas);
-      }
-    }
-  });
-
-  return {
-    encontrado,
-    tablas:[...new Set(todasLasTablas)]
-  };
-}
-</script>
-
-
-<script>
-async function obtenerTablasAnterioresCliente(telefonoActual, tablasActuales){
-  const telefono = String(telefonoActual || '').replace(/\D/g,'');
-  const snapshot = await getDocs(collection(db,'pedidos'));
-  let tablas = [...tablasActuales];
-
-  snapshot.forEach(docSnap=>{
-    const pedido = docSnap.data();
-    const tel = String(pedido.telefono || '').replace(/\D/g,'');
-    if(tel === telefono && Array.isArray(pedido.tablas)){
-      tablas.push(...pedido.tablas);
-    }
-  });
-
-  return [...new Set(tablas)];
-}
-</script>
-
-
-<script>
-function normalizarWhatsAppColombia(numero){
-  let n = String(numero || '').replace(/\D/g,'');
-  if(n.startsWith('57') && n.length >= 12) return n;
-  if(n.length === 10 && n.startsWith('3')) return '57' + n;
-  return n;
-}
-</script>
-
-
-<script>
-async function consolidarTablasClienteFinal(telefono, tablasNuevas){
- const tel = String(telefono||'').replace(/\D/g,'');
- let tablas=[...(tablasNuevas||[])];
- const snap = await getDocs(collection(db,'pedidos'));
- snap.forEach(d=>{
-   const p=d.data();
-   const tp=String(p.telefono||'').replace(/\D/g,'');
-   if(tp===tel && Array.isArray(p.tablas)){
-      tablas.push(...p.tablas);
-   }
- });
- return [...new Set(tablas)];
-}
-</script>
-
-<script>
-async function obtenerTodasLasTablasClienteRegistro(telefono, tablasNuevas){
- const tel = String(telefono || '').replace(/\D/g,'');
- let todas = [...(tablasNuevas || [])];
- const snapshot = await getDocs(collection(db,'pedidos'));
-
- snapshot.forEach(docSnap=>{
-   const p = docSnap.data();
-   const tp = String(p.telefono || '').replace(/\D/g,'');
-   if(tp === tel && Array.isArray(p.tablas)){
-     todas.push(...p.tablas);
-   }
- });
-
- return [...new Set(todas)];
-}
 </script>
 </body>
 </html>
