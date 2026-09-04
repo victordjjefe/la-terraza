@@ -1252,17 +1252,7 @@
       document.getElementById('order-number-display').textContent = `Registro #${orderId}`;
       document.getElementById('buyer-success-display').textContent = `Hola ${buyerName}, tu registro fue realizado exitosamente.`;
       document.getElementById('assigned-tables-display').textContent = tablesToBuy.join(', ');
-      const resultadoConsolidado = await buscarTablasClienteConsolidado(
-          buyerPhone,
-          tablesToBuy
-        );
-
-        ultimoEnlaceDigital = generarLinkDigitalCliente(
-          resultadoConsolidado.tablas,
-          buyerName,
-          config?.fecha || '',
-          config?.linkTransmision || ''
-        );
+      ultimoEnlaceDigital = enlaceDigital || '';
       ultimoMensajeDigital = `🎱 LA TERRAZA BINGO\n\n¡Hola ${buyerName}!\n\n✅ Tu registro fue realizado exitosamente.\n\n🎟️ Tablas asignadas: ${tablesToBuy.join(', ')}\n\n📅 Fecha del Bingo: ${config?.fecha || ''}\n⏰ Hora: ${config?.hora || ''}\n\n🔗 Tu enlace para jugar es:\n${ultimoEnlaceDigital}\n\n💳 Puedes realizar tu pago por:\n📱 Nequi: 323 437 0590\n📱 Daviplata: 323 437 0590\n🔑 Llave: 323 437 0590\n\nDespués de realizar el pago, conserva este mensaje como comprobante de tus tablas.`;
       document.getElementById('bingo-info-success').innerHTML = `📅 <b>Fecha del Bingo:</b> ${config?.fecha || '--'}<br>⏰ <b>Hora:</b> ${config?.hora || '--'}`;
       document.getElementById('digital-link-box').innerHTML = enlaceDigital ? `<a class="btn btn-success" href="${enlaceDigital}" target="_blank">🎱 ABRIR MIS TABLAS DIGITALES</a>` : 'Enlace pendiente';
@@ -1351,32 +1341,5 @@ Gracias por tu compra.`;
   listenConfig();
   listenTables();
 </script>
-
-<script>
-async function buscarTablasClienteConsolidado(telefonoActual, tablasNuevas){
-  const telefono = String(telefonoActual || '').replace(/\D/g,'');
-  const snapshot = await getDocs(collection(db,'pedidos'));
-  let todasLasTablas = [...tablasNuevas];
-  let encontrado = false;
-
-  snapshot.forEach(docSnap=>{
-    const pedido = docSnap.data();
-    const telefonoPedido = String(pedido.telefono || '').replace(/\D/g,'');
-
-    if(telefonoPedido === telefono){
-      encontrado = true;
-      if(Array.isArray(pedido.tablas)){
-        todasLasTablas.push(...pedido.tablas);
-      }
-    }
-  });
-
-  return {
-    encontrado,
-    tablas:[...new Set(todasLasTablas)]
-  };
-}
-</script>
-
 </body>
 </html>
