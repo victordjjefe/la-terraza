@@ -1333,7 +1333,7 @@
 }
       ultimoMensajeDigital = `🎱 LA TERRAZA BINGO\n\n¡Hola ${buyerName}!\n\n✅ Tu registro fue realizado exitosamente.\n\n🎟️ Tablas asignadas: ${tablesToBuy.join(', ')}\n\n📅 Fecha del Bingo: ${config?.fecha || ''}\n⏰ Hora: ${config?.hora || ''}\n\n🔗 Tu enlace para jugar es:\n${ultimoEnlaceDigital}\n\n💳 Puedes realizar tu pago por:\n📱 Nequi: 323 437 0590\n📱 Daviplata: 323 437 0590\n🔑 Llave: 323 437 0590\n\nDespués de realizar el pago, conserva este mensaje como comprobante de tus tablas.`;
       document.getElementById('bingo-info-success').innerHTML = `📅 <b>Fecha del Bingo:</b> ${config?.fecha || '--'}<br>⏰ <b>Hora:</b> ${config?.hora || '--'}`;
-      document.getElementById('digital-link-box').innerHTML = enlaceDigital ? `<a class="btn btn-success digital-uniform-btn" href="${enlaceDigital}" target="_blank">🎱 ABRIR MIS TABLAS DIGITALES</a>` : 'Enlace pendiente';
+      document.getElementById('digital-link-box').innerHTML = ultimoEnlaceDigital ? `<a class="btn btn-success digital-uniform-btn" href="${ultimoEnlaceDigital}" target="_blank">🎱 ABRIR MIS TABLAS DIGITALES</a>` : 'Enlace pendiente';
 
     } catch (err) {
       console.error("Error al finalizar pedido:", err);
@@ -1375,7 +1375,7 @@
       return;
     }
     const telefono = cleanPhone(document.getElementById('buyer-phone').value);
-    const destino = telefono ? 'https://wa.me/' + telefono : 'https://wa.me/';
+    const destino = telefono ? 'https://wa.me/' + normalizarWhatsAppColombia(telefono) : 'https://wa.me/';
     const url = destino + '?text=' + encodeURIComponent(ultimoMensajeDigital);
     window.open(url, '_blank');
   }
@@ -1432,6 +1432,32 @@ function generarWhatsAppColombiaUnico(numero){
   if(n.length === 10 && n.startsWith('3')) return '57' + n;
   return n;
 }
+
+
+  async function buscarTablasClienteConsolidado(telefonoActual, tablasNuevas){
+    const telefono = String(telefonoActual || '').replace(/\D/g,'');
+    const snapshot = await getDocs(collection(db,'pedidos'));
+    let todasLasTablas = [...(tablasNuevas || [])];
+
+    snapshot.forEach(docSnap=>{
+      const pedido = docSnap.data();
+      const telefonoPedido = String(pedido.telefono || '').replace(/\D/g,'');
+
+      if(telefonoPedido === telefono && Array.isArray(pedido.tablas)){
+        todasLasTablas.push(...pedido.tablas);
+      }
+    });
+
+    return {
+      tablas:[...new Set(todasLasTablas)]
+    };
+  }
+
+  async function consolidarTablasClienteFinal(telefono, tablasNuevas){
+    const resultado = await buscarTablasClienteConsolidado(telefono, tablasNuevas);
+    return resultado.tablas;
+  }
+
 </script>
 
 <script>
