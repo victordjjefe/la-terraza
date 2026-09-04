@@ -483,6 +483,7 @@
           Tus tablas registradas son: <b id="assigned-tables-display"></b>
         </p>
         <div id="bingo-info-success" style="margin-bottom:12px; font-size:0.95rem; color:var(--text-main);"></div>
+        <div id="consolidado-aviso"></div>
         <div id="digital-link-box" style="margin-bottom:0;"></div>
         <button class="btn btn-success" id="btn-copy-digital-link" style="margin-bottom:14px;">📋 Copiar enlace</button>
         <button class="btn btn-success" id="btn-whatsapp-digital-link" style="margin-bottom:14px;">📲 Enviar enlace por WhatsApp</button>
@@ -1325,11 +1326,13 @@
       // Una vez guardado el pedido actual, recuperamos todos los pedidos del mismo
       // WhatsApp y generamos UN SOLO enlace con todas sus tablas registradas.
       let tablasConsolidadas = [...tablesToBuy];
+      let teniaRegistrosAnteriores = false;
       try {
         tablasConsolidadas = await obtenerTodasLasTablasClienteRegistro(
           buyerPhone,
           tablesToBuy
         );
+        teniaRegistrosAnteriores = tablasConsolidadas.length > tablesToBuy.length;
       } catch (consolidationError) {
         console.error('No fue posible consolidar compras anteriores:', consolidationError);
         // La compra ya quedó confirmada. Si Firestore no permite la segunda lectura,
@@ -1348,12 +1351,21 @@
       document.getElementById('buyer-success-display').textContent = `Hola ${buyerName}, tu registro fue realizado exitosamente.`;
       document.getElementById('assigned-tables-display').textContent = tablasConsolidadas.join(', ');
 
+      document.getElementById('consolidado-aviso').innerHTML = teniaRegistrosAnteriores ? `
+        <div class="consolidado-aviso">
+          🔄 <b>Tus tablas fueron unificadas</b><br><br>
+          Encontramos tablas registradas anteriormente con este número de WhatsApp.
+          Las unimos con tus nuevas tablas para que puedas ingresar a todas desde un único enlace digital.
+        </div>
+      ` : '';
+
       ultimoMensajeDigital = `🎱 LA TERRAZA BINGO
 
 ¡Hola ${buyerName}!
 
 ✅ Tu registro fue realizado exitosamente.
 
+${teniaRegistrosAnteriores ? '🔄 Encontramos registros anteriores asociados a este WhatsApp y unificamos todas tus tablas en un solo enlace.\n\n' : ''}
 🎟️ Tablas asignadas: ${tablasConsolidadas.join(', ')}
 
 📅 Fecha del Bingo: ${config?.fecha || ''}
