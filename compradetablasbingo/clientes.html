@@ -337,6 +337,10 @@
 }
 </style>
 
+
+<style>
+/* WhatsApp unificado registro y búsqueda */
+</style>
 </head>
 <body>
 <div id="initial-loader" class="initial-loader">
@@ -1414,6 +1418,13 @@ Gracias por tu compra.`;
 
   listenConfig();
   listenTables();
+
+function whatsappColombiaFinal(numero){
+  let n = String(numero || '').replace(/\D/g,'');
+  if(n.startsWith('57') && n.length >= 12) return n;
+  if(n.length === 10 && n.startsWith('3')) return '57' + n;
+  return n;
+}
 </script>
 
 <script>
