@@ -397,9 +397,6 @@
       <h3>Consulta de tablas</h3>
       <p id="lookup-message" style="margin-top:12px;"></p>
       <div class="lookup-tables" id="lookup-tables"></div>
-      <div id="lookup-link-box" style="margin:12px 0;"></div>
-      <button class="btn btn-dark" id="btn-copy-lookup-link" style="display:none;margin-bottom:8px;">📋 Copiar enlace</button>
-      <button class="btn btn-success" id="btn-whatsapp-lookup-link" style="display:none;margin-bottom:8px;">📲 Enviar enlace por WhatsApp</button>
       <button class="btn btn-dark" id="btn-close-lookup">Cerrar</button>
     </div>
   </div>
@@ -441,9 +438,9 @@
   let orderCompleted = false;
   let ultimoEnlaceDigital = '';
   let ultimoMensajeDigital = '';
-  let ultimoLookupEnlace = '';
   let ultimoLookupMensaje = '';
   let ultimoLookupTelefono = '';
+  let ultimoLookupEnlace = '';
 
 
 
@@ -543,38 +540,26 @@
 
     document.getElementById('lookup-modal').classList.add('active');
 
-    const copyBtn = document.getElementById('btn-copy-lookup-link');
-    const waBtn = document.getElementById('btn-whatsapp-lookup-link');
-
-    if(tablasEncontradas.length && pedidoEncontrado){
-      const tablasUnicas = [...new Set(tablasEncontradas)];
+    if(tablasEncontradas.length){
       document.getElementById('lookup-message').textContent =
         'Estas son tus tablas registradas:';
+      const tablasUnicas = [...new Set(tablasEncontradas)];
       document.getElementById('lookup-tables').textContent = tablasUnicas.join(', ');
-
-      ultimoLookupEnlace = generarLinkDigitalCliente(
-        tablasUnicas,
-        pedidoEncontrado.cliente,
-        config?.fecha || '',
-        config?.linkTransmision || ''
-      );
-
-      ultimoLookupMensaje = `🎱 LA TERRAZA BINGO\n\n¡Hola ${pedidoEncontrado.cliente}! 👋\n\n✅ Encontramos tus tablas registradas.\n\n🎟️ Tablas asignadas: ${tablasUnicas.join(', ')}\n\n🔗 Tu enlace digital para jugar:\n${ultimoLookupEnlace}\n\n📅 Fecha del Bingo: ${config?.fecha || ''}\n⏰ Hora: ${config?.hora || ''}\n\n💳 Datos de pago:\n📱 Nequi / Daviplata / Llave: 323 437 0590\n\nConserva este mensaje para el día del bingo. 🎉`;
-
-      document.getElementById('lookup-link-box').innerHTML =
-        `<a class="btn btn-success" href="${ultimoLookupEnlace}" target="_blank">🎱 ABRIR MIS TABLAS DIGITALES</a>`;
-      copyBtn.style.display='block';
-      waBtn.style.display='block';
+      ultimoLookupEnlace = generarLinkDigitalCliente(tablasUnicas, pedidoEncontrado.cliente, config?.fecha || '', config?.linkTransmision || '');
+      ultimoLookupMensaje = `🎱 LA TERRAZA BINGO\n\n¡Hola ${pedidoEncontrado.cliente}! 👋\n\n✅ Encontramos tus tablas registradas.\n\n🎟️ Tablas asignadas: ${tablasUnicas.join(', ')}\n\n🔗 Tu enlace digital para jugar:\n${ultimoLookupEnlace}`;
+      document.getElementById('lookup-link-box').innerHTML = `<a class="btn btn-success" href="${ultimoLookupEnlace}" target="_blank">🎱 ABRIR MIS TABLAS DIGITALES</a>`;
+      document.getElementById('btn-copy-lookup-link').style.display='block';
+      document.getElementById('btn-whatsapp-lookup-link').style.display='block';
       ultimoLookupTelefono = cleanPhone(pedidoEncontrado.telefono);
     }else{
       document.getElementById('lookup-message').textContent =
         'No encontramos registros asociados.';
       document.getElementById('lookup-tables').textContent='';
-      document.getElementById('lookup-link-box').innerHTML='';
-      copyBtn.style.display='none';
-      waBtn.style.display='none';
     }
   }
+
+  document.getElementById('btn-copy-lookup-link')?.addEventListener('click',()=>{navigator.clipboard.writeText(ultimoLookupMensaje); alert('✓ Enlace copiado correctamente.');});
+  document.getElementById('btn-whatsapp-lookup-link')?.addEventListener('click',()=>{window.open('https://wa.me/'+ultimoLookupTelefono+'?text='+encodeURIComponent(ultimoLookupMensaje),'_blank');});
 
   function listenConfig() {
     onSnapshot(doc(db, 'configuracion', 'evento'), (docSnap) => {
@@ -1247,21 +1232,6 @@ Gracias por tu compra.`;
       alert('✓ Comprobante copiado. Ahora puedes pegarlo en WhatsApp del administrador.');
     }).catch(()=>{
       alert(mensaje);
-    });
-  }
-
-  const btnCopyLookup = document.getElementById('btn-copy-lookup-link');
-  if(btnCopyLookup){
-    btnCopyLookup.addEventListener('click',()=>{
-      navigator.clipboard.writeText(ultimoLookupMensaje).then(()=>alert('✓ Enlace copiado correctamente.'));
-    });
-  }
-
-  const btnWhatsappLookup = document.getElementById('btn-whatsapp-lookup-link');
-  if(btnWhatsappLookup){
-    btnWhatsappLookup.addEventListener('click',()=>{
-      const destino = ultimoLookupTelefono ? 'https://wa.me/' + ultimoLookupTelefono : 'https://wa.me/';
-      window.open(destino + '?text=' + encodeURIComponent(ultimoLookupMensaje), '_blank');
     });
   }
 
