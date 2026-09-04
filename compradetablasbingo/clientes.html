@@ -551,6 +551,9 @@
       document.getElementById('btn-copy-lookup-link').style.display='block';
       document.getElementById('btn-whatsapp-lookup-link').style.display='block';
       ultimoLookupTelefono = cleanPhone(pedidoEncontrado.telefono);
+      if (ultimoLookupTelefono.startsWith('3') && ultimoLookupTelefono.length === 10) {
+        ultimoLookupTelefono = '57' + ultimoLookupTelefono;
+      }
     }else{
       document.getElementById('lookup-message').textContent =
         'No encontramos registros asociados.';
@@ -1209,7 +1212,7 @@
       alert('No hay enlace digital disponible.');
       return;
     }
-    navigator.clipboard.writeText(ultimoMensajeDigital).then(()=>{
+    navigator.clipboard.writeText(ultimoEnlaceDigital).then(()=>{
       alert('✓ Enlace copiado correctamente.');
     });
   }
@@ -1219,7 +1222,10 @@
       alert('No hay enlace digital disponible.');
       return;
     }
-    const telefono = cleanPhone(document.getElementById('buyer-phone').value);
+    let telefono = cleanPhone(document.getElementById('buyer-phone').value);
+    if (telefono.startsWith('3') && telefono.length === 10) {
+      telefono = '57' + telefono;
+    }
     const destino = telefono ? 'https://wa.me/' + telefono : 'https://wa.me/';
     const url = destino + '?text=' + encodeURIComponent(ultimoMensajeDigital);
     window.open(url, '_blank');
