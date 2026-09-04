@@ -1383,20 +1383,13 @@
 
 ✅ Tu registro fue realizado exitosamente.
 
-🎟️ Nuevas tablas registradas:
-${tablesToBuy.join(', ')}
+🎟️ Tus tablas asignadas para jugar son:
+${tablasConsolidadas.map(tabla => '🎟️ ' + tabla).join('\n')}
 
-${teniaRegistrosAnteriores ? `🔄 Registros anteriores encontrados:
-${tablasAnterioresCliente.join(', ')}
-
-🎯 Total de tablas asignadas:
-${tablasConsolidadas.join(', ')}
-
-` : ''}
 📅 Fecha del Bingo: ${config?.fecha || ''}
 ⏰ Hora: ${config?.hora || ''}
 
-🔗 Tu enlace para jugar es:
+🔗 Tu enlace para jugar todas tus tablas es:
 ${ultimoEnlaceDigital}
 
 💳 Puedes realizar tu pago por:
