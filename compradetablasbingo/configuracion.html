@@ -381,6 +381,11 @@
           <div class="form-group">
              <label>Valor por Tabla ($)</label>
             <input type="number" id="cfg-valor" class="form-control" placeholder="$ Valor por tabla" min="0" required>
+
+            <div class="form-group">
+              <label>Enlace de transmisión YouTube</label>
+              <input type="text" id="cfg-link-transmision" class="form-control" placeholder="https://www.youtube.com/live/...">
+            </div>
           </div>
           <div class="form-row">
             <div class="form-group">
@@ -395,6 +400,12 @@
           <div class="range-help">DEFINE DESDE QUÉ NÚMERO HASTA QUÉ NÚMERO ESTARÁN HABILITADAS LAS TABLAS (ENTRE 1 Y 5000).</div>
           <button type="submit" id="btn-submit-config" class="btn btn-primary" style="margin-top: 10px;">Guardar Cambios y Generar Tablas</button>
         </form>
+
+      <div class="card" style="margin-top:14px;">
+        <div class="card-title">Sincronización con Sistema Contable</div>
+        <p style="font-size:.9rem;color:#64748b;margin-bottom:10px;">Genera un archivo con los pedidos actuales para cargarlo en el sistema contable local.</p>
+        <button type="button" id="btn-exportar-contable" class="btn btn-success">Exportar ventas para bingo</button>
+      </div>
       </div>
 
       <div class="card" style="margin-bottom: 16px;">
@@ -633,6 +644,7 @@
         document.getElementById('cfg-venta-hasta-fecha').value = firestoreDateToInput(cfg.ventaHastaFecha);
         document.getElementById('cfg-venta-hasta-hora').value = firestoreTimeToInput(cfg.ventaHastaHora);
         document.getElementById('cfg-valor').value = cfg.valor ?? '';
+        document.getElementById('cfg-link-transmision').value = cfg.linkTransmision ?? '';
         document.getElementById('cfg-desde').value = cfg.rangoDesde ?? 1;
         document.getElementById('cfg-hasta').value = cfg.tablasHabilitadas ?? '';
       } else {
@@ -644,6 +656,7 @@
         document.getElementById('cfg-venta-hasta-fecha').value = '';
         document.getElementById('cfg-venta-hasta-hora').value = '';
         document.getElementById('cfg-valor').value = '';
+        document.getElementById('cfg-link-transmision').value = '';
         document.getElementById('cfg-desde').value = '';
         document.getElementById('cfg-hasta').value = '';
       }
@@ -712,6 +725,7 @@
         fecha: fecha,
         hora: hora,
         valor: valor,
+        linkTransmision: document.getElementById('cfg-link-transmision').value.trim(),
         rangoDesde: desde,
         tablasHabilitadas: hasta,
         ventaDesdeFecha: ventaDesdeFecha,
@@ -767,6 +781,12 @@
       btn.textContent = "Guardar Cambios y Generar Tablas";
     }
   });
+
+  // Compatibilidad Sistema Contable V34
+  // Mantiene identificada la configuración del evento para módulos contables.
+  function obtenerVersionSistema(){
+    return 'CONTABILIDAD_V34';
+  }
 
   function listenOrders() {
     onSnapshot(collection(db, 'pedidos'), (snapshot) => {
@@ -1221,6 +1241,7 @@
         document.getElementById('cfg-venta-hasta-fecha').value = '';
         document.getElementById('cfg-venta-hasta-hora').value = '';
       document.getElementById('cfg-valor').value = '';
+        document.getElementById('cfg-link-transmision').value = '';
       document.getElementById('cfg-desde').value = '';
       document.getElementById('cfg-hasta').value = '';
       document.getElementById('orders-list').innerHTML = '';
@@ -1237,6 +1258,42 @@
   }
 
   document.getElementById('btn-cerrar-bingo').addEventListener('click', cerrarBingo);
+
+
+  // Exportación administrativa para el sistema contable local
+  document.getElementById('btn-exportar-contable')?.addEventListener('click', async()=>{
+    const snap = await getDocs(collection(db,'pedidos'));
+    const ventas=[];
+    snap.forEach(d=>{
+      const x=d.data();
+      ventas.push({
+        id:d.id,
+        nombre:x.cliente||'',
+        whatsapp:x.telefono||'',
+        referencia:x.referencia||x.direccion||'',
+        tablas:Array.isArray(x.tablas)?x.tablas:[],
+        fecha:new Date().toISOString()
+      });
+    });
+    const tablasExportadas=[];
+    ventas.forEach(v=>{
+      (Array.isArray(v.tablas)?v.tablas:[]).forEach(tab=>{
+        tablasExportadas.push({
+          tabla:String(tab).startsWith('T')?String(tab):'T'+String(tab).padStart(3,'0'),
+          nombre:v.nombre||v.cliente||'',
+          referencia:v.referencia||v.direccion||'',
+          whatsapp:v.whatsapp||v.telefono||'',
+          destino:'DEBEN'
+        });
+      });
+    });
+    const blob=new Blob([JSON.stringify({version:'tablas_bingo_v1',tablas:tablasExportadas},null,2)],{type:'application/json'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='ventas_bingo_actualizacion.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
 </script>
 </body>
 </html>
