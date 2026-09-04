@@ -369,8 +369,9 @@
         </p>
         <div id="bingo-info-success" style="margin-bottom:12px; font-size:0.95rem; color:var(--text-main);"></div>
         <div id="digital-link-box" style="margin-bottom:12px;"></div>
-        <button class="btn btn-dark" id="btn-copy-digital-link" style="margin-bottom:8px;">📋 Copiar enlace</button>
-        <button class="btn btn-success" id="btn-whatsapp-digital-link" style="margin-bottom:8px;">📲 Enviar enlace por WhatsApp</button>
+        <button class="btn btn-dark" id="btn-copy-digital-link" style="margin-bottom:8px;">📋 Copiar enlace y datos del bingo</button>
+        <button class="btn btn-success" id="btn-whatsapp-digital-link" style="margin-bottom:8px;">📲 Enviarme por WhatsApp</button>
+        <button class="btn btn-dark" id="btn-copy-receipt-admin" style="margin-bottom:8px;">📋 Copiar comprobante para administrador</button>
         <button class="btn btn-primary" onclick="document.getElementById('lookup-input').focus()">Consultar mis tablas</button>
         <button class="btn btn-success btn-restart-action" style="margin-top: 8px;">Hacer otra compra</button>
       </div>
@@ -438,9 +439,6 @@
   let orderCompleted = false;
   let ultimoEnlaceDigital = '';
   let ultimoMensajeDigital = '';
-  let ultimoLookupMensaje = '';
-  let ultimoLookupTelefono = '';
-  let ultimoLookupEnlace = '';
 
 
 
@@ -519,7 +517,6 @@
     const snapshot = await getDocs(collection(db,'pedidos'));
 
     let tablasEncontradas = [];
-    let pedidoEncontrado = null;
 
     snapshot.forEach(docSnap=>{
       const pedido = docSnap.data();
@@ -531,7 +528,6 @@
       const coincideTelefono = telefonoBusqueda && telefono.includes(telefonoBusqueda);
 
       if(coincideNombre || coincideTelefono){
-        pedidoEncontrado = pedido;
         if(Array.isArray(pedido.tablas)){
           tablasEncontradas.push(...pedido.tablas);
         }
@@ -543,23 +539,14 @@
     if(tablasEncontradas.length){
       document.getElementById('lookup-message').textContent =
         'Estas son tus tablas registradas:';
-      const tablasUnicas = [...new Set(tablasEncontradas)];
-      document.getElementById('lookup-tables').textContent = tablasUnicas.join(', ');
-      ultimoLookupEnlace = generarLinkDigitalCliente(tablasUnicas, pedidoEncontrado.cliente, config?.fecha || '', config?.linkTransmision || '');
-      ultimoLookupMensaje = `🎱 LA TERRAZA BINGO\n\n¡Hola ${pedidoEncontrado.cliente}! 👋\n\n✅ Encontramos tus tablas registradas.\n\n🎟️ Tablas asignadas: ${tablasUnicas.join(', ')}\n\n🔗 Tu enlace digital para jugar:\n${ultimoLookupEnlace}`;
-      document.getElementById('lookup-link-box').innerHTML = `<a class="btn btn-success" href="${ultimoLookupEnlace}" target="_blank">🎱 ABRIR MIS TABLAS DIGITALES</a>`;
-      document.getElementById('btn-copy-lookup-link').style.display='block';
-      document.getElementById('btn-whatsapp-lookup-link').style.display='block';
-      ultimoLookupTelefono = cleanPhone(pedidoEncontrado.telefono);
+      document.getElementById('lookup-tables').textContent =
+        [...new Set(tablasEncontradas)].join(', ');
     }else{
       document.getElementById('lookup-message').textContent =
         'No encontramos registros asociados.';
       document.getElementById('lookup-tables').textContent='';
     }
   }
-
-  document.getElementById('btn-copy-lookup-link')?.addEventListener('click',()=>{navigator.clipboard.writeText(ultimoLookupMensaje); alert('✓ Enlace copiado correctamente.');});
-  document.getElementById('btn-whatsapp-lookup-link')?.addEventListener('click',()=>{window.open('https://wa.me/'+ultimoLookupTelefono+'?text='+encodeURIComponent(ultimoLookupMensaje),'_blank');});
 
   function listenConfig() {
     onSnapshot(doc(db, 'configuracion', 'evento'), (docSnap) => {
@@ -941,22 +928,6 @@
     });
   });
 
-
-
-  // Genera la estructura de sincronización que utiliza el sistema contable v34.
-  // Se mantiene separada del proceso de compra para no afectar Firestore.
-  function generarRegistroContableV34(nombre, telefono, referencia, tablas, fecha, linkTransmision) {
-    return {
-      cliente: nombre || '',
-      telefono: telefono || '',
-      referencia: referencia || '',
-      tablas: Array.isArray(tablas) ? tablas : [],
-      fechaBingo: fecha || '',
-      linkTransmision: linkTransmision || '',
-      fechaRegistro: new Date().toLocaleString()
-    };
-  }
-
   async function finishOrder() {
     if (config) {
       const ahora = new Date();
@@ -1175,7 +1146,7 @@
       document.getElementById('buyer-success-display').textContent = `Hola ${buyerName}, tu registro fue realizado exitosamente.`;
       document.getElementById('assigned-tables-display').textContent = tablesToBuy.join(', ');
       ultimoEnlaceDigital = enlaceDigital || '';
-      ultimoMensajeDigital = `🎱 LA TERRAZA BINGO\n\n¡Hola ${buyerName}!\n\n✅ Tu registro fue realizado exitosamente.\n\n🎟️ Tablas asignadas: ${tablesToBuy.join(', ')}\n\n📅 Fecha del Bingo: ${config?.fecha || ''}\n⏰ Hora: ${config?.hora || ''}\n\n🔗 Tu enlace para jugar es:\n${ultimoEnlaceDigital}\n\n💳 Puedes realizar tu pago por:\n📱 Nequi: 323 437 0590\n📱 Daviplata: 323 437 0590\n🔑 Llave: 323 437 0590\n\nDespués de realizar el pago, conserva este mensaje como comprobante de tus tablas.`;
+      ultimoMensajeDigital = `🎱 LA TERRAZA BINGO\n\nCliente: ${buyerName}\n\nTablas: ${tablesToBuy.join(', ')}\n\nFecha: ${config?.fecha || ''}\nHora: ${config?.hora || ''}\n\nMi enlace de juego:\n${ultimoEnlaceDigital}`;
       document.getElementById('bingo-info-success').innerHTML = `📅 <b>Fecha del Bingo:</b> ${config?.fecha || '--'}<br>⏰ <b>Hora:</b> ${config?.hora || '--'}`;
       document.getElementById('digital-link-box').innerHTML = enlaceDigital ? `<a class="btn btn-success" href="${enlaceDigital}" target="_blank">🎱 ABRIR MIS TABLAS DIGITALES</a>` : 'Enlace pendiente';
 
@@ -1218,9 +1189,7 @@
       alert('No hay enlace digital disponible.');
       return;
     }
-    const telefono = cleanPhone(document.getElementById('buyer-phone').value);
-    const destino = telefono ? 'https://wa.me/' + telefono : 'https://wa.me/';
-    const url = destino + '?text=' + encodeURIComponent(ultimoMensajeDigital);
+    const url = 'https://wa.me/?text=' + encodeURIComponent(ultimoMensajeDigital);
     window.open(url, '_blank');
   }
 
@@ -1251,6 +1220,7 @@ Gracias por tu compra.`;
     });
   }
 
+  document.getElementById('btn-copy-receipt-admin').addEventListener('click', copiarComprobanteAdministrador);
   document.getElementById('btn-copy-digital-link').addEventListener('click', copiarEnlaceDigital);
   document.getElementById('btn-whatsapp-digital-link').addEventListener('click', enviarWhatsAppDigital);
 
