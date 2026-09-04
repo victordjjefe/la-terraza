@@ -225,7 +225,18 @@
 
     .hidden { display: none !important; }
 
-  </style>
+  
+    .digital-action-spacing{margin-top:14px!important;}
+    #lookup-modal .lookup-box .btn{margin-top:12px;}
+    
+        .digital-action-gap-fix{
+          margin-top:14px !important;
+          display:block;
+        }
+        #digital-link-box a{
+          margin-bottom:14px !important;
+        }
+        </style>
 </head>
 <body>
 <div id="initial-loader" class="initial-loader">
@@ -368,9 +379,10 @@
           Tus tablas registradas son: <b id="assigned-tables-display"></b>
         </p>
         <div id="bingo-info-success" style="margin-bottom:12px; font-size:0.95rem; color:var(--text-main);"></div>
-        <div id="digital-link-box" style="margin-bottom:16px;"></div>
-        <button class="btn btn-dark" id="btn-copy-digital-link" style="margin-bottom:12px;">📋 Copiar enlace</button>
-        <button class="btn btn-success" id="btn-whatsapp-digital-link" style="margin-bottom:12px;">📲 Enviar enlace por WhatsApp</button>
+        <div id="digital-link-box" style="margin-bottom:12px;"></div>
+        <button class="btn btn-dark" id="btn-copy-digital-link" style="margin-bottom:8px;">📋 Copiar enlace</button>
+        <button class="btn btn-success" id="btn-whatsapp-digital-link" style="margin-bottom:8px;">📲 Enviar enlace por WhatsApp</button>
+        <button class="btn btn-primary" onclick="document.getElementById('lookup-input').focus()">Consultar mis tablas</button>
         <button class="btn btn-success btn-restart-action" style="margin-top: 8px;">Hacer otra compra</button>
       </div>
     </div>
@@ -540,19 +552,16 @@
     document.getElementById('lookup-modal').classList.add('active');
 
     if(tablasEncontradas.length){
-      document.getElementById('lookup-message').textContent =
-        'Estas son tus tablas registradas:';
+      document.getElementById('lookup-message').innerHTML =
+        '<h3 style="color:#10b981;">TUS TABLAS REGISTRADAS</h3>';
       const tablasUnicas = [...new Set(tablasEncontradas)];
       document.getElementById('lookup-tables').textContent = tablasUnicas.join(', ');
       ultimoLookupEnlace = generarLinkDigitalCliente(tablasUnicas, pedidoEncontrado.cliente, config?.fecha || '', config?.linkTransmision || '');
       ultimoLookupMensaje = `🎱 LA TERRAZA BINGO\n\n¡Hola ${pedidoEncontrado.cliente}! 👋\n\n✅ Encontramos tus tablas registradas.\n\n🎟️ Tablas asignadas: ${tablasUnicas.join(', ')}\n\n🔗 Tu enlace digital para jugar:\n${ultimoLookupEnlace}`;
-      document.getElementById('lookup-link-box').innerHTML = `<a class="btn btn-success" href="${ultimoLookupEnlace}" target="_blank">🎱 ABRIR MIS TABLAS DIGITALES</a>`;
+      document.getElementById('lookup-link-box').innerHTML = `<a class="btn btn-success digital-action-spacing" href="${ultimoLookupEnlace}" target="_blank">🎱 ABRIR MIS TABLAS DIGITALES</a>`;
       document.getElementById('btn-copy-lookup-link').style.display='block';
       document.getElementById('btn-whatsapp-lookup-link').style.display='block';
       ultimoLookupTelefono = cleanPhone(pedidoEncontrado.telefono);
-      if (ultimoLookupTelefono.startsWith('3') && ultimoLookupTelefono.length === 10) {
-        ultimoLookupTelefono = '57' + ultimoLookupTelefono;
-      }
     }else{
       document.getElementById('lookup-message').textContent =
         'No encontramos registros asociados.';
@@ -560,7 +569,7 @@
     }
   }
 
-  document.getElementById('btn-copy-lookup-link')?.addEventListener('click',()=>{navigator.clipboard.writeText(ultimoLookupMensaje); alert('✓ Enlace copiado correctamente.');});
+  document.getElementById('btn-copy-lookup-link')?.addEventListener('click',()=>{navigator.clipboard.writeText(ultimoLookupEnlace); alert('✓ Enlace copiado correctamente.');});
   document.getElementById('btn-whatsapp-lookup-link')?.addEventListener('click',()=>{window.open('https://wa.me/'+ultimoLookupTelefono+'?text='+encodeURIComponent(ultimoLookupMensaje),'_blank');});
 
   function listenConfig() {
@@ -1211,7 +1220,7 @@
       alert('No hay enlace digital disponible.');
       return;
     }
-    navigator.clipboard.writeText(ultimoEnlaceDigital).then(()=>{
+    navigator.clipboard.writeText(ultimoMensajeDigital).then(()=>{
       alert('✓ Enlace copiado correctamente.');
     });
   }
@@ -1221,10 +1230,7 @@
       alert('No hay enlace digital disponible.');
       return;
     }
-    let telefono = cleanPhone(document.getElementById('buyer-phone').value);
-    if (telefono.startsWith('3') && telefono.length === 10) {
-      telefono = '57' + telefono;
-    }
+    const telefono = cleanPhone(document.getElementById('buyer-phone').value);
     const destino = telefono ? 'https://wa.me/' + telefono : 'https://wa.me/';
     const url = destino + '?text=' + encodeURIComponent(ultimoMensajeDigital);
     window.open(url, '_blank');
