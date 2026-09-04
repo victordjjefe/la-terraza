@@ -324,6 +324,19 @@
 }
 </style>
 
+
+<style>
+.consolidado-aviso{
+  margin:12px 0;
+  padding:12px;
+  border-radius:10px;
+  background:#ecfdf5;
+  color:#065f46;
+  font-weight:600;
+  line-height:1.4;
+}
+</style>
+
 </head>
 <body>
 <div id="initial-loader" class="initial-loader">
@@ -1406,6 +1419,25 @@ async function buscarTablasClienteConsolidado(telefonoActual, tablasNuevas){
     encontrado,
     tablas:[...new Set(todasLasTablas)]
   };
+}
+</script>
+
+
+<script>
+async function obtenerTablasAnterioresCliente(telefonoActual, tablasActuales){
+  const telefono = String(telefonoActual || '').replace(/\D/g,'');
+  const snapshot = await getDocs(collection(db,'pedidos'));
+  let tablas = [...tablasActuales];
+
+  snapshot.forEach(docSnap=>{
+    const pedido = docSnap.data();
+    const tel = String(pedido.telefono || '').replace(/\D/g,'');
+    if(tel === telefono && Array.isArray(pedido.tablas)){
+      tablas.push(...pedido.tablas);
+    }
+  });
+
+  return [...new Set(tablas)];
 }
 </script>
 
