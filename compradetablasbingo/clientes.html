@@ -1326,17 +1326,19 @@
       // Una vez guardado el pedido actual, recuperamos todos los pedidos del mismo
       // WhatsApp y generamos UN SOLO enlace con todas sus tablas registradas.
       let tablasConsolidadas = [...tablesToBuy];
+      let tablasAnterioresCliente = [];
       let teniaRegistrosAnteriores = false;
+
       try {
         tablasConsolidadas = await obtenerTodasLasTablasClienteRegistro(
           buyerPhone,
           tablesToBuy
         );
-        teniaRegistrosAnteriores = tablasConsolidadas.length > tablesToBuy.length;
+
+        tablasAnterioresCliente = tablasConsolidadas.filter(tabla => !tablesToBuy.includes(tabla));
+        teniaRegistrosAnteriores = tablasAnterioresCliente.length > 0;
       } catch (consolidationError) {
         console.error('No fue posible consolidar compras anteriores:', consolidationError);
-        // La compra ya quedó confirmada. Si Firestore no permite la segunda lectura,
-        // mantenemos disponible el enlace de esta compra en vez de bloquear al usuario.
       }
 
       ultimoEnlaceDigital = generarLinkDigitalCliente(
@@ -1349,15 +1351,31 @@
       document.getElementById('success-exclusive-screen').classList.remove('hidden');
       document.getElementById('order-number-display').textContent = `Registro #${orderId}`;
       document.getElementById('buyer-success-display').textContent = `Hola ${buyerName}, tu registro fue realizado exitosamente.`;
-      document.getElementById('assigned-tables-display').textContent = tablasConsolidadas.join(', ');
+
+      // Muestra primero únicamente lo que acaba de registrar el cliente
+      document.getElementById('assigned-tables-display').innerHTML = `
+        <div>
+          <b>🎟️ Nuevas tablas registradas:</b><br>
+          ${tablesToBuy.join(', ')}
+        </div>
+      `;
 
       document.getElementById('consolidado-aviso').innerHTML = teniaRegistrosAnteriores ? `
         <div class="consolidado-aviso">
-          🔄 <b>Tus tablas fueron unificadas</b><br><br>
-          Encontramos tablas registradas anteriormente con este número de WhatsApp.
-          Las unimos con tus nuevas tablas para que puedas ingresar a todas desde un único enlace digital.
+          🔄 <b>Encontramos registros anteriores</b><br><br>
+          Ya tenías tablas registradas anteriormente con este número de WhatsApp.
+          Estas tablas fueron unificadas automáticamente con tu nuevo registro.<br><br>
+          <b>🎟️ Tablas de registros anteriores:</b><br>
+          ${tablasAnterioresCliente.join(', ')}<br><br>
+          <b>🎯 Total de tablas asignadas:</b><br>
+          ${tablasConsolidadas.join(', ')}
         </div>
-      ` : '';
+      ` : `
+        <div class="consolidado-aviso">
+          <b>🎯 Total de tablas asignadas:</b><br>
+          ${tablasConsolidadas.join(', ')}
+        </div>
+      `;
 
       ultimoMensajeDigital = `🎱 LA TERRAZA BINGO
 
@@ -1365,9 +1383,16 @@
 
 ✅ Tu registro fue realizado exitosamente.
 
-${teniaRegistrosAnteriores ? '🔄 Encontramos registros anteriores asociados a este WhatsApp y unificamos todas tus tablas en un solo enlace.\n\n' : ''}
-🎟️ Tablas asignadas: ${tablasConsolidadas.join(', ')}
+🎟️ Nuevas tablas registradas:
+${tablesToBuy.join(', ')}
 
+${teniaRegistrosAnteriores ? `🔄 Registros anteriores encontrados:
+${tablasAnterioresCliente.join(', ')}
+
+🎯 Total de tablas asignadas:
+${tablasConsolidadas.join(', ')}
+
+` : ''}
 📅 Fecha del Bingo: ${config?.fecha || ''}
 ⏰ Hora: ${config?.hora || ''}
 
