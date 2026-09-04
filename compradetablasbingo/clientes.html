@@ -672,7 +672,7 @@
   }
 
   document.getElementById('btn-copy-lookup-link')?.addEventListener('click',()=>{navigator.clipboard.writeText(ultimoLookupEnlace); alert('✓ Enlace copiado correctamente.');});
-  document.getElementById('btn-whatsapp-lookup-link')?.addEventListener('click',()=>{window.open('https://wa.me/'+ultimoLookupTelefono+'?text='+encodeURIComponent(ultimoLookupMensaje),'_blank');});
+  document.getElementById('btn-whatsapp-lookup-link')?.addEventListener('click',()=>{window.open('https://wa.me/'+normalizarWhatsAppColombia(ultimoLookupTelefono)+'?text='+encodeURIComponent(ultimoLookupMensaje),'_blank');});
 
   function listenConfig() {
     onSnapshot(doc(db, 'configuracion', 'evento'), (docSnap) => {
@@ -1298,7 +1298,17 @@
           );
         } catch(e) {
           // Si falla la consolidación, conserva el enlace del registro actual
-          ultimoEnlaceDigital = enlaceDigital || '';
+          try {
+ const tablasConsolidadas = await consolidarTablasClienteFinal(buyerPhone, tablesToBuy);
+ ultimoEnlaceDigital = generarLinkDigitalCliente(
+   tablasConsolidadas,
+   buyerName,
+   config?.fecha || '',
+   config?.linkTransmision || ''
+ );
+} catch(e) {
+ ultimoEnlaceDigital = enlaceDigital || '';
+}
         }
 
         document.getElementById('success-exclusive-screen').classList.remove('hidden');
@@ -1306,7 +1316,17 @@
       document.getElementById('order-number-display').textContent = `Registro #${orderId}`;
       document.getElementById('buyer-success-display').textContent = `Hola ${buyerName}, tu registro fue realizado exitosamente.`;
       document.getElementById('assigned-tables-display').textContent = tablesToBuy.join(', ');
-      ultimoEnlaceDigital = enlaceDigital || '';
+      try {
+ const tablasConsolidadas = await consolidarTablasClienteFinal(buyerPhone, tablesToBuy);
+ ultimoEnlaceDigital = generarLinkDigitalCliente(
+   tablasConsolidadas,
+   buyerName,
+   config?.fecha || '',
+   config?.linkTransmision || ''
+ );
+} catch(e) {
+ ultimoEnlaceDigital = enlaceDigital || '';
+}
       ultimoMensajeDigital = `🎱 LA TERRAZA BINGO\n\n¡Hola ${buyerName}!\n\n✅ Tu registro fue realizado exitosamente.\n\n🎟️ Tablas asignadas: ${tablesToBuy.join(', ')}\n\n📅 Fecha del Bingo: ${config?.fecha || ''}\n⏰ Hora: ${config?.hora || ''}\n\n🔗 Tu enlace para jugar es:\n${ultimoEnlaceDigital}\n\n💳 Puedes realizar tu pago por:\n📱 Nequi: 323 437 0590\n📱 Daviplata: 323 437 0590\n🔑 Llave: 323 437 0590\n\nDespués de realizar el pago, conserva este mensaje como comprobante de tus tablas.`;
       document.getElementById('bingo-info-success').innerHTML = `📅 <b>Fecha del Bingo:</b> ${config?.fecha || '--'}<br>⏰ <b>Hora:</b> ${config?.hora || '--'}`;
       document.getElementById('digital-link-box').innerHTML = enlaceDigital ? `<a class="btn btn-success digital-uniform-btn" href="${enlaceDigital}" target="_blank">🎱 ABRIR MIS TABLAS DIGITALES</a>` : 'Enlace pendiente';
@@ -1441,5 +1461,31 @@ async function obtenerTablasAnterioresCliente(telefonoActual, tablasActuales){
 }
 </script>
 
+
+<script>
+function normalizarWhatsAppColombia(numero){
+  let n = String(numero || '').replace(/\D/g,'');
+  if(n.startsWith('57') && n.length >= 12) return n;
+  if(n.length === 10 && n.startsWith('3')) return '57' + n;
+  return n;
+}
+</script>
+
+
+<script>
+async function consolidarTablasClienteFinal(telefono, tablasNuevas){
+ const tel = String(telefono||'').replace(/\D/g,'');
+ let tablas=[...(tablasNuevas||[])];
+ const snap = await getDocs(collection(db,'pedidos'));
+ snap.forEach(d=>{
+   const p=d.data();
+   const tp=String(p.telefono||'').replace(/\D/g,'');
+   if(tp===tel && Array.isArray(p.tablas)){
+      tablas.push(...p.tablas);
+   }
+ });
+ return [...new Set(tablas)];
+}
+</script>
 </body>
 </html>
