@@ -1277,6 +1277,12 @@
     btn.disabled = true;
     btn.textContent = "Registrando...";
 
+    const registroAviso = setTimeout(() => {
+      if (btn.disabled) {
+        btn.textContent = "Conectando con el servidor...";
+      }
+    }, 4000);
+
     try {
       let enlaceDigital = '';
       clearInterval(timerInterval);
@@ -1492,6 +1498,7 @@ Después de realizar el pago, conserva este mensaje como comprobante de tus tabl
         document.getElementById('reservation-timer-box').classList.remove('hidden');
       }
     } finally {
+      clearTimeout(registroAviso);
       btn.disabled = false;
       btn.textContent = "Registrar / Comprar";
     }
