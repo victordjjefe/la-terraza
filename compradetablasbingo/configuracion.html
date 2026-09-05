@@ -798,8 +798,8 @@
         allOrders.push({ firestoreId: docSnap.id, ...docSnap.data() });
       });
 
-      // Mantiene los registros en orden consecutivo: 1, 2, 3, 4...
-      allOrders.sort((a, b) => (parseInt(a.id) || 0) - (parseInt(b.id) || 0));
+      // Mantener registros asociados al consecutivo real de creación
+      allOrders.sort((a,b) => Number(a.id || 0) - Number(b.id || 0));
 
       renderOrders();
       renderListado();
