@@ -1107,6 +1107,7 @@
           <div><b>Tablas (${tableList.length}):</b> ${tableList.length > 0 ? `<span style="color:var(--accent-gold); font-weight:700;">${tableList.join(', ')}</span>` : '<span style="color:var(--danger); font-style:italic;">Ninguna (Liberadas)</span>'}</div>
           ${tableList.length > 0 ? relatedOrdersHTML : ''}
           ${tableList.length > 0 ? `<div class="payment-status ${paymentClass}">${isPaid ? '✓' : '●'} ${paymentLegend}</div>` : ''}
+          ${tableList.length > 0 && isPaid ? `<div class="payment-status" style="color:var(--accent-gold);">Forma: ${o.destino || 'SIN DEFINIR'}</div>` : ''}
           ${tableList.length > 0 ? `<div class="system-registration-status ${registrationClass}">${isPassed ? '✓' : '●'} ${registrationLegend}</div>` : ''}
         </div>
         <div class="order-actions">
@@ -1191,7 +1192,7 @@ function seleccionarFormaPago(){
       const orderRef = doc(db, 'pedidos', orderDocId);
       await updateDoc(orderRef, { 
         estado: newStatus,
-        destino: destino
+        destino: String(destino||'DEBEN').toUpperCase()
       });
     } catch (err) {
       console.error("Error actualizando estado del pedido:", err);
