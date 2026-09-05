@@ -841,7 +841,23 @@
           btn.textContent = 'Liberando...';
 
           const tableRef = doc(db, 'tablas', tableCode);
-          const updatedTablas = order.tablas.filter(t => t !== tableCode);
+          const tableSnap = await getDoc(tableRef);
+
+          if (!tableSnap.exists()) {
+            throw new Error('La tabla no existe en el sistema. No se realizó ningún cambio.');
+          }
+
+          const tableData = tableSnap.data();
+
+          if (tableData.pedido && tableData.pedido !== order.firestoreId) {
+            throw new Error('La tabla pertenece a otro registro. No se puede liberar desde este pedido.');
+          }
+
+          if (!order.tablas.includes(tableCode)) {
+            throw new Error('La tabla no pertenece a este registro.');
+          }
+
+          const updatedTablas = order.tablas.filter(t => String(t) !== String(tableCode));
           const orderRef = doc(db, 'pedidos', order.firestoreId);
           const newTotal = updatedTablas.length * (configValor() || 0);
 
