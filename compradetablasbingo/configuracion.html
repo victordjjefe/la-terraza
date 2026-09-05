@@ -3,11 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LA TERRAZA BINGO - Panel Administrador</title>
+  <title>LA TERRAZA BINGO - Compra de Tablas</title>
+  
+  <meta property="og:title" content="LA TERRAZA BINGO - Compra de Tablas Digitales">
+  <meta property="og:description" content="¡Compra tus tablas de manera fácil y segura para nuestro gran bingo! Participa y gana.">
+  <meta property="og:image" content="https://raw.githubusercontent.com/victordjjefe/la-terraza/refs/heads/main/compradetablasbingo/pagos.png">
+  <meta property="og:type" content="website">
+
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-body: #f1f5f9;
+      --bg-body: #f8fafc;
       --surface: #ffffff;
       --primary: #0f172a;
       --primary-accent: #1e293b;
@@ -17,6 +23,7 @@
       --text-muted: #64748b;
       --border-color: #e2e8f0;
       --success: #10b981;
+      --success-hover: #059669;
       --warning: #f59e0b;
       --danger: #ef4444;
       --radius-sm: 8px;
@@ -36,7 +43,6 @@
       display: flex;
       flex-direction: column;
       box-shadow: var(--shadow-lg);
-      position: relative;
     }
 
     .header {
@@ -46,8 +52,27 @@
       text-align: center;
       border-bottom: 3px solid var(--accent-gold);
     }
-    .header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: 1px; color: var(--accent-gold); }
-    .header p { font-size: 0.9rem; color: #94a3b8; margin-top: 4px; }
+    .header h1 { font-size: 1.6rem; font-weight: 700; color: var(--accent-gold); letter-spacing: 1px; }
+
+    .banner-container { text-align: center; padding: 20px; background: #fff; border-bottom: 1px solid var(--border-color); }
+    .banner-img { max-width: 100%; height: auto; max-height: 160px; border-radius: var(--radius-sm); object-fit: contain; }
+    .hero-title { font-size: 1.3rem; font-weight: 700; color: var(--primary); margin-top: 10px; }
+
+    .event-highlight {
+      background: linear-gradient(135deg, #fff7ed, #fffbeb);
+      border: 2px solid #d97706;
+      border-radius: 16px;
+      padding: 18px;
+      margin-top: 14px;
+      box-shadow: 0 8px 20px rgba(217,119,6,.15);
+    }
+    .event-highlight .event-main-title { font-size: .95rem; font-weight:800; color:#92400e; letter-spacing:.5px; }
+    .event-highlight .event-date { font-size:1.35rem; font-weight:800; color:#0f172a; margin-top:8px; line-height:1.25; }
+    .event-highlight .event-time { font-size:1.15rem; font-weight:800; color:#d97706; margin-top:6px; }
+    .purchase-info { background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px; margin-top:14px; font-size:.9rem; color:#475569; }
+    .purchase-info b { color:#0f172a; }
+
+    .event-info { font-size: 1rem; color: var(--text-muted); margin-top: 8px; display: flex; flex-direction: column; gap: 6px; align-items: center; }
 
     .main-content { padding: 20px; flex: 1; display: flex; flex-direction: column; gap: 20px; }
 
@@ -58,460 +83,447 @@
       padding: 20px;
       box-shadow: var(--shadow-sm);
     }
-    .card-title {
-      font-size: 1.15rem;
-      font-weight: 700;
-      color: var(--primary);
+    .card-title { font-size: 1.15rem; font-weight: 700; color: var(--primary); margin-bottom: 14px; }
+
+    .timer-banner {
+      background: #fffbe3;
+      border: 1px solid var(--warning);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      text-align: center;
       margin-bottom: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      font-size: 1rem;
+      color: #78350f;
+    }
+    .timer-clock {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--danger);
+      margin-top: 4px;
     }
 
+    .tables-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
+      gap: 8px;
+      padding: 6px;
+    }
+    .btn-table {
+      padding: 12px 6px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+      background: #f8fafc;
+      color: var(--text-main);
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.1s, border-color 0.1s;
+    }
+    .btn-table.selected { background: var(--accent-gold); color: #fff; border-color: var(--accent-gold); }
+
+    .summary-box { background: #f8fafc; border-radius: var(--radius-sm); padding: 14px; font-size: 1rem; }
+    .summary-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+    .summary-total { font-weight: 700; font-size: 1.2rem; color: var(--primary); border-top: 1px solid var(--border-color); padding-top: 8px; margin-top: 8px; }
+
     .form-group { margin-bottom: 14px; }
-    .form-group label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; }
+    .form-group label { display: block; font-size: 0.9rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
     .form-control {
       width: 100%;
-      padding: 12px 14px;
+      padding: 12px;
       border: 1px solid var(--border-color);
       border-radius: var(--radius-sm);
       font-size: 1rem;
       outline: none;
-      transition: all 0.2s;
     }
-    .form-control:focus { border-color: var(--accent-gold); box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.15); }
-    .form-row { display: flex; gap: 10px; }
-    .form-row .form-group { flex: 1; }
-
-    .toggle-container {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: #f8fafc;
-      padding: 12px 14px;
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-sm);
-      margin-bottom: 14px;
-    }
-    .toggle-label { font-size: 0.95rem; font-weight: 700; color: var(--primary); }
+    .form-control:focus { border-color: var(--accent-gold); }
 
     .btn {
       width: 100%;
-      padding: 12px 16px;
+      padding: 14px;
       border: none;
       border-radius: var(--radius-sm);
       font-weight: 700;
       font-size: 1rem;
       cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
+      text-align: center;
       transition: background 0.2s;
     }
-    .btn-primary { background: var(--accent-gold); color: #fff; }
-    .btn-primary:hover { background: var(--accent-gold-hover); }
-    .btn-dark { background: var(--primary); color: #fff; }
-    .btn-sm { padding: 8px 12px; font-size: 0.85rem; width: auto; }
     .btn-success { background: var(--success); color: #fff; }
+    .btn-success:hover { background: var(--success-hover); }
+    .btn-dark { background: var(--primary); color: #fff; }
     .btn-danger { background: var(--danger); color: #fff; }
-    .btn-warning { background: var(--warning); color: #fff; }
+    .btn-danger:hover { background: #dc2626; }
 
-    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-    .metric-card {
-      background: var(--bg-body);
-      padding: 14px;
-      border-radius: var(--radius-sm);
-      border-left: 4px solid var(--border-color);
-    }
-    .metric-card.total { border-color: var(--primary); }
-    .metric-card.disp { border-color: var(--success); }
-    .metric-card.vend { border-color: var(--danger); }
-    .metric-val { font-size: 1.4rem; font-weight: 700; }
-    .metric-lbl { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
-    .metric-money { margin-top: 6px; font-size: 0.78rem; font-weight: 700; color: var(--text-main); line-height: 1.25; }
-    .range-help { margin-top: -4px; margin-bottom: 14px; font-size: 0.78rem; color: var(--text-muted); line-height: 1.35; }
-
-    .search-box { margin-bottom: 14px; }
-    .order-item {
+    .payment-box {
+      background: #f8fafc;
       border: 1px solid var(--border-color);
       border-radius: var(--radius-sm);
       padding: 14px;
-      margin-bottom: 10px;
-      background: #fff;
-    }
-    .order-header { display: flex; justify-content: space-between; font-weight: 700; font-size: 1rem; margin-bottom: 8px; }
-    .order-info { font-size: 0.92rem; color: var(--text-main); line-height: 1.55; font-weight: 600; }
-    .order-info b { font-weight: 700; }
-    .related-orders-alert {
-      margin-top: 10px;
-      margin-bottom: 4px;
-      padding: 10px 12px;
-      background: #fffbeb;
-      border: 1px solid #f59e0b;
-      border-left: 4px solid #f59e0b;
-      border-radius: var(--radius-sm);
-      color: #78350f;
-      font-size: 0.86rem;
-      line-height: 1.45;
-    }
-    .related-orders-title { font-weight: 800; margin-bottom: 5px; }
-    .related-order-row { margin-top: 3px; }
-    .related-order-row span { color: #92400e; font-weight: 700; }
-    .system-registration-status, .payment-status { margin-top: 6px; font-size: 0.85rem; font-weight: 700; }
-    .system-registration-status.not-registered { color: var(--danger); }
-    .system-registration-status.registered { color: var(--success); }
-    .payment-status.pending { color: #b45309; }
-    .payment-status.paid { color: var(--success); }
-    .payment-status-btn {
-      background-color: var(--warning);
-      color: #ffffff;
-      border: none;
-      padding: 8px 12px;
-      font-size: 0.82rem;
-      font-weight: 700;
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-      transition: background-color 0.2s;
-    }
-    .payment-status-btn.paid { background-color: var(--success); }
-    .order-actions { margin-top: 10px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    .order-badges { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
-    .badge { font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
-    .badge-pending { background: #fef3c7; color: #92400e; }
-    .badge-pagado { background: #d1fae5; color: #065f46; }
-    .badge-rechazado { background: #fee2e2; color: #991b1b; }
-    .badge-cancelled { background: #e2e8f0; color: #475569; }
-
-    .tables-list-container {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      max-height: 60vh;
-      overflow-y: auto;
+      margin-bottom: 16px;
     }
 
-    .listing-table-wrapper { overflow-x:auto; max-height:60vh; overflow-y:auto; }
-    .listing-table { width:100%; border-collapse:collapse; font-size:0.88rem; }
-    .listing-table th { background:#f8fafc; padding:10px; text-align:left; border-bottom:1px solid var(--border-color); }
-    .listing-table td { padding:10px; border-bottom:1px solid var(--border-color); vertical-align:top; }
-    .listing-copy-btn { margin-top:12px; }
 
-    .orders-scroll-container {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      max-height: 60vh;
-      overflow-y: auto;
+    .lookup-card {
+      background:#fff7ed;
+      border:2px solid var(--accent-gold);
+      border-radius:var(--radius-md);
+      padding:18px;
+      text-align:center;
+    }
+    .lookup-modal {
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.55);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      z-index:9999;
+    }
+    .lookup-modal.active { display:flex; }
+    .lookup-box {
+      background:#fff;
+      width:100%;
+      max-width:380px;
+      border-radius:16px;
+      padding:22px;
+      text-align:center;
+    }
+    .lookup-tables {
+      margin:15px 0;
+      font-size:1.25rem;
+      font-weight:800;
+      color:var(--accent-gold);
     }
 
-    .table-list-item {
-      display: flex;
-      flex-direction: column;
-      background: #fff;
-      padding: 14px;
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-sm);
-      gap: 8px;
-    }
-    .table-info-details {
-      font-size: 0.9rem;
-      color: var(--text-main);
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      flex: 1;
-    }
-    .action-buttons-group {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-    .table-status-btn {
-      background-color: var(--danger);
-      color: #ffffff;
-      border: none;
-      padding: 8px 12px;
-      font-size: 0.82rem;
-      font-weight: 700;
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-      transition: background-color 0.2s;
-    }
-    .table-status-btn.passed {
-      background-color: var(--success);
-    }
-    .table-release-btn {
-      background-color: var(--warning);
-      color: #ffffff;
-      border: none;
-      padding: 8px 12px;
-      font-size: 0.82rem;
-      font-weight: 700;
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-      transition: background-color 0.2s;
-    }
-    .table-release-btn:hover { background-color: #d97706; }
 
-    .modal {
+    .initial-loader {
       position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.6);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-      z-index: 100;
+      inset: 0;
+      background: #ffffff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex-direction:column;
+      z-index:10000;
+      color:#0f172a;
+      font-weight:700;
+      gap:12px;
     }
-    .modal-content {
-      background: #fff;
-      border-radius: var(--radius-md);
-      padding: 20px;
-      max-width: 400px;
-      width: 100%;
-      max-height: 90vh;
-      overflow-y: auto;
+    .initial-loader .spinner {
+      width:42px;
+      height:42px;
+      border:5px solid #e2e8f0;
+      border-top-color:#d97706;
+      border-radius:50%;
+      animation:spin 1s linear infinite;
     }
-    .modal-content img { width: 100%; border-radius: var(--radius-sm); margin-top: 10px; }
+    @keyframes spin {
+      to { transform:rotate(360deg); }
+    }
 
-    .tab-bar { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 14px; }
-    .tab-item { flex: 1; text-align: center; padding: 10px; font-size: 0.9rem; font-weight: 600; cursor: pointer; color: var(--text-muted); }
-    .tab-item.active { color: var(--accent-gold); border-bottom: 3px solid var(--accent-gold); }
+    .hidden { display: none !important; }
 
-    #login-screen {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: var(--bg-body);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 999;
-      padding: 16px;
-    }
-    .login-card {
-      background: var(--surface);
-      padding: 24px;
-      border-radius: var(--radius-md);
-      border: 1px solid var(--border-color);
-      width: 100%;
-      max-width: 380px;
-      box-shadow: var(--shadow-lg);
-    }
-  </style>
+  
+    .digital-action-spacing{margin-top:14px!important;}
+    #lookup-modal .lookup-box .btn{margin-top:12px;}
+    
+        .digital-action-gap-fix{
+          margin-top:14px !important;
+          display:block;
+        }
+        #digital-link-box a{
+          margin-bottom:14px !important;
+        }
+        </style>
+
+<style>
+/* Uniformidad de botones de resultados */
+#lookup-modal .btn,
+#success-modal .btn,
+.digital-action-spacing,
+#btn-copy-digital-link,
+#btn-whatsapp-digital-link,
+#btn-copy-lookup-link,
+#btn-whatsapp-lookup-link {
+    width: 100% !important;
+    min-height: 58px !important;
+    margin-top: 12px !important;
+    margin-bottom: 12px !important;
+    border-radius: 10px !important;
+    font-size: 1.05rem !important;
+    font-weight: 700 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+}
+
+#lookup-link-box {
+    margin-bottom: 12px !important;
+}
+
+#lookup-link-box a {
+    width: 100% !important;
+}
+</style>
+
+
+<style>
+/* Ajuste definitivo: todos los botones de resultados iguales */
+#lookup-modal .btn,
+#success-modal .btn,
+#lookup-link-box a,
+#btn-copy-digital-link,
+#btn-whatsapp-digital-link,
+#btn-copy-lookup-link,
+#btn-whatsapp-lookup-link,
+.btn-restart-action {
+    width: 100% !important;
+    height: 58px !important;
+    min-height: 58px !important;
+    margin: 10px 0 !important;
+    padding: 0 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+    border-radius: 10px !important;
+    font-size: 18px !important;
+    font-weight: 700 !important;
+}
+
+#lookup-link-box,
+#digital-link-box {
+    margin: 10px 0 !important;
+}
+</style>
+
+
+<style>
+/* Todos los botones de resultados: registro y consulta */
+.digital-uniform-btn,
+#btn-copy-digital-link,
+#btn-whatsapp-digital-link,
+#btn-copy-lookup-link,
+#btn-whatsapp-lookup-link,
+.btn-restart-action {
+    width:100% !important;
+    height:58px !important;
+    min-height:58px !important;
+    margin:10px 0 !important;
+    padding:0 16px !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    border-radius:10px !important;
+    box-sizing:border-box !important;
+    font-size:18px !important;
+    font-weight:700 !important;
+}
+</style>
+
+
+<style>
+.consolidado-aviso{
+  margin:12px 0;
+  padding:12px;
+  border-radius:10px;
+  background:#ecfdf5;
+  color:#065f46;
+  font-weight:600;
+  line-height:1.4;
+}
+</style>
+
+
+<style>
+/* WhatsApp unificado registro y búsqueda */
+</style>
 </head>
 <body>
-
-<!-- PANTALLA DE LOGIN -->
-<div id="login-screen">
-  <div class="login-card">
-    <div class="header" style="border-radius: var(--radius-sm); margin-bottom: 16px;">
-      <h1>LA TERRAZA BINGO</h1>
-      <p>Acceso al Panel de Control</p>
-    </div>
-    <form id="form-login">
-      <div class="form-group">
-        <label>Usuario</label>
-        <input type="text" id="login-user" class="form-control" autocomplete="username" required>
-      </div>
-      <div class="form-group">
-        <label>Contraseña</label>
-        <input type="password" id="login-pass" class="form-control" autocomplete="current-password" required>
-      </div>
-      <button type="submit" class="btn btn-primary" style="margin-top: 10px;">Ingresar</button>
-      <p id="login-error" style="color: var(--danger); font-size: 0.85rem; text-align: center; margin-top: 10px; display: none;">Usuario o contraseña incorrectos.</p>
-    </form>
-  </div>
+<div id="initial-loader" class="initial-loader">
+  <div class="spinner"></div>
+  <div>Cargando tablas disponibles...</div>
 </div>
 
-<div class="app-container" id="app-wrapper" style="display: none;">
+
+<div class="app-container">
   <header class="header">
     <h1>LA TERRAZA BINGO</h1>
-    <p>Panel de Control Administrador</p>
   </header>
 
-  <main class="main-content">
-    <div class="tab-bar">
-      <div class="tab-item active" id="tab-btn-config">Configuración</div>
-      <div class="tab-item" id="tab-btn-pedidos">Pedidos</div>
-      <div class="tab-item" id="tab-btn-listado">Listado</div>
+  <div id="disabled-screen" class="main-content hidden">
+    <div class="card" style="text-align: center; padding: 30px 16px;">
+      <img src="pagos.png" alt="Aún no disponible" class="banner-img" style="margin-bottom: 16px;" onerror="this.style.display='none'">
+      <div style="font-size: 2.5rem; margin-bottom: 8px;">⏳</div>
+      <div class="card-title" id="disabled-message-title" style="font-size: 1.25rem; color: var(--danger); justify-content: center;">COMPRAS NO DISPONIBLES</div>
+      <p id="disabled-message-body" style="font-size: 1rem; color: var(--text-muted); line-height: 1.5; margin-top: 8px;">
+        Las ventas de tablas aún no están habilitadas.
+      </p>
+    </div>
+  </div>
+
+  <div id="enabled-screen">
+    <div class="banner-container" id="banner-section">
+      <img src="pagos.png" alt="Métodos de Pago" class="banner-img" onerror="this.style.display='none'">
+      <div class="hero-title">COMPRA TUS TABLAS DIGITALES</div>
+      <div class="event-highlight">
+        <div class="event-main-title">🎱 GRAN BINGO</div>
+        <div class="event-date" id="info-fecha">--</div>
+        <div class="event-time">⏰ <span id="info-hora">--</span></div>
+      </div>
+      <div class="purchase-info">
+        💵 Valor tabla: <b>$<span id="info-valor">0</span></b><br>
+        🛒 Compra de tablas disponible:<br>
+        <b id="info-venta-rango">--</b>
+      </div>
     </div>
 
-    <!-- SECCIÓN CONFIGURACIÓN -->
-    <div id="tab-config">
-      <div class="card" style="margin-bottom: 16px;">
-        <div class="card-title">Ajustes del Evento</div>
-        <form id="form-config">
-          <div class="form-row">
-            <div class="form-group">
-              <label>Fecha del Bingo</label>
-              <input type="date" id="cfg-fecha" class="form-control">
-            </div>
-            <div class="form-group">
-              <label>Hora del Bingo</label>
-              <input type="time" id="cfg-hora" class="form-control">
-            </div>
-          </div>
+    <main class="main-content" id="main-flow-container">
 
-<div class="card" style="background:#f8fafc; margin-bottom:14px; padding:14px;">
-            <div class="card-title" style="font-size:1rem;">Periodo de Venta de Tablas</div>
-            <div class="form-row">
-              <div class="form-group">
-                <label>Disponible Desde - Fecha</label>
-                <input type="date" id="cfg-venta-desde-fecha" class="form-control">
-              </div>
-              <div class="form-group">
-                <label>Hora</label>
-                <input type="time" id="cfg-venta-desde-hora" class="form-control">
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label>Disponible Hasta - Fecha</label>
-                <input type="date" id="cfg-venta-hasta-fecha" class="form-control">
-              </div>
-              <div class="form-group">
-                <label>Hora</label>
-                <input type="time" id="cfg-venta-hasta-hora" class="form-control">
-              </div>
-            </div>
-            <div class="range-help">Al llegar a la fecha y hora final, las compras se bloquearán automáticamente.</div>
-          </div>
-
-          <div class="form-group">
-             <label>Valor por Tabla ($)</label>
-            <input type="number" id="cfg-valor" class="form-control" placeholder="$ Valor por tabla" min="0" required>
-
-            <div class="form-group">
-              <label>Enlace de transmisión YouTube</label>
-              <input type="text" id="cfg-link-transmision" class="form-control" placeholder="https://www.youtube.com/live/...">
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>Rango Desde</label>
-              <input type="number" id="cfg-desde" class="form-control" min="1" required>
-            </div>
-            <div class="form-group">
-              <label>Rango Hasta</label>
-              <input type="number" id="cfg-hasta" class="form-control" min="1" required>
-            </div>
-          </div>
-          <div class="range-help">DEFINE DESDE QUÉ NÚMERO HASTA QUÉ NÚMERO ESTARÁN HABILITADAS LAS TABLAS (ENTRE 1 Y 5000).</div>
-          <button type="submit" id="btn-submit-config" class="btn btn-primary" style="margin-top: 10px;">Guardar Cambios y Generar Tablas</button>
-        </form>
-
-      <div class="card" style="margin-top:14px;">
-        <div class="card-title">Sincronización con Sistema Contable</div>
-        <p style="font-size:.9rem;color:#64748b;margin-bottom:10px;">Genera un archivo con los pedidos actuales para cargarlo en el sistema contable local.</p>
-        <button type="button" id="btn-exportar-contable" class="btn btn-success">Exportar ventas para bingo</button>
-      </div>
+      <div id="reservation-timer-box" class="timer-banner hidden">
+        <b>¡Tienes tablas reservadas!</b>
+        <p style="margin-top:4px;">Tiempo restante para completar el registro:</p>
+        <div id="timer-display" class="timer-clock">03:00</div>
       </div>
 
-      <div class="card" style="margin-bottom: 16px;">
-        <div class="card-title">Métricas de Tablas</div>
-        <div class="metrics-grid">
-          <div class="metric-card total">
-            <div class="metric-val" id="m-total">0</div>
-            <div class="metric-lbl">Total Tablas</div>
-            <div class="metric-money" id="m-total-money">$0</div>
+
+      <div class="lookup-card">
+        <div class="card-title" style="justify-content:center;">
+          🔎 ¿Ya registraste tus tablas?
+        </div>
+        <p style="color:var(--text-muted); margin-bottom:12px;">
+          Consulta aquí usando tu nombre completo o número de WhatsApp.
+        </p>
+        <input id="lookup-input" class="form-control" placeholder="Nombre o WhatsApp">
+        <button class="btn btn-success" id="btn-lookup" style="margin-top:12px;">
+          Consultar mis tablas
+        </button>
+      </div>
+
+      <div class="card" id="card-tables-section">
+        <div class="card-title">1. Selecciona tus tablas (Máximo 10)</div>
+        <div class="tables-grid" id="tables-container"></div>
+        
+        <div class="summary-box" style="margin-top: 14px;">
+          <div class="summary-row">
+            <span>Tablas seleccionadas:</span>
+            <span id="summary-tables" style="font-weight: 700;">Ninguna</span>
           </div>
-          <div class="metric-card disp">
-            <div class="metric-val" id="m-disp">0</div>
-            <div class="metric-lbl">Disponibles</div>
-            <div class="metric-money" id="m-disp-money">$0</div>
+          <div class="summary-row">
+            <span>Cantidad:</span>
+            <span id="summary-qty">0</span>
           </div>
-          <div class="metric-card vend">
-            <div class="metric-val" id="m-vend">0</div>
-            <div class="metric-lbl">Vendidas</div>
-            <div class="metric-money" id="m-vend-money">$0</div>
+          <div class="summary-row summary-total">
+            <span>Total:</span>
+            <span id="summary-total">$0</span>
           </div>
         </div>
       </div>
 
-      <div class="card" style="border-color: #fca5a5; background: #fff5f5;">
-        <div class="card-title" style="color: var(--danger);">Cierre de Evento</div>
-        <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:12px; line-height: 1.5;">
-          Borra absolutamente toda la información, tablas generadas y pedidos registrados para reiniciar el bingo.
-        </p>
-        <button class="btn btn-danger" id="btn-cerrar-bingo">Cerrar Bingo</button>
-      </div>
-    </div>
-
-    <!-- SECCIÓN PEDIDOS -->
-    <div id="tab-pedidos" style="display: none;">
-      <div class="card">
-        <div class="card-title">Gestión de Pedidos</div>
-        <div class="search-box">
-          <input type="text" id="search-input" class="form-control" placeholder="Buscar por pedido, nombre o whatsapp...">
+      <div class="card" id="card-buyer-section">
+        <div class="card-title">2. Datos de Registro</div>
+        <div class="form-group">
+          <label>Nombre y Apellido</label>
+          <input type="text" id="buyer-name" class="form-control" placeholder="Ej: Juan Pérez">
         </div>
         <div class="form-group">
-          <select id="filter-status" class="form-control">
-            <option value="TODOS">Todos los estados</option>
-            <option value="PENDIENTE PAGO">PENDIENTE PAGO</option>
-            <option value="PAGADO">PAGADO</option>
-            <option value="CANCELADO">CANCELADO</option>
-            <option value="NO_REGISTRADO_SISTEMA">NO REGISTRADOS EN EL SISTEMA</option>
-          </select>
+          <label>Referencia, Ciudad, Barrio</label>
+          <input type="text" id="buyer-address" class="form-control" placeholder="Ej: Cali - El Limonar - Casa 12">
         </div>
-        <!-- Contenedor con scroll aplicado para que no crezca infinitamente -->
-        <div class="orders-scroll-container" id="orders-list"></div>
+        <div class="form-group">
+          <label>Número de WhatsApp</label>
+          <input type="tel" id="buyer-phone" class="form-control" placeholder="Ej: 3001234567">
+        </div>
+      </div>
+
+      <div class="card" id="payment-section-card">
+        <div class="card-title">3. Pago y Comprobante (Opcional)</div>
+        
+        <div style="background: #eff6ff; border: 1px solid #3b82f6; border-radius: var(--radius-sm); padding: 12px; margin-bottom: 14px; font-size: 0.9rem; color: #1e40af; line-height: 1.4;">
+          💡 <b>¡Aviso importante!</b> Puedes terminar tu registro <b>sin realizar el pago ni subir el comprobante aún</b>. Haz clic en "Registrar / Comprar" para apartar tu número de tabla de inmediato, y podrás hacer el pago después o compartirlo por WhatsApp.
+        </div>
+
+        <div class="payment-box">
+          <p style="font-size:0.95rem; color:var(--text-main); margin-bottom: 8px; line-height: 1.4;">
+            Realiza el pago por <b>Nequi</b>, <b>Daviplata</b> o <b>Llave</b> a nombre de <b>Víctor Rosas</b>:
+          </p>
+          <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; border: 1px solid var(--border-color); padding: 10px 14px; border-radius: var(--radius-sm); margin-top: 10px;">
+            <span style="font-size: 1.2rem; font-weight: 700; color: var(--accent-gold);" id="phone-number">3234370590</span>
+            <button type="button" class="btn btn-dark" id="btn-copy-number" style="width: auto; padding: 8px 14px; font-size: 0.85rem;">Copiar</button>
+          </div>
+          <div id="copy-feedback" style="font-size:0.85rem; color: var(--success); font-weight: 700; margin-top: 8px; display: none;">
+            ✓ Número copiado
+          </div>
+        </div>
+
+        <div class="form-group" id="proof-group-container">
+          <label>Subir Soporte de Pago (Opcional)</label>
+          <input type="file" id="proof-file" accept="image/*,application/pdf" class="form-control">
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 14px;" id="action-buttons-container">
+          <button class="btn btn-danger" id="btn-cancel-purchase" style="flex: 1;">Cancelar</button>
+          <button class="btn btn-success" id="btn-finish-order" style="flex: 2;" disabled>Registrar / Comprar</button>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- MENSAJE DE ÉXITO EXCLUSIVO (OCULTA TODO LO DEMÁS AL REGISTRAR) -->
+    <div id="success-exclusive-screen" class="main-content hidden" style="justify-content: center;">
+      <div class="card" style="text-align: center; padding: 35px 20px;">
+        <div style="font-size: 3rem; color: var(--success); margin-bottom: 8px;">✓</div>
+        <div class="card-title" style="font-size: 1.4rem; justify-content: center; color: var(--success);">¡REGISTRO EXITOSO!</div>
+        <p id="order-number-display" style="font-size: 1.1rem; font-weight: 700; color: var(--accent-gold); margin-bottom: 8px;"></p>
+        <p id="buyer-success-display" style="font-size: 1.05rem; font-weight: 700; color: var(--text-main); margin-bottom: 10px;"></p>
+        <p style="font-size: 0.95rem; color: var(--text-main); margin-bottom: 10px;">
+          Tus tablas registradas son: <b id="assigned-tables-display"></b>
+        </p>
+        <div id="bingo-info-success" style="margin-bottom:12px; font-size:0.95rem; color:var(--text-main);"></div>
+        <div id="consolidado-aviso"></div>
+        <div id="digital-link-box" style="margin-bottom:0;"></div>
+        <button class="btn btn-success" id="btn-copy-digital-link" style="margin-bottom:14px;">📋 Copiar enlace</button>
+        <button class="btn btn-success" id="btn-whatsapp-digital-link" style="margin-bottom:14px;">📲 Enviar enlace por WhatsApp</button>
+        <button class="btn btn-success btn-restart-action" style="margin-top: 8px;">Hacer otra compra</button>
       </div>
     </div>
 
-    <!-- SECCIÓN LISTADO -->
-    <div id="tab-listado" style="display: none;">
-      <div class="card">
-        <div class="card-title">Listado de Registros</div>
-        <button class="btn btn-primary listing-copy-btn" id="btn-copy-listado">Copiar Listado Completo</button>
-        <button class="btn btn-success listing-copy-btn" id="btn-copy-nombres" style="margin-top:10px;">Copiar Solo Nombres</button>
-        <button class="btn btn-dark listing-copy-btn" id="btn-copy-tablas-orden" style="margin-top:10px;">Copiar para Sistema Contable</button>
-        <p id="listado-total" style="margin:12px 0; font-size:0.9rem; color:var(--text-muted);"></p>
-        <div class="listing-table-wrapper">
-          <table class="listing-table">
-            <thead>
-              <tr><th>#</th><th>Nombre</th><th>Celular</th><th>Tablas</th></tr>
-            </thead>
-            <tbody id="listado-body"></tbody>
-          </table>
-        </div>
+    <!-- PANTALLA DE COMPRA CANCELADA (OCULTA TODO Y MUESTRA EL MENSAJE ELEGANTE) -->
+    <div id="cancelled-exclusive-screen" class="main-content hidden" style="justify-content: center;">
+      <div class="card" style="text-align: center; padding: 35px 20px;">
+        <div style="font-size: 3rem; color: var(--danger); margin-bottom: 8px;">✕</div>
+        <div class="card-title" style="font-size: 1.4rem; justify-content: center; color: var(--danger);">COMPRA CANCELADA</div>
+        <p style="font-size: 1rem; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5;">
+          Su compra ha sido cancelada y las tablas seleccionadas han sido liberadas exitosamente.
+        </p>
+        <button class="btn btn-success btn-restart-action" style="margin-top: 8px;">Hacer otra compra</button>
       </div>
     </div>
-  </main>
-</div>
 
-<!-- MODAL COMPROBANTE -->
-<div id="modal-proof" class="modal">
-  <div class="modal-content">
-    <div class="card-title">
-      Comprobante de Pago
-      <button class="btn btn-sm btn-dark" id="btn-close-modal">✕</button>
-    </div>
-    <div id="modal-proof-body"></div>
   </div>
 </div>
 
-<!-- MODAL LIBERAR TABLA INDIVIDUAL -->
-<div id="modal-release-table" class="modal">
-  <div class="modal-content">
-    <div class="card-title">
-      Liberar Tabla Individual
-      <button class="btn btn-sm btn-dark" id="btn-close-release-modal">✕</button>
-    </div>
-    <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 12px;">
-      Selecciona la tabla que deseas liberar de este registro:
-    </p>
-    <div id="release-tables-buttons-container" style="display: flex; flex-direction: column; gap: 8px; max-height: 50vh; overflow-y: auto;">
-      <!-- Botones dinámicos de las tablas del pedido -->
+
+  <div id="lookup-modal" class="lookup-modal">
+    <div class="lookup-box" style="text-align:center;">
+      <h3 id="lookup-title">Consulta de tablas</h3>
+      <p id="lookup-message" style="margin-top:12px;"></p>
+      <div class="lookup-tables" id="lookup-tables"></div>
+      <div id="lookup-link-box" style="margin-top:14px; margin-bottom:14px;"></div>
+      <button class="btn btn-success" id="btn-copy-lookup-link" style="margin-bottom:14px; display:none;">📋 Copiar enlace</button>
+      <button class="btn btn-success" id="btn-whatsapp-lookup-link" style="margin-bottom:14px; display:none;">📲 Enviar enlace por WhatsApp</button>
+      <button class="btn btn-dark" id="btn-close-lookup">Cerrar</button>
     </div>
   </div>
-</div>
 
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
-  import {  
-    getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc,  
-    collection, getDocs, onSnapshot, writeBatch  
+  import { 
+    getFirestore, doc, setDoc, updateDoc, collection, 
+    onSnapshot, runTransaction, getDocs 
   } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
   const firebaseConfig = {
@@ -527,811 +539,954 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  let allOrders = [];
-  let allTables = [];
-  let currentTableValue = 0;
-
-  document.getElementById('form-login').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const userVal = document.getElementById('login-user').value.trim();
-    const passVal = document.getElementById('login-pass').value.trim();
-    const errorMsg = document.getElementById('login-error');
-
-    if (userVal === 'laterraza' && passVal === '189304') {
-      document.getElementById('login-screen').style.display = 'none';
-      document.getElementById('app-wrapper').style.display = 'flex';
-      loadInitialConfig();
-      listenTables();
-      listenOrders();
-    } else {
-      errorMsg.style.display = 'block';
-    }
-  });
-
-  function formatTableCode(num) {
-    if (num < 1000) {
-      return 'T' + String(num).padStart(3, '0');
-    }
-    return 'T' + String(num);
+  let myClientId = sessionStorage.getItem('ltb_client_id');
+  if (!myClientId) {
+    myClientId = 'cli_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
+    sessionStorage.setItem('ltb_client_id', myClientId);
   }
 
-  function switchTab(tab) {
-    document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
-    document.getElementById('tab-config').style.display = 'none';
-    document.getElementById('tab-pedidos').style.display = 'none';
-    document.getElementById('tab-listado').style.display = 'none';
-    
-    if (tab === 'config') {
-      document.getElementById('tab-btn-config').classList.add('active');
-      document.getElementById('tab-config').style.display = 'block';
-    } else if (tab === 'pedidos') {
-      document.getElementById('tab-btn-pedidos').classList.add('active');
-      document.getElementById('tab-pedidos').style.display = 'block';
-      renderOrders();
-    } else {
-      document.getElementById('tab-btn-listado').classList.add('active');
-      document.getElementById('tab-listado').style.display = 'block';
-      renderListado();
-    }
-  }
+  let config = null;
+  let selectedTables = [];
+  let proofBase64 = null;
+  let allTablesData = [];
 
-  document.getElementById('tab-btn-config').addEventListener('click', () => switchTab('config'));
-  document.getElementById('tab-btn-pedidos').addEventListener('click', () => switchTab('pedidos'));
-  document.getElementById('tab-btn-listado').addEventListener('click', () => switchTab('listado'));
+  const HOLD_TIME_MINUTES = 3;
+  let timerInterval = null;
+  let reservationEndTime = null;
+  let orderCompleted = false;
+  let ultimoEnlaceDigital = '';
+  let ultimoMensajeDigital = '';
+  let ultimoLookupMensaje = '';
+  let ultimoLookupTelefono = '';
+  let ultimoLookupEnlace = '';
 
-  function firestoreDateToInput(value) {
-    if (!value) return '';
-    const text = String(value).trim();
-    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
-    const match = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-    if (!match) return '';
-    const [, day, month, year] = match;
-    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-  }
 
-  function inputDateToDisplay(value) {
-    if (!value) return '';
-    const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (!match) return value;
-    const [, year, month, day] = match;
-    return `${day}/${month}/${year}`;
-  }
 
-  function firestoreTimeToInput(value) {
-    if (!value) return '';
+  // Genera el mismo enlace dinámico usado por el sistema contable.
+  // Ejemplo:
+  // tabla-digital/?tablas=14,22&vence=20260902&nombre=cliente&video=ID_YOUTUBE
+  function generarLinkDigitalCliente(tablas, nombre, fecha, linkTransmision){
 
-    const raw = String(value).trim();
+    const base = 'https://laterrazacalipodcast.top/tabla-digital/';
 
-    // Formato que acepta directamente <input type="time">: HH:MM o HH:MM:SS.
-    let match = raw.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
-    if (match) {
-      const hours = Number(match[1]);
-      const minutes = Number(match[2]);
-      if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
-        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    // Convierte la fecha del bingo al formato YYYYMMDD
+    let fechaCodigo = '';
+    if(fecha){
+      const f = String(fecha).trim();
+
+      if(f.includes('-')){
+        fechaCodigo = f.replaceAll('-','');
+      }else if(f.includes('/')){
+        const partes = f.split('/');
+        if(partes.length === 3){
+          fechaCodigo = `${partes[2]}${partes[1].padStart(2,'0')}${partes[0].padStart(2,'0')}`;
+        }
       }
     }
 
-    // Compatibilidad con horas guardadas anteriormente como 7:00 PM, 7:00 p. m., etc.
-    const normalized = raw.toUpperCase().replace(/[.\s]/g, '');
-    match = normalized.match(/^(\d{1,2}):(\d{2})(AM|PM)$/);
-    if (match) {
-      let hours = Number(match[1]);
-      const minutes = Number(match[2]);
-      const period = match[3];
-      if (hours >= 1 && hours <= 12 && minutes >= 0 && minutes <= 59) {
-        if (period === 'AM') hours = hours === 12 ? 0 : hours;
-        if (period === 'PM') hours = hours === 12 ? 12 : hours + 12;
-        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    // Obtiene únicamente el ID del video de YouTube
+    let videoId = '';
+    if(linkTransmision){
+      const link = String(linkTransmision).trim();
+
+      const match =
+        link.match(/[?&]v=([^&]+)/) ||
+        link.match(/youtu\.be\/([^?&]+)/) ||
+        link.match(/live\/([^?&]+)/);
+
+      if(match){
+        videoId = match[1];
+      }else{
+        videoId = link;
       }
     }
 
-    console.warn('Formato de hora no reconocido en configuración:', value);
-    return '';
+    const nombreUrl = String(nombre || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g,'')
+      .replace(/[^a-z0-9]+/g,'-')
+      .replace(/^-+|-+$/g,'');
+
+    const listaTablas = Array.isArray(tablas)
+      ? tablas.map(t => String(t).replace(/^T/i,'')).join(',')
+      : '';
+
+    return `${base}?tablas=${listaTablas}&vence=${fechaCodigo}&nombre=${nombreUrl}&video=${videoId}`;
   }
 
-  async function loadInitialConfig() {
-    try {
-      const docRef = doc(db, 'configuracion', 'evento');
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const cfg = docSnap.data();
-        currentTableValue = Number(cfg.valor) || 0;
-        document.getElementById('cfg-fecha').value = firestoreDateToInput(cfg.fecha);
-        document.getElementById('cfg-hora').value = firestoreTimeToInput(cfg.hora);
-        document.getElementById('cfg-venta-desde-fecha').value = firestoreDateToInput(cfg.ventaDesdeFecha);
-        document.getElementById('cfg-venta-desde-hora').value = firestoreTimeToInput(cfg.ventaDesdeHora);
-        document.getElementById('cfg-venta-hasta-fecha').value = firestoreDateToInput(cfg.ventaHastaFecha);
-        document.getElementById('cfg-venta-hasta-hora').value = firestoreTimeToInput(cfg.ventaHastaHora);
-        document.getElementById('cfg-valor').value = cfg.valor ?? '';
-        document.getElementById('cfg-link-transmision').value = cfg.linkTransmision ?? '';
-        document.getElementById('cfg-desde').value = cfg.rangoDesde ?? 1;
-        document.getElementById('cfg-hasta').value = cfg.tablasHabilitadas ?? '';
-      } else {
-        currentTableValue = 0;
-          document.getElementById('cfg-fecha').value = '';
-        document.getElementById('cfg-hora').value = '';
-        document.getElementById('cfg-venta-desde-fecha').value = '';
-        document.getElementById('cfg-venta-desde-hora').value = '';
-        document.getElementById('cfg-venta-hasta-fecha').value = '';
-        document.getElementById('cfg-venta-hasta-hora').value = '';
-        document.getElementById('cfg-valor').value = '';
-        document.getElementById('cfg-link-transmision').value = '';
-        document.getElementById('cfg-desde').value = '';
-        document.getElementById('cfg-hasta').value = '';
+  function cleanSearch(value){
+    return String(value || '').toLowerCase().trim();
+  }
+
+  function cleanPhone(value){
+    return String(value || '').replace(/\D/g,'');
+  }
+
+
+  function normalizarWhatsAppColombia(numero){
+    let n = cleanPhone(numero);
+    if(n.startsWith('57') && n.length >= 12) return n;
+    if(n.length === 10 && n.startsWith('3')) return '57' + n;
+    return n;
+  }
+
+  // Une las tablas de todas las compras asociadas al mismo WhatsApp.
+  // Las tablas de la compra recién terminada se incluyen primero y los
+  // duplicados se eliminan para que siempre exista un único enlace digital.
+  function consolidarTablasPorTelefono(pedidos, telefonoActual, tablasNuevas){
+    const telefono = normalizarWhatsAppColombia(telefonoActual);
+    const todasLasTablas = [...(Array.isArray(tablasNuevas) ? tablasNuevas : [])];
+
+    (Array.isArray(pedidos) ? pedidos : []).forEach(pedido => {
+      if(normalizarWhatsAppColombia(pedido?.telefono) === telefono && Array.isArray(pedido?.tablas)){
+        todasLasTablas.push(...pedido.tablas);
       }
-      loadMetrics();
-    } catch (err) {
-      console.error("Error cargando configuración:", err);
+    });
+
+    return [...new Set(todasLasTablas)];
+  }
+
+  async function obtenerTodasLasTablasClienteRegistro(telefonoActual, tablasNuevas){
+    const snapshot = await getDocs(collection(db, 'pedidos'));
+    const pedidos = [];
+
+    snapshot.forEach(docSnap => {
+      pedidos.push(docSnap.data());
+    });
+
+    return consolidarTablasPorTelefono(pedidos, telefonoActual, tablasNuevas);
+  }
+
+  async function consultarTablas(){
+    const valor = document.getElementById('lookup-input').value.trim();
+
+    if(!valor){
+      alert('Ingrese su nombre o WhatsApp.');
+      return;
     }
+
+    const nombreBusqueda = cleanSearch(valor);
+    const telefonoBusqueda = cleanPhone(valor);
+
+    // Usa la información sincronizada en memoria para buscar.
+    // Evita una lectura completa de Firestore cada vez que un usuario consulta sus tablas.
+    const pedidosActuales = pedidosCacheCliente || [];
+
+    let tablasEncontradas = [];
+    let pedidoEncontrado = null;
+
+    pedidosActuales.forEach(pedido=>{
+
+      const nombre = cleanSearch(pedido.cliente);
+      const telefono = cleanPhone(pedido.telefono);
+
+      const coincideNombre = nombre && nombre.includes(nombreBusqueda);
+      const coincideTelefono = telefonoBusqueda && telefono.includes(telefonoBusqueda);
+
+      if(coincideNombre || coincideTelefono){
+        pedidoEncontrado = pedido;
+        if(Array.isArray(pedido.tablas)){
+          tablasEncontradas.push(...pedido.tablas);
+        }
+      }
+    });
+
+    document.getElementById('lookup-modal').classList.add('active');
+
+    if(tablasEncontradas.length){
+      document.getElementById('lookup-title').textContent = 'TUS TABLAS REGISTRADAS';
+      document.getElementById('lookup-message').innerHTML = '<b>' + pedidoEncontrado.cliente + '</b><br>Fecha del Bingo: ' + (config?.fecha || '') + '<br>Hora: ' + (config?.hora || '') + '<br><br>🎟️ Tablas asignadas:';
+      const tablasUnicas = [...new Set(tablasEncontradas)];
+      document.getElementById('lookup-tables').textContent = tablasUnicas.join(', ');
+      ultimoLookupEnlace = generarLinkDigitalCliente(tablasUnicas, pedidoEncontrado.cliente, config?.fecha || '', config?.linkTransmision || '');
+      ultimoLookupMensaje = `🎱 LA TERRAZA BINGO\n\n¡Hola ${pedidoEncontrado.cliente}! 👋\n\n✅ Encontramos tus tablas registradas.\n\n🎟️ Tablas asignadas: ${tablasUnicas.join(', ')}\n\n🔗 Tu enlace digital para jugar:\n${ultimoLookupEnlace}`;
+      document.getElementById('lookup-link-box').innerHTML = `<a class="btn btn-success digital-action-spacing" href="${ultimoLookupEnlace}" target="_blank">🎱 ABRIR MIS TABLAS DIGITALES</a>`;
+      document.getElementById('btn-copy-lookup-link').style.display='block';
+      document.getElementById('btn-whatsapp-lookup-link').style.display='block';
+      ultimoLookupTelefono = cleanPhone(pedidoEncontrado.telefono);
+    }else{
+      document.getElementById('lookup-message').textContent =
+        'No encontramos registros asociados.';
+      document.getElementById('lookup-tables').textContent='';
+    }
+  }
+
+  document.getElementById('btn-copy-lookup-link')?.addEventListener('click',()=>{navigator.clipboard.writeText(ultimoLookupEnlace); alert('✓ Enlace copiado correctamente.');});
+  document.getElementById('btn-whatsapp-lookup-link')?.addEventListener('click',()=>{window.open('https://wa.me/'+normalizarWhatsAppColombia(ultimoLookupTelefono)+'?text='+encodeURIComponent(ultimoLookupMensaje),'_blank');});
+
+  function listenConfig() {
+    onSnapshot(doc(db, 'configuracion', 'evento'), (docSnap) => {
+      if (!docSnap.exists()) {
+        document.getElementById('enabled-screen').classList.add('hidden');
+        document.getElementById('disabled-screen').classList.remove('hidden');
+        document.getElementById('disabled-message-title').textContent = "SIN CONFIGURACIÓN";
+        document.getElementById('disabled-message-body').textContent = "El evento todavía no está configurado";
+        return;
+      }
+
+      config = docSnap.data();
+
+      const convertirFecha = (f,h) => f && h ? new Date(`${f.split('/').reverse().join('-')}T${h}`) : null;
+      const ahora = new Date();
+
+      const fechaBonita = (f) => {
+        if (!f) return '--';
+
+        let d;
+
+        try {
+          if (f.includes('-')) {
+            const partes = f.split('-');
+            d = new Date(Number(partes[0]), Number(partes[1]) - 1, Number(partes[2]));
+          } else if (f.includes('/')) {
+            const partes = f.split('/');
+            d = new Date(Number(partes[2]), Number(partes[1]) - 1, Number(partes[0]));
+          } else {
+            return '--';
+          }
+
+          if (isNaN(d.getTime())) return '--';
+
+          return d.toLocaleDateString('es-CO', {
+            weekday:'long',
+            day:'numeric',
+            month:'long',
+            year:'numeric'
+          }).toUpperCase();
+        } catch(e) {
+          console.error('Error convirtiendo fecha del bingo:', e);
+          return '--';
+        }
+      };
+
+      const horaBonita = (h) => {
+        if (!h) return '--';
+        const partes = h.split(':');
+        if (partes.length < 2) return h;
+        let hora = Number(partes[0]);
+        const minutos = partes[1];
+        const periodo = hora >= 12 ? 'PM' : 'AM';
+        hora = hora % 12 || 12;
+        return `${hora}:${minutos} ${periodo}`;
+      };
+      const apertura = convertirFecha(config.ventaDesdeFecha, config.ventaDesdeHora);
+      const cierre = convertirFecha(config.ventaHastaFecha, config.ventaHastaHora);
+
+      if (document.getElementById('info-venta-rango')) {
+        document.getElementById('info-venta-rango').textContent = `${config.ventaDesdeFecha || '--'} ${config.ventaDesdeHora || ''} hasta ${config.ventaHastaFecha || '--'} ${config.ventaHastaHora || ''}`;
+      }
+
+      if (cierre && ahora >= cierre) {
+        document.getElementById('enabled-screen').classList.add('hidden');
+        document.getElementById('disabled-screen').classList.remove('hidden');
+        document.getElementById('disabled-message-title').textContent = 'TIEMPO DE COMPRA FINALIZADO';
+        document.getElementById('disabled-message-body').textContent = 'El periodo para adquirir tablas del bingo ha terminado.';
+        return;
+      }
+
+      if (apertura && ahora < apertura) {
+        document.getElementById('enabled-screen').classList.add('hidden');
+        document.getElementById('disabled-screen').classList.remove('hidden');
+        document.getElementById('disabled-message-title').textContent = 'COMPRAS AÚN NO DISPONIBLES';
+        document.getElementById('disabled-message-body').textContent = `Las tablas estarán disponibles desde ${config.ventaDesdeFecha} ${config.ventaDesdeHora}.`;
+        return;
+      }
+
+
+      document.getElementById('enabled-screen').classList.remove('hidden');
+      document.getElementById('disabled-screen').classList.add('hidden');
+
+      document.getElementById('info-fecha').textContent = fechaBonita(config.fecha);
+      document.getElementById('info-hora').textContent = horaBonita(config.hora);
+      document.getElementById('info-valor').textContent = (config.valor || 0).toLocaleString();
+    });
   }
 
   function listenTables() {
     onSnapshot(collection(db, 'tablas'), (snapshot) => {
-      allTables = [];
+      allTablesData = [];
+      const now = Date.now();
+
       snapshot.forEach(docSnap => {
-        allTables.push(docSnap.data());
+        const data = docSnap.data();
+        if (data.status === 'RESERVADA' && data.reservedUntil && data.reservedUntil <= now) {
+          data.status = 'DISPONIBLE';
+        }
+        allTablesData.push(data);
       });
-      loadMetrics();
+
+      renderTables();
+      const loader = document.getElementById('initial-loader');
+      if (loader) loader.style.display = 'none';
     });
   }
 
-  function formatMoney(value) {
-    return '$' + Math.round(Number(value) || 0).toLocaleString('es-CO');
+  function renderTables() {
+    const container = document.getElementById('tables-container');
+    container.innerHTML = '';
+    const now = Date.now();
+
+    allTablesData.sort((a,b) => a.code.localeCompare(b.code, undefined, {numeric: true, sensitivity: 'base'}));
+
+    allTablesData.forEach(t => {
+      const isReservedByMe = selectedTables.includes(t.code);
+      const isExpired = t.reservedUntil && t.reservedUntil <= now;
+
+      if (t.status === 'VENDIDA') return;
+      if (t.status === 'RESERVADA' && t.reservedBy !== myClientId && !isExpired) return;
+
+      const btn = document.createElement('button');
+      btn.className = 'btn-table';
+      btn.textContent = t.code;
+
+      if (isReservedByMe) {
+        btn.classList.add('selected');
+      }
+
+      btn.onclick = () => toggleTableSelection(t.code);
+      container.appendChild(btn);
+    });
   }
 
-  function loadMetrics() {
-    const total = allTables.length;
-    const disp = allTables.filter(t => t.status === 'DISPONIBLE').length;
-    const vend = allTables.filter(t => t.status === 'VENDIDA').length;
-    const valor = Number(currentTableValue) || 0;
+  async function toggleTableSelection(code) {
+    const index = selectedTables.indexOf(code);
 
-    document.getElementById('m-total').textContent = total;
-    document.getElementById('m-disp').textContent = disp;
-    document.getElementById('m-vend').textContent = vend;
-    document.getElementById('m-total-money').textContent = formatMoney(total * valor);
-    document.getElementById('m-disp-money').textContent = formatMoney(disp * valor);
-    document.getElementById('m-vend-money').textContent = formatMoney(vend * valor);
-  }
+    if (index > -1) {
+      selectedTables.splice(index, 1);
+    } else {
+      if (selectedTables.length >= 10) {
+        alert('Máximo puedes seleccionar 10 tablas.');
+        return;
+      }
+      selectedTables.push(code);
+      if (selectedTables.length === 1 || !reservationEndTime) {
+        reservationEndTime = Date.now() + (HOLD_TIME_MINUTES * 60 * 1000);
+      }
+    }
 
-  document.getElementById('form-config').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = document.getElementById('btn-submit-config');
-    btn.disabled = true;
-    btn.textContent = "Procesando...";
+    if (selectedTables.length > 0) {
+      startReservationTimer();
+      document.getElementById('reservation-timer-box').classList.remove('hidden');
+    } else {
+      clearInterval(timerInterval);
+      reservationEndTime = null;
+      document.getElementById('reservation-timer-box').classList.add('hidden');
+    }
+    updateSummary();
+    renderTables();
 
     try {
-      const fechaInput = document.getElementById('cfg-fecha').value;
-      const fecha = inputDateToDisplay(fechaInput);
-      const hora = document.getElementById('cfg-hora').value.trim();
-      const ventaDesdeFecha = inputDateToDisplay(document.getElementById('cfg-venta-desde-fecha').value);
-      const ventaDesdeHora = document.getElementById('cfg-venta-desde-hora').value.trim();
-      const ventaHastaFecha = inputDateToDisplay(document.getElementById('cfg-venta-hasta-fecha').value);
-      const ventaHastaHora = document.getElementById('cfg-venta-hasta-hora').value.trim();
-      const valor = parseFloat(document.getElementById('cfg-valor').value);
-      const desde = parseInt(document.getElementById('cfg-desde').value);
-      const hasta = parseInt(document.getElementById('cfg-hasta').value);
+      if (index > -1) {
+        // Nunca liberamos a ciegas: solo se devuelve a DISPONIBLE si la tabla
+        // sigue RESERVADA por este mismo comprador. Si ya fue VENDIDA, no se toca.
+        await releaseTableIfOwned(code);
+      } else {
+        const success = await runTransaction(db, async (transaction) => {
+          const tRef = doc(db, 'tablas', code);
+          const tDoc = await transaction.get(tRef);
 
-      if (desde >= hasta) {
-        alert('El rango "Hasta" debe ser mayor que "Desde".');
-        btn.disabled = false;
-        btn.textContent = "Guardar Cambios y Generar Tablas";
+          if (!tDoc.exists()) throw new Error("La tabla no existe.");
+          const tData = tDoc.data();
+          const now = Date.now();
+          const isExpired = tData.reservedUntil && tData.reservedUntil <= now;
+
+          if (tData.status === 'VENDIDA' || (tData.status === 'RESERVADA' && tData.reservedBy !== myClientId && !isExpired)) {
+            return false;
+          }
+
+          transaction.update(tRef, {
+            status: 'RESERVADA',
+            reservedUntil: reservationEndTime,
+            reservedBy: myClientId
+          });
+          return true;
+        });
+
+        if (!success) {
+          selectedTables = selectedTables.filter(c => c !== code);
+          alert(`La tabla ${code} ya ha sido reservada o comprada por otra persona.`);
+          updateSummary();
+          renderTables();
+        }
+      }
+    } catch (err) {
+      console.error("Error al sincronizar selección:", err);
+    }
+  }
+
+  function updateSummary() {
+    const qty = selectedTables.length;
+    const total = qty * (config ? config.valor : 0);
+
+    document.getElementById('summary-tables').textContent = qty > 0 ? selectedTables.join(', ') : 'Ninguna';
+    document.getElementById('summary-qty').textContent = qty;
+    document.getElementById('summary-total').textContent = `$${total.toLocaleString()}`;
+
+    document.getElementById('btn-finish-order').disabled = qty === 0;
+  }
+
+  function startReservationTimer() {
+    clearInterval(timerInterval);
+
+    function updateDisplay() {
+      const remainingMs = reservationEndTime - Date.now();
+
+      if (remainingMs <= 0) {
+        clearInterval(timerInterval);
+        handleTimerExpiration();
         return;
       }
 
-      await setDoc(doc(db, 'configuracion', 'evento'), {
-        nombre: "LA TERRAZA BINGO",
-        enabled: true,
-        fecha: fecha,
-        hora: hora,
-        valor: valor,
-        linkTransmision: document.getElementById('cfg-link-transmision').value.trim(),
-        rangoDesde: desde,
-        tablasHabilitadas: hasta,
-        ventaDesdeFecha: ventaDesdeFecha,
-        ventaDesdeHora: ventaDesdeHora,
-        ventaHastaFecha: ventaHastaFecha,
-        ventaHastaHora: ventaHastaHora
-      }, { merge: true });
+      const totalSeconds = Math.floor(remainingMs / 1000);
+      const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+      const seconds = String(totalSeconds % 60).padStart(2, '0');
 
-      currentTableValue = valor;
-      loadMetrics();
-
-      const existingSnapshot = await getDocs(collection(db, 'tablas'));
-      const existingMap = new Map();
-      existingSnapshot.forEach(docSnap => {
-        existingMap.set(docSnap.id, docSnap.data());
-      });
-
-      let batch = writeBatch(db);
-      let count = 0;
-
-      for (let i = desde; i <= hasta; i++) {
-        const code = formatTableCode(i);
-        if (!existingMap.has(code)) {
-          const tableRef = doc(db, 'tablas', code);
-          batch.set(tableRef, {
-            code: code,
-            status: 'DISPONIBLE',
-            passedToPC: false,
-            reservedUntil: null,
-            reservedBy: null,
-            pedido: null
-          });
-          count++;
-
-          if (count === 500) {
-            await batch.commit();
-            batch = writeBatch(db);
-            count = 0;
-          }
-        }
-      }
-
-      if (count > 0) {
-        await batch.commit();
-      }
-
-      alert('Configuración y tablas actualizadas correctamente.');
-    } catch (err) {
-      console.error("Error guardando configuración:", err);
-      alert("Error al guardar la configuración: " + err.message);
-    } finally {
-      btn.disabled = false;
-      btn.textContent = "Guardar Cambios y Generar Tablas";
+      document.getElementById('timer-display').textContent = `${minutes}:${seconds}`;
     }
-  });
 
-  // Compatibilidad Sistema Contable V34
-  // Mantiene identificada la configuración del evento para módulos contables.
-  function obtenerVersionSistema(){
-    return 'CONTABILIDAD_V34';
+    updateDisplay();
+    timerInterval = setInterval(updateDisplay, 1000);
   }
 
-  function listenOrders() {
-    onSnapshot(collection(db, 'pedidos'), (snapshot) => {
-      allOrders = [];
-      snapshot.forEach(docSnap => {
-        allOrders.push({ firestoreId: docSnap.id, ...docSnap.data() });
+  async function handleTimerExpiration() {
+    alert('Tu tiempo de reserva (3 minutos) ha expirado. Las tablas han sido liberadas.');
+    await releaseCurrentReservations();
+    resetForm();
+  }
+
+  async function releaseTableIfOwned(code) {
+    const tRef = doc(db, 'tablas', code);
+
+    return runTransaction(db, async (transaction) => {
+      const tDoc = await transaction.get(tRef);
+      if (!tDoc.exists()) return false;
+
+      const tData = tDoc.data();
+
+      // Protección principal contra tablas repetidas:
+      // una tabla VENDIDA, disponible o reservada por otra persona jamás
+      // puede ser liberada desde este navegador.
+      if (tData.status !== 'RESERVADA' || tData.reservedBy !== myClientId) {
+        return false;
+      }
+
+      transaction.update(tRef, {
+        status: 'DISPONIBLE',
+        reservedUntil: null,
+        reservedBy: null,
+        pedido: null
       });
-      renderOrders();
-      renderListado();
+
+      return true;
     });
   }
 
-  async function toggleOrderPassedStatus(orderFirestoreId, newStatus) {
-    try {
-      const orderRef = doc(db, 'pedidos', orderFirestoreId);
-      await updateDoc(orderRef, { passedToPC: newStatus });
-    } catch (err) {
-      console.error("Error actualizando estado del pedido:", err);
+  async function releaseCurrentReservations() {
+    if (selectedTables.length === 0) return;
+    const tablesToRelease = [...selectedTables];
+    selectedTables = [];
+
+    for (const code of tablesToRelease) {
+      try {
+        await releaseTableIfOwned(code);
+      } catch (err) {
+        console.error("Error liberando reserva:", err);
+      }
     }
   }
 
-  // FUNCIÓN PARA LIBERAR TABLAS Y CAMBIAR AUTOMÁTICAMENTE A CANCELADO SI QUEDA VACÍO
-  function openReleaseModal(orderFirestoreId) {
-    const order = allOrders.find(o => o.firestoreId === orderFirestoreId);
-    if (!order || !order.tablas || order.tablas.length === 0) {
-      alert("Este registro no tiene tablas para liberar.");
-      return;
+  async function cancelarCompraCompleta() {
+    await releaseCurrentReservations();
+
+    document.getElementById('banner-section').classList.add('hidden');
+    document.getElementById('main-flow-container').classList.add('hidden');
+    document.getElementById('cancelled-exclusive-screen').classList.remove('hidden');
+  }
+
+  document.getElementById('btn-cancel-purchase').addEventListener('click', cancelarCompraCompleta);
+
+  window.addEventListener('beforeunload', () => {
+    if (!orderCompleted && selectedTables.length > 0) {
+      // Es un intento de liberación inmediata al cerrar la página. El navegador
+      // puede interrumpir operaciones de red durante el cierre; si eso ocurre,
+      // el vencimiento de 5 minutos sigue siendo el respaldo. La transacción
+      // evita que una tabla ya VENDIDA vuelva accidentalmente a DISPONIBLE.
+      selectedTables.forEach(code => {
+        releaseTableIfOwned(code).catch(() => {});
+      });
     }
+  });
 
-    const container = document.getElementById('release-tables-buttons-container');
-    container.innerHTML = '';
+  function resetForm() {
+    clearInterval(timerInterval);
+    reservationEndTime = null;
+    selectedTables = [];
+    proofBase64 = null;
+    orderCompleted = false;
 
-    order.tablas.forEach(tableCode => {
-      const btn = document.createElement('button');
-      btn.className = 'btn btn-sm btn-danger';
-      btn.textContent = `Liberar tabla ${tableCode}`;
-      btn.style.width = '100%';
-      
-      btn.addEventListener('click', async () => {
-        const confirmar = confirm(`¿Estás seguro de liberar la tabla ${tableCode} del Registro #${order.id}? Quedará disponible nuevamente.`);
-        if (!confirmar) return;
+    document.getElementById('buyer-name').value = '';
+    document.getElementById('buyer-address').value = '';
+    document.getElementById('buyer-phone').value = '';
+    document.getElementById('proof-file').value = '';
+
+    document.getElementById('reservation-timer-box').classList.add('hidden');
+    
+    document.getElementById('success-exclusive-screen').classList.add('hidden');
+    document.getElementById('cancelled-exclusive-screen').classList.add('hidden');
+    document.getElementById('banner-section').classList.remove('hidden');
+    document.getElementById('main-flow-container').classList.remove('hidden');
+
+    updateSummary();
+    renderTables();
+  }
+
+  function copiarNumero() {
+    const num = "3234370590";
+    navigator.clipboard.writeText(num).then(() => {
+      const feedback = document.getElementById('copy-feedback');
+      feedback.style.display = 'block';
+      setTimeout(() => { feedback.style.display = 'none'; }, 2500);
+    }).catch(() => {
+      alert("Número: 3234370590");
+    });
+  }
+
+  document.getElementById('btn-copy-number').addEventListener('click', copiarNumero);
+
+  function readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  document.getElementById('proof-file').addEventListener('change', async function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      // Conserva el archivo original para evitar pérdida de calidad.
+      // Soporta JPG, PNG, capturas de pantalla y PDF.
+      proofBase64 = await readFileAsDataURL(file);
+    } catch (error) {
+      console.error('Error procesando comprobante:', error);
+      alert('No fue posible cargar el comprobante. Intente nuevamente.');
+      proofBase64 = null;
+    }
+  });
+
+
+  function normalizeText(value) {
+    return value
+      .trim()
+      .replace(/\s+/g, ' ')
+      .toUpperCase();
+  }
+
+  // Normaliza los datos al salir del campo, no mientras escribe.
+  // Esto permite que el usuario pueda usar espacios normalmente entre nombre y apellido.
+  ['buyer-name', 'buyer-address'].forEach(id => {
+    const input = document.getElementById(id);
+    input.addEventListener('blur', () => {
+      input.value = normalizeText(input.value);
+    });
+  });
+
+
+
+  // Genera la estructura de sincronización que utiliza el sistema contable v34.
+  // Se mantiene separada del proceso de compra para no afectar Firestore.
+  function generarRegistroContableV34(nombre, telefono, referencia, tablas, fecha, linkTransmision) {
+    return {
+      cliente: nombre || '',
+      telefono: telefono || '',
+      referencia: referencia || '',
+      tablas: Array.isArray(tablas) ? tablas : [],
+      fechaBingo: fecha || '',
+      linkTransmision: linkTransmision || '',
+      fechaRegistro: new Date().toLocaleString()
+    };
+  }
+
+  async function finishOrder() {
+    if (config) {
+      const ahora = new Date();
+
+      const fechaBonita = (f) => {
+        if (!f) return '--';
+
+        let d;
 
         try {
-          const tableRef = doc(db, 'tablas', tableCode);
-          await updateDoc(tableRef, {
-            status: 'DISPONIBLE',
-            reservedUntil: null,
-            reservedBy: null,
-            pedido: null
-          });
-
-          const updatedTablas = order.tablas.filter(t => t !== tableCode);
-          const orderRef = doc(db, 'pedidos', order.firestoreId);
-
-          const newTotal = updatedTablas.length * (configValor() || 0);
-
-          if (updatedTablas.length === 0) {
-            // SI QUEDA SIN TABLAS, CAMBIA AUTOMÁTICAMENTE A CANCELADO
-            await updateDoc(orderRef, {
-              tablas: [],
-              total: 0,
-              estado: 'CANCELADO'
-            });
+          if (f.includes('-')) {
+            const partes = f.split('-');
+            d = new Date(Number(partes[0]), Number(partes[1]) - 1, Number(partes[2]));
+          } else if (f.includes('/')) {
+            const partes = f.split('/');
+            d = new Date(Number(partes[2]), Number(partes[1]) - 1, Number(partes[0]));
           } else {
-            await updateDoc(orderRef, {
-              tablas: updatedTablas,
-              total: newTotal
-            });
+            return '--';
           }
 
-          alert(`La tabla ${tableCode} ha sido liberada correctamente.`);
-          document.getElementById('modal-release-table').style.display = 'none';
-          renderOrders();
-        } catch (err) {
-          console.error("Error al liberar la tabla individual:", err);
-          alert("Error al liberar la tabla: " + err.message);
+          if (isNaN(d.getTime())) return '--';
+
+          return d.toLocaleDateString('es-CO', {
+            weekday:'long',
+            day:'numeric',
+            month:'long',
+            year:'numeric'
+          }).toUpperCase();
+        } catch(e) {
+          console.error('Error convirtiendo fecha del bingo:', e);
+          return '--';
         }
-      });
+      };
 
-      container.appendChild(btn);
-    });
-
-    document.getElementById('modal-release-table').style.display = 'flex';
-  }
-
-  function configValor() {
-    const valInput = document.getElementById('cfg-valor');
-    return valInput ? parseFloat(valInput.value) || 3000 : 3000;
-  }
-
-  document.getElementById('btn-close-release-modal').addEventListener('click', () => {
-    document.getElementById('modal-release-table').style.display = 'none';
-  });
-
-  function renderListado() {
-    const tbody = document.getElementById('listado-body');
-    const total = document.getElementById('listado-total');
-    if (!tbody) return;
-
-    const clientes = {};
-
-    allOrders.forEach(order => {
-      const celular = getOrderWhatsapp(order);
-      if (!celular) return;
-      const nombre = typeof order.cliente === 'string' ? order.cliente : (order.cliente?.name || 'Cliente');
-      if (!clientes[celular]) {
-        clientes[celular] = { nombre, celular, tablas: [] };
+      const horaBonita = (h) => {
+        if (!h) return '--';
+        const partes = h.split(':');
+        if (partes.length < 2) return h;
+        let hora = Number(partes[0]);
+        const minutos = partes[1];
+        const periodo = hora >= 12 ? 'PM' : 'AM';
+        hora = hora % 12 || 12;
+        return `${hora}:${minutos} ${periodo}`;
+      };
+      if (config.ventaDesdeFecha && config.ventaDesdeHora) {
+        const apertura = new Date(`${config.ventaDesdeFecha.split('/').reverse().join('-')}T${config.ventaDesdeHora}`);
+        if (ahora < apertura) {
+          alert('La venta de tablas todavía no está disponible.');
+          return;
+        }
       }
-      clientes[celular].tablas.push(...(order.tablas || []));
-    });
-
-    const listado = Object.values(clientes).map(c => ({
-      ...c,
-      tablas: [...new Set(c.tablas)].sort((a,b)=> (parseInt(String(a).replace(/\D/g,''))||0)-(parseInt(String(b).replace(/\D/g,''))||0))
-    }));
-
-    total.textContent = `Total registrados: ${listado.length}`;
-    tbody.innerHTML = listado.map((c,i)=>`
-      <tr>
-        <td>${i+1}</td>
-        <td>${c.nombre}</td>
-        <td>${c.celular}</td>
-        <td>${c.tablas.join(', ')}</td>
-      </tr>`).join('');
-
-    window.currentListadoCopy = listado;
-  }
-
-  document.getElementById('btn-copy-listado').addEventListener('click', async () => {
-    const listado = window.currentListadoCopy || [];
-    const texto = listado.map((c, i) => `${i + 1}\t${c.nombre}\t${c.tablas.join(', ')}`).join('\n');
-    await navigator.clipboard.writeText(texto);
-    alert('Listado completo copiado.');
-  });
-
-  document.getElementById('btn-copy-nombres').addEventListener('click', async () => {
-    const listado = window.currentListadoCopy || [];
-    const texto = listado.map(c => c.nombre).join('\n');
-    await navigator.clipboard.writeText(texto);
-    alert('Nombres copiados.');
-  });
-
-  document.getElementById('btn-copy-tablas-orden').addEventListener('click', async () => {
-    const mapaTablas = {};
-
-    allOrders.forEach(order => {
-      const nombre = typeof order.cliente === 'string' ? order.cliente : (order.cliente?.name || '');
-      const whatsapp = getOrderWhatsapp(order);
-      const referencia = order.referencia || '';
-
-      (order.tablas || []).forEach(tabla => {
-        mapaTablas[tabla] = { nombre, whatsapp, referencia };
-      });
-    });
-
-    let desde = Number(document.getElementById('cfg-desde')?.value || 1);
-    let hasta = Number(document.getElementById('cfg-hasta')?.value || 0);
-
-    if (!hasta && Array.isArray(allTables) && allTables.length) {
-      const numeros = allTables.map(t => Number(String(t.code || '').replace(/\D/g,''))).filter(Boolean);
-      desde = Math.min(...numeros);
-      hasta = Math.max(...numeros);
+      if (config.ventaHastaFecha && config.ventaHastaHora) {
+        const cierre = new Date(`${config.ventaHastaFecha.split('/').reverse().join('-')}T${config.ventaHastaHora}`);
+        if (ahora >= cierre) {
+          alert('El tiempo para comprar tablas ha finalizado.');
+          return;
+        }
+      }
     }
 
-    const filas = [];
+    const buyerNameInput = document.getElementById('buyer-name');
+    const buyerAddressInput = document.getElementById('buyer-address');
+    const buyerPhoneInput = document.getElementById('buyer-phone');
 
-    for (let i = desde; i <= hasta; i++) {
-      const tabla = 'T' + String(i).padStart(3, '0');
-      const dato = mapaTablas[tabla] || {};
-      filas.push(`${tabla}\t${dato.nombre || ''}\t${dato.referencia || ''}\t${dato.whatsapp || ''}`);
-    }
+    const buyerName = normalizeText(buyerNameInput.value);
+    const buyerAddress = normalizeText(buyerAddressInput.value);
+    const buyerPhone = buyerPhoneInput.value.trim();
 
-    const texto = [
-      'TABLA\tNOMBRE\tREFERENCIA\tWHATSAPP',
-      ...filas
-    ].join('\n');
+    buyerNameInput.value = buyerName;
+    buyerAddressInput.value = buyerAddress;
 
-    await navigator.clipboard.writeText(texto);
-    alert('Datos para sistema contable copiados.');
-  });
-
-  function renderOrders() {
-    filterOrders();
-  }
-
-  function getEffectiveOrderStatus(order) {
-    const tables = order.tablas || [];
-    if (tables.length === 0) return 'CANCELADO';
-    return order.estado === 'PAGADO' ? 'PAGADO' : 'PENDIENTE PAGO';
-  }
-
-  function normalizeWhatsapp(value) {
-    const digits = String(value || '').replace(/\D/g, '');
-    // Permite reconocer como el mismo WhatsApp, por ejemplo,
-    // 3001234567 y +57 300 123 4567.
-    return digits.length > 10 ? digits.slice(-10) : digits;
-  }
-
-  function getOrderWhatsapp(order) {
-    return normalizeWhatsapp(order.telefono || order.cliente?.whatsapp || '');
-  }
-
-  function getRelatedOrders(order) {
-    const whatsapp = getOrderWhatsapp(order);
-    if (!whatsapp) return [];
-
-    return allOrders
-      .filter(related => {
-        if (related.firestoreId === order.firestoreId) return false;
-        if (!related.tablas || related.tablas.length === 0) return false;
-        return getOrderWhatsapp(related) === whatsapp;
-      })
-      .sort((a, b) => (parseInt(a.id) || 0) - (parseInt(b.id) || 0));
-  }
-
-  function filterOrders() {
-    const queryStr = document.getElementById('search-input').value.toLowerCase();
-    const statusFilter = document.getElementById('filter-status').value;
-    const container = document.getElementById('orders-list');
-    container.innerHTML = '';
-
-    const filtered = allOrders.filter(o => {
-      const clientName = typeof o.cliente === 'string' ? o.cliente : (o.cliente?.name || '');
-      const clientPhone = o.telefono || o.cliente?.whatsapp || '';
-      const reference = o.referencia || '';
-      const tablesStr = (o.tablas || []).join(', ');
-      const matchQuery = String(o.id || '').toLowerCase().includes(queryStr) ||
-                         clientName.toLowerCase().includes(queryStr) ||
-                         String(clientPhone).toLowerCase().includes(queryStr) ||
-                         reference.toLowerCase().includes(queryStr) ||
-                         tablesStr.toLowerCase().includes(queryStr);
-      let matchStatus;
-      if (statusFilter === 'NO_REGISTRADO_SISTEMA') {
-        matchStatus = (o.tablas || []).length > 0 && o.passedToPC !== true;
-      } else {
-        matchStatus = statusFilter === 'TODOS' || getEffectiveOrderStatus(o) === statusFilter;
-      }
-      return matchQuery && matchStatus;
-    });
-
-    if (filtered.length === 0) {
-      container.innerHTML = '<p style="font-size:0.9rem; color:var(--text-muted); text-align:center;">No se encontraron registros.</p>';
+    if (!buyerName || !buyerAddress || !buyerPhone) {
+      alert('Por favor complete su nombre y apellido, referencia/ciudad/barrio y número de WhatsApp.');
       return;
     }
 
-    filtered.sort((a,b) => (parseInt(a.id) || 0) - (parseInt(b.id) || 0));
+    const nameParts = buyerName.split(' ').filter(part => part.length > 0);
+    if (nameParts.length < 2) {
+      alert('Por favor escriba su nombre completo con nombre y apellido. Ejemplo: MARIO VALLEZ');
+      return;
+    }
 
-    filtered.forEach(o => {
-      const currentStatus = getEffectiveOrderStatus(o);
-      let badgeClass = 'badge-pending';
-      if (currentStatus === 'PAGADO') badgeClass = 'badge-pagado';
-      if (currentStatus === 'RECHAZADO') badgeClass = 'badge-rechazado';
-      if (currentStatus === 'CANCELADO') badgeClass = 'badge-cancelled';
+    if (selectedTables.length === 0) {
+      alert('Selecciona al menos una tabla.');
+      return;
+    }
 
-      const el = document.createElement('div');
-      el.className = 'order-item';
+    // Congelamos la selección exacta que se va a comprar para que toda la operación
+    // use el mismo grupo de tablas de principio a fin.
+    const tablesToBuy = [...selectedTables];
 
-      const tableList = [...(o.tablas || [])].sort((a, b) => {
-        const numA = parseInt(String(a).replace(/\D/g, '')) || 0;
-        const numB = parseInt(String(b).replace(/\D/g, '')) || 0;
-        return numA - numB;
-      });
-      const clientName = typeof o.cliente === 'string' ? o.cliente : (o.cliente?.name || 'Cliente');
+    const btn = document.getElementById('btn-finish-order');
+    btn.disabled = true;
+    btn.textContent = "Registrando...";
 
-      // Los pedidos relacionados se detectan por WhatsApp, pero NO se mueven ni
-      // se agrupan. Cada tarjeta conserva su posición normal y solo informa qué
-      // otros registros activos pertenecen al mismo cliente.
-      const relatedOrders = getRelatedOrders(o);
-      const relatedOrdersHTML = relatedOrders.length > 0 ? `
-        <div class="related-orders-alert">
-          <div class="related-orders-title">⚠️ CLIENTE CON ${relatedOrders.length === 1 ? 'REGISTRO ADICIONAL' : 'REGISTROS ADICIONALES'}</div>
-          ${relatedOrders.map(related => {
-            const relatedTables = [...(related.tablas || [])].sort((a, b) => {
-              const numA = parseInt(String(a).replace(/\D/g, '')) || 0;
-              const numB = parseInt(String(b).replace(/\D/g, '')) || 0;
-              return numA - numB;
-            });
-            return `<div class="related-order-row"><b>Registro #${related.id || related.firestoreId}:</b> <span>${relatedTables.join(', ')}</span></div>`;
-          }).join('')}
-        </div>
-      ` : '';
+    try {
+      let enlaceDigital = '';
+      clearInterval(timerInterval);
+      orderCompleted = true;
 
-      // Todo pedido nuevo/activo se interpreta como NO REGISTRADO hasta que se marque manualmente.
-      const isPassed = o.passedToPC === true;
-      const registrationLegend = isPassed ? 'Tablas registradas en el sistema' : 'No registradas en el sistema';
-      const registrationClass = isPassed ? 'registered' : 'not-registered';
-      const registrationButtonClass = isPassed ? 'table-status-btn passed' : 'table-status-btn';
+      // Tomamos como punto de partida el mayor registro existente.
+      // La asignación definitiva del consecutivo y la venta de las tablas se hacen
+      // juntas dentro de UNA sola transacción de Firestore.
+      const pedidosSnap = await getDocs(collection(db, 'pedidos'));
+      let nextOrderNumber = 1;
 
-      // Todo pedido con tablas se interpreta como PAGO PENDIENTE salvo que se haya marcado PAGADO.
-      const isPaid = currentStatus === 'PAGADO';
-      const paymentLegend = isPaid ? 'Pagado' : 'Pago pendiente';
-      const paymentClass = isPaid ? 'paid' : 'pending';
-      const paymentButtonClass = isPaid ? 'payment-status-btn paid' : 'payment-status-btn';
-
-      let actionButtonsHTML = '';
-      if (tableList.length === 0) {
-        actionButtonsHTML = `<span style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; font-weight:600;">Registro sin tablas (Cancelado automáticamente)</span>`;
-      } else {
-        if (o.comprobante) {
-          actionButtonsHTML += `<button class="btn btn-sm btn-dark btn-view-proof" data-order="${o.firestoreId}">Ver Comprobante</button>`;
+      pedidosSnap.forEach(docSnap => {
+        const n = parseInt(docSnap.id, 10);
+        if (Number.isFinite(n) && n >= nextOrderNumber) {
+          nextOrderNumber = n + 1;
         }
-        actionButtonsHTML += `<button class="${paymentButtonClass} btn-payment-status" data-order="${o.firestoreId}" data-status="${currentStatus}">Estado de pago</button>`;
-        actionButtonsHTML += `<button class="${registrationButtonClass} btn-register-system" data-order="${o.firestoreId}" data-passed="${isPassed}">Registro en el sistema</button>`;
-        actionButtonsHTML += `<button class="table-release-btn btn-release-order" data-order="${o.firestoreId}">Liberar tablas</button>`;
+      });
+
+      const orderId = await runTransaction(db, async (transaction) => {
+        let candidateNumber = nextOrderNumber;
+        let candidateId;
+        let candidateRef;
+
+        // Buscar el primer consecutivo libre. Si otra compra simultánea alcanza
+        // a tomarlo, Firestore reintenta automáticamente esta transacción.
+        while (true) {
+          candidateId = String(candidateNumber).padStart(5, '0');
+          candidateRef = doc(db, 'pedidos', candidateId);
+          const candidateSnap = await transaction.get(candidateRef);
+
+          if (!candidateSnap.exists()) break;
+          candidateNumber++;
+        }
+
+        // Verificar dentro de la misma transacción que todas las tablas siguen
+        // reservadas por este comprador y que la reserva no ha vencido.
+        const tableRefs = tablesToBuy.map(code => doc(db, 'tablas', code));
+        const tableDocs = [];
+
+        for (const tRef of tableRefs) {
+          tableDocs.push(await transaction.get(tRef));
+        }
+
+        const now = Date.now();
+        for (let i = 0; i < tableDocs.length; i++) {
+          const tDoc = tableDocs[i];
+          const code = tablesToBuy[i];
+
+          if (!tDoc.exists()) {
+            throw new Error(`La tabla ${code} ya no existe.`);
+          }
+
+          const tData = tDoc.data();
+          const isExpired = tData.reservedUntil && tData.reservedUntil <= now;
+
+          if (tData.status !== 'RESERVADA' || tData.reservedBy !== myClientId || isExpired) {
+            throw new Error(`La reserva de la tabla ${code} ya no está disponible. Selecciona nuevamente tus tablas.`);
+          }
+        }
+
+        enlaceDigital = generarLinkDigitalCliente(
+          tablesToBuy,
+          buyerName,
+          config.fecha,
+          config.linkTransmision
+        );
+
+        const newOrder = {
+          id: candidateId,
+          cliente: buyerName,
+          telefono: buyerPhone,
+          referencia: buyerAddress,
+          tablas: tablesToBuy,
+          linkDigital: enlaceDigital,
+          // Datos preparados para sincronización con SISTEMA CONTABLE v34
+          clienteId: 'CLI_' + cleanPhone(buyerPhone),
+          eventoId: 'BINGO_' + String(config?.fecha || '').replace(/\D/g,''),
+          registroContable: generarRegistroContableV34(
+            buyerName,
+            buyerPhone,
+            buyerAddress,
+            tablesToBuy,
+            config?.fecha || '',
+            config?.linkTransmision || ''
+          ),
+          total: tablesToBuy.length * (config ? config.valor : 0),
+          comprobante: proofBase64 || null,
+          fecha: new Date().toLocaleString(),
+          estado: 'PENDIENTE PAGO'
+        };
+
+        // Pedido y tablas vendidas se guardan juntos: si algo falla, no se
+        // confirma ninguna de las dos partes de la compra.
+        transaction.set(candidateRef, newOrder);
+
+        for (let i = 0; i < tableRefs.length; i++) {
+          const tRef = tableRefs[i];
+          transaction.update(tRef, {
+            status: 'VENDIDA',
+            reservedUntil: null,
+            reservedBy: null,
+            pedido: candidateId
+          });
+        }
+
+        return candidateId;
+      });
+
+      // Desde este punto Firebase ya confirmó pedido + tablas VENDIDAS.
+      // Limpiamos de inmediato la selección local para que una recarga/cierre
+      // posterior nunca intente liberar estas tablas, incluso si falla la UI.
+      selectedTables = [];
+      reservationEndTime = null;
+
+      document.getElementById('reservation-timer-box').classList.add('hidden');
+      document.getElementById('banner-section').classList.add('hidden');
+      document.getElementById('main-flow-container').classList.add('hidden');
+
+      // Una vez guardado el pedido actual, recuperamos todos los pedidos del mismo
+      // WhatsApp y generamos UN SOLO enlace con todas sus tablas registradas.
+      let tablasConsolidadas = [...tablesToBuy];
+      let tablasAnterioresCliente = [];
+      let teniaRegistrosAnteriores = false;
+
+      try {
+        tablasConsolidadas = await obtenerTodasLasTablasClienteRegistro(
+          buyerPhone,
+          tablesToBuy
+        );
+
+        tablasAnterioresCliente = tablasConsolidadas.filter(tabla => !tablesToBuy.includes(tabla));
+        teniaRegistrosAnteriores = tablasAnterioresCliente.length > 0;
+      } catch (consolidationError) {
+        console.error('No fue posible consolidar compras anteriores:', consolidationError);
       }
 
-      el.innerHTML = `
-        <div class="order-header">
-          <span>Registro #${o.id || ''}</span>
-          <span>$${(o.total || 0).toLocaleString()}</span>
-        </div>
-        ${tableList.length === 0 ? `<div class="order-badges"><span class="badge ${badgeClass}">CANCELADO</span></div>` : ''}
-        <div class="order-info">
-          <div><b>Nombre y Apellido:</b> ${clientName}</div>
-          <div><b>WhatsApp:</b> ${o.telefono || ''}</div>
-          <div><b>Referencia, Ciudad, Barrio:</b> ${o.referencia || 'N/A'}</div>
-          <div><b>Fecha/Hora:</b> ${o.fecha || ''}</div>
-          <div><b>Tablas (${tableList.length}):</b> ${tableList.length > 0 ? `<span style="color:var(--accent-gold); font-weight:700;">${tableList.join(', ')}</span>` : '<span style="color:var(--danger); font-style:italic;">Ninguna (Liberadas)</span>'}</div>
-          ${tableList.length > 0 ? relatedOrdersHTML : ''}
-          ${tableList.length > 0 ? `<div class="payment-status ${paymentClass}">${isPaid ? '✓' : '●'} ${paymentLegend}</div>` : ''}
-          ${tableList.length > 0 && isPaid ? `<div class="payment-status" style="color:var(--accent-gold);">Forma: ${o.destino || 'SIN DEFINIR'}</div>` : ''}
-          ${tableList.length > 0 ? `<div class="system-registration-status ${registrationClass}">${isPassed ? '✓' : '●'} ${registrationLegend}</div>` : ''}
-        </div>
-        <div class="order-actions">
-          ${actionButtonsHTML}
+      ultimoEnlaceDigital = generarLinkDigitalCliente(
+        tablasConsolidadas,
+        buyerName,
+        config?.fecha || '',
+        config?.linkTransmision || ''
+      );
+
+      document.getElementById('success-exclusive-screen').classList.remove('hidden');
+      document.getElementById('order-number-display').textContent = `Registro #${orderId}`;
+      document.getElementById('buyer-success-display').textContent = `Hola ${buyerName}, tu registro fue realizado exitosamente.`;
+
+      // Muestra primero únicamente lo que acaba de registrar el cliente
+      document.getElementById('assigned-tables-display').innerHTML = `
+        <div>
+          <b>🎟️ Nuevas tablas registradas:</b><br>
+          ${tablesToBuy.join(', ')}
         </div>
       `;
 
-      el.querySelectorAll('.btn-view-proof').forEach(btn => {
-        btn.addEventListener('click', () => viewProof(btn.dataset.order));
-      });
-      el.querySelectorAll('.btn-payment-status').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          const order = allOrders.find(o => o.firestoreId === btn.dataset.order);
-          if (!order) return;
+      document.getElementById('consolidado-aviso').innerHTML = teniaRegistrosAnteriores ? `
+        <div class="consolidado-aviso">
+          🔄 <b>Encontramos registros anteriores</b><br><br>
+          Ya tenías tablas registradas anteriormente con este número de WhatsApp.
+          Estas tablas fueron unificadas automáticamente con tu nuevo registro.<br><br>
+          <b>🎟️ Tablas de registros anteriores:</b><br>
+          ${tablasAnterioresCliente.join(', ')}<br><br>
+          <b>🎯 Total de tablas asignadas:</b><br>
+          ${tablasConsolidadas.join(', ')}
+        </div>
+      ` : `
+        <div class="consolidado-aviso">
+          <b>🎯 Total de tablas asignadas:</b><br>
+          ${tablasConsolidadas.join(', ')}
+        </div>
+      `;
 
-          const currentStatus = btn.dataset.status === 'PAGADO' ? 'PAGADO' : 'PENDIENTE PAGO';
+      ultimoMensajeDigital = `🎱 LA TERRAZA BINGO
 
-          if (currentStatus === 'PAGADO') {
-            const confirmar = confirm('¿Estás seguro que deseas cambiar el estado a pendiente?');
-            if (!confirmar) return;
-            await updateOrderStatus(btn.dataset.order, 'PENDIENTE PAGO', 'DEBEN');
-            return;
-          }
+¡Hola ${buyerName}!
 
-          const formaPago = await seleccionarFormaPago();
+✅ Tu registro fue realizado exitosamente.
 
-          if (!formaPago) return;
+🎟️ Tus tablas asignadas para jugar son:
+${tablasConsolidadas.map(tabla => '🎟️ ' + tabla).join('\n')}
 
-          await updateOrderStatus(btn.dataset.order, 'PAGADO', formaPago);
-        });
-      });
+📅 Fecha del Bingo: ${config?.fecha || ''}
+⏰ Hora: ${config?.hora || ''}
 
-el.querySelectorAll('.btn-register-system').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const currentPassed = btn.dataset.passed === 'true';
+🔗 Tu enlace para jugar todas tus tablas es:
+${ultimoEnlaceDigital}
 
-          // Para volver de REGISTRADO a NO REGISTRADO se exige confirmación de seguridad.
-          if (currentPassed) {
-            const confirmar = confirm('¿Estás seguro que deseas cambiar el estado?');
-            if (!confirmar) return;
-          }
+💳 Puedes realizar tu pago por:
+📱 Nequi: 323 437 0590
+📱 Daviplata: 323 437 0590
+🔑 Llave: 323 437 0590
 
-          toggleOrderPassedStatus(btn.dataset.order, !currentPassed);
-        });
-      });
-      el.querySelectorAll('.btn-release-order').forEach(btn => {
-        btn.addEventListener('click', () => openReleaseModal(btn.dataset.order));
-      });
+Después de realizar el pago, conserva este mensaje como comprobante de tus tablas.`;
 
-      container.appendChild(el);
-    });
-  }
+      document.getElementById('bingo-info-success').innerHTML = `📅 <b>Fecha del Bingo:</b> ${config?.fecha || '--'}<br>⏰ <b>Hora:</b> ${config?.hora || '--'}`;
+      document.getElementById('digital-link-box').innerHTML = ultimoEnlaceDigital ? `<a class="btn btn-success digital-uniform-btn" href="${ultimoEnlaceDigital}" target="_blank">🎱 ABRIR MIS TABLAS DIGITALES</a>` : 'Enlace pendiente';
 
-  document.getElementById('search-input').addEventListener('keyup', filterOrders);
-  document.getElementById('filter-status').addEventListener('change', filterOrders);
-
-
-
-function seleccionarFormaPago(){
-  return new Promise((resolve)=>{
-    const modal=document.createElement('div');
-    modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:9999;';
-    modal.innerHTML=`<div style="background:white;padding:20px;border-radius:12px;width:300px;color:#111;text-align:center">
-      <h3 style="margin-bottom:15px">Forma de pago</h3>
-      <select id="select-forma-pago" style="width:100%;padding:10px;margin-bottom:15px">
-        <option value="">Seleccione</option>
-        <option value="EFECTIVO">EFECTIVO</option>
-        <option value="CONSIGNACIÓN">CONSIGNACIÓN</option>
-      </select>
-      <button id="confirmar-forma-pago" style="padding:10px;width:100%">Continuar</button>
-    </div>`;
-    document.body.appendChild(modal);
-    modal.querySelector('#confirmar-forma-pago').onclick=()=>{
-      const valor=modal.querySelector('#select-forma-pago').value;
-      modal.remove();
-      resolve(valor||null);
-    };
-  });
-}
-  async function updateOrderStatus(orderDocId, newStatus, destino='DEBEN') {
-    try {
-      const orderRef = doc(db, 'pedidos', orderDocId);
-      await updateDoc(orderRef, { 
-        estado: newStatus,
-        destino: String(destino||'DEBEN').toUpperCase()
-      });
     } catch (err) {
-      console.error("Error actualizando estado del pedido:", err);
-      alert("Error al actualizar estado del pedido: " + err.message);
-    }
-  }
+      console.error("Error al finalizar pedido:", err);
+      alert("Error al guardar en Firestore: " + err.message);
+      orderCompleted = false;
 
-  function viewProof(orderDocId) {
-    const order = allOrders.find(o => o.firestoreId === orderDocId);
-    if (!order) return;
-    const proofImg = order.comprobante;
-    if (!proofImg) return;
-
-    const body = document.getElementById('modal-proof-body');
-    const clientName = typeof order.cliente === 'string' ? order.cliente : (order.cliente?.name || '');
-    body.innerHTML = `
-      <p style="font-size:0.9rem; color:var(--text-muted);">Registro #${order.id} - ${clientName}</p>
-      <img src="${proofImg}" alt="Comprobante de Pago">
-    `;
-    document.getElementById('modal-proof').style.display = 'flex';
-  }
-
-  document.getElementById('btn-close-modal').addEventListener('click', () => {
-    document.getElementById('modal-proof').style.display = 'none';
-  });
-
-  async function cerrarBingo() {
-    const confirmacion = confirm("¿Desea borrar todos los datos del evento, tablas y pedidos?");
-    if (!confirmacion) return;
-
-    const btnCerrar = document.getElementById('btn-cerrar-bingo');
-    btnCerrar.disabled = true;
-    const textoOriginal = btnCerrar.textContent;
-    btnCerrar.textContent = "Cerrando bingo...";
-
-    try {
-      // Borrar una colección en bloques y ESPERAR la confirmación de Firebase
-      // antes de continuar con el siguiente bloque.
-      async function borrarSnapshotEnBloques(snapshot) {
-        const docs = snapshot.docs;
-        const LIMITE_BATCH = 500;
-
-        for (let i = 0; i < docs.length; i += LIMITE_BATCH) {
-          const batch = writeBatch(db);
-          docs.slice(i, i + LIMITE_BATCH).forEach(d => batch.delete(d.ref));
-          await batch.commit();
-        }
+      // Si la reserva todavía tiene tiempo, reanudamos el contador visual para
+      // que el comprador pueda intentar nuevamente sin perder la referencia.
+      if (selectedTables.length > 0 && reservationEndTime && reservationEndTime > Date.now()) {
+        startReservationTimer();
+        document.getElementById('reservation-timer-box').classList.remove('hidden');
       }
-
-      // Primero se eliminan todas las tablas y todos los pedidos.
-      const tablasSnap = await getDocs(collection(db, 'tablas'));
-      await borrarSnapshotEnBloques(tablasSnap);
-
-      const pedidosSnap = await getDocs(collection(db, 'pedidos'));
-      await borrarSnapshotEnBloques(pedidosSnap);
-
-      // La configuración se borra al final. Así el evento solo se considera
-      // cerrado cuando las tablas y los pedidos ya terminaron de eliminarse.
-      await deleteDoc(doc(db, 'configuracion', 'evento'));
-
-      // Verificación final: no mostramos éxito hasta confirmar que todo quedó vacío.
-      const [verificacionTablas, verificacionPedidos, verificacionConfig] = await Promise.all([
-        getDocs(collection(db, 'tablas')),
-        getDocs(collection(db, 'pedidos')),
-        getDoc(doc(db, 'configuracion', 'evento'))
-      ]);
-
-      if (!verificacionTablas.empty || !verificacionPedidos.empty || verificacionConfig.exists()) {
-        throw new Error('Firebase todavía reporta datos del bingo. Vuelva a intentar el cierre.');
-      }
-
-      allOrders = [];
-      allTables = [];
-
-      document.getElementById('form-config').reset();
-      currentTableValue = 0;
-      document.getElementById('cfg-fecha').value = '';
-      document.getElementById('cfg-hora').value = '';
-        document.getElementById('cfg-venta-desde-fecha').value = '';
-        document.getElementById('cfg-venta-desde-hora').value = '';
-        document.getElementById('cfg-venta-hasta-fecha').value = '';
-        document.getElementById('cfg-venta-hasta-hora').value = '';
-      document.getElementById('cfg-valor').value = '';
-        document.getElementById('cfg-link-transmision').value = '';
-      document.getElementById('cfg-desde').value = '';
-      document.getElementById('cfg-hasta').value = '';
-      document.getElementById('orders-list').innerHTML = '';
-      loadMetrics();
-
-      alert("Todos los datos del bingo se han borrado correctamente en Firestore.");
-    } catch (err) {
-      console.error("Error al cerrar bingo:", err);
-      alert("Error al borrar datos: " + err.message);
     } finally {
-      btnCerrar.disabled = false;
-      btnCerrar.textContent = textoOriginal;
+      btn.disabled = false;
+      btn.textContent = "Registrar / Comprar";
     }
   }
 
-  document.getElementById('btn-cerrar-bingo').addEventListener('click', cerrarBingo);
 
+  document.getElementById('btn-lookup').addEventListener('click', consultarTablas);
 
-  // Exportación administrativa para el sistema contable local
-  document.getElementById('btn-exportar-contable')?.addEventListener('click', async()=>{
-    const snap = await getDocs(collection(db,'pedidos'));
-    const ventas=[];
-    snap.forEach(d=>{
-      const x=d.data();
-      ventas.push({
-        id:d.id,
-        nombre:x.cliente||'',
-        whatsapp:x.telefono||'',
-        referencia:x.referencia||x.direccion||'',
-        tablas:Array.isArray(x.tablas)?x.tablas:[],
-        fecha:new Date().toISOString(),
-        estado:x.estado||'PENDIENTE PAGO',
-        destino:(x.estado==='PAGADO' ? (x.destino||'DEBEN') : 'DEBEN')
-      });
-    });
-    const tablasExportadas=[];
-    ventas.forEach(v=>{
-      (Array.isArray(v.tablas)?v.tablas:[]).forEach(tab=>{
-        tablasExportadas.push({
-          tabla:String(tab).startsWith('T')?String(tab):'T'+String(tab).padStart(3,'0'),
-          nombre:v.nombre||v.cliente||'',
-          referencia:v.referencia||v.direccion||'',
-          whatsapp:v.whatsapp||v.telefono||'',
-          estado:v.estado||'PENDIENTE PAGO',
-          destino:v.destino||'DEBEN'
-        });
-      });
-    });
-    const blob=new Blob([JSON.stringify({version:'tablas_bingo_v1',tablas:tablasExportadas},null,2)],{type:'application/json'});
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(blob);
-    a.download='ventas_bingo_actualizacion.json';
-    a.click();
-    URL.revokeObjectURL(a.href);
+  document.getElementById('btn-close-lookup').addEventListener('click',()=>{
+    document.getElementById('lookup-modal').classList.remove('active');
   });
+
+  function copiarEnlaceDigital(){
+    if(!ultimoEnlaceDigital){
+      alert('No hay enlace digital disponible.');
+      return;
+    }
+    navigator.clipboard.writeText(ultimoEnlaceDigital).then(()=>{
+      alert('✓ Enlace copiado correctamente.');
+    });
+  }
+
+  function enviarWhatsAppDigital(){
+    if(!ultimoMensajeDigital){
+      alert('No hay enlace digital disponible.');
+      return;
+    }
+    const telefono = cleanPhone(document.getElementById('buyer-phone').value);
+    const destino = telefono ? 'https://wa.me/' + normalizarWhatsAppColombia(telefono) : 'https://wa.me/';
+    const url = destino + '?text=' + encodeURIComponent(ultimoMensajeDigital);
+    window.open(url, '_blank');
+  }
+
+  function copiarComprobanteAdministrador(){
+    const nombre = document.getElementById('buyer-name').value.trim();
+    const tablas = document.getElementById('assigned-tables-display').textContent.trim();
+    const registro = document.getElementById('order-number-display').textContent.trim();
+
+    const mensaje = `🎉 COMPROBANTE DE COMPRA
+
+${registro}
+
+Cliente:
+${nombre}
+
+Tablas adquiridas:
+${tablas}
+
+Estado:
+TRANSACCIÓN EXITOSA
+
+Gracias por tu compra.`;
+
+    navigator.clipboard.writeText(mensaje).then(()=>{
+      alert('✓ Comprobante copiado. Ahora puedes pegarlo en WhatsApp del administrador.');
+    }).catch(()=>{
+      alert(mensaje);
+    });
+  }
+
+  document.getElementById('btn-copy-digital-link').addEventListener('click', copiarEnlaceDigital);
+  document.getElementById('btn-whatsapp-digital-link').addEventListener('click', enviarWhatsAppDigital);
+
+  document.getElementById('btn-finish-order').addEventListener('click', finishOrder);
+  
+  document.querySelectorAll('.btn-restart-action').forEach(btn => {
+    btn.addEventListener('click', resetForm);
+  });
+
+  listenConfig();
+  listenTables();
+
 </script>
 </body>
 </html>
