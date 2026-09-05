@@ -523,7 +523,7 @@
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
   import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js';
   import { 
-    getFirestore, doc, setDoc, updateDoc, collection, 
+    getFirestore, doc, getDoc, setDoc, updateDoc, collection, 
     onSnapshot, runTransaction, getDocs 
   } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
@@ -724,7 +724,20 @@
   }
 
   document.getElementById('btn-copy-lookup-link')?.addEventListener('click',()=>{navigator.clipboard.writeText(ultimoLookupEnlace); alert('✓ Enlace copiado correctamente.');});
-  document.getElementById('btn-whatsapp-lookup-link')?.addEventListener('click',()=>{window.open('https://wa.me/'+normalizarWhatsAppColombia(ultimoLookupTelefono)+'?text='+encodeURIComponent(ultimoLookupMensaje),'_blank');});
+  document.getElementById('btn-whatsapp-lookup-link')?.addEventListener('click',()=>{
+    try{
+      const telefono = normalizarWhatsAppColombia(ultimoLookupTelefono || document.getElementById('lookup-input').value);
+      if(!telefono){
+        alert('No encontramos un número de WhatsApp válido.');
+        return;
+      }
+      const url = 'https://wa.me/' + telefono + '?text=' + encodeURIComponent(ultimoLookupMensaje || ultimoLookupEnlace);
+      window.open(url, '_blank');
+    }catch(error){
+      console.error('Error abriendo WhatsApp:', error);
+      alert('No fue posible abrir WhatsApp.');
+    }
+});
 
   function listenConfig() {
     onSnapshot(doc(db, 'configuracion', 'evento'), (docSnap) => {
