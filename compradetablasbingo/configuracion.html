@@ -1131,20 +1131,11 @@
             return;
           }
 
-          const formaPago = prompt('Seleccione forma de pago:\n\nEscriba EFECTIVO o CONSIGNACIÓN');
+          const formaPago = await seleccionarFormaPago();
 
           if (!formaPago) return;
 
-          const forma = formaPago.trim().toUpperCase();
-
-          if (forma !== 'EFECTIVO' && forma !== 'CONSIGNACIÓN' && forma !== 'CONSIGNACION') {
-            alert('Debe escribir EFECTIVO o CONSIGNACIÓN');
-            return;
-          }
-
-          const destino = forma === 'CONSIGNACION' ? 'CONSIGNACIÓN' : forma;
-
-          await updateOrderStatus(btn.dataset.order, 'PAGADO', destino);
+          await updateOrderStatus(btn.dataset.order, 'PAGADO', formaPago);
         });
       });
 
@@ -1172,6 +1163,29 @@ el.querySelectorAll('.btn-register-system').forEach(btn => {
   document.getElementById('search-input').addEventListener('keyup', filterOrders);
   document.getElementById('filter-status').addEventListener('change', filterOrders);
 
+
+
+function seleccionarFormaPago(){
+  return new Promise((resolve)=>{
+    const modal=document.createElement('div');
+    modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:9999;';
+    modal.innerHTML=`<div style="background:white;padding:20px;border-radius:12px;width:300px;color:#111;text-align:center">
+      <h3 style="margin-bottom:15px">Forma de pago</h3>
+      <select id="select-forma-pago" style="width:100%;padding:10px;margin-bottom:15px">
+        <option value="">Seleccione</option>
+        <option value="EFECTIVO">EFECTIVO</option>
+        <option value="CONSIGNACIÓN">CONSIGNACIÓN</option>
+      </select>
+      <button id="confirmar-forma-pago" style="padding:10px;width:100%">Continuar</button>
+    </div>`;
+    document.body.appendChild(modal);
+    modal.querySelector('#confirmar-forma-pago').onclick=()=>{
+      const valor=modal.querySelector('#select-forma-pago').value;
+      modal.remove();
+      resolve(valor||null);
+    };
+  });
+}
   async function updateOrderStatus(orderDocId, newStatus, destino='DEBEN') {
     try {
       const orderRef = doc(db, 'pedidos', orderDocId);
@@ -1292,7 +1306,9 @@ el.querySelectorAll('.btn-register-system').forEach(btn => {
         whatsapp:x.telefono||'',
         referencia:x.referencia||x.direccion||'',
         tablas:Array.isArray(x.tablas)?x.tablas:[],
-        fecha:new Date().toISOString()
+        fecha:new Date().toISOString(),
+        estado:x.estado||'PENDIENTE PAGO',
+        destino:(x.estado==='PAGADO' ? (x.destino||'DEBEN') : 'DEBEN')
       });
     });
     const tablasExportadas=[];
