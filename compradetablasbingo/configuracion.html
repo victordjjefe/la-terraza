@@ -1118,20 +1118,37 @@
         btn.addEventListener('click', () => viewProof(btn.dataset.order));
       });
       el.querySelectorAll('.btn-payment-status').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const currentStatus = btn.dataset.status === 'PAGADO' ? 'PAGADO' : 'PENDIENTE PAGO';
-          const newStatus = currentStatus === 'PAGADO' ? 'PENDIENTE PAGO' : 'PAGADO';
+        btn.addEventListener('click', async () => {
+          const order = allOrders.find(o => o.firestoreId === btn.dataset.order);
+          if (!order) return;
 
-          // Para volver de PAGADO a PENDIENTE se exige confirmación de seguridad.
+          const currentStatus = btn.dataset.status === 'PAGADO' ? 'PAGADO' : 'PENDIENTE PAGO';
+
           if (currentStatus === 'PAGADO') {
-            const confirmar = confirm('¿Estás seguro que deseas cambiar el estado?');
+            const confirmar = confirm('¿Estás seguro que deseas cambiar el estado a pendiente?');
             if (!confirmar) return;
+            await updateOrderStatus(btn.dataset.order, 'PENDIENTE PAGO', 'DEBEN');
+            return;
           }
 
-          updateOrderStatus(btn.dataset.order, newStatus);
+          const formaPago = prompt('Seleccione forma de pago:\n\nEscriba EFECTIVO o CONSIGNACIÓN');
+
+          if (!formaPago) return;
+
+          const forma = formaPago.trim().toUpperCase();
+
+          if (forma !== 'EFECTIVO' && forma !== 'CONSIGNACIÓN' && forma !== 'CONSIGNACION') {
+            alert('Debe escribir EFECTIVO o CONSIGNACIÓN');
+            return;
+          }
+
+          const destino = forma === 'CONSIGNACION' ? 'CONSIGNACIÓN' : forma;
+
+          await updateOrderStatus(btn.dataset.order, 'PAGADO', destino);
         });
       });
-      el.querySelectorAll('.btn-register-system').forEach(btn => {
+
+el.querySelectorAll('.btn-register-system').forEach(btn => {
         btn.addEventListener('click', () => {
           const currentPassed = btn.dataset.passed === 'true';
 
@@ -1155,10 +1172,13 @@
   document.getElementById('search-input').addEventListener('keyup', filterOrders);
   document.getElementById('filter-status').addEventListener('change', filterOrders);
 
-  async function updateOrderStatus(orderDocId, newStatus) {
+  async function updateOrderStatus(orderDocId, newStatus, destino='DEBEN') {
     try {
       const orderRef = doc(db, 'pedidos', orderDocId);
-      await updateDoc(orderRef, { estado: newStatus });
+      await updateDoc(orderRef, { 
+        estado: newStatus,
+        destino: destino
+      });
     } catch (err) {
       console.error("Error actualizando estado del pedido:", err);
       alert("Error al actualizar estado del pedido: " + err.message);
@@ -1283,7 +1303,7 @@
           nombre:v.nombre||v.cliente||'',
           referencia:v.referencia||v.direccion||'',
           whatsapp:v.whatsapp||v.telefono||'',
-          destino:'DEBEN'
+          destino:x.destino||'DEBEN'
         });
       });
     });
