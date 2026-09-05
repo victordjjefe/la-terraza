@@ -634,6 +634,9 @@
   // Une las tablas de todas las compras asociadas al mismo WhatsApp.
   // Las tablas de la compra recién terminada se incluyen primero y los
   // duplicados se eliminan para que siempre exista un único enlace digital.
+  // Caché local de pedidos para reducir lecturas repetidas sin afectar la seguridad de compra.
+  let pedidosCacheCliente = [];
+
   function consolidarTablasPorTelefono(pedidos, telefonoActual, tablasNuevas){
     const telefono = normalizarWhatsAppColombia(telefonoActual);
     const todasLasTablas = [...(Array.isArray(tablasNuevas) ? tablasNuevas : [])];
@@ -648,14 +651,7 @@
   }
 
   async function obtenerTodasLasTablasClienteRegistro(telefonoActual, tablasNuevas){
-    const snapshot = await getDocs(collection(db, 'pedidos'));
-    const pedidos = [];
-
-    snapshot.forEach(docSnap => {
-      pedidos.push(docSnap.data());
-    });
-
-    return consolidarTablasPorTelefono(pedidos, telefonoActual, tablasNuevas);
+    return consolidarTablasPorTelefono(pedidosCacheCliente, telefonoActual, tablasNuevas);
   }
 
   async function consultarTablas(){
@@ -713,6 +709,13 @@
 
   document.getElementById('btn-copy-lookup-link')?.addEventListener('click',()=>{navigator.clipboard.writeText(ultimoLookupEnlace); alert('✓ Enlace copiado correctamente.');});
   document.getElementById('btn-whatsapp-lookup-link')?.addEventListener('click',()=>{window.open('https://wa.me/'+normalizarWhatsAppColombia(ultimoLookupTelefono)+'?text='+encodeURIComponent(ultimoLookupMensaje),'_blank');});
+
+  function listenPedidosClienteOptimizado(){
+    onSnapshot(collection(db,'pedidos'), (snapshot)=>{
+      pedidosCacheCliente = [];
+      snapshot.forEach(docSnap=>pedidosCacheCliente.push(docSnap.data()));
+    });
+  }
 
   function listenConfig() {
     onSnapshot(doc(db, 'configuracion', 'evento'), (docSnap) => {
@@ -1483,6 +1486,7 @@ Gracias por tu compra.`;
     btn.addEventListener('click', resetForm);
   });
 
+  listenPedidosClienteOptimizado();
   listenConfig();
   listenTables();
 
