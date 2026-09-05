@@ -1197,7 +1197,15 @@ function seleccionarFormaPago(){
         estado: newStatus,
         destino: String(destino||'DEBEN').toUpperCase()
       });
-      
+
+      // Actualiza la copia local para reflejar el cambio inmediatamente.
+      // Mantiene la optimización existente con un solo listener de Firestore.
+      const localOrder = allOrders.find(o => o.firestoreId === orderDocId);
+      if (localOrder) {
+        localOrder.estado = newStatus;
+        localOrder.destino = String(destino||'DEBEN').toUpperCase();
+      }
+
       // Refresca inmediatamente la vista después del cambio de pago.
       if (typeof renderOrders === 'function') {
         renderOrders();
