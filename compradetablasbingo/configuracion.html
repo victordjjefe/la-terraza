@@ -837,36 +837,47 @@
         if (!confirmar) return;
 
         try {
+          btn.disabled = true;
+          btn.textContent = 'Liberando...';
+
           const tableRef = doc(db, 'tablas', tableCode);
-          await updateDoc(tableRef, {
+          const updatedTablas = order.tablas.filter(t => t !== tableCode);
+          const orderRef = doc(db, 'pedidos', order.firestoreId);
+          const newTotal = updatedTablas.length * (configValor() || 0);
+
+          // Una sola escritura agrupada para evitar esperas y bloqueos en celular.
+          const batch = writeBatch(db);
+
+          batch.update(tableRef, {
             status: 'DISPONIBLE',
             reservedUntil: null,
             reservedBy: null,
             pedido: null
           });
 
-          const updatedTablas = order.tablas.filter(t => t !== tableCode);
-          const orderRef = doc(db, 'pedidos', order.firestoreId);
-
-          const newTotal = updatedTablas.length * (configValor() || 0);
-
           if (updatedTablas.length === 0) {
-            // SI QUEDA SIN TABLAS, CAMBIA AUTOMÁTICAMENTE A CANCELADO
-            await updateDoc(orderRef, {
+            batch.update(orderRef, {
               tablas: [],
               total: 0,
               estado: 'CANCELADO'
             });
           } else {
-            await updateDoc(orderRef, {
+            batch.update(orderRef, {
               tablas: updatedTablas,
               total: newTotal
             });
           }
 
+          await batch.commit();
+
+          // Actualización inmediata de pantalla.
+          order.tablas = updatedTablas;
+          order.total = newTotal;
+          if(updatedTablas.length === 0) order.estado = 'CANCELADO';
+          renderOrders();
+
           alert(`La tabla ${tableCode} ha sido liberada correctamente.`);
           document.getElementById('modal-release-table').style.display = 'none';
-          renderOrders();
         } catch (err) {
           console.error("Error al liberar la tabla individual:", err);
           alert("Error al liberar la tabla: " + err.message);
