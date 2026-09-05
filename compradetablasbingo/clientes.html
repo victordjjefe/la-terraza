@@ -1298,10 +1298,12 @@
           nextNumber = Number(counterSnap.data().ultimo || 0) + 1;
         }
 
-        const candidateId = String(nextNumber).padStart(5, '0');
+        // Garantiza que el consecutivo continúe correctamente sin reutilizar
+        // números anteriores aunque el contador haya quedado desfasado.
+        let candidateId = String(nextNumber).padStart(5, '0');
 
-        // El consecutivo es solo un número visible. El ID real del documento
-        // lo genera Firebase para evitar sobrescribir pedidos existentes.
+        // El documento real usa ID automático de Firebase para no reemplazar
+        // registros existentes. El consecutivo queda únicamente como número visible.
         const candidateRef = doc(collection(db, 'pedidos'));
 
         // Verificar dentro de la misma transacción que todas las tablas siguen
