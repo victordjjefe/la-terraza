@@ -441,7 +441,7 @@
     <!-- SECCIÓN PEDIDOS -->
     <div id="tab-pedidos" style="display: none;">
       <div class="card">
-        <div class="card-title">Gestión de Pedidos</div>
+        <div class="card-title">Gestión de Pedidos <button class="btn btn-sm btn-dark" onclick="verificarIntegridadTablas()">Verificar integridad</button></div>
         <div class="search-box">
           <input type="text" id="search-input" class="form-control" placeholder="Buscar por pedido, nombre o whatsapp...">
         </div>
@@ -841,23 +841,7 @@
           btn.textContent = 'Liberando...';
 
           const tableRef = doc(db, 'tablas', tableCode);
-          const tableSnap = await getDoc(tableRef);
-
-          if (!tableSnap.exists()) {
-            throw new Error('La tabla no existe en el sistema. No se realizó ningún cambio.');
-          }
-
-          const tableData = tableSnap.data();
-
-          if (tableData.pedido && tableData.pedido !== order.firestoreId) {
-            throw new Error('La tabla pertenece a otro registro. No se puede liberar desde este pedido.');
-          }
-
-          if (!order.tablas.includes(tableCode)) {
-            throw new Error('La tabla no pertenece a este registro.');
-          }
-
-          const updatedTablas = order.tablas.filter(t => String(t) !== String(tableCode));
+          const updatedTablas = order.tablas.filter(t => t !== tableCode);
           const orderRef = doc(db, 'pedidos', order.firestoreId);
           const newTotal = updatedTablas.length * (configValor() || 0);
 
@@ -1379,6 +1363,47 @@ function seleccionarFormaPago(){
     a.click();
     URL.revokeObjectURL(a.href);
   });
+
+  window.verificarIntegridadTablas = async function() {
+    try {
+      const [tablasSnap, pedidosSnap] = await Promise.all([
+        getDocs(collection(db, 'tablas')),
+        getDocs(collection(db, 'pedidos'))
+      ]);
+
+      const tablasConPedido = new Set();
+      pedidosSnap.forEach(docSnap => {
+        const pedido = docSnap.data();
+        if (Array.isArray(pedido.tablas)) {
+          pedido.tablas.forEach(t => tablasConPedido.add(String(t)));
+        }
+      });
+
+      const inconsistencias = [];
+      tablasSnap.forEach(docSnap => {
+        const tabla = docSnap.data();
+        const codigo = String(docSnap.id);
+        const estado = String(tabla.status || '').toUpperCase();
+
+        const disponible = estado === 'DISPONIBLE';
+        const asignada = tablasConPedido.has(codigo);
+
+        if (!disponible && !asignada) {
+          inconsistencias.push(codigo);
+        }
+      });
+
+      if (inconsistencias.length === 0) {
+        alert('Validación completa. No se encontraron tablas perdidas.');
+      } else {
+        alert('Tablas sin ubicación válida:\n\n' + inconsistencias.join(', ') + '\n\nRevise antes de recuperarlas.');
+      }
+    } catch (error) {
+      console.error('Error verificando integridad:', error);
+      alert('No se pudo realizar la verificación: ' + error.message);
+    }
+  };
+
 </script>
 </body>
 </html>
