@@ -797,6 +797,10 @@
       snapshot.forEach(docSnap => {
         allOrders.push({ firestoreId: docSnap.id, ...docSnap.data() });
       });
+
+      // Mantiene los registros en orden consecutivo: 1, 2, 3, 4...
+      allOrders.sort((a, b) => (parseInt(a.id) || 0) - (parseInt(b.id) || 0));
+
       renderOrders();
       renderListado();
     });
