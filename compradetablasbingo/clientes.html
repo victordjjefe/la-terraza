@@ -724,8 +724,8 @@
 
     // Reinicia acciones anteriores para evitar que botones de una consulta exitosa
     // queden visibles cuando la siguiente búsqueda no tiene registros.
-    document.getElementById('btn-copy-lookup-link').style.display='none';
-    document.getElementById('btn-whatsapp-lookup-link').style.display='none';
+    document.getElementById('btn-copy-lookup-link').style.setProperty('display','none','important');
+    document.getElementById('btn-whatsapp-lookup-link').style.setProperty('display','none','important');
     document.getElementById('lookup-link-box').innerHTML='';
     document.getElementById('lookup-tables').textContent='';
     ultimoLookupEnlace = '';
@@ -753,9 +753,9 @@
       `;
       document.getElementById('lookup-tables').textContent='';
       document.getElementById('lookup-link-box').innerHTML='';
-      document.getElementById('btn-copy-lookup-link').style.display='none';
-      document.getElementById('btn-whatsapp-lookup-link').style.display='none';
-      document.getElementById('btn-close-lookup').style.display='flex';
+      document.getElementById('btn-copy-lookup-link').style.setProperty('display','none','important');
+      document.getElementById('btn-whatsapp-lookup-link').style.setProperty('display','none','important');
+      document.getElementById('btn-close-lookup').style.setProperty('display','flex','important');
       ultimoLookupEnlace = '';
       ultimoLookupMensaje = '';
       ultimoLookupTelefono = '';
