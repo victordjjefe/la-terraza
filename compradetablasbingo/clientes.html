@@ -1302,7 +1302,7 @@
 
         // El consecutivo es solo un número visible. El ID real del documento
         // lo genera Firebase para evitar sobrescribir pedidos existentes.
-        const candidateRef = doc(db, 'pedidos');
+        const candidateRef = doc(collection(db, 'pedidos'));
 
         // Verificar dentro de la misma transacción que todas las tablas siguen
         // reservadas por este comprador y que la reserva no ha vencido.
