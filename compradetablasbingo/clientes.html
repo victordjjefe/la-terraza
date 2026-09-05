@@ -722,6 +722,16 @@
 
     document.getElementById('lookup-modal').classList.add('active');
 
+    // Reinicia acciones anteriores para evitar que botones de una consulta exitosa
+    // queden visibles cuando la siguiente búsqueda no tiene registros.
+    document.getElementById('btn-copy-lookup-link').style.display='none';
+    document.getElementById('btn-whatsapp-lookup-link').style.display='none';
+    document.getElementById('lookup-link-box').innerHTML='';
+    document.getElementById('lookup-tables').textContent='';
+    ultimoLookupEnlace = '';
+    ultimoLookupMensaje = '';
+    ultimoLookupTelefono = '';
+
     if(tablasEncontradas.length){
       document.getElementById('lookup-title').textContent = 'TUS TABLAS REGISTRADAS';
       document.getElementById('lookup-message').innerHTML = '<b>' + pedidoEncontrado.cliente + '</b><br>Fecha del Bingo: ' + (config?.fecha || '') + '<br>Hora: ' + (config?.hora || '') + '<br><br>🎟️ Tablas asignadas:';
