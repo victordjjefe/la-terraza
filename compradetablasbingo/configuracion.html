@@ -1197,6 +1197,11 @@ function seleccionarFormaPago(){
         estado: newStatus,
         destino: String(destino||'DEBEN').toUpperCase()
       });
+      
+      // Refresca inmediatamente la vista después del cambio de pago.
+      if (typeof renderOrders === 'function') {
+        renderOrders();
+      }
     } catch (err) {
       console.error("Error actualizando estado del pedido:", err);
       alert("Error al actualizar estado del pedido: " + err.message);
