@@ -671,9 +671,14 @@
     const nombreBusqueda = cleanSearch(valor);
     const telefonoBusqueda = cleanPhone(valor);
 
-    // Usa la información sincronizada en memoria para buscar.
-    // Evita una lectura completa de Firestore cada vez que un usuario consulta sus tablas.
-    const pedidosActuales = pedidosCacheCliente || [];
+    // Carga los pedidos directamente desde Firestore para realizar la consulta.
+    // Se evita depender de una variable de caché inexistente.
+    const pedidosSnapshot = await getDocs(collection(db, 'pedidos'));
+    const pedidosActuales = [];
+
+    pedidosSnapshot.forEach(docSnap => {
+      pedidosActuales.push(docSnap.data());
+    });
 
     let tablasEncontradas = [];
     let pedidoEncontrado = null;
