@@ -744,14 +744,18 @@
       document.getElementById('btn-whatsapp-lookup-link').style.display='block';
       ultimoLookupTelefono = cleanPhone(pedidoEncontrado.telefono);
     }else{
-      document.getElementById('lookup-title').textContent = 'SIN REGISTROS';
-      document.getElementById('lookup-message').innerHTML =
-        'No hay registros asociados a este número de WhatsApp.';
+      document.getElementById('lookup-title').textContent = 'AÚN NO TIENES TABLAS REGISTRADAS 🎱';
+      document.getElementById('lookup-message').innerHTML = `
+        <div style="line-height:1.5; color:#64748b;">
+          No encontramos registros asociados a este número de WhatsApp.<br><br>
+          Participa en nuestro gran bingo y registra tus tablas para disfrutar la experiencia completa.
+        </div>
+      `;
       document.getElementById('lookup-tables').textContent='';
       document.getElementById('lookup-link-box').innerHTML='';
       document.getElementById('btn-copy-lookup-link').style.display='none';
       document.getElementById('btn-whatsapp-lookup-link').style.display='none';
-      document.getElementById('btn-close-lookup').style.display='none';
+      document.getElementById('btn-close-lookup').style.display='flex';
       ultimoLookupEnlace = '';
       ultimoLookupMensaje = '';
       ultimoLookupTelefono = '';
