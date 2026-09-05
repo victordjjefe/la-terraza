@@ -465,7 +465,6 @@
         <div class="card-title">Listado de Registros</div>
         <button class="btn btn-primary listing-copy-btn" id="btn-copy-listado">Copiar Listado Completo</button>
         <button class="btn btn-success listing-copy-btn" id="btn-copy-nombres" style="margin-top:10px;">Copiar Solo Nombres</button>
-        <button class="btn btn-dark listing-copy-btn" id="btn-copy-tablas-orden" style="margin-top:10px;">Copiar para Sistema Contable</button>
         <p id="listado-total" style="margin:12px 0; font-size:0.9rem; color:var(--text-muted);"></p>
         <div class="listing-table-wrapper">
           <table class="listing-table">
@@ -909,22 +908,40 @@
     allOrders.forEach(order => {
       const celular = getOrderWhatsapp(order);
       if (!celular) return;
-      const nombre = typeof order.cliente === 'string' ? order.cliente : (order.cliente?.name || 'Cliente');
+
+      const nombre = typeof order.cliente === 'string'
+        ? order.cliente
+        : (order.cliente?.name || 'Cliente');
+
       if (!clientes[celular]) {
-        clientes[celular] = { nombre, celular, tablas: [] };
+        clientes[celular] = {
+          consecutivo: order.id || '',
+          nombre,
+          celular,
+          tablas: []
+        };
       }
+
       clientes[celular].tablas.push(...(order.tablas || []));
     });
 
     const listado = Object.values(clientes).map(c => ({
       ...c,
-      tablas: [...new Set(c.tablas)].sort((a,b)=> (parseInt(String(a).replace(/\D/g,''))||0)-(parseInt(String(b).replace(/\D/g,''))||0))
+      tablas: [...new Set(c.tablas)].sort((a,b)=>
+        (parseInt(String(a).replace(/\D/g,''))||0) -
+        (parseInt(String(b).replace(/\D/g,''))||0)
+      )
     }));
 
+    listado.forEach((c, i) => {
+      if (!c.consecutivo) c.consecutivo = i + 1;
+    });
+
     total.textContent = `Total registrados: ${listado.length}`;
-    tbody.innerHTML = listado.map((c,i)=>`
+
+    tbody.innerHTML = listado.map((c)=>`
       <tr>
-        <td>${i+1}</td>
+        <td>${c.consecutivo}</td>
         <td>${c.nombre}</td>
         <td>${c.celular}</td>
         <td>${c.tablas.join(', ')}</td>
@@ -935,55 +952,24 @@
 
   document.getElementById('btn-copy-listado').addEventListener('click', async () => {
     const listado = window.currentListadoCopy || [];
-    const texto = listado.map((c, i) => `${i + 1}\t${c.nombre}\t${c.tablas.join(', ')}`).join('\n');
+
+    const texto = listado.map(c =>
+      `${c.consecutivo}\t${c.nombre}\t${c.celular}\t${c.tablas.join(', ')}`
+    ).join('\n');
+
     await navigator.clipboard.writeText(texto);
     alert('Listado completo copiado.');
   });
 
   document.getElementById('btn-copy-nombres').addEventListener('click', async () => {
     const listado = window.currentListadoCopy || [];
-    const texto = listado.map(c => c.nombre).join('\n');
-    await navigator.clipboard.writeText(texto);
-    alert('Nombres copiados.');
-  });
 
-  document.getElementById('btn-copy-tablas-orden').addEventListener('click', async () => {
-    const mapaTablas = {};
-
-    allOrders.forEach(order => {
-      const nombre = typeof order.cliente === 'string' ? order.cliente : (order.cliente?.name || '');
-      const whatsapp = getOrderWhatsapp(order);
-      const referencia = order.referencia || '';
-
-      (order.tablas || []).forEach(tabla => {
-        mapaTablas[tabla] = { nombre, whatsapp, referencia };
-      });
-    });
-
-    let desde = Number(document.getElementById('cfg-desde')?.value || 1);
-    let hasta = Number(document.getElementById('cfg-hasta')?.value || 0);
-
-    if (!hasta && Array.isArray(allTables) && allTables.length) {
-      const numeros = allTables.map(t => Number(String(t.code || '').replace(/\D/g,''))).filter(Boolean);
-      desde = Math.min(...numeros);
-      hasta = Math.max(...numeros);
-    }
-
-    const filas = [];
-
-    for (let i = desde; i <= hasta; i++) {
-      const tabla = 'T' + String(i).padStart(3, '0');
-      const dato = mapaTablas[tabla] || {};
-      filas.push(`${tabla}\t${dato.nombre || ''}\t${dato.referencia || ''}\t${dato.whatsapp || ''}`);
-    }
-
-    const texto = [
-      'TABLA\tNOMBRE\tREFERENCIA\tWHATSAPP',
-      ...filas
-    ].join('\n');
+    const texto = listado.map(c =>
+      `${c.consecutivo}\t${c.nombre}`
+    ).join('\n');
 
     await navigator.clipboard.writeText(texto);
-    alert('Datos para sistema contable copiados.');
+    alert('Consecutivo y nombres copiados.');
   });
 
   function renderOrders() {
@@ -1107,7 +1093,6 @@
           actionButtonsHTML += `<button class="btn btn-sm btn-dark btn-view-proof" data-order="${o.firestoreId}">Ver Comprobante</button>`;
         }
         actionButtonsHTML += `<button class="${paymentButtonClass} btn-payment-status" data-order="${o.firestoreId}" data-status="${currentStatus}">Estado de pago</button>`;
-        actionButtonsHTML += `<button class="${registrationButtonClass} btn-register-system" data-order="${o.firestoreId}" data-passed="${isPassed}">Registro en el sistema</button>`;
         actionButtonsHTML += `<button class="table-release-btn btn-release-order" data-order="${o.firestoreId}">Liberar tablas</button>`;
       }
 
@@ -1158,19 +1143,6 @@
         });
       });
 
-el.querySelectorAll('.btn-register-system').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const currentPassed = btn.dataset.passed === 'true';
-
-          // Para volver de REGISTRADO a NO REGISTRADO se exige confirmación de seguridad.
-          if (currentPassed) {
-            const confirmar = confirm('¿Estás seguro que deseas cambiar el estado?');
-            if (!confirmar) return;
-          }
-
-          toggleOrderPassedStatus(btn.dataset.order, !currentPassed);
-        });
-      });
       el.querySelectorAll('.btn-release-order').forEach(btn => {
         btn.addEventListener('click', () => openReleaseModal(btn.dataset.order));
       });
