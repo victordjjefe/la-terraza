@@ -1226,37 +1226,24 @@
       clearInterval(timerInterval);
       orderCompleted = true;
 
-      // Tomamos como punto de partida el mayor registro existente.
-      // La asignación definitiva del consecutivo y la venta de las tablas se hacen
-      // juntas dentro de UNA sola transacción de Firestore.
-      const pedidosSnap = await getDocs(collection(db, 'pedidos'));
-      let nextOrderNumber = 1;
-
-      pedidosSnap.forEach(docSnap => {
-        const n = parseInt(docSnap.id, 10);
-        if (Number.isFinite(n) && n >= nextOrderNumber) {
-          nextOrderNumber = n + 1;
-        }
-      });
+      // Optimización: ya no se leen todos los pedidos para calcular el consecutivo.
+      // El contador independiente evita consumir lecturas de toda la colección.
+      // El consecutivo se actualiza dentro de la misma transacción de compra.
+      const counterRef = doc(db, 'sistema', 'contadorPedidos');
 
       const provisionalId = Date.now().toString();
       const comprobanteURL = await subirComprobanteStorage(proofFile, provisionalId);
 
       const orderId = await runTransaction(db, async (transaction) => {
-        let candidateNumber = nextOrderNumber;
-        let candidateId;
-        let candidateRef;
+        const counterSnap = await transaction.get(counterRef);
 
-        // Buscar el primer consecutivo libre. Si otra compra simultánea alcanza
-        // a tomarlo, Firestore reintenta automáticamente esta transacción.
-        while (true) {
-          candidateId = String(candidateNumber).padStart(5, '0');
-          candidateRef = doc(db, 'pedidos', candidateId);
-          const candidateSnap = await transaction.get(candidateRef);
-
-          if (!candidateSnap.exists()) break;
-          candidateNumber++;
+        let nextNumber = 1;
+        if (counterSnap.exists()) {
+          nextNumber = Number(counterSnap.data().ultimo || 0) + 1;
         }
+
+        const candidateId = String(nextNumber).padStart(5, '0');
+        const candidateRef = doc(db, 'pedidos', candidateId);
 
         // Verificar dentro de la misma transacción que todas las tablas siguen
         // reservadas por este comprador y que la reserva no ha vencido.
@@ -1318,6 +1305,9 @@
         // Pedido y tablas vendidas se guardan juntos: si algo falla, no se
         // confirma ninguna de las dos partes de la compra.
         transaction.set(candidateRef, newOrder);
+
+        // Guarda únicamente el último consecutivo utilizado.
+        transaction.set(counterRef, { ultimo: nextNumber }, { merge: true });
 
         for (let i = 0; i < tableRefs.length; i++) {
           const tRef = tableRefs[i];
