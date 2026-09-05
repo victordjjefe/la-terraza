@@ -395,9 +395,9 @@
           🔎 ¿Ya registraste tus tablas?
         </div>
         <p style="color:var(--text-muted); margin-bottom:12px;">
-          Consulta aquí usando tu nombre completo o número de WhatsApp.
+          Consulta aquí usando tu número de WhatsApp registrado.
         </p>
-        <input id="lookup-input" class="form-control" placeholder="Nombre o WhatsApp">
+        <input id="lookup-input" class="form-control" type="tel" inputmode="numeric" pattern="[0-9+ ]*" placeholder="Ej: 3001234567">
         <button class="btn btn-success" id="btn-lookup" style="margin-top:12px;">
           Consultar mis tablas
         </button>
@@ -627,9 +627,22 @@
 
 
   function normalizarWhatsAppColombia(numero){
-    let n = cleanPhone(numero);
-    if(n.startsWith('57') && n.length >= 12) return n;
+    let original = String(numero || '').trim();
+    let tieneCodigoInternacional = original.startsWith('+') || original.startsWith('00');
+    let n = cleanPhone(original);
+
+    // Acepta números internacionales escritos por el usuario.
+    if(tieneCodigoInternacional){
+      if(n.startsWith('00')) n = n.substring(2);
+      return n;
+    }
+
+    // Colombia: el usuario solo escribe los 10 dígitos.
     if(n.length === 10 && n.startsWith('3')) return '57' + n;
+
+    // También acepta si alguien escribe el código de Colombia.
+    if(n.startsWith('57') && n.length >= 12) return n;
+
     return n;
   }
 
@@ -664,40 +677,31 @@
     const valor = document.getElementById('lookup-input').value.trim();
 
     if(!valor){
-      alert('Ingrese su nombre o WhatsApp.');
+      alert('Ingrese su número de WhatsApp registrado.');
       return;
     }
 
-    const nombreBusqueda = cleanSearch(valor);
-    const telefonoBusqueda = cleanPhone(valor);
+    const telefonoBusqueda = normalizarWhatsAppColombia(valor);
 
-    // Carga los pedidos directamente desde Firestore para realizar la consulta.
-    // Se evita depender de una variable de caché inexistente.
-    const pedidosSnapshot = await getDocs(collection(db, 'pedidos'));
-    const pedidosActuales = [];
+    if(!telefonoBusqueda){
+      alert('Ingrese un número de WhatsApp válido.');
+      return;
+    }
 
-    pedidosSnapshot.forEach(docSnap => {
-      pedidosActuales.push(docSnap.data());
-    });
+    // Consulta optimizada: busca directamente el cliente por WhatsApp.
+    // Evita leer todos los pedidos de Firestore.
+    const clienteRef = doc(db, 'clientes', telefonoBusqueda);
+    const clienteSnap = await getDoc(clienteRef);
 
     let tablasEncontradas = [];
     let pedidoEncontrado = null;
 
-    pedidosActuales.forEach(pedido=>{
-
-      const nombre = cleanSearch(pedido.cliente);
-      const telefono = cleanPhone(pedido.telefono);
-
-      const coincideNombre = nombre && nombre.includes(nombreBusqueda);
-      const coincideTelefono = telefonoBusqueda && telefono.includes(telefonoBusqueda);
-
-      if(coincideNombre || coincideTelefono){
-        pedidoEncontrado = pedido;
-        if(Array.isArray(pedido.tablas)){
-          tablasEncontradas.push(...pedido.tablas);
-        }
+    if(clienteSnap.exists()){
+      pedidoEncontrado = clienteSnap.data();
+      if(Array.isArray(pedidoEncontrado.tablas)){
+        tablasEncontradas = pedidoEncontrado.tablas;
       }
-    });
+    }
 
     document.getElementById('lookup-modal').classList.add('active');
 
@@ -1305,6 +1309,19 @@
         // Pedido y tablas vendidas se guardan juntos: si algo falla, no se
         // confirma ninguna de las dos partes de la compra.
         transaction.set(candidateRef, newOrder);
+
+        // Índice liviano por WhatsApp para consultas rápidas del cliente.
+        // Evita recorrer toda la colección pedidos al buscar tablas.
+        const clientIndexRef = doc(db, 'clientes', normalizarWhatsAppColombia(buyerPhone));
+        transaction.set(clientIndexRef, {
+          cliente: buyerName,
+          telefono: normalizarWhatsAppColombia(buyerPhone),
+          tablas: tablesToBuy,
+          linkDigital: enlaceDigital,
+          fechaBingo: config?.fecha || '',
+          linkTransmision: config?.linkTransmision || '',
+          pedidoId: candidateId
+        });
 
         // Guarda únicamente el último consecutivo utilizado.
         transaction.set(counterRef, { ultimo: nextNumber }, { merge: true });
