@@ -1182,6 +1182,17 @@
     };
   }
 
+  // Controla el tiempo máximo de espera de operaciones Firebase.
+  // Evita que una transacción quede bloqueada indefinidamente.
+  function conTiempoLimite(promesa, tiempo = 20000) {
+    return Promise.race([
+      promesa,
+      new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('La operación tardó demasiado tiempo.')), tiempo);
+      })
+    ]);
+  }
+
   async function finishOrder() {
     if (config) {
       const ahora = new Date();
