@@ -1088,7 +1088,7 @@
       if (tableList.length === 0) {
         actionButtonsHTML = `<span style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; font-weight:600;">Registro sin tablas (Cancelado automáticamente)</span>`;
       } else {
-        if (o.comprobante) {
+        if (o.comprobanteURL || o.comprobante) {
           actionButtonsHTML += `<button class="btn btn-sm btn-dark btn-view-proof" data-order="${o.firestoreId}">Ver Comprobante</button>`;
         }
         actionButtonsHTML += `<button class="${paymentButtonClass} btn-payment-status" data-order="${o.firestoreId}" data-status="${currentStatus}">Estado de pago</button>`;
@@ -1206,7 +1206,7 @@ function seleccionarFormaPago(){
   function viewProof(orderDocId) {
     const order = allOrders.find(o => o.firestoreId === orderDocId);
     if (!order) return;
-    const proofImg = order.comprobante;
+    const proofImg = order.comprobanteURL || order.comprobante;
     if (!proofImg) return;
 
     const body = document.getElementById('modal-proof-body');
