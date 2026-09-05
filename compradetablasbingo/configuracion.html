@@ -883,8 +883,21 @@
           if(updatedTablas.length === 0) order.estado = 'CANCELADO';
           renderOrders();
 
-          alert(`La tabla ${tableCode} ha sido liberada correctamente.`);
-          document.getElementById('modal-release-table').style.display = 'none';
+          const modalConfirm = document.createElement('div');
+          modalConfirm.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:9999;';
+          modalConfirm.innerHTML = `
+            <div style="background:white;padding:25px;border-radius:12px;width:320px;text-align:center;">
+              <div style="font-size:2rem;margin-bottom:10px;">✅</div>
+              <h3 style="margin-bottom:10px;">Tabla liberada</h3>
+              <p style="margin-bottom:20px;">La tabla ${tableCode} fue liberada correctamente y ya está disponible nuevamente.</p>
+              <button id="btn-confirm-release-success" class="btn btn-success">Aceptar</button>
+            </div>`;
+          document.body.appendChild(modalConfirm);
+
+          modalConfirm.querySelector('#btn-confirm-release-success').onclick = () => {
+            modalConfirm.remove();
+            document.getElementById('modal-release-table').style.display = 'none';
+          };
         } catch (err) {
           console.error("Error al liberar la tabla individual:", err);
           alert("Error al liberar la tabla: " + err.message);
