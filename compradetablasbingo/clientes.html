@@ -1275,13 +1275,7 @@
 
     const btn = document.getElementById('btn-finish-order');
     btn.disabled = true;
-    btn.textContent = "Registrando...";
-
-    const registroAviso = setTimeout(() => {
-      if (btn.disabled) {
-        btn.textContent = "Conectando con el servidor...";
-      }
-    }, 4000);
+    btn.textContent = "Registrando tus tablas...";
 
     try {
       let enlaceDigital = '';
@@ -1296,7 +1290,7 @@
       const provisionalId = Date.now().toString();
       const comprobanteURL = await subirComprobanteStorage(proofFile, provisionalId);
 
-      const orderId = await runTransaction(db, async (transaction) => {
+      const orderId = await conTiempoLimite(runTransaction(db, async (transaction) => {
         const counterSnap = await transaction.get(counterRef);
 
         let nextNumber = 1;
@@ -1395,7 +1389,7 @@
         }
 
         return candidateId;
-      });
+      }), 20000);
 
       // Desde este punto Firebase ya confirmó pedido + tablas VENDIDAS.
       // Limpiamos de inmediato la selección local para que una recarga/cierre
@@ -1488,7 +1482,7 @@ Después de realizar el pago, conserva este mensaje como comprobante de tus tabl
 
     } catch (err) {
       console.error("Error al finalizar pedido:", err);
-      alert("Error al guardar en Firestore: " + err.message);
+      alert("No fue posible completar el registro. Por favor verifica tu conexión e intenta nuevamente. Tus tablas seguirán disponibles según la reserva.");
       orderCompleted = false;
 
       // Si la reserva todavía tiene tiempo, reanudamos el contador visual para
@@ -1498,7 +1492,6 @@ Después de realizar el pago, conserva este mensaje como comprobante de tus tabl
         document.getElementById('reservation-timer-box').classList.remove('hidden');
       }
     } finally {
-      clearTimeout(registroAviso);
       btn.disabled = false;
       btn.textContent = "Registrar / Comprar";
     }
