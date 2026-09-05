@@ -869,6 +869,14 @@
 
           await batch.commit();
 
+          await setDoc(doc(collection(db, 'integridad_tablas')), {
+            tabla: tableCode,
+            accion: 'LIBERACION_MANUAL',
+            motivo: 'Cliente solicitó liberar tabla desde pedido',
+            pedido: order.id || '',
+            fecha: new Date().toISOString()
+          });
+
           // Actualización inmediata de pantalla.
           order.tablas = updatedTablas;
           order.total = newTotal;
@@ -1361,7 +1369,11 @@ function seleccionarFormaPago(){
         const estado = String(tabla.status || '').toUpperCase();
 
         if (estado !== 'DISPONIBLE' && !tablasConPedido.has(codigo)) {
-          tablasPerdidasActuales.push(codigo);
+          tablasPerdidasActuales.push({
+            codigo,
+            estado,
+            motivo: tabla.reservedBy ? 'Reserva de cliente sin pedido asociado' : 'Liberación incompleta o error de sincronización'
+          });
         }
       });
 
@@ -1387,9 +1399,11 @@ function seleccionarFormaPago(){
         <div class="card-title">Tablas sin registro ni disponibilidad</div>
         <div style="max-height:400px;overflow:auto;margin:15px 0">
           ${tablasPerdidasActuales.length ? tablasPerdidasActuales.map(t=>`
-            <div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:8px">
-              <b>Tabla ${t}</b>
-              <button class="btn btn-danger" onclick="liberarTablaPerdida('${t}')">Liberar</button>
+            <div style="border:1px solid #e2e8f0;padding:10px;border-radius:8px;margin-bottom:8px">
+              <b>Tabla ${t.codigo}</b><br>
+              Estado: ${t.estado}<br>
+              <small>Motivo: ${t.motivo}</small><br>
+              <button class="btn btn-danger" onclick="liberarTablaPerdida('${t.codigo}')">Liberar</button>
             </div>`).join('') : '<p>No hay tablas perdidas.</p>'}
         </div>
         <button class="btn btn-warning" onclick="liberarTodasTablasPerdidas()">Liberar todas</button>
@@ -1406,13 +1420,20 @@ function seleccionarFormaPago(){
       reservedBy:null,
       pedido:null
     });
-    tablasPerdidasActuales = tablasPerdidasActuales.filter(t=>t!==codigo);
+    await setDoc(doc(collection(db, 'integridad_tablas')), {
+      tabla: codigo,
+      accion: 'LIBERACION_INTEGRIDAD',
+      motivo: 'Tabla recuperada manualmente desde integridad',
+      fecha: new Date().toISOString()
+    });
+    tablasPerdidasActuales = tablasPerdidasActuales.filter(t=>t.codigo!==codigo);
     mostrarTablasPerdidas();
   };
 
   window.liberarTodasTablasPerdidas = async function(){
     const batch = writeBatch(db);
-    tablasPerdidasActuales.forEach(codigo=>{
+    tablasPerdidasActuales.forEach(item=>{
+      const codigo=item.codigo;
       batch.update(doc(db,'tablas',codigo),{
         status:'DISPONIBLE',
         reservedUntil:null,
@@ -1421,6 +1442,14 @@ function seleccionarFormaPago(){
       });
     });
     await batch.commit();
+    for (const item of tablasPerdidasActuales) {
+      await setDoc(doc(collection(db, 'integridad_tablas')), {
+        tabla:item.codigo,
+        accion:'LIBERACION_MASIVA_INTEGRIDAD',
+        motivo:'Tabla recuperada desde integridad',
+        fecha:new Date().toISOString()
+      });
+    }
     tablasPerdidasActuales=[];
     mostrarTablasPerdidas();
     alert('Tablas recuperadas correctamente.');
