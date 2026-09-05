@@ -1364,6 +1364,8 @@ function seleccionarFormaPago(){
     URL.revokeObjectURL(a.href);
   });
 
+  let tablasPerdidasActuales = [];
+
   window.verificarIntegridadTablas = async function() {
     try {
       const [tablasSnap, pedidosSnap] = await Promise.all([
@@ -1379,29 +1381,77 @@ function seleccionarFormaPago(){
         }
       });
 
-      const inconsistencias = [];
+      tablasPerdidasActuales = [];
+
       tablasSnap.forEach(docSnap => {
         const tabla = docSnap.data();
         const codigo = String(docSnap.id);
         const estado = String(tabla.status || '').toUpperCase();
 
-        const disponible = estado === 'DISPONIBLE';
-        const asignada = tablasConPedido.has(codigo);
-
-        if (!disponible && !asignada) {
-          inconsistencias.push(codigo);
+        if (estado !== 'DISPONIBLE' && !tablasConPedido.has(codigo)) {
+          tablasPerdidasActuales.push(codigo);
         }
       });
 
-      if (inconsistencias.length === 0) {
-        alert('Validación completa. No se encontraron tablas perdidas.');
-      } else {
-        alert('Tablas sin ubicación válida:\n\n' + inconsistencias.join(', ') + '\n\nRevise antes de recuperarlas.');
-      }
+      mostrarTablasPerdidas();
+
     } catch (error) {
       console.error('Error verificando integridad:', error);
       alert('No se pudo realizar la verificación: ' + error.message);
     }
+  };
+
+  function mostrarTablasPerdidas(){
+    let modal = document.getElementById('modal-integridad-tablas');
+    if(!modal){
+      modal = document.createElement('div');
+      modal.id='modal-integridad-tablas';
+      modal.className='modal';
+      document.body.appendChild(modal);
+    }
+
+    modal.innerHTML = `
+      <div class="modal-content" style="max-width:500px">
+        <div class="card-title">Tablas sin registro ni disponibilidad</div>
+        <div style="max-height:400px;overflow:auto;margin:15px 0">
+          ${tablasPerdidasActuales.length ? tablasPerdidasActuales.map(t=>`
+            <div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:8px">
+              <b>Tabla ${t}</b>
+              <button class="btn btn-danger" onclick="liberarTablaPerdida('${t}')">Liberar</button>
+            </div>`).join('') : '<p>No hay tablas perdidas.</p>'}
+        </div>
+        <button class="btn btn-warning" onclick="liberarTodasTablasPerdidas()">Liberar todas</button>
+        <button class="btn btn-dark" onclick="document.getElementById('modal-integridad-tablas').style.display='none'">Cerrar</button>
+      </div>`;
+    modal.style.display='flex';
+  }
+
+  window.liberarTablaPerdida = async function(codigo){
+    const ref = doc(db,'tablas',codigo);
+    await updateDoc(ref,{
+      status:'DISPONIBLE',
+      reservedUntil:null,
+      reservedBy:null,
+      pedido:null
+    });
+    tablasPerdidasActuales = tablasPerdidasActuales.filter(t=>t!==codigo);
+    mostrarTablasPerdidas();
+  };
+
+  window.liberarTodasTablasPerdidas = async function(){
+    const batch = writeBatch(db);
+    tablasPerdidasActuales.forEach(codigo=>{
+      batch.update(doc(db,'tablas',codigo),{
+        status:'DISPONIBLE',
+        reservedUntil:null,
+        reservedBy:null,
+        pedido:null
+      });
+    });
+    await batch.commit();
+    tablasPerdidasActuales=[];
+    mostrarTablasPerdidas();
+    alert('Tablas recuperadas correctamente.');
   };
 
 </script>
