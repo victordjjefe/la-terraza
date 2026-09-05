@@ -524,7 +524,7 @@
   import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js';
   import { 
     getFirestore, doc, getDoc, setDoc, updateDoc, collection, 
-    onSnapshot, runTransaction, getDocs 
+    onSnapshot, runTransaction, getDocs, query, where, limit 
   } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
   const firebaseConfig = {
@@ -701,6 +701,23 @@
       if(Array.isArray(pedidoEncontrado.tablas)){
         tablasEncontradas = pedidoEncontrado.tablas;
       }
+    }else{
+      // Compatibilidad con registros creados antes del índice clientes.
+      // Busca únicamente coincidencias exactas por WhatsApp.
+      const pedidosQuery = query(
+        collection(db, 'pedidos'),
+        where('telefono', '==', valor),
+        limit(1)
+      );
+
+      const pedidosSnap = await getDocs(pedidosQuery);
+
+      if(!pedidosSnap.empty){
+        pedidoEncontrado = pedidosSnap.docs[0].data();
+        if(Array.isArray(pedidoEncontrado.tablas)){
+          tablasEncontradas = pedidoEncontrado.tablas;
+        }
+      }
     }
 
     document.getElementById('lookup-modal').classList.add('active');
@@ -717,9 +734,16 @@
       document.getElementById('btn-whatsapp-lookup-link').style.display='block';
       ultimoLookupTelefono = cleanPhone(pedidoEncontrado.telefono);
     }else{
-      document.getElementById('lookup-message').textContent =
-        'No encontramos registros asociados.';
+      document.getElementById('lookup-title').textContent = 'SIN REGISTROS';
+      document.getElementById('lookup-message').innerHTML =
+        'No hay registros asociados a este número de WhatsApp.';
       document.getElementById('lookup-tables').textContent='';
+      document.getElementById('lookup-link-box').innerHTML='';
+      document.getElementById('btn-copy-lookup-link').style.display='none';
+      document.getElementById('btn-whatsapp-lookup-link').style.display='none';
+      ultimoLookupEnlace = '';
+      ultimoLookupMensaje = '';
+      ultimoLookupTelefono = '';
     }
   }
 
