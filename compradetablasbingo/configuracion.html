@@ -978,11 +978,11 @@
     const listado = window.currentListadoCopy || [];
 
     const texto = listado.map(c => {
+      const consecutivo = String(c.consecutivoListado || '').padStart(2, '0');
       const nombre = String(c.nombre || '');
-      if (nombre.length > 35) {
-        return `${c.consecutivoListado}\t${nombre}\n\t${c.tablas.join(', ')}`;
-      }
-      return `${c.consecutivoListado}\t${nombre}\t${c.tablas.join(', ')}`;
+      const nombreAlineado = nombre.padEnd(35, ' ');
+      const tablas = (c.tablas && c.tablas.length > 0) ? c.tablas.join(', ') : 'SIN TABLAS';
+      return `${consecutivo}  ${nombreAlineado}  ${tablas}`;
     }).join('\n');
 
     await navigator.clipboard.writeText(texto);
