@@ -463,7 +463,7 @@
     <div id="tab-listado" style="display: none;">
       <div class="card">
         <div class="card-title">Listado de Registros</div>
-        <button class="btn btn-primary listing-copy-btn" id="btn-copy-listado">Copiar Listado Completo</button>
+        <button class="btn btn-primary listing-copy-btn" id="btn-copy-listado">Copiar Listado con Tablas</button>
         <button class="btn btn-success listing-copy-btn" id="btn-copy-nombres" style="margin-top:10px;">Copiar Solo Nombres</button>
         <p id="listado-total" style="margin:12px 0; font-size:0.9rem; color:var(--text-muted);"></p>
         <div class="listing-table-wrapper">
@@ -980,13 +980,13 @@
     const texto = listado.map(c => {
       const nombre = String(c.nombre || '');
       if (nombre.length > 35) {
-        return `${c.consecutivoListado}\t${nombre}\n\t${c.celular}\t${c.tablas.join(', ')}`;
+        return `${c.consecutivoListado}\t${nombre}\n\t${c.tablas.join(', ')}`;
       }
-      return `${c.consecutivoListado}\t${nombre}\t${c.celular}\t${c.tablas.join(', ')}`;
+      return `${c.consecutivoListado}\t${nombre}\t${c.tablas.join(', ')}`;
     }).join('\n');
 
     await navigator.clipboard.writeText(texto);
-    alert('Listado completo copiado.');
+    alert('Listado con tablas copiado.');
   });
 
   document.getElementById('btn-copy-nombres').addEventListener('click', async () => {
