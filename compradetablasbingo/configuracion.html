@@ -1169,11 +1169,11 @@
             return;
           }
 
-          const formaPago = await seleccionarFormaPago();
+          const formaPago = await seleccionarFormaPago(order);
 
           if (!formaPago) return;
 
-          await updateOrderStatus(btn.dataset.order, 'PAGADO', formaPago);
+          await updateOrderStatus(btn.dataset.order, 'PAGADO', formaPago.destino, formaPago.porTabla);
         });
       });
 
@@ -1190,33 +1190,50 @@
 
 
 
-function seleccionarFormaPago(){
+function seleccionarFormaPago(order){
   return new Promise((resolve)=>{
+    const tablas = Array.isArray(order?.tablas) ? order.tablas : [];
+
     const modal=document.createElement('div');
     modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:9999;';
-    modal.innerHTML=`<div style="background:white;padding:20px;border-radius:12px;width:300px;color:#111;text-align:center">
-      <h3 style="margin-bottom:15px">Forma de pago</h3>
-      <select id="select-forma-pago" style="width:100%;padding:10px;margin-bottom:15px">
-        <option value="">Seleccione</option>
-        <option value="EFECTIVO">EFECTIVO</option>
-        <option value="CONSIGNACIÓN">CONSIGNACIÓN</option>
-      </select>
-      <button id="confirmar-forma-pago" style="padding:10px;width:100%">Continuar</button>
+
+    modal.innerHTML=`<div style="background:white;padding:20px;border-radius:12px;width:320px;color:#111;text-align:center;max-height:90vh;overflow:auto">
+      <h3 style="margin-bottom:15px">Forma de pago por tabla</h3>
+      ${tablas.map(tabla=>`
+        <div style="margin-bottom:10px;text-align:left">
+          <label style="font-weight:700">Tabla ${tabla}</label>
+          <select class="select-pago-tabla" data-tabla="${tabla}" style="width:100%;padding:10px">
+            <option value="DEBEN">Pendiente</option>
+            <option value="EFECTIVO">EFECTIVO</option>
+            <option value="CONSIGNACIÓN">CONSIGNACIÓN</option>
+            <option value="GRATIS">GRATIS</option>
+          </select>
+        </div>`).join('')}
+      <button id="confirmar-forma-pago" style="padding:10px;width:100%">Guardar</button>
     </div>`;
+
     document.body.appendChild(modal);
+
     modal.querySelector('#confirmar-forma-pago').onclick=()=>{
-      const valor=modal.querySelector('#select-forma-pago').value;
+      const porTabla={};
+      modal.querySelectorAll('.select-pago-tabla').forEach(sel=>{
+        porTabla[sel.dataset.tabla]=sel.value;
+      });
+      const valores=Object.values(porTabla);
+      const destino=valores.length && valores.every(v=>v===valores[0]) ? valores[0] : 'VARIOS';
       modal.remove();
-      resolve(valor||null);
+      resolve({destino, porTabla});
     };
   });
 }
-  async function updateOrderStatus(orderDocId, newStatus, destino='DEBEN') {
+
+  async function updateOrderStatus(orderDocId, newStatus, destino='DEBEN', porTabla={}) {
     try {
       const orderRef = doc(db, 'pedidos', orderDocId);
       await updateDoc(orderRef, { 
         estado: newStatus,
-        destino: String(destino||'DEBEN').toUpperCase()
+        destino: String(destino||'DEBEN').toUpperCase(),
+        destinoPorTabla: porTabla || {}
       });
 
       // Actualiza la copia local para reflejar el cambio inmediatamente.
@@ -1225,6 +1242,7 @@ function seleccionarFormaPago(){
       if (localOrder) {
         localOrder.estado = newStatus;
         localOrder.destino = String(destino||'DEBEN').toUpperCase();
+        localOrder.destinoPorTabla = porTabla || {};
       }
 
       // Refresca inmediatamente la vista después del cambio de pago.
@@ -1346,7 +1364,8 @@ function seleccionarFormaPago(){
         tablas:Array.isArray(x.tablas)?x.tablas:[],
         fecha:new Date().toISOString(),
         estado:x.estado||'PENDIENTE PAGO',
-        destino:(x.estado==='PAGADO' ? (x.destino||'DEBEN') : 'DEBEN')
+        destino:(x.estado==='PAGADO' ? (x.destino||'DEBEN') : 'DEBEN'),
+        destinoPorTabla:x.destinoPorTabla||{}
       });
     });
     const tablasExportadas=[];
@@ -1358,7 +1377,7 @@ function seleccionarFormaPago(){
           referencia:v.referencia||v.direccion||'',
           whatsapp:v.whatsapp||v.telefono||'',
           estado:v.estado||'PENDIENTE PAGO',
-          destino:v.destino||'DEBEN'
+          destino:(v.destinoPorTabla && v.destinoPorTabla[tab]) || v.destino || 'DEBEN'
         });
       });
     });
