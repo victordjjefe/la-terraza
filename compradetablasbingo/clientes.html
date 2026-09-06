@@ -688,42 +688,64 @@
       return;
     }
 
-    // Consulta optimizada: busca directamente el cliente por WhatsApp.
-    // Evita leer todos los pedidos de Firestore.
-    const clienteRef = doc(db, 'clientes', telefonoBusqueda);
-    const clienteSnap = await getDoc(clienteRef);
-
     let tablasEncontradas = [];
-    let pedidoEncontrado = null;
+    let nombreCliente = '';
+    let telefonoFinal = telefonoBusqueda;
 
-    if(clienteSnap.exists()){
-      pedidoEncontrado = clienteSnap.data();
-      if(Array.isArray(pedidoEncontrado.tablas)){
-        tablasEncontradas = pedidoEncontrado.tablas;
-      }
-    }else{
-      // Compatibilidad con registros creados antes del índice clientes.
-      // Busca únicamente coincidencias exactas por WhatsApp.
-      const pedidosQuery = query(
-        collection(db, 'pedidos'),
-        where('telefono', '==', valor),
-        limit(1)
-      );
+    try {
+      // Primero revisa el consolidado de clientes
+      const clienteRef = doc(db, 'clientes', telefonoBusqueda);
+      const clienteSnap = await getDoc(clienteRef);
 
-      const pedidosSnap = await getDocs(pedidosQuery);
+      if(clienteSnap.exists()){
+        const clienteData = clienteSnap.data();
 
-      if(!pedidosSnap.empty){
-        pedidoEncontrado = pedidosSnap.docs[0].data();
-        if(Array.isArray(pedidoEncontrado.tablas)){
-          tablasEncontradas = pedidoEncontrado.tablas;
+        if(Array.isArray(clienteData.tablas)){
+          tablasEncontradas.push(...clienteData.tablas);
         }
+
+        nombreCliente = clienteData.cliente || clienteData.nombre || '';
+        telefonoFinal = clienteData.telefono || telefonoBusqueda;
       }
+
+      /*
+        Corrección:
+        Un mismo WhatsApp puede tener varios documentos en pedidos.
+        Antes solo se tomaba el primer registro (limit(1)), por eso se perdían
+        tablas de compras anteriores.
+      */
+      const pedidosSnap = await getDocs(collection(db, 'pedidos'));
+
+      pedidosSnap.forEach((docPedido)=>{
+        const pedido = docPedido.data();
+        const telefonoPedido = normalizarWhatsAppColombia(
+          pedido.telefono || pedido.whatsapp || ''
+        );
+
+        if(telefonoPedido === telefonoBusqueda){
+          if(Array.isArray(pedido.tablas)){
+            tablasEncontradas.push(...pedido.tablas);
+          }
+
+          if(!nombreCliente){
+            nombreCliente = pedido.cliente || pedido.nombre || '';
+          }
+
+          telefonoFinal = pedido.telefono || telefonoFinal;
+        }
+      });
+
+    } catch(error){
+      console.error('Error buscando tablas consolidadas:', error);
+      alert('No fue posible consultar tus tablas. Intenta nuevamente.');
+      return;
     }
+
+    // Elimina duplicados y mantiene todas las tablas encontradas
+    tablasEncontradas = [...new Set(tablasEncontradas)];
 
     document.getElementById('lookup-modal').classList.add('active');
 
-    // Reinicia acciones anteriores para evitar que botones de una consulta exitosa
-    // queden visibles cuando la siguiente búsqueda no tiene registros.
     document.getElementById('btn-copy-lookup-link').style.setProperty('display','none','important');
     document.getElementById('btn-whatsapp-lookup-link').style.setProperty('display','none','important');
     document.getElementById('lookup-link-box').innerHTML='';
@@ -733,29 +755,59 @@
     ultimoLookupTelefono = '';
 
     if(tablasEncontradas.length){
+
+      const nombreMostrar = nombreCliente || 'Cliente';
+
       document.getElementById('lookup-title').textContent = 'TUS TABLAS REGISTRADAS';
-      document.getElementById('lookup-message').innerHTML = '<b>' + pedidoEncontrado.cliente + '</b><br>Fecha del Bingo: ' + (config?.fecha || '') + '<br>Hora: ' + (config?.hora || '') + '<br><br>🎟️ Tablas asignadas:';
-      const tablasUnicas = [...new Set(tablasEncontradas)];
-      document.getElementById('lookup-tables').textContent = tablasUnicas.join(', ');
-      ultimoLookupEnlace = generarLinkDigitalCliente(tablasUnicas, pedidoEncontrado.cliente, config?.fecha || '', config?.linkTransmision || '');
-      ultimoLookupMensaje = `🎱 LA TERRAZA BINGO\n\n¡Hola ${pedidoEncontrado.cliente}! 👋\n\n✅ Encontramos tus tablas registradas.\n\n🎟️ Tablas asignadas: ${tablasUnicas.join(', ')}\n\n🔗 Tu enlace digital para jugar:\n${ultimoLookupEnlace}`;
-      document.getElementById('lookup-link-box').innerHTML = `<a class="btn btn-success digital-action-spacing" href="${ultimoLookupEnlace}" target="_blank">🎱 ABRIR MIS TABLAS DIGITALES</a>`;
+
+      document.getElementById('lookup-message').innerHTML =
+        '<b>' + nombreMostrar + '</b><br>' +
+        'Fecha del Bingo: ' + (config?.fecha || '') +
+        '<br>Hora: ' + (config?.hora || '') +
+        '<br><br>🎟️ Todas tus tablas asociadas a este WhatsApp:';
+
+      document.getElementById('lookup-tables').textContent =
+        tablasEncontradas.join(', ');
+
+      ultimoLookupEnlace = generarLinkDigitalCliente(
+        tablasEncontradas,
+        nombreMostrar,
+        config?.fecha || '',
+        config?.linkTransmision || ''
+      );
+
+      ultimoLookupMensaje =
+        `🎱 LA TERRAZA BINGO\n\n` +
+        `¡Hola ${nombreMostrar}!\n\n` +
+        `✅ Encontramos todos tus registros asociados.\n\n` +
+        `🎟️ Tus tablas son:\n${tablasEncontradas.map(t=>'🎟️ '+t).join('\n')}\n\n` +
+        `🔗 Tu enlace digital para jugar:\n${ultimoLookupEnlace}`;
+
+      document.getElementById('lookup-link-box').innerHTML =
+        `<a class="btn btn-success digital-action-spacing" href="${ultimoLookupEnlace}" target="_blank">🎱 ABRIR MIS TABLAS DIGITALES</a>`;
+
       document.getElementById('btn-copy-lookup-link').style.display='block';
       document.getElementById('btn-whatsapp-lookup-link').style.display='block';
-      ultimoLookupTelefono = cleanPhone(pedidoEncontrado.telefono);
+
+      ultimoLookupTelefono = cleanPhone(telefonoFinal);
+
     }else{
-      document.getElementById('lookup-title').textContent = 'AÚN NO TIENES TABLAS REGISTRADAS 🎱';
+
+      document.getElementById('lookup-title').textContent =
+        'AÚN NO TIENES TABLAS REGISTRADAS 🎱';
+
       document.getElementById('lookup-message').innerHTML = `
         <div style="line-height:1.5; color:#64748b;">
           No encontramos registros asociados a este número de WhatsApp.<br><br>
           Participa en nuestro gran bingo y registra tus tablas para disfrutar la experiencia completa.
         </div>
       `;
+
       document.getElementById('lookup-tables').textContent='';
       document.getElementById('lookup-link-box').innerHTML='';
       document.getElementById('btn-copy-lookup-link').style.setProperty('display','none','important');
       document.getElementById('btn-whatsapp-lookup-link').style.setProperty('display','none','important');
-      document.getElementById('btn-close-lookup').style.setProperty('display','flex','important');
+
       ultimoLookupEnlace = '';
       ultimoLookupMensaje = '';
       ultimoLookupTelefono = '';
