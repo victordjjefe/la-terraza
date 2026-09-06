@@ -930,6 +930,10 @@
       const celular = getOrderWhatsapp(order);
       if (!celular) return;
 
+      // Solo incluir registros que actualmente tienen tablas asignadas.
+      // Los pedidos sin tablas quedan únicamente para trazabilidad.
+      if (!order.tablas || order.tablas.length === 0) return;
+
       const nombre = typeof order.cliente === 'string'
         ? order.cliente
         : (order.cliente?.name || 'Cliente');
@@ -943,19 +947,21 @@
         };
       }
 
-      clientes[celular].tablas.push(...(order.tablas || []));
+      clientes[celular].tablas.push(...order.tablas);
     });
 
-    let listado = Object.values(clientes).map(c => ({
-      ...c,
-      tablas: [...new Set(c.tablas)].sort((a,b)=>
-        (parseInt(String(a).replace(/\D/g,''))||0) -
-        (parseInt(String(b).replace(/\D/g,''))||0)
-      )
-    }));
+    let listado = Object.values(clientes)
+      .map(c => ({
+        ...c,
+        tablas: [...new Set(c.tablas)].sort((a,b)=>
+          (parseInt(String(a).replace(/\D/g,''))||0) -
+          (parseInt(String(b).replace(/\D/g,''))||0)
+        )
+      }))
+      .filter(c => c.tablas.length > 0);
 
-    // Orden estable por nombre y consecutivo visible independiente
     listado.sort((a,b)=> String(a.nombre).localeCompare(String(b.nombre), 'es', {sensitivity:'base'}));
+
     listado = listado.map((c,i)=>({
       ...c,
       consecutivoListado: i + 1
