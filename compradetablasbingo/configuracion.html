@@ -1006,6 +1006,25 @@
     alert('Consecutivo y nombres copiados.');
   });
 
+
+  function resumenFormaPago(order) {
+    const porTabla = order.destinoPorTabla || {};
+    const conteo = {};
+
+    Object.values(porTabla).forEach(valor => {
+      const estado = String(valor || 'DEBEN').toUpperCase();
+      conteo[estado] = (conteo[estado] || 0) + 1;
+    });
+
+    if (Object.keys(conteo).length === 0) {
+      return order.destino || 'SIN DEFINIR';
+    }
+
+    return Object.entries(conteo)
+      .map(([estado, cantidad]) => `${estado}: ${cantidad}`)
+      .join(' | ');
+  }
+
   function renderOrders() {
     filterOrders();
   }
@@ -1144,7 +1163,7 @@
           <div><b>Tablas (${tableList.length}):</b> ${tableList.length > 0 ? `<span style="color:var(--accent-gold); font-weight:700;">${tableList.join(', ')}</span>` : '<span style="color:var(--danger); font-style:italic;">Ninguna (Liberadas)</span>'}</div>
           ${tableList.length > 0 ? relatedOrdersHTML : ''}
           ${tableList.length > 0 ? `<div class="payment-status ${paymentClass}">${isPaid ? '✓' : '●'} ${paymentLegend}</div>` : ''}
-          ${tableList.length > 0 && isPaid ? `<div class="payment-status" style="color:var(--accent-gold);">Forma: ${o.destino || 'SIN DEFINIR'}</div>` : ''}
+          ${tableList.length > 0 && isPaid ? `<div class="payment-status" style="color:var(--accent-gold);">Forma de pago: ${resumenFormaPago(o)}</div>` : ''}
           ${tableList.length > 0 ? `<div class="system-registration-status ${registrationClass}">${isPassed ? '✓' : '●'} ${registrationLegend}</div>` : ''}
         </div>
         <div class="order-actions">
