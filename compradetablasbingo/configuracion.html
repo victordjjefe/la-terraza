@@ -428,6 +428,7 @@
             <div class="metric-money" id="m-vend-consignacion">Consig.: $0</div>
             <div class="metric-money" id="m-vend-efectivo">Efectivo: $0</div>
             <div class="metric-money" id="m-vend-gratis">Gratis:<br>$0</div>
+            <div class="metric-money" id="m-vend-deben">Deben:<br>$0</div>
           </div>
         </div>
       </div>
@@ -691,6 +692,7 @@
     let consignacion = 0;
     let efectivo = 0;
     let gratis = 0;
+    let deben = 0;
 
     allOrders.forEach(order => {
       if (!order.tablas || order.tablas.length === 0) return;
@@ -709,6 +711,7 @@
         if (forma.includes('CONSIGN')) consignacion += valor;
         if (forma.includes('EFECTIVO')) efectivo += valor;
         if (forma.includes('GRATIS')) gratis += valor;
+        if (forma.includes('DEBEN') || forma.includes('PENDIENTE')) deben += valor;
       });
     });
 
