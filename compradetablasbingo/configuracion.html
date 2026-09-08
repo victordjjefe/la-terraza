@@ -1373,6 +1373,11 @@ function seleccionarFormaPago(order){
       const pedidosSnap = await getDocs(collection(db, 'pedidos'));
       await borrarSnapshotEnBloques(pedidosSnap);
 
+      // El índice rápido por WhatsApp también debe desaparecer.
+      // Si queda esta colección, un cliente antiguo podría recuperar tablas de otro bingo.
+      const clientesSnap = await getDocs(collection(db, 'clientes'));
+      await borrarSnapshotEnBloques(clientesSnap);
+
       // Reinicia el consecutivo para que el nuevo bingo inicie nuevamente desde 1.
       // Esto no afecta la seguridad del registro durante el bingo actual.
       await deleteDoc(doc(db, 'sistema', 'contadorPedidos'));
@@ -1387,13 +1392,14 @@ function seleccionarFormaPago(order){
       await deleteDoc(doc(db, 'configuracion', 'evento'));
 
       // Verificación final: no mostramos éxito hasta confirmar que todo quedó vacío.
-      const [verificacionTablas, verificacionPedidos, verificacionConfig] = await Promise.all([
+      const [verificacionTablas, verificacionPedidos, verificacionClientes, verificacionConfig] = await Promise.all([
         getDocs(collection(db, 'tablas')),
         getDocs(collection(db, 'pedidos')),
+        getDocs(collection(db, 'clientes')),
         getDoc(doc(db, 'configuracion', 'evento'))
       ]);
 
-      if (!verificacionTablas.empty || !verificacionPedidos.empty || verificacionConfig.exists()) {
+      if (!verificacionTablas.empty || !verificacionPedidos.empty || !verificacionClientes.empty || verificacionConfig.exists()) {
         throw new Error('Firebase todavía reporta datos del bingo. Vuelva a intentar el cierre.');
       }
 
