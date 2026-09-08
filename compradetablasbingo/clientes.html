@@ -524,7 +524,7 @@
   import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js';
   import { 
     getFirestore, doc, getDoc, setDoc, updateDoc, collection, 
-    onSnapshot, runTransaction, getDocs, query, where, limit 
+    onSnapshot, runTransaction, getDocs, query, where, limit, serverTimestamp 
   } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
   const firebaseConfig = {
@@ -1425,6 +1425,7 @@
           total: tablesToBuy.length * (config ? config.valor : 0),
           comprobanteURL: comprobanteURL || null,
           fecha: new Date().toLocaleString(),
+          fechaServidor: serverTimestamp(),
           estado: 'PENDIENTE PAGO'
         };
 
