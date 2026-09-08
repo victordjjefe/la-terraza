@@ -425,7 +425,7 @@
             <div class="metric-val" id="m-vend">0</div>
             <div class="metric-lbl">Vendidas</div>
             <div class="metric-money" id="m-vend-money">$0</div>
-            <div class="metric-money" id="m-vend-consignacion">Consignación: $0</div>
+            <div class="metric-money" id="m-vend-consignacion">Consig.: $0</div>
             <div class="metric-money" id="m-vend-efectivo">Efectivo: $0</div>
             <div class="metric-money" id="m-vend-gratis">Gratis: $0</div>
           </div>
@@ -713,7 +713,7 @@
     document.getElementById('m-disp-money').textContent = formatMoney(disp * valor);
     document.getElementById('m-vend-money').textContent = formatMoney(vend * valor);
 
-    document.getElementById('m-vend-consignacion').textContent = 'Consignación: ' + formatMoney(consignacion);
+    document.getElementById('m-vend-consignacion').textContent = 'Consig.: ' + formatMoney(consignacion);
     document.getElementById('m-vend-efectivo').textContent = 'Efectivo: ' + formatMoney(efectivo);
     document.getElementById('m-vend-gratis').textContent = 'Gratis: ' + formatMoney(gratis);
   }
