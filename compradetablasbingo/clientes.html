@@ -509,8 +509,8 @@
         <div id="bingo-info-success" style="margin-bottom:12px; font-size:0.95rem; color:var(--text-main);"></div>
         <div id="consolidado-aviso"></div>
         <div id="digital-link-box" style="margin-bottom:0;"></div>
-        <button class="btn btn-success" id="btn-copy-digital-link" style="margin-bottom:14px;">📋 Copiar enlace</button>
-        <button class="btn btn-success" id="btn-whatsapp-digital-link" style="margin-bottom:14px;">📲 Enviar enlace por WhatsApp</button>
+        <button class="btn" id="btn-whatsapp-digital-link" style="background:#25D366;color:white;margin-bottom:10px;font-size:1.15rem;font-weight:800;">🟢 📲 Guardar mis tablas en WhatsApp</button>
+        <p style="font-size:0.9rem;color:#475569;line-height:1.5;margin:0 0 14px;">🎱 Por seguridad, guarda este enlace en tu WhatsApp. Será tu acceso para jugar, ver tus tablas y disfrutar la transmisión en vivo del bingo.</p>
         <button class="btn btn-success btn-restart-action" style="margin-top: 8px;">Hacer otra compra</button>
       </div>
     </div>
@@ -724,8 +724,7 @@
       if(clienteSnap.exists()){
         const clienteData = clienteSnap.data();
 
-        // Solo acepta registros del bingo actualmente configurado.
-        if(Array.isArray(clienteData.tablas) && clienteData.fechaBingo === (config?.fecha || '')){
+        if(Array.isArray(clienteData.tablas)){
           tablasEncontradas.push(...clienteData.tablas);
         }
 
@@ -747,7 +746,7 @@
           pedido.telefono || pedido.whatsapp || ''
         );
 
-        if(telefonoPedido === telefonoBusqueda && pedido.eventoId === ('BINGO_' + String(config?.fecha || '').replace(/\D/g,''))){
+        if(telefonoPedido === telefonoBusqueda){
           if(Array.isArray(pedido.tablas)){
             tablasEncontradas.push(...pedido.tablas);
           }
@@ -1702,7 +1701,6 @@ Gracias por tu compra.`;
     });
   }
 
-  document.getElementById('btn-copy-digital-link').addEventListener('click', copiarEnlaceDigital);
   document.getElementById('btn-whatsapp-digital-link').addEventListener('click', enviarWhatsAppDigital);
 
   document.getElementById('btn-finish-order').addEventListener('click', finishOrder);
