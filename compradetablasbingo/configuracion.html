@@ -1364,6 +1364,9 @@ function seleccionarFormaPago(order){
 
       // Reinicia el consecutivo para que el nuevo bingo inicie nuevamente desde 1.
       // Esto no afecta la seguridad del registro durante el bingo actual.
+      await deleteDoc(doc(db, 'sistema', 'contadorPedidos'));
+
+      // Crea nuevamente el contador limpio para el nuevo bingo.
       await setDoc(doc(db, 'sistema', 'contadorPedidos'), {
         ultimo: 0
       });
