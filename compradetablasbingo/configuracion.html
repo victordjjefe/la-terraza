@@ -698,11 +698,17 @@
       const pagos = order.destinoPorTabla || {};
 
       order.tablas.forEach(tabla => {
-        const forma = String(pagos[tabla] || '').toUpperCase();
+        const clave = String(tabla);
+        const forma = String(
+          pagos[clave] ||
+          pagos[clave.replace(/^T/i,'')] ||
+          pagos['T' + clave.replace(/^T/i,'')] ||
+          ''
+        ).trim().toUpperCase();
 
-        if (forma === 'CONSIGNACIÓN') consignacion += valor;
-        if (forma === 'EFECTIVO') efectivo += valor;
-        if (forma === 'GRATIS') gratis += valor;
+        if (forma.includes('CONSIGN')) consignacion += valor;
+        if (forma.includes('EFECTIVO')) efectivo += valor;
+        if (forma.includes('GRATIS')) gratis += valor;
       });
     });
 
