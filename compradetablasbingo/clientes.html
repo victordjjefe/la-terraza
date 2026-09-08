@@ -401,13 +401,6 @@
 
     <main class="main-content" id="main-flow-container">
 
-      <div id="reservation-timer-box" class="timer-banner hidden">
-        <b>¡Tienes tablas reservadas!</b>
-        <p style="margin-top:4px;">Tiempo restante para completar el registro:</p>
-        <div id="timer-display" class="timer-clock">03:00</div>
-      </div>
-
-
       <div class="lookup-card">
         <div class="card-title" style="justify-content:center;">
           🔎 ¿Ya registraste tus tablas?
@@ -428,7 +421,12 @@
       </div>
 
       <div class="card" id="card-tables-section">
-        <div class="card-title">1. Selecciona tus tablas (Máximo 10)</div>
+        <div class="card-title" style="align-items:center;">
+          <span>1. Selecciona tus tablas (Máximo 15)</span>
+          <div id="reservation-timer-box" class="timer-banner hidden" style="margin:0; padding:8px 10px; font-size:.8rem;">
+            <b>Reserva:</b> <span id="timer-display">03:00</span>
+          </div>
+        </div>
         <div class="tables-grid" id="tables-container"></div>
         
         <div class="summary-box" style="margin-top: 14px;">
@@ -1049,8 +1047,8 @@
     if (index > -1) {
       selectedTables.splice(index, 1);
     } else {
-      if (selectedTables.length >= 10) {
-        alert('Máximo puedes seleccionar 10 tablas.');
+      if (selectedTables.length >= 15) {
+        alert('Máximo puedes seleccionar 15 tablas.');
         return;
       }
       selectedTables.push(code);
@@ -1144,9 +1142,13 @@
   }
 
   async function handleTimerExpiration() {
-    alert('Tu tiempo de reserva (3 minutos) ha expirado. Las tablas han sido liberadas.');
     await releaseCurrentReservations();
+    clearInterval(timerInterval);
+    reservationEndTime = null;
+    document.getElementById('reservation-timer-box').classList.add('hidden');
+    alert('Tu tiempo de reserva (3 minutos) ha expirado. Las tablas han sido liberadas.');
     resetForm();
+    renderTables();
   }
 
   async function releaseTableIfOwned(code) {
