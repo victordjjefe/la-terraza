@@ -724,7 +724,8 @@
       if(clienteSnap.exists()){
         const clienteData = clienteSnap.data();
 
-        if(Array.isArray(clienteData.tablas)){
+        // Solo acepta registros del bingo actualmente configurado.
+        if(Array.isArray(clienteData.tablas) && clienteData.fechaBingo === (config?.fecha || '')){
           tablasEncontradas.push(...clienteData.tablas);
         }
 
@@ -746,7 +747,7 @@
           pedido.telefono || pedido.whatsapp || ''
         );
 
-        if(telefonoPedido === telefonoBusqueda){
+        if(telefonoPedido === telefonoBusqueda && pedido.eventoId === ('BINGO_' + String(config?.fecha || '').replace(/\D/g,''))){
           if(Array.isArray(pedido.tablas)){
             tablasEncontradas.push(...pedido.tablas);
           }
