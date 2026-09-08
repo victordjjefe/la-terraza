@@ -1776,12 +1776,34 @@ Después de realizar el pago, conserva este mensaje como comprobante de tus tabl
 
     } catch (err) {
       console.error("Error al finalizar pedido:", err);
-      alert("No fue posible completar el registro. Por favor verifica tu conexión e intenta nuevamente. Tus tablas seguirán disponibles según la reserva.");
+
+      const falloCargaComprobante = proofFile && !orderCompleted;
+
+      if (falloCargaComprobante) {
+        try {
+          await releaseCurrentReservations();
+        } catch (releaseError) {
+          console.error("Error liberando tablas después del fallo del comprobante:", releaseError);
+        }
+
+        reservationEndTime = null;
+        proofFile = null;
+        const proofInput = document.getElementById('proof-file');
+        if (proofInput) proofInput.value = '';
+
+        renderTables();
+        updateSummary();
+
+        alert("❌ No fue posible cargar el comprobante de pago.\n\nLas tablas seleccionadas fueron liberadas automáticamente.\n\nPor favor realiza nuevamente el registro e intenta subir el comprobante.");
+      } else {
+        alert("No fue posible completar el registro. Por favor verifica tu conexión e intenta nuevamente. Tus tablas seguirán disponibles según la reserva.");
+      }
+
       orderCompleted = false;
 
-      // Si la reserva todavía tiene tiempo, reanudamos el contador visual para
-      // que el comprador pueda intentar nuevamente sin perder la referencia.
-      if (selectedTables.length > 0 && reservationEndTime && reservationEndTime > Date.now()) {
+      // Si la reserva todavía tiene tiempo y no fue un fallo del comprobante,
+      // mantenemos la posibilidad de continuar la compra.
+      if (!falloCargaComprobante && selectedTables.length > 0 && reservationEndTime && reservationEndTime > Date.now()) {
         startReservationTimer();
         document.getElementById('reservation-timer-box').classList.remove('hidden');
       }
