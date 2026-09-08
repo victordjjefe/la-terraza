@@ -425,6 +425,9 @@
             <div class="metric-val" id="m-vend">0</div>
             <div class="metric-lbl">Vendidas</div>
             <div class="metric-money" id="m-vend-money">$0</div>
+            <div class="metric-money" id="m-vend-consignacion">Consignación: $0</div>
+            <div class="metric-money" id="m-vend-efectivo">Efectivo: $0</div>
+            <div class="metric-money" id="m-vend-gratis">Gratis: $0</div>
           </div>
         </div>
       </div>
@@ -685,12 +688,34 @@
     const vend = allTables.filter(t => t.status === 'VENDIDA').length;
     const valor = Number(currentTableValue) || 0;
 
+    let consignacion = 0;
+    let efectivo = 0;
+    let gratis = 0;
+
+    allOrders.forEach(order => {
+      if (!order.tablas || order.tablas.length === 0) return;
+
+      const pagos = order.destinoPorTabla || {};
+
+      order.tablas.forEach(tabla => {
+        const forma = String(pagos[tabla] || '').toUpperCase();
+
+        if (forma === 'CONSIGNACIÓN') consignacion += valor;
+        if (forma === 'EFECTIVO') efectivo += valor;
+        if (forma === 'GRATIS') gratis += valor;
+      });
+    });
+
     document.getElementById('m-total').textContent = total;
     document.getElementById('m-disp').textContent = disp;
     document.getElementById('m-vend').textContent = vend;
     document.getElementById('m-total-money').textContent = formatMoney(total * valor);
     document.getElementById('m-disp-money').textContent = formatMoney(disp * valor);
     document.getElementById('m-vend-money').textContent = formatMoney(vend * valor);
+
+    document.getElementById('m-vend-consignacion').textContent = 'Consignación: ' + formatMoney(consignacion);
+    document.getElementById('m-vend-efectivo').textContent = 'Efectivo: ' + formatMoney(efectivo);
+    document.getElementById('m-vend-gratis').textContent = 'Gratis: ' + formatMoney(gratis);
   }
 
   document.getElementById('form-config').addEventListener('submit', async (e) => {
@@ -802,6 +827,7 @@
 
       renderOrders();
       renderListado();
+      loadMetrics();
     });
   }
 
@@ -913,6 +939,19 @@
   function configValor() {
     const valInput = document.getElementById('cfg-valor');
     return valInput ? parseFloat(valInput.value) || 3000 : 3000;
+  }
+
+  // Calcula el valor real pendiente de cada registro.
+  // Las tablas GRATIS no suman al total porque no generan cobro.
+  function calcularTotalCobroPedido(order) {
+    const valorTabla = configValor() || 0;
+    const tablas = Array.isArray(order?.tablas) ? order.tablas : [];
+    const pagos = order?.destinoPorTabla || {};
+
+    return tablas.reduce((total, tabla) => {
+      const forma = String(pagos[tabla] || '').toUpperCase();
+      return forma === 'GRATIS' ? total : total + valorTabla;
+    }, 0);
   }
 
   document.getElementById('btn-close-release-modal').addEventListener('click', () => {
@@ -1152,7 +1191,7 @@
       el.innerHTML = `
         <div class="order-header">
           <span>Registro #${o.id || ''}</span>
-          <span>$${(o.total || 0).toLocaleString()}</span>
+          <span>$${calcularTotalCobroPedido(o).toLocaleString()}</span>
         </div>
         ${tableList.length === 0 ? `<div class="order-badges"><span class="badge ${badgeClass}">CANCELADO</span></div>` : ''}
         <div class="order-info">
