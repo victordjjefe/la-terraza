@@ -721,7 +721,7 @@
 
     document.getElementById('m-vend-consignacion').textContent = 'Consig.: ' + formatMoney(consignacion);
     document.getElementById('m-vend-efectivo').textContent = 'Efectivo: ' + formatMoney(efectivo);
-    document.getElementById('m-vend-gratis').textContent = 'Gratis: ' + formatMoney(gratis);
+    document.getElementById('m-vend-gratis').innerHTML = 'Gratis:<br>' + formatMoney(gratis);
   }
 
   document.getElementById('form-config').addEventListener('submit', async (e) => {
