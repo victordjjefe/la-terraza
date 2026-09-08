@@ -1367,10 +1367,37 @@
 
   async function subirComprobanteStorage(file, pedidoId){
     if(!file) return null;
+
+    const maxImageSize = 10 * 1024 * 1024;
+    const maxPdfSize = 15 * 1024 * 1024;
+    const allowedTypes = [
+      'image/jpeg',
+      'image/png',
+      'application/pdf'
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      throw new Error('Formato no permitido. Solo JPG, PNG o PDF.');
+    }
+
+    if (file.type === 'application/pdf' && file.size > maxPdfSize) {
+      throw new Error('El PDF supera el tamaño máximo permitido.');
+    }
+
+    if (file.type.startsWith('image/') && file.size > maxImageSize) {
+      throw new Error('La imagen supera el tamaño máximo permitido.');
+    }
+
     const ruta = `comprobantes/${pedidoId}_${Date.now()}_${file.name}`;
     const archivoRef = storageRef(storage, ruta);
-    await uploadBytes(archivoRef, file);
-    return await getDownloadURL(archivoRef);
+
+    return await conTiempoLimite(
+      (async () => {
+        await uploadBytes(archivoRef, file);
+        return await getDownloadURL(archivoRef);
+      })(),
+      30000
+    );
   }
 
   document.getElementById('proof-file').addEventListener('change', async function(e) {
@@ -1525,20 +1552,30 @@
 
     const btn = document.getElementById('btn-finish-order');
     btn.disabled = true;
-    btn.textContent = "Registrando tus tablas...";
 
     try {
       let enlaceDigital = '';
       clearInterval(timerInterval);
+
+      // Si el cliente adjuntó comprobante, este debe cargarse correctamente
+      // antes de confirmar la venta. Si no hay comprobante, continúa normalmente.
+      let comprobanteURL = null;
+      const provisionalId = Date.now().toString();
+
+      if (proofFile) {
+        btn.textContent = "Subiendo comprobante...";
+
+        comprobanteURL = await subirComprobanteStorage(
+          proofFile,
+          provisionalId
+        );
+      }
+
+      btn.textContent = "Confirmando registro...";
+
       orderCompleted = true;
 
-      // Optimización: ya no se leen todos los pedidos para calcular el consecutivo.
-      // El contador independiente evita consumir lecturas de toda la colección.
-      // El consecutivo se actualiza dentro de la misma transacción de compra.
       const counterRef = doc(db, 'sistema', 'contadorPedidos');
-
-      const provisionalId = Date.now().toString();
-      const comprobanteURL = await subirComprobanteStorage(proofFile, provisionalId);
 
       const orderId = await conTiempoLimite(runTransaction(db, async (transaction) => {
         const counterSnap = await transaction.get(counterRef);
