@@ -1366,38 +1366,51 @@
   }
 
   async function subirComprobanteStorage(file, pedidoId){
-    if(!file) return null;
+    try {
+      if(!file) return null;
 
-    const maxImageSize = 10 * 1024 * 1024;
-    const maxPdfSize = 15 * 1024 * 1024;
-    const allowedTypes = [
-      'image/jpeg',
-      'image/png',
-      'application/pdf'
-    ];
+      console.log('📎 Comprobante recibido:', file.name, file.type, file.size);
 
-    if (!allowedTypes.includes(file.type)) {
-      throw new Error('Formato no permitido. Solo JPG, PNG o PDF.');
+      const maxImageSize = 10 * 1024 * 1024;
+      const maxPdfSize = 15 * 1024 * 1024;
+      const allowedTypes = [
+        'image/jpeg',
+        'image/png',
+        'application/pdf'
+      ];
+
+      if (!allowedTypes.includes(file.type)) {
+        throw new Error('Formato no permitido. Solo JPG, PNG o PDF.');
+      }
+
+      if (file.type === 'application/pdf' && file.size > maxPdfSize) {
+        throw new Error('El PDF supera el tamaño máximo permitido.');
+      }
+
+      if (file.type.startsWith('image/') && file.size > maxImageSize) {
+        throw new Error('La imagen supera el tamaño máximo permitido.');
+      }
+
+      const ruta = `comprobantes/${pedidoId}_${Date.now()}_${file.name}`;
+      const archivoRef = storageRef(storage, ruta);
+
+      console.log('⬆️ Subiendo a Firebase Storage:', ruta);
+
+      const resultado = await conTiempoLimite(
+        (async () => {
+          await uploadBytes(archivoRef, file);
+          return await getDownloadURL(archivoRef);
+        })(),
+        30000
+      );
+
+      console.log('✅ Comprobante cargado:', resultado);
+      return resultado;
+
+    } catch(error) {
+      console.error('❌ Error Firebase Storage comprobante:', error);
+      throw error;
     }
-
-    if (file.type === 'application/pdf' && file.size > maxPdfSize) {
-      throw new Error('El PDF supera el tamaño máximo permitido.');
-    }
-
-    if (file.type.startsWith('image/') && file.size > maxImageSize) {
-      throw new Error('La imagen supera el tamaño máximo permitido.');
-    }
-
-    const ruta = `comprobantes/${pedidoId}_${Date.now()}_${file.name}`;
-    const archivoRef = storageRef(storage, ruta);
-
-    return await conTiempoLimite(
-      (async () => {
-        await uploadBytes(archivoRef, file);
-        return await getDownloadURL(archivoRef);
-      })(),
-      30000
-    );
   }
 
   document.getElementById('proof-file').addEventListener('change', async function(e) {
