@@ -698,6 +698,7 @@
       if (!order.tablas || order.tablas.length === 0) return;
 
       const pagos = order.destinoPorTabla || {};
+      const formaGeneral = String(order.destino || 'DEBEN').trim().toUpperCase();
 
       order.tablas.forEach(tabla => {
         const clave = String(tabla);
@@ -705,13 +706,13 @@
           pagos[clave] ||
           pagos[clave.replace(/^T/i,'')] ||
           pagos['T' + clave.replace(/^T/i,'')] ||
-          ''
+          formaGeneral
         ).trim().toUpperCase();
 
         if (forma.includes('CONSIGN')) consignacion += valor;
-        if (forma.includes('EFECTIVO')) efectivo += valor;
-        if (forma.includes('GRATIS')) gratis += valor;
-        if (forma.includes('DEBEN') || forma.includes('PENDIENTE')) deben += valor;
+        else if (forma.includes('EFECTIVO')) efectivo += valor;
+        else if (forma.includes('GRATIS')) gratis += valor;
+        else deben += valor;
       });
     });
 
@@ -725,6 +726,7 @@
     document.getElementById('m-vend-consignacion').innerHTML = 'Consig.:<br>' + formatMoney(consignacion);
     document.getElementById('m-vend-efectivo').innerHTML = 'Efectivo:<br>' + formatMoney(efectivo);
     document.getElementById('m-vend-gratis').innerHTML = 'Gratis:<br>' + formatMoney(gratis);
+    document.getElementById('m-vend-deben').innerHTML = 'Deben:<br>' + formatMoney(deben);
   }
 
   document.getElementById('form-config').addEventListener('submit', async (e) => {
