@@ -918,7 +918,35 @@
     });
   }
 
+  async function limpiarReservasVencidas() {
+    try {
+      const snapshot = await getDocs(collection(db, 'tablas'));
+      const now = Date.now();
+
+      const updates = [];
+
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+
+        if (data.status === 'RESERVADA' && data.reservedUntil && data.reservedUntil <= now) {
+          updates.push(updateDoc(doc(db, 'tablas', docSnap.id), {
+            status: 'DISPONIBLE',
+            reservedUntil: null,
+            reservedBy: null,
+            pedido: null
+          }));
+        }
+      });
+
+      await Promise.all(updates);
+    } catch (error) {
+      console.error('Error limpiando reservas vencidas:', error);
+    }
+  }
+
   function listenTables() {
+    limpiarReservasVencidas();
+
     onSnapshot(collection(db, 'tablas'), (snapshot) => {
       allTablesData = [];
       const now = Date.now();
