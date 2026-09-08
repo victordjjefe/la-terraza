@@ -535,7 +535,6 @@
       <p id="lookup-message" style="margin-top:12px;"></p>
       <div class="lookup-tables" id="lookup-tables"></div>
       <div id="lookup-link-box" style="margin-top:14px; margin-bottom:14px;"></div>
-      <button class="btn btn-success" id="btn-copy-lookup-link" style="margin-bottom:14px; display:none;">📋 Copiar enlace</button>
       <button class="btn btn-success" id="btn-whatsapp-lookup-link" style="margin-bottom:14px; display:none;">📲 Enviar enlace por WhatsApp</button>
       <button class="btn btn-dark" id="btn-close-lookup">Cerrar</button>
     </div>
@@ -763,12 +762,34 @@
       return;
     }
 
-    // Elimina duplicados y mantiene todas las tablas encontradas
-    tablasEncontradas = [...new Set(tablasEncontradas)];
+    // CORRECCIÓN DE SEGURIDAD:
+    // Antes se tomaban todas las tablas históricas del pedido aunque una de ellas
+    // hubiera sido liberada posteriormente. Ahora se valida contra la colección
+    // actual de tablas. Solo permanecen visibles las tablas que siguen vendidas.
+    const tablasConfirmadas = [];
+
+    for (const codigoTabla of [...new Set(tablasEncontradas)]) {
+      try {
+        const tablaRef = doc(db, 'tablas', codigoTabla);
+        const tablaSnap = await getDoc(tablaRef);
+
+        if (tablaSnap.exists()) {
+          const estadoTabla = tablaSnap.data()?.status;
+
+          if (estadoTabla === 'VENDIDA') {
+            tablasConfirmadas.push(codigoTabla);
+          }
+        }
+      } catch (error) {
+        console.error('Error validando tabla:', codigoTabla, error);
+      }
+    }
+
+    tablasEncontradas = tablasConfirmadas;
 
     document.getElementById('lookup-modal').classList.add('active');
 
-    document.getElementById('btn-copy-lookup-link').style.setProperty('display','none','important');
+    document.getElementById('btn-copy-lookup-link')?.style.setProperty('display','none','important');
     document.getElementById('btn-whatsapp-lookup-link').style.setProperty('display','none','important');
     document.getElementById('lookup-link-box').innerHTML='';
     document.getElementById('lookup-tables').textContent='';
@@ -806,9 +827,9 @@
         `🔗 Tu enlace digital para jugar:\n${ultimoLookupEnlace}`;
 
       document.getElementById('lookup-link-box').innerHTML =
-        `<a class="btn btn-success digital-action-spacing" href="${ultimoLookupEnlace}" target="_blank">🎱 ABRIR MIS TABLAS DIGITALES</a>`;
+        ``;
 
-      document.getElementById('btn-copy-lookup-link').style.display='block';
+      document.getElementById('btn-copy-lookup-link')?.style.setProperty('display','none','important');
       document.getElementById('btn-whatsapp-lookup-link').style.display='block';
 
       ultimoLookupTelefono = cleanPhone(telefonoFinal);
@@ -827,7 +848,7 @@
 
       document.getElementById('lookup-tables').textContent='';
       document.getElementById('lookup-link-box').innerHTML='';
-      document.getElementById('btn-copy-lookup-link').style.setProperty('display','none','important');
+      document.getElementById('btn-copy-lookup-link')?.style.setProperty('display','none','important');
       document.getElementById('btn-whatsapp-lookup-link').style.setProperty('display','none','important');
 
       ultimoLookupEnlace = '';
@@ -836,7 +857,6 @@
     }
   }
 
-  document.getElementById('btn-copy-lookup-link')?.addEventListener('click',()=>{navigator.clipboard.writeText(ultimoLookupEnlace); alert('✓ Enlace copiado correctamente.');});
   document.getElementById('btn-whatsapp-lookup-link')?.addEventListener('click',()=>{
     try{
       const telefono = normalizarWhatsAppColombia(ultimoLookupTelefono || document.getElementById('lookup-input').value);
@@ -1644,7 +1664,7 @@ ${ultimoEnlaceDigital}
 Después de realizar el pago, conserva este mensaje como comprobante de tus tablas.`;
 
       document.getElementById('bingo-info-success').innerHTML = `📅 <b>Fecha del Bingo:</b> ${config?.fecha || '--'}<br>⏰ <b>Hora:</b> ${config?.hora || '--'}`;
-      document.getElementById('digital-link-box').innerHTML = ultimoEnlaceDigital ? `<a class="btn btn-success digital-uniform-btn" href="${ultimoEnlaceDigital}" target="_blank">🎱 ABRIR MIS TABLAS DIGITALES</a>` : 'Enlace pendiente';
+      document.getElementById('digital-link-box').innerHTML = '';
 
     } catch (err) {
       console.error("Error al finalizar pedido:", err);
