@@ -1022,8 +1022,7 @@
     const sectionsToHide = [
       'card-tables-section',
       'card-buyer-section',
-      'payment-section-card',
-      'reservation-timer-box'
+      'payment-section-card'
     ];
 
     if (availableCount === 0) {
@@ -1061,8 +1060,12 @@
       startReservationTimer();
       document.getElementById('reservation-timer-box').classList.remove('hidden');
     } else {
+      // Sin tablas seleccionadas NO existe reserva activa.
+      // Se detiene el contador y se oculta completamente.
       clearInterval(timerInterval);
+      timerInterval = null;
       reservationEndTime = null;
+      document.getElementById('timer-display').textContent = '03:00';
       document.getElementById('reservation-timer-box').classList.add('hidden');
     }
     updateSummary();
@@ -1119,9 +1122,21 @@
   }
 
   function startReservationTimer() {
+    if (selectedTables.length === 0) {
+      document.getElementById('reservation-timer-box').classList.add('hidden');
+      return;
+    }
+
     clearInterval(timerInterval);
 
     function updateDisplay() {
+      if (selectedTables.length === 0) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        document.getElementById('reservation-timer-box').classList.add('hidden');
+        return;
+      }
+
       const remainingMs = reservationEndTime - Date.now();
 
       if (remainingMs <= 0) {
