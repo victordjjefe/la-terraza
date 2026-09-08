@@ -1323,6 +1323,12 @@ function seleccionarFormaPago(order){
       const pedidosSnap = await getDocs(collection(db, 'pedidos'));
       await borrarSnapshotEnBloques(pedidosSnap);
 
+      // Reinicia el consecutivo para que el nuevo bingo inicie nuevamente desde 1.
+      // Esto no afecta la seguridad del registro durante el bingo actual.
+      await setDoc(doc(db, 'sistema', 'contadorPedidos'), {
+        ultimo: 0
+      });
+
       // La configuración se borra al final. Así el evento solo se considera
       // cerrado cuando las tablas y los pedidos ya terminaron de eliminarse.
       await deleteDoc(doc(db, 'configuracion', 'evento'));
