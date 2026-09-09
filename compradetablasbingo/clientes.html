@@ -554,7 +554,7 @@
 
         <div class="form-group" id="proof-group-container">
           <label>Subir Soporte de Pago (Opcional)</label>
-          <input type="file" id="proof-file" accept="image/*,application/pdf" class="form-control">
+          <input type="file" id="proof-file" accept="image/jpeg,image/png,.jpg,.jpeg,.png" class="form-control">
         </div>
 
         <div style="display: flex; gap: 10px; margin-top: 14px;" id="action-buttons-container">
@@ -1356,76 +1356,136 @@
 
   document.getElementById('btn-copy-number').addEventListener('click', copiarNumero);
 
-  function readFileAsDataURL(file) {
+  function actualizarProgresoComprobante(porcentaje, texto = 'Procesando comprobante') {
+    const btn = document.getElementById('btn-finish-order');
+    const valor = Math.max(0, Math.min(100, Math.round(porcentaje)));
+    btn.textContent = `${texto}... ${valor}%`;
+  }
+
+  function leerImagenConProgreso(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = reject;
+
+      reader.onprogress = (e) => {
+        if (e.lengthComputable && e.total > 0) {
+          // La lectura local ocupa del 5% al 30% del progreso visible.
+          const pct = 5 + ((e.loaded / e.total) * 25);
+          actualizarProgresoComprobante(pct, 'Preparando comprobante');
+        }
+      };
+
+      reader.onload = () => {
+        actualizarProgresoComprobante(30, 'Preparando comprobante');
+        resolve(reader.result);
+      };
+
+      reader.onerror = () => reject(new Error('No fue posible leer la imagen seleccionada.'));
       reader.readAsDataURL(file);
     });
   }
 
-  async function subirComprobanteStorage(file, pedidoId){
-    try {
-      if(!file) return null;
-
-      console.log('📎 Comprobante recibido:', file.name, file.type, file.size);
-
-      const maxImageSize = 10 * 1024 * 1024;
-      const maxPdfSize = 15 * 1024 * 1024;
-      const allowedTypes = [
-        'image/jpeg',
-        'image/png',
-        'application/pdf'
-      ];
-
-      if (!allowedTypes.includes(file.type)) {
-        throw new Error('Formato no permitido. Solo JPG, PNG o PDF.');
-      }
-
-      if (file.type === 'application/pdf' && file.size > maxPdfSize) {
-        throw new Error('El PDF supera el tamaño máximo permitido.');
-      }
-
-      if (file.type.startsWith('image/') && file.size > maxImageSize) {
-        throw new Error('La imagen supera el tamaño máximo permitido.');
-      }
-
-      const ruta = `comprobantes/${pedidoId}_${Date.now()}_${file.name}`;
-      const archivoRef = storageRef(storage, ruta);
-
-      console.log('⬆️ Subiendo a Firebase Storage:', ruta);
-
-      const resultado = await conTiempoLimite(
-        (async () => {
-          await uploadBytes(archivoRef, file);
-          return await getDownloadURL(archivoRef);
-        })(),
-        30000
-      );
-
-      console.log('✅ Comprobante cargado:', resultado);
-      return resultado;
-
-    } catch(error) {
-      console.error('❌ Error Firebase Storage comprobante:', error);
-      throw error;
-    }
+  function cargarImagenDesdeDataURL(dataURL) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('No fue posible procesar la imagen seleccionada.'));
+      img.src = dataURL;
+    });
   }
 
-  document.getElementById('proof-file').addEventListener('change', async function(e) {
-    const file = e.target.files[0];
-    if (!file) return;
+  async function prepararComprobanteFirestore(file) {
+    if (!file) return null;
 
-    try {
-      // Conserva el archivo original para evitar pérdida de calidad.
-      // Soporta JPG, PNG, capturas de pantalla y PDF.
-      proofFile = file;
-    } catch (error) {
-      console.error('Error procesando comprobante:', error);
-      alert('No fue posible cargar el comprobante. Intente nuevamente.');
-      proofFile = null;
+    const allowedTypes = ['image/jpeg', 'image/png'];
+    const maxInputSize = 15 * 1024 * 1024;
+    const TARGET_DATA_URL_BYTES = 450 * 1024;
+
+    if (!allowedTypes.includes(file.type)) {
+      throw new Error('Formato no permitido. Usa una imagen JPG o PNG.');
     }
+
+    if (file.size > maxInputSize) {
+      throw new Error('La imagen es demasiado pesada. El máximo permitido es 15 MB.');
+    }
+
+    actualizarProgresoComprobante(5, 'Preparando comprobante');
+
+    const originalDataURL = await leerImagenConProgreso(file);
+    const img = await cargarImagenDesdeDataURL(originalDataURL);
+
+    actualizarProgresoComprobante(40, 'Optimizando comprobante');
+
+    // Reduce imágenes grandes conservando suficiente definición para leer un comprobante.
+    const maxDimension = 1280;
+    let width = img.naturalWidth || img.width;
+    let height = img.naturalHeight || img.height;
+
+    if (width > maxDimension || height > maxDimension) {
+      const scale = Math.min(maxDimension / width, maxDimension / height);
+      width = Math.round(width * scale);
+      height = Math.round(height * scale);
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+
+    const ctx = canvas.getContext('2d', { alpha: false });
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+    ctx.drawImage(img, 0, 0, width, height);
+
+    actualizarProgresoComprobante(55, 'Optimizando comprobante');
+
+    let quality = 0.82;
+    let resultado = canvas.toDataURL('image/jpeg', quality);
+
+    // Firestore tiene un límite cercano a 1 MiB por documento.
+    // Dejamos el comprobante bastante por debajo para que el resto del pedido tenga margen.
+    while (resultado.length > TARGET_DATA_URL_BYTES && quality > 0.42) {
+      quality -= 0.08;
+      resultado = canvas.toDataURL('image/jpeg', quality);
+    }
+
+    // Si todavía pesa demasiado, reducimos dimensiones una segunda vez.
+    if (resultado.length > TARGET_DATA_URL_BYTES) {
+      const secondCanvas = document.createElement('canvas');
+      secondCanvas.width = Math.max(600, Math.round(width * 0.75));
+      secondCanvas.height = Math.max(450, Math.round(height * 0.75));
+
+      const secondCtx = secondCanvas.getContext('2d', { alpha: false });
+      secondCtx.fillStyle = '#ffffff';
+      secondCtx.fillRect(0, 0, secondCanvas.width, secondCanvas.height);
+      secondCtx.drawImage(canvas, 0, 0, secondCanvas.width, secondCanvas.height);
+
+      resultado = secondCanvas.toDataURL('image/jpeg', 0.55);
+    }
+
+    if (resultado.length > TARGET_DATA_URL_BYTES) {
+      throw new Error('No fue posible reducir suficientemente la imagen. Intenta con una captura más pequeña.');
+    }
+
+    actualizarProgresoComprobante(70, 'Comprobante listo');
+    return resultado;
+  }
+
+  document.getElementById('proof-file').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) {
+      proofFile = null;
+      return;
+    }
+
+    const allowedTypes = ['image/jpeg', 'image/png'];
+
+    if (!allowedTypes.includes(file.type)) {
+      alert('Selecciona únicamente una imagen JPG o PNG.');
+      e.target.value = '';
+      proofFile = null;
+      return;
+    }
+
+    proofFile = file;
   });
 
 
@@ -1565,30 +1625,37 @@
 
     const btn = document.getElementById('btn-finish-order');
     btn.disabled = true;
+    let progresoGuardadoInterval = null;
 
     try {
       let enlaceDigital = '';
       clearInterval(timerInterval);
 
-      // Si el cliente adjuntó comprobante, este debe cargarse correctamente
-      // antes de confirmar la venta. Si no hay comprobante, continúa normalmente.
-      let comprobanteURL = null;
-      const provisionalId = Date.now().toString();
+      // Si el cliente adjuntó comprobante, se optimiza y se guarda dentro
+      // del mismo pedido en Firestore. No usa Firebase Storage ni requiere plan Blaze.
+      let comprobanteImagen = null;
 
       if (proofFile) {
-        btn.textContent = "Subiendo comprobante...";
-
-        comprobanteURL = await subirComprobanteStorage(
-          proofFile,
-          provisionalId
-        );
+        comprobanteImagen = await prepararComprobanteFirestore(proofFile);
       }
 
-      btn.textContent = "Confirmando registro...";
+      btn.textContent = proofFile
+        ? "Guardando comprobante... 75%"
+        : "Confirmando registro...";
 
       orderCompleted = true;
 
       const counterRef = doc(db, 'sistema', 'contadorPedidos');
+
+      if (proofFile) {
+        let progresoVisible = 75;
+        progresoGuardadoInterval = setInterval(() => {
+          if (progresoVisible < 95) {
+            progresoVisible += 2;
+            actualizarProgresoComprobante(progresoVisible, 'Guardando comprobante');
+          }
+        }, 450);
+      }
 
       const orderId = await conTiempoLimite(runTransaction(db, async (transaction) => {
         const counterSnap = await transaction.get(counterRef);
@@ -1660,7 +1727,10 @@
             config?.linkTransmision || ''
           ),
           total: tablesToBuy.length * (config ? config.valor : 0),
-          comprobanteURL: comprobanteURL || null,
+          // Comprobante almacenado como imagen JPEG comprimida dentro de Firestore.
+          // El panel administrador ya admite el campo "comprobante".
+          comprobante: comprobanteImagen || null,
+          comprobanteURL: null,
           fecha: new Date().toLocaleString(),
           estado: 'PENDIENTE PAGO'
         };
@@ -1697,6 +1767,12 @@
 
         return candidateId;
       }), 20000);
+
+      if (progresoGuardadoInterval) {
+        clearInterval(progresoGuardadoInterval);
+        progresoGuardadoInterval = null;
+        actualizarProgresoComprobante(100, 'Comprobante guardado');
+      }
 
       // Desde este punto Firebase ya confirmó pedido + tablas VENDIDAS.
       // Limpiamos de inmediato la selección local para que una recarga/cierre
@@ -1821,6 +1897,10 @@ Después de realizar el pago, conserva este mensaje como comprobante de tus tabl
         document.getElementById('reservation-timer-box').classList.remove('hidden');
       }
     } finally {
+      if (progresoGuardadoInterval) {
+        clearInterval(progresoGuardadoInterval);
+        progresoGuardadoInterval = null;
+      }
       btn.disabled = false;
       btn.textContent = "Registrar / Comprar";
     }
