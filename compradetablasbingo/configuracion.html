@@ -158,9 +158,6 @@
     .related-orders-title { font-weight: 800; margin-bottom: 5px; }
     .related-order-row { margin-top: 3px; }
     .related-order-row span { color: #92400e; font-weight: 700; }
-    .system-registration-status, .payment-status { margin-top: 6px; font-size: 0.85rem; font-weight: 700; }
-    .system-registration-status.not-registered { color: var(--danger); }
-    .system-registration-status.registered { color: var(--success); }
     .payment-status.pending { color: #b45309; }
     .payment-status.paid { color: var(--success); }
     .payment-status-btn {
@@ -455,7 +452,6 @@
             <option value="PENDIENTE PAGO">PENDIENTE PAGO</option>
             <option value="PAGADO">PAGADO</option>
             <option value="CANCELADO">CANCELADO</option>
-            <option value="NO_REGISTRADO_SISTEMA">NO REGISTRADOS EN EL SISTEMA</option>
           </select>
         </div>
         <!-- Contenedor con scroll aplicado para que no crezca infinitamente -->
@@ -788,7 +784,6 @@
           batch.set(tableRef, {
             code: code,
             status: 'DISPONIBLE',
-            passedToPC: false,
             reservedUntil: null,
             reservedBy: null,
             pedido: null
@@ -842,15 +837,6 @@
     });
   }
 
-  async function toggleOrderPassedStatus(orderFirestoreId, newStatus) {
-    try {
-      const orderRef = doc(db, 'pedidos', orderFirestoreId);
-      await updateDoc(orderRef, { passedToPC: newStatus });
-    } catch (err) {
-      console.error("Error actualizando estado del pedido:", err);
-    }
-  }
-
   // FUNCIÓN PARA LIBERAR TABLAS Y CAMBIAR AUTOMÁTICAMENTE A CANCELADO SI QUEDA VACÍO
   function openReleaseModal(orderFirestoreId) {
     const order = allOrders.find(o => o.firestoreId === orderFirestoreId);
@@ -895,7 +881,9 @@
             batch.update(orderRef, {
               tablas: [],
               total: 0,
-              estado: 'CANCELADO'
+              estado: 'CANCELADO',
+              comprobanteURL: null,
+              comprobante: null
             });
           } else {
             batch.update(orderRef, {
@@ -1092,6 +1080,15 @@
     return digits.length > 10 ? digits.slice(-10) : digits;
   }
 
+  // Normaliza textos para búsquedas sin afectar el dato original guardado.
+  // Permite encontrar nombres con o sin tildes (José = Jose, María = Maria).
+  function normalizeSearchText(value) {
+    return String(value || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  }
+
   function getOrderWhatsapp(order) {
     return normalizeWhatsapp(order.telefono || order.cliente?.whatsapp || '');
   }
@@ -1110,7 +1107,7 @@
   }
 
   function filterOrders() {
-    const queryStr = document.getElementById('search-input').value.toLowerCase();
+    const queryStr = normalizeSearchText(document.getElementById('search-input').value);
     const statusFilter = document.getElementById('filter-status').value;
     const container = document.getElementById('orders-list');
     container.innerHTML = '';
@@ -1120,17 +1117,13 @@
       const clientPhone = o.telefono || o.cliente?.whatsapp || '';
       const reference = o.referencia || '';
       const tablesStr = (o.tablas || []).join(', ');
-      const matchQuery = String(o.id || '').toLowerCase().includes(queryStr) ||
-                         clientName.toLowerCase().includes(queryStr) ||
-                         String(clientPhone).toLowerCase().includes(queryStr) ||
-                         reference.toLowerCase().includes(queryStr) ||
-                         tablesStr.toLowerCase().includes(queryStr);
+      const matchQuery = normalizeSearchText(String(o.id || '')).includes(queryStr) ||
+                         normalizeSearchText(clientName).includes(queryStr) ||
+                         normalizeSearchText(String(clientPhone)).includes(queryStr) ||
+                         normalizeSearchText(reference).includes(queryStr) ||
+                         normalizeSearchText(tablesStr).includes(queryStr);
       let matchStatus;
-      if (statusFilter === 'NO_REGISTRADO_SISTEMA') {
-        matchStatus = (o.tablas || []).length > 0 && o.passedToPC !== true;
-      } else {
-        matchStatus = statusFilter === 'TODOS' || getEffectiveOrderStatus(o) === statusFilter;
-      }
+      matchStatus = statusFilter === 'TODOS' || getEffectiveOrderStatus(o) === statusFilter;
       return matchQuery && matchStatus;
     });
 
@@ -1176,12 +1169,6 @@
         </div>
       ` : '';
 
-      // Todo pedido nuevo/activo se interpreta como NO REGISTRADO hasta que se marque manualmente.
-      const isPassed = o.passedToPC === true;
-      const registrationLegend = isPassed ? 'Tablas registradas en el sistema' : 'No registradas en el sistema';
-      const registrationClass = isPassed ? 'registered' : 'not-registered';
-      const registrationButtonClass = isPassed ? 'table-status-btn passed' : 'table-status-btn';
-
       // Todo pedido con tablas se interpreta como PAGO PENDIENTE salvo que se haya marcado PAGADO.
       const isPaid = currentStatus === 'PAGADO';
       const paymentLegend = isPaid ? 'Pagado' : 'Pago pendiente';
@@ -1214,7 +1201,6 @@
           ${tableList.length > 0 ? relatedOrdersHTML : ''}
           ${tableList.length > 0 ? `<div class="payment-status ${paymentClass}">${isPaid ? '✓' : '●'} ${paymentLegend}</div>` : ''}
           ${tableList.length > 0 && isPaid ? `<div class="payment-status" style="color:var(--accent-gold);">Forma de pago: ${resumenFormaPago(o)}</div>` : ''}
-          ${tableList.length > 0 ? `<div class="system-registration-status ${registrationClass}">${isPassed ? '✓' : '●'} ${registrationLegend}</div>` : ''}
         </div>
         <div class="order-actions">
           ${actionButtonsHTML}
@@ -1278,10 +1264,18 @@ function seleccionarFormaPago(order){
             <option value="GRATIS">GRATIS</option>
           </select>
         </div>`).join('')}
-      <button id="confirmar-forma-pago" style="padding:10px;width:100%">Guardar</button>
+      <div style="display:flex;gap:10px;margin-top:10px">
+        <button id="cancelar-forma-pago" style="padding:10px;flex:1;background:#64748b;color:white;border:none;border-radius:8px">Cerrar</button>
+        <button id="confirmar-forma-pago" style="padding:10px;flex:1;background:#d97706;color:white;border:none;border-radius:8px">Guardar</button>
+      </div>
     </div>`;
 
     document.body.appendChild(modal);
+
+    modal.querySelector('#cancelar-forma-pago').onclick=()=>{
+      modal.remove();
+      resolve(null);
+    };
 
     modal.querySelector('#confirmar-forma-pago').onclick=()=>{
       const porTabla={};
