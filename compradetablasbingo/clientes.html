@@ -578,7 +578,7 @@
         <div id="bingo-info-success" style="margin-bottom:12px; font-size:0.95rem; color:var(--text-main);"></div>
         <div id="consolidado-aviso"></div>
         <div id="digital-link-box" style="margin-bottom:0;"></div>
-        <button class="btn" id="btn-whatsapp-digital-link" style="background:#25D366;color:white;margin-bottom:10px;font-size:1.15rem;font-weight:800;">🟢 📲 Guardar mis tablas en WhatsApp</button>
+        <button class="btn" id="btn-whatsapp-digital-link" style="background:#25D366;color:white;margin-bottom:10px;font-size:1.15rem;font-weight:800;">🟢 📲 Guardar mis tablas y transmisión en WhatsApp</button>
         <p style="font-size:0.9rem;color:#475569;line-height:1.5;margin:0 0 14px;">🎱 Por seguridad, guarda este enlace en tu WhatsApp. Será tu acceso para jugar, ver tus tablas y disfrutar la transmisión en vivo del bingo.</p>
         <button class="btn btn-success btn-restart-action" style="margin-top: 8px;">Hacer otra compra</button>
       </div>
@@ -606,7 +606,7 @@
       <p id="lookup-message" style="margin-top:12px;"></p>
       <div class="lookup-tables" id="lookup-tables"></div>
       <div id="lookup-link-box" style="margin-top:14px; margin-bottom:14px;"></div>
-      <button class="btn" id="btn-whatsapp-lookup-link" style="background:#25D366;color:white;margin-bottom:10px;font-size:1.15rem;font-weight:800;display:none;">🟢 📲 Guardar mis tablas en WhatsApp</button>
+      <button class="btn" id="btn-whatsapp-lookup-link" style="background:#25D366;color:white;margin-bottom:10px;font-size:1.15rem;font-weight:800;display:none;">🟢 📲 Guardar mis tablas y transmisión en WhatsApp</button>
       <p id="lookup-security-message" style="font-size:0.9rem;color:#475569;line-height:1.5;margin:0 0 14px;display:none;">🎱 Por seguridad, guarda este enlace en tu WhatsApp. Será tu acceso para jugar, ver tus tablas y disfrutar la transmisión en vivo del bingo.</p>
       <button class="btn btn-dark" id="btn-close-lookup">Cerrar</button>
     </div>
@@ -891,11 +891,20 @@
       );
 
       ultimoLookupMensaje =
-        `🎱 LA TERRAZA BINGO\n\n` +
-        `¡Hola ${nombreMostrar}!\n\n` +
-        `✅ Encontramos todos tus registros asociados.\n\n` +
-        `🎟️ Tus tablas son:\n${tablasEncontradas.map(t=>'🎟️ '+t).join('\n')}\n\n` +
-        `🔗 Tu enlace digital para jugar:\n${ultimoLookupEnlace}`;
+        `🎱✨ LA TERRAZA BINGO ✨🎱\n\n` +
+        `¡Hola ${nombreMostrar}! 👋😄\n\n` +
+        `🎉 ¡Listo! Ya tienes tus tablas contigo… bueno, donde las estés guardando 😅🎱\n` +
+        `Ahora solo falta la suerte, los buenos números y cantar ese esperado ¡BINGO! 🍀\n\n` +
+        `🎟️ Tus tablas para jugar son:\n${tablasEncontradas.map(t=>'🎟️ '+t).join('\n')}\n\n` +
+        `📅 Fecha: ${config?.fecha || ''}\n` +
+        `⏰ Hora: ${config?.hora || ''}\n\n` +
+        `🔗 Guarda este acceso en WhatsApp para consultar tus tablas y disfrutar la transmisión en vivo:\n\n${ultimoLookupEnlace}\n\n` +
+        `💳 Información de pago:\n\n` +
+        `📱 Nequi: 323 437 0590\n` +
+        `📱 Daviplata: 323 437 0590\n` +
+        `🔑 Llave: 323 437 0590\n\n` +
+        `✅ Si ya realizaste el pago, ignora esta información. Tu registro ya está confirmado.\n\n` +
+        `🍀 ¡Que la suerte te acompañe y que esos números se pongan de tu lado! 🎱`;
 
       document.getElementById('lookup-link-box').innerHTML =
         ``;
@@ -1507,6 +1516,15 @@
     });
   });
 
+  // WhatsApp siempre se conserva únicamente con números.
+  // Elimina espacios, guiones u otros separadores sin modificar ningún dígito.
+  const buyerPhoneField = document.getElementById('buyer-phone');
+  if (buyerPhoneField) {
+    buyerPhoneField.addEventListener('blur', () => {
+      buyerPhoneField.value = cleanPhone(buyerPhoneField.value);
+    });
+  }
+
 
 
   // Genera la estructura de sincronización que utiliza el sistema contable v34.
@@ -1600,7 +1618,7 @@
 
     const buyerName = normalizeText(buyerNameInput.value);
     const buyerAddress = normalizeText(buyerAddressInput.value);
-    const buyerPhone = buyerPhoneInput.value.trim();
+    const buyerPhone = cleanPhone(buyerPhoneInput.value);
 
     buyerNameInput.value = buyerName;
     buyerAddressInput.value = buyerAddress;
@@ -1643,7 +1661,7 @@
 
       btn.textContent = proofFile
         ? "Guardando comprobante... 75%"
-        : "Confirmando registro...";
+        : "Registrando... 20%";
 
       orderCompleted = true;
 
@@ -1655,6 +1673,14 @@
           if (progresoVisible < 95) {
             progresoVisible += 2;
             actualizarProgresoComprobante(progresoVisible, 'Guardando comprobante');
+          }
+        }, 450);
+      } else {
+        let progresoRegistro = 20;
+        progresoGuardadoInterval = setInterval(() => {
+          if (progresoRegistro < 90) {
+            progresoRegistro += 5;
+            btn.textContent = `Registrando... ${progresoRegistro}%`;
           }
         }, 450);
       }
@@ -1840,27 +1866,32 @@
         </div>
       `;
 
-      ultimoMensajeDigital = `🎱 LA TERRAZA BINGO
+      ultimoMensajeDigital = `🎱✨ LA TERRAZA BINGO ✨🎱
 
-¡Hola ${buyerName}!
+¡Hola ${buyerName}! 👋😄
 
-✅ Tu registro fue realizado exitosamente.
+🎉 ¡Listo! Ya tienes tus tablas contigo… bueno, donde las estés guardando 😅🎱
+Ahora solo falta la suerte, los buenos números y cantar ese esperado ¡BINGO! 🍀
 
-🎟️ Tus tablas asignadas para jugar son:
+🎟️ Tus tablas para jugar son:
 ${tablasConsolidadas.map(tabla => '🎟️ ' + tabla).join('\n')}
 
-📅 Fecha del Bingo: ${config?.fecha || ''}
+📅 Fecha: ${config?.fecha || ''}
 ⏰ Hora: ${config?.hora || ''}
 
-🔗 Tu enlace para jugar todas tus tablas es:
+🔗 Guarda este acceso en WhatsApp para consultar tus tablas y disfrutar la transmisión en vivo:
+
 ${ultimoEnlaceDigital}
 
-💳 Puedes realizar tu pago por:
+💳 Información de pago:
+
 📱 Nequi: 323 437 0590
 📱 Daviplata: 323 437 0590
 🔑 Llave: 323 437 0590
 
-Después de realizar el pago, conserva este mensaje como comprobante de tus tablas.`;
+✅ Si ya realizaste el pago, ignora esta información. Tu registro ya está confirmado.
+
+🍀 ¡Que la suerte te acompañe y que esos números se pongan de tu lado! 🎱`;
 
       document.getElementById('bingo-info-success').innerHTML = `📅 <b>Fecha del Bingo:</b> ${config?.fecha || '--'}<br>⏰ <b>Hora:</b> ${config?.hora || '--'}`;
       document.getElementById('digital-link-box').innerHTML = '';
