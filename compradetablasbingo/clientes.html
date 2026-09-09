@@ -1044,22 +1044,27 @@
 
   async function limpiarReservasVencidas() {
     try {
-      const snapshot = await getDocs(collection(db, 'tablas'));
       const now = Date.now();
+
+      // Solo buscamos reservas vencidas.
+      // No revisamos todas las tablas para evitar consumo innecesario.
+      const reservasVencidasQuery = query(
+        collection(db, 'tablas'),
+        where('status', '==', 'RESERVADA'),
+        where('reservedUntil', '<=', now)
+      );
+
+      const snapshot = await getDocs(reservasVencidasQuery);
 
       const updates = [];
 
       snapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-
-        if (data.status === 'RESERVADA' && data.reservedUntil && data.reservedUntil <= now) {
-          updates.push(updateDoc(doc(db, 'tablas', docSnap.id), {
-            status: 'DISPONIBLE',
-            reservedUntil: null,
-            reservedBy: null,
-            pedido: null
-          }));
-        }
+        updates.push(updateDoc(doc(db, 'tablas', docSnap.id), {
+          status: 'DISPONIBLE',
+          reservedUntil: null,
+          reservedBy: null,
+          pedido: null
+        }));
       });
 
       await Promise.all(updates);
@@ -1069,7 +1074,15 @@
   }
 
   function listenTables() {
+    // Limpieza inicial al entrar.
     limpiarReservasVencidas();
+
+    // Protección adicional:
+    // si un comprador abandona la página, las reservas vencidas
+    // no quedan bloqueadas indefinidamente mientras exista actividad.
+    setInterval(() => {
+      limpiarReservasVencidas();
+    }, 60000);
 
     onSnapshot(collection(db, 'tablas'), (snapshot) => {
       allTablesData = [];
