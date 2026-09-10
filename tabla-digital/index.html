@@ -418,169 +418,58 @@ border:none;
 }
 
 
-
-/* ===== DISTRIBUCION MULTIPLES TABLAS ===== */
-
+/* ===== DISTRIBUCION DE MULTIPLES TABLAS ===== */
 /* Una tabla conserva el diseño original */
 
-#tabla.variasTablas{
+.contenedor.multiplesTablas{
+    max-width:none;
+    width:auto;
+}
+
+#tabla.multiplesTablas{
     display:flex;
     flex-wrap:wrap;
     justify-content:center;
     align-items:flex-start;
-    gap:20px;
+    gap:25px;
 }
 
-/* PC y pantallas grandes: tamaño original */
-#tabla.variasTablas .bloqueTabla{
-    box-sizing:border-box;
+#tabla.multiplesTablas .bloqueTabla{
     flex:0 0 400px;
-    width:400px;
-}
-
-/* Celular vertical: NO se sale de la pantalla */
-@media(max-width:767px) and (orientation:portrait){
-
-    .contenedor.variasContenedor{
-        width:100%;
-        max-width:400px;
-        box-sizing:border-box;
-    }
-
-    #tabla.variasTablas{
-        width:100%;
-        flex-direction:column;
-        align-items:center;
-    }
-
-    #tabla.variasTablas .bloqueTabla{
-        width:100%;
-        max-width:100%;
-        flex:0 0 auto;
-    }
-}
-
-/* Celular horizontal: dos tablas */
-@media(max-width:767px) and (orientation:landscape){
-
-    .contenedor.variasContenedor{
-        max-width:none;
-        width:100%;
-    }
-
-    #tabla.variasTablas{
-        flex-direction:row;
-    }
-
-    #tabla.variasTablas .bloqueTabla{
-        width:calc(50vw - 30px);
-        max-width:400px;
-        flex:0 0 calc(50vw - 30px);
-    }
-}
-
-/* Tablet vertical */
-@media(min-width:768px) and (max-width:1100px) and (orientation:portrait){
-
-    #tabla.variasTablas .bloqueTabla{
-        flex-basis:400px;
-    }
-}
-
-/* Tablet horizontal y PC */
-@media(min-width:768px) and (orientation:landscape){
-
-    #tabla.variasTablas .bloqueTabla{
-        flex-basis:400px;
-    }
-}
-
-/* ===== AJUSTE FINAL: SOLO CELULAR HORIZONTAL ===== */
-
-@media (orientation:landscape) and (max-width:900px){
-
-    #tabla.variasTablas{
-        display:flex !important;
-        flex-wrap:wrap;
-        justify-content:center;
-        align-items:flex-start;
-        gap:20px;
-    }
-
-    #tabla.variasTablas .bloqueTabla{
-        flex:0 0 auto !important;
-        width:auto;
-        max-width:400px;
-    }
-}
-
-
-/* ===== LIMPIEZA FINAL RESPONSIVE TABLAS ===== */
-
-/* Base: conserva una tabla como original */
-#tabla{
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-}
-
-#tabla.variasTablas{
-    display:flex;
-    flex-wrap:wrap;
-    justify-content:center;
-    align-items:flex-start;
-    gap:20px;
-}
-
-/* No cambiar tamaño de tablas */
-#tabla.variasTablas .bloqueTabla{
-    flex:0 0 auto;
     width:400px;
     max-width:400px;
 }
 
-/* CELULAR VERTICAL */
+/* Celular vertical: una debajo de otra, sin cortar */
 @media (max-width:767px) and (orientation:portrait){
+    .contenedor.multiplesTablas{
+        width:100%;
+        max-width:400px;
+    }
 
-    #tabla.variasTablas{
+    #tabla.multiplesTablas{
         flex-direction:column;
         align-items:center;
     }
 
-    #tabla.variasTablas .bloqueTabla{
+    #tabla.multiplesTablas .bloqueTabla{
         width:100%;
         max-width:400px;
+        flex-basis:auto;
     }
 }
 
-/* CELULAR HORIZONTAL */
+/* Celular horizontal: conserva tamaño y coloca lado a lado */
 @media (max-width:900px) and (orientation:landscape){
-
-    #tabla.variasTablas{
-        flex-direction:row;
-        justify-content:center;
-        align-items:flex-start;
-        gap:20px;
-    }
-
-    #tabla.variasTablas .bloqueTabla{
-        width:400px;
-        max-width:400px;
+    #tabla.multiplesTablas{
+        max-width:850px;
     }
 }
 
-/* TABLET Y PC */
+/* Tablet y PC mantienen tablas grandes */
 @media (min-width:901px){
-
-    #tabla.variasTablas{
-        flex-direction:row;
-        justify-content:center;
-        gap:20px;
-    }
-
-    #tabla.variasTablas .bloqueTabla{
-        width:400px;
-        max-width:400px;
+    #tabla.multiplesTablas{
+        max-width:1300px;
     }
 }
 </style>
@@ -1052,11 +941,11 @@ let lista=datosEnlace.lista || "1";
 let ids=lista.split(",").map(n=>parseInt(n,10)).filter(n=>Number.isInteger(n) && n>0);
 
 const contenedor=document.getElementById("tabla");
-
-if(ids.length > 1){
-    contenedor.classList.add("variasTablas");
-    document.querySelector(".contenedor").classList.add("variasContenedor");
+if(ids.length>1){
+    document.querySelector(".contenedor").classList.add("multiplesTablas");
+    contenedor.classList.add("multiplesTablas");
 }
+
 const primeraTablaInexistente=ids.find(id=>id>MAXIMO_TABLAS);
 
 if(datosEnlace.invalido || enlaceExpirado){
