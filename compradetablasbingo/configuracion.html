@@ -1459,7 +1459,16 @@ function seleccionarFormaPago(order){
         });
       });
     });
-    const blob=new Blob([JSON.stringify({version:'tablas_bingo_v1',tablas:tablasExportadas},null,2)],{type:'application/json'});
+    const cfgSnap = await getDoc(doc(db,'configuracion','evento'));
+    const cfgEvento = cfgSnap.exists() ? cfgSnap.data() : {};
+    const blob=new Blob([JSON.stringify({
+      version:'tablas_bingo_v2',
+      fechaBingo: cfgEvento.fecha || '',
+      horaBingo: cfgEvento.hora || '',
+      linkTransmision: cfgEvento.linkTransmision || '',
+      valorTabla: Number(cfgEvento.valor || 0),
+      tablas:tablasExportadas
+    },null,2)],{type:'application/json'});
     const a=document.createElement('a');
     a.href=URL.createObjectURL(blob);
     a.download='ventas_bingo_actualizacion.json';
