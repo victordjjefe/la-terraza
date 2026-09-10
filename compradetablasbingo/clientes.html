@@ -430,6 +430,96 @@
 }
 </style>
 
+
+<style>
+/* Efecto premium 3D para botones WhatsApp */
+#btn-whatsapp-digital-link,
+#btn-whatsapp-lookup-link {
+    background: linear-gradient(145deg, #35e878, #128c55) !important;
+    border: 3px solid #ffffff !important;
+    border-radius: 14px !important;
+    box-shadow: 0 7px 0 #075e3d, 0 12px 22px rgba(0,0,0,.28) !important;
+    position: relative;
+    overflow: hidden;
+    transform: translateY(0);
+    transition: all .2s ease;
+    animation: whatsappPulse3D 2.8s infinite;
+}
+
+#btn-whatsapp-digital-link::before,
+#btn-whatsapp-lookup-link::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -120%;
+    width: 70%;
+    height: 100%;
+    background: rgba(255,255,255,.35);
+    transform: skewX(-25deg);
+    animation: whatsappShine 3.5s infinite;
+}
+
+#btn-whatsapp-digital-link:hover,
+#btn-whatsapp-lookup-link:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 10px 0 #075e3d, 0 16px 25px rgba(0,0,0,.35) !important;
+}
+
+#btn-whatsapp-digital-link:active,
+#btn-whatsapp-lookup-link:active {
+    transform: translateY(5px);
+    box-shadow: 0 2px 0 #075e3d, 0 5px 10px rgba(0,0,0,.25) !important;
+}
+
+@keyframes whatsappPulse3D {
+    0%,100% { transform: scale(1); }
+    50% { transform: scale(1.035); }
+}
+
+@keyframes whatsappShine {
+    0% { left:-120%; }
+    25%,100% { left:150%; }
+}
+</style>
+
+<style>
+/* Confirmación intermedia para guardar en WhatsApp */
+#whatsapp-accept-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,.48);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 20000;
+}
+#whatsapp-accept-overlay.active { display:flex; }
+.whatsapp-accept-card {
+  width: min(360px, 90%);
+  text-align:center;
+  background:#fff;
+  padding:28px 22px;
+  border-radius:18px;
+  box-shadow:0 15px 35px rgba(0,0,0,.35);
+}
+#btn-accept-whatsapp {
+  width:100%;
+  min-height:62px;
+  border:none;
+  border-radius:12px;
+  background:linear-gradient(145deg,#25D366,#128C7E);
+  color:#fff;
+  font-size:1.25rem;
+  font-weight:900;
+  cursor:pointer;
+  box-shadow:0 6px 0 #075E54,0 12px 20px rgba(0,0,0,.25);
+  animation:acceptPulse 2s infinite;
+}
+#btn-accept-whatsapp:active { transform:translateY(5px); box-shadow:0 2px 0 #075E54; }
+@keyframes acceptPulse { 50% { transform:scale(1.04); } }
+</style>
 </head>
 <body>
 <div id="initial-loader" class="initial-loader">
@@ -451,6 +541,19 @@
       <p id="disabled-message-body" style="font-size: 1rem; color: var(--text-muted); line-height: 1.5; margin-top: 8px;">
         Las ventas de tablas aún no están habilitadas.
       </p>
+
+      <div class="lookup-card">
+        <div class="card-title" style="justify-content:center;">
+          🔎 ¿Ya registraste tus tablas?
+        </div>
+        <p style="color:var(--text-muted); margin-bottom:12px;">
+          Consulta aquí usando tu número de WhatsApp registrado.
+        </p>
+        <input id="lookup-input" class="form-control" type="tel" inputmode="numeric" pattern="[0-9+ ]*" placeholder="Ej: 3001234567">
+        <button class="btn btn-success" id="btn-lookup" style="margin-top:12px;">
+          Consultar mis tablas
+        </button>
+      </div>
     </div>
   </div>
 
@@ -471,19 +574,6 @@
     </div>
 
     <main class="main-content" id="main-flow-container">
-
-      <div class="lookup-card">
-        <div class="card-title" style="justify-content:center;">
-          🔎 ¿Ya registraste tus tablas?
-        </div>
-        <p style="color:var(--text-muted); margin-bottom:12px;">
-          Consulta aquí usando tu número de WhatsApp registrado.
-        </p>
-        <input id="lookup-input" class="form-control" type="tel" inputmode="numeric" pattern="[0-9+ ]*" placeholder="Ej: 3001234567">
-        <button class="btn btn-success" id="btn-lookup" style="margin-top:12px;">
-          Consultar mis tablas
-        </button>
-      </div>
 
       <div id="no-tables-message" class="no-tables-message hidden">
         <div class="icon">🎱</div>
@@ -611,6 +701,13 @@
       <button class="btn btn-dark" id="btn-close-lookup">Cerrar</button>
     </div>
   </div>
+
+
+<div id="whatsapp-accept-overlay">
+  <div class="whatsapp-accept-card">
+    <button id="btn-accept-whatsapp">✅ ACEPTAR</button>
+  </div>
+</div>
 
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
@@ -1851,6 +1948,7 @@
       );
 
       document.getElementById('success-exclusive-screen').classList.remove('hidden');
+      setTimeout(() => { document.getElementById('whatsapp-accept-overlay').classList.add('active'); }, 300);
       document.getElementById('order-number-display').textContent = `Registro #${orderId}`;
       document.getElementById('buyer-success-display').textContent = `Hola ${buyerName}, tu registro fue realizado exitosamente.`;
 
@@ -2008,6 +2106,11 @@ Gracias por tu compra.`;
   }
 
   document.getElementById('btn-whatsapp-digital-link').addEventListener('click', enviarWhatsAppDigital);
+
+  document.getElementById('btn-accept-whatsapp').addEventListener('click', () => {
+    document.getElementById('whatsapp-accept-overlay').classList.remove('active');
+    enviarWhatsAppDigital();
+  });
 
   document.getElementById('btn-finish-order').addEventListener('click', finishOrder);
   
