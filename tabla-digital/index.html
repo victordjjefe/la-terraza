@@ -417,6 +417,94 @@ height:100%;
 border:none;
 }
 
+
+/* ===== MULTIPLES TABLAS SIN REDUCIR TAMAÑO ===== */
+
+#tabla.variasTablas{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    align-items:flex-start;
+    gap:20px;
+}
+
+#tabla.variasTablas .bloqueTabla{
+    flex:0 0 400px;
+    width:400px;
+    max-width:400px;
+}
+
+/* Celular vertical: una debajo de otra */
+@media (max-width:767px) and (orientation:portrait){
+    #tabla.variasTablas{
+        flex-direction:column;
+        align-items:center;
+    }
+}
+
+/* Celular horizontal: conserva tamaño, permite dos */
+@media (max-width:767px) and (orientation:landscape){
+    #tabla.variasTablas .bloqueTabla{
+        flex-basis:320px;
+        width:320px;
+    }
+}
+
+/* Tablet y PC mantienen tablas legibles */
+@media (min-width:768px){
+    #tabla.variasTablas .bloqueTabla{
+        flex-basis:400px;
+        width:400px;
+    }
+}
+
+
+/* ===== CORRECCION FINAL MULTIPLES TABLAS SIN REDUCIR TAMAÑO ===== */
+
+.contenedor.variasContenedor{
+    max-width:none !important;
+    width:auto !important;
+}
+
+#tabla.variasTablas{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    align-items:flex-start;
+    gap:20px;
+    width:100%;
+}
+
+#tabla.variasTablas .bloqueTabla{
+    width:400px;
+    max-width:400px;
+    flex:0 0 400px;
+}
+
+/* En celular vertical mantener una debajo de otra */
+@media(max-width:767px) and (orientation:portrait){
+    #tabla.variasTablas{
+        flex-direction:column;
+        align-items:center;
+    }
+}
+
+/* En celular horizontal */
+@media(max-width:767px) and (orientation:landscape){
+    #tabla.variasTablas .bloqueTabla{
+        flex-basis:360px;
+        width:360px;
+    }
+}
+
+/* Tablet y PC mantienen tamaño, solo distribuyen */
+@media(min-width:768px){
+    #tabla.variasTablas .bloqueTabla{
+        flex-basis:400px;
+        width:400px;
+    }
+}
+
 </style>
 </head>
 
@@ -886,6 +974,11 @@ let lista=datosEnlace.lista || "1";
 let ids=lista.split(",").map(n=>parseInt(n,10)).filter(n=>Number.isInteger(n) && n>0);
 
 const contenedor=document.getElementById("tabla");
+
+if(ids.length > 1){
+    contenedor.classList.add("variasTablas");
+    document.querySelector(".contenedor").classList.add("variasContenedor");
+}
 const primeraTablaInexistente=ids.find(id=>id>MAXIMO_TABLAS);
 
 if(datosEnlace.invalido || enlaceExpirado){
