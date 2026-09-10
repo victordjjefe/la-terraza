@@ -418,7 +418,10 @@ border:none;
 }
 
 
-/* ===== MULTIPLES TABLAS SIN REDUCIR TAMAÑO ===== */
+
+/* ===== DISTRIBUCION MULTIPLES TABLAS ===== */
+
+/* Una tabla conserva el diseño original */
 
 #tabla.variasTablas{
     display:flex;
@@ -428,83 +431,158 @@ border:none;
     gap:20px;
 }
 
+/* PC y pantallas grandes: tamaño original */
 #tabla.variasTablas .bloqueTabla{
+    box-sizing:border-box;
     flex:0 0 400px;
     width:400px;
-    max-width:400px;
 }
 
-/* Celular vertical: una debajo de otra */
-@media (max-width:767px) and (orientation:portrait){
-    #tabla.variasTablas{
-        flex-direction:column;
-        align-items:center;
-    }
-}
-
-/* Celular horizontal: conserva tamaño, permite dos */
-@media (max-width:767px) and (orientation:landscape){
-    #tabla.variasTablas .bloqueTabla{
-        flex-basis:320px;
-        width:320px;
-    }
-}
-
-/* Tablet y PC mantienen tablas legibles */
-@media (min-width:768px){
-    #tabla.variasTablas .bloqueTabla{
-        flex-basis:400px;
-        width:400px;
-    }
-}
-
-
-/* ===== CORRECCION FINAL MULTIPLES TABLAS SIN REDUCIR TAMAÑO ===== */
-
-.contenedor.variasContenedor{
-    max-width:none !important;
-    width:auto !important;
-}
-
-#tabla.variasTablas{
-    display:flex;
-    flex-wrap:wrap;
-    justify-content:center;
-    align-items:flex-start;
-    gap:20px;
-    width:100%;
-}
-
-#tabla.variasTablas .bloqueTabla{
-    width:400px;
-    max-width:400px;
-    flex:0 0 400px;
-}
-
-/* En celular vertical mantener una debajo de otra */
+/* Celular vertical: NO se sale de la pantalla */
 @media(max-width:767px) and (orientation:portrait){
+
+    .contenedor.variasContenedor{
+        width:100%;
+        max-width:400px;
+        box-sizing:border-box;
+    }
+
+    #tabla.variasTablas{
+        width:100%;
+        flex-direction:column;
+        align-items:center;
+    }
+
+    #tabla.variasTablas .bloqueTabla{
+        width:100%;
+        max-width:100%;
+        flex:0 0 auto;
+    }
+}
+
+/* Celular horizontal: dos tablas */
+@media(max-width:767px) and (orientation:landscape){
+
+    .contenedor.variasContenedor{
+        max-width:none;
+        width:100%;
+    }
+
+    #tabla.variasTablas{
+        flex-direction:row;
+    }
+
+    #tabla.variasTablas .bloqueTabla{
+        width:calc(50vw - 30px);
+        max-width:400px;
+        flex:0 0 calc(50vw - 30px);
+    }
+}
+
+/* Tablet vertical */
+@media(min-width:768px) and (max-width:1100px) and (orientation:portrait){
+
+    #tabla.variasTablas .bloqueTabla{
+        flex-basis:400px;
+    }
+}
+
+/* Tablet horizontal y PC */
+@media(min-width:768px) and (orientation:landscape){
+
+    #tabla.variasTablas .bloqueTabla{
+        flex-basis:400px;
+    }
+}
+
+/* ===== AJUSTE FINAL: SOLO CELULAR HORIZONTAL ===== */
+
+@media (orientation:landscape) and (max-width:900px){
+
+    #tabla.variasTablas{
+        display:flex !important;
+        flex-wrap:wrap;
+        justify-content:center;
+        align-items:flex-start;
+        gap:20px;
+    }
+
+    #tabla.variasTablas .bloqueTabla{
+        flex:0 0 auto !important;
+        width:auto;
+        max-width:400px;
+    }
+}
+
+
+/* ===== LIMPIEZA FINAL RESPONSIVE TABLAS ===== */
+
+/* Base: conserva una tabla como original */
+#tabla{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+}
+
+#tabla.variasTablas{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    align-items:flex-start;
+    gap:20px;
+}
+
+/* No cambiar tamaño de tablas */
+#tabla.variasTablas .bloqueTabla{
+    flex:0 0 auto;
+    width:400px;
+    max-width:400px;
+}
+
+/* CELULAR VERTICAL */
+@media (max-width:767px) and (orientation:portrait){
+
     #tabla.variasTablas{
         flex-direction:column;
         align-items:center;
     }
-}
 
-/* En celular horizontal */
-@media(max-width:767px) and (orientation:landscape){
     #tabla.variasTablas .bloqueTabla{
-        flex-basis:360px;
-        width:360px;
+        width:100%;
+        max-width:400px;
     }
 }
 
-/* Tablet y PC mantienen tamaño, solo distribuyen */
-@media(min-width:768px){
+/* CELULAR HORIZONTAL */
+@media (max-width:900px) and (orientation:landscape){
+
+    #tabla.variasTablas{
+        flex-direction:row;
+        justify-content:center;
+        align-items:flex-start;
+        gap:20px;
+    }
+
     #tabla.variasTablas .bloqueTabla{
-        flex-basis:400px;
         width:400px;
+        max-width:400px;
     }
 }
 
+/* TABLET Y PC */
+@media (min-width:901px){
+
+    #tabla.variasTablas{
+        flex-direction:row;
+        justify-content:center;
+        gap:20px;
+    }
+
+    #tabla.variasTablas .bloqueTabla{
+        width:400px;
+        max-width:400px;
+    }
+}
 </style>
 </head>
 
