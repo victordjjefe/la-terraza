@@ -505,6 +505,30 @@ border:none;
     }
 }
 
+
+/* AJUSTE MOVIL FINAL: no cortar tablas */
+@media(max-width:767px) and (orientation:portrait){
+    #tabla.variasTablas .bloqueTabla{
+        width:calc(100vw - 40px);
+        max-width:400px;
+        flex:0 0 auto;
+    }
+}
+
+/* Celular horizontal: dos tablas aprovechando ancho */
+@media(max-width:767px) and (orientation:landscape){
+    #tabla.variasTablas{
+        flex-direction:row;
+        align-items:flex-start;
+        justify-content:center;
+    }
+    #tabla.variasTablas .bloqueTabla{
+        width:calc(50vw - 40px);
+        max-width:400px;
+        flex:0 0 auto;
+    }
+}
+
 </style>
 </head>
 
