@@ -93,10 +93,14 @@ justify-self:start;
 }
 
 .topRow .nombreJugador{
-padding:4px 8px;
+justify-self:center;
+}
+
+.nombreJugador{
+padding:8px 12px;
 margin-top:8px;
-display:none;
-width:max-content;
+display:inline-block;
+width:auto;
 max-width:90vw;
 box-sizing:border-box;
 text-align:center;
@@ -110,8 +114,6 @@ box-shadow:0 0 10px #ffd700,0 0 20px rgba(255,215,0,0.4);
 white-space:normal;
 overflow-wrap:anywhere;
 }
-
-
 
 .contenedor{
 background:rgba(0,0,0,0.7);
@@ -838,9 +840,8 @@ document.querySelector(".videoContainer").style.display="none";
 }
 
 if(nombre){
-const cajaNombre=document.getElementById("nombreJugador");
-cajaNombre.textContent=nombre.toLocaleUpperCase("es-CO");
-cajaNombre.style.display="inline-block";
+document.getElementById("nombreJugador").textContent=
+nombre.toLocaleUpperCase("es-CO");
 }
 
 if(videoID){
