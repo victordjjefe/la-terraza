@@ -417,6 +417,99 @@ height:100%;
 border:none;
 }
 
+
+/* ===== DISTRIBUCION REAL DE MULTIPLES TABLAS ===== */
+
+/* Una tabla conserva el diseño original */
+
+.contenedor.multiplesTablas{
+    max-width:none;
+    width:auto;
+}
+
+#tabla.variasTablas{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    align-items:flex-start;
+    gap:25px;
+}
+
+#tabla.variasTablas .bloqueTabla{
+    flex:0 0 auto;
+    width:400px;
+    margin-bottom:0;
+}
+
+
+/* CELULAR VERTICAL:
+   una debajo de otra, sin cambiar tamaño visual */
+@media (max-width:600px) and (orientation:portrait){
+
+    .contenedor.multiplesTablas{
+        width:100%;
+        max-width:400px;
+    }
+
+    #tabla.variasTablas{
+        flex-direction:column;
+        align-items:center;
+    }
+
+    #tabla.variasTablas .bloqueTabla{
+        width:100%;
+        max-width:400px;
+    }
+}
+
+
+/* CELULAR HORIZONTAL:
+   dos columnas si el ancho permite */
+@media (min-width:601px) and (max-width:900px) and (orientation:landscape){
+
+    .contenedor.multiplesTablas{
+        max-width:none;
+    }
+
+    #tabla.variasTablas{
+        max-width:850px;
+    }
+
+    #tabla.variasTablas .bloqueTabla{
+        width:400px;
+    }
+}
+
+
+/* TABLET VERTICAL */
+@media (min-width:601px) and (max-width:1024px) and (orientation:portrait){
+
+    .contenedor.multiplesTablas{
+        max-width:none;
+    }
+
+    #tabla.variasTablas .bloqueTabla{
+        width:400px;
+    }
+}
+
+
+/* PC Y TABLET HORIZONTAL */
+@media (min-width:901px) and (orientation:landscape){
+
+    .contenedor.multiplesTablas{
+        max-width:none;
+    }
+
+    #tabla.variasTablas{
+        max-width:1300px;
+    }
+
+    #tabla.variasTablas .bloqueTabla{
+        width:400px;
+    }
+}
+
 </style>
 </head>
 
@@ -887,6 +980,11 @@ let ids=lista.split(",").map(n=>parseInt(n,10)).filter(n=>Number.isInteger(n) &&
 
 const contenedor=document.getElementById("tabla");
 const primeraTablaInexistente=ids.find(id=>id>MAXIMO_TABLAS);
+
+if(ids.length>1){
+ document.querySelector(".contenedor").classList.add("multiplesTablas");
+ contenedor.classList.add("variasTablas");
+}
 
 if(datosEnlace.invalido || enlaceExpirado){
 ids=[];
