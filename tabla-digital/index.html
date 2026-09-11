@@ -417,68 +417,6 @@ height:100%;
 border:none;
 }
 
-
-/* ===== DISTRIBUCION MULTIPLES TABLAS ===== */
-
-#tabla.variasTablas{
-    display:flex;
-    flex-wrap:wrap;
-    justify-content:center;
-    align-items:flex-start;
-    gap:20px;
-    width:100%;
-}
-
-#tabla.variasTablas .bloqueTabla{
-    flex:0 0 400px;
-    width:400px;
-}
-
-
-/* CELULAR VERTICAL */
-@media(max-width:600px) and (orientation:portrait){
-
-    #tabla.variasTablas{
-        flex-direction:column;
-        align-items:center;
-    }
-
-    #tabla.variasTablas .bloqueTabla{
-        width:100%;
-        max-width:400px;
-        flex:none;
-    }
-}
-
-
-/* CELULAR HORIZONTAL */
-@media(max-width:900px) and (orientation:landscape){
-
-    #tabla.variasTablas{
-        flex-direction:row;
-        justify-content:center;
-    }
-
-    #tabla.variasTablas .bloqueTabla{
-        flex:0 0 400px;
-        width:400px;
-    }
-}
-
-
-/* TABLET / PC */
-@media(min-width:901px){
-
-    #tabla.variasTablas{
-        justify-content:center;
-    }
-
-    #tabla.variasTablas .bloqueTabla{
-        flex:0 0 400px;
-        width:400px;
-    }
-}
-
 </style>
 </head>
 
@@ -956,8 +894,6 @@ ids=[];
 mostrarTablaNoExiste(primeraTablaInexistente);
 ids=[];
 }
-
-if(ids.length>1){ contenedor.classList.add("variasTablas"); }
 
 ids.forEach(id=>{
 
