@@ -577,6 +577,18 @@ grid-template-columns:repeat(auto-fit,400px);
   }
 }
 
+
+/* ===== AJUSTE FINO CELULAR VERTICAL: aumentar tablas sin afectar otros dispositivos ===== */
+@media (max-width:600px) and (orientation:portrait){
+  #tabla.tablasMultiples{
+    width:100%;
+    max-width:380px;
+  }
+  #tabla.tablasMultiples .bloqueTabla{
+    width:100%;
+  }
+}
+
 </style>
 </head>
 
