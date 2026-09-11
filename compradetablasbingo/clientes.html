@@ -571,6 +571,19 @@
         🛒 Compra de tablas disponible:<br>
         <b id="info-venta-rango">--</b>
       </div>
+
+      <div class="lookup-card">
+        <div class="card-title" style="justify-content:center;">
+          🔎 ¿Ya registraste tus tablas?
+        </div>
+        <p style="color:var(--text-muted); margin-bottom:12px;">
+          Consulta aquí usando tu número de WhatsApp registrado.
+        </p>
+        <input id="lookup-input-active" class="form-control" type="tel" inputmode="numeric" pattern="[0-9+ ]*" placeholder="Ej: 3001234567">
+        <button class="btn btn-success" id="btn-lookup-active" style="margin-top:12px;">
+          Consultar mis tablas
+        </button>
+      </div>
     </div>
 
     <main class="main-content" id="main-flow-container">
@@ -2052,6 +2065,11 @@ ${ultimoEnlaceDigital}
 
 
   document.getElementById('btn-lookup').addEventListener('click', consultarTablas);
+
+  document.getElementById('btn-lookup-active').addEventListener('click',()=>{
+    document.getElementById('lookup-input').value = document.getElementById('lookup-input-active').value;
+    consultarTablas();
+  });
 
   document.getElementById('btn-close-lookup').addEventListener('click',()=>{
     document.getElementById('lookup-modal').classList.remove('active');
