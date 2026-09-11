@@ -159,6 +159,7 @@
     .related-order-row { margin-top: 3px; }
     .related-order-row span { color: #92400e; font-weight: 700; }
     .payment-status.pending { color: #b45309; }
+    .payment-status.partial { color: #d97706; font-weight:800; }
     .payment-status.paid { color: var(--success); }
     .payment-status-btn {
       background-color: var(--warning);
@@ -1169,11 +1170,16 @@
         </div>
       ` : '';
 
-      // Todo pedido con tablas se interpreta como PAGO PENDIENTE salvo que se haya marcado PAGADO.
-      const isPaid = currentStatus === 'PAGADO';
-      const paymentLegend = isPaid ? 'Pagado' : 'Pago pendiente';
-      const paymentClass = isPaid ? 'paid' : 'pending';
-      const paymentButtonClass = isPaid ? 'payment-status-btn paid' : 'payment-status-btn';
+      // Estado real por tabla: debe, parcial o pagado completo.
+      const destinos = tableList.map(t => String((o.destinoPorTabla || {})[t] || 'DEBEN').toUpperCase());
+      const totalTablas = destinos.length;
+      const pagadas = destinos.filter(v => v === 'CONSIGNACIÓN' || v === 'EFECTIVO' || v === 'GRATIS').length;
+      const tienePendientes = destinos.some(v => v === 'DEBEN');
+      const esPagoCompleto = totalTablas > 0 && pagadas === totalTablas;
+      const esPagoParcial = pagadas > 0 && tienePendientes;
+      const paymentLegend = esPagoCompleto ? 'Pagado' : (esPagoParcial ? 'Pago parcial' : 'Pago pendiente');
+      const paymentClass = esPagoCompleto ? 'paid' : (esPagoParcial ? 'partial' : 'pending');
+      const paymentButtonClass = esPagoCompleto ? 'payment-status-btn paid' : (esPagoParcial ? 'payment-status-btn' : 'payment-status-btn');
 
       let actionButtonsHTML = '';
       if (tableList.length === 0) {
@@ -1199,7 +1205,7 @@
           <div><b>Fecha/Hora:</b> ${o.fecha || ''}</div>
           <div><b>Tablas (${tableList.length}):</b> ${tableList.length > 0 ? `<span style="color:var(--accent-gold); font-weight:700;">${tableList.join(', ')}</span>` : '<span style="color:var(--danger); font-style:italic;">Ninguna (Liberadas)</span>'}</div>
           ${tableList.length > 0 ? relatedOrdersHTML : ''}
-          ${tableList.length > 0 ? `<div class="payment-status ${paymentClass}">${isPaid ? '✓' : '●'} ${paymentLegend}</div>` : ''}
+          ${tableList.length > 0 ? `<div class="payment-status ${paymentClass}">${esPagoCompleto ? '✓' : (esPagoParcial ? '◐' : '●')} ${paymentLegend}</div>` : ''}
           ${tableList.length > 0 && isPaid ? `<div class="payment-status" style="color:var(--accent-gold);">Forma de pago: ${resumenFormaPago(o)}</div>` : ''}
         </div>
         <div class="order-actions">
@@ -1215,20 +1221,16 @@
           const order = allOrders.find(o => o.firestoreId === btn.dataset.order);
           if (!order) return;
 
-          const currentStatus = btn.dataset.status === 'PAGADO' ? 'PAGADO' : 'PENDIENTE PAGO';
-
-          if (currentStatus === 'PAGADO') {
-            const confirmar = confirm('¿Estás seguro que deseas cambiar el estado a pendiente?');
-            if (!confirmar) return;
-            await updateOrderStatus(btn.dataset.order, 'PENDIENTE PAGO', 'DEBEN');
-            return;
-          }
-
+          // Siempre abrir la ventana actual de selección.
+          // No se eliminan pagos automáticamente al presionar el botón.
           const formaPago = await seleccionarFormaPago(order);
-
           if (!formaPago) return;
 
-          await updateOrderStatus(btn.dataset.order, 'PAGADO', formaPago.destino, formaPago.porTabla);
+          const valores = Object.values(formaPago.porTabla || {});
+          const todasPagadas = valores.length > 0 && valores.every(v => v !== 'DEBEN');
+          const nuevoEstado = todasPagadas ? 'PAGADO' : 'PENDIENTE PAGO';
+
+          await updateOrderStatus(btn.dataset.order, nuevoEstado, formaPago.destino, formaPago.porTabla);
         });
       });
 
