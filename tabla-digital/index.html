@@ -418,95 +418,63 @@ border:none;
 }
 
 
-/* ===== DISTRIBUCION REAL DE MULTIPLES TABLAS ===== */
+/* ===== MULTIPLES TABLAS: EL CONTENEDOR DE UNA TABLA NO MANDA ===== */
 
-/* Una tabla conserva el diseño original */
-
-.contenedor.multiplesTablas{
+body.multiplesBody .contenedor{
     max-width:none;
     width:auto;
 }
 
-#tabla.variasTablas{
+body.multiplesBody #tabla{
     display:flex;
     flex-wrap:wrap;
     justify-content:center;
     align-items:flex-start;
     gap:25px;
+    width:100%;
 }
 
-#tabla.variasTablas .bloqueTabla{
+body.multiplesBody .bloqueTabla{
     flex:0 0 auto;
     width:400px;
     margin-bottom:0;
 }
 
 
-/* CELULAR VERTICAL:
-   una debajo de otra, sin cambiar tamaño visual */
-@media (max-width:600px) and (orientation:portrait){
+/* Celular vertical: mantiene una tabla por fila */
+@media(max-width:600px) and (orientation:portrait){
 
-    .contenedor.multiplesTablas{
-        width:100%;
+    body.multiplesBody .contenedor{
         max-width:400px;
+        width:100%;
     }
 
-    #tabla.variasTablas{
+    body.multiplesBody #tabla{
         flex-direction:column;
         align-items:center;
     }
 
-    #tabla.variasTablas .bloqueTabla{
+    body.multiplesBody .bloqueTabla{
         width:100%;
         max-width:400px;
     }
 }
 
 
-/* CELULAR HORIZONTAL:
-   dos columnas si el ancho permite */
-@media (min-width:601px) and (max-width:900px) and (orientation:landscape){
+/* Celular horizontal: dos tablas cuando hay espacio */
+@media(min-width:601px) and (max-width:900px) and (orientation:landscape){
 
-    .contenedor.multiplesTablas{
-        max-width:none;
-    }
-
-    #tabla.variasTablas{
+    body.multiplesBody #tabla{
         max-width:850px;
     }
-
-    #tabla.variasTablas .bloqueTabla{
-        width:400px;
-    }
 }
 
 
-/* TABLET VERTICAL */
-@media (min-width:601px) and (max-width:1024px) and (orientation:portrait){
+/* Tablet horizontal y PC */
+@media(min-width:901px){
 
-    .contenedor.multiplesTablas{
-        max-width:none;
-    }
-
-    #tabla.variasTablas .bloqueTabla{
-        width:400px;
-    }
-}
-
-
-/* PC Y TABLET HORIZONTAL */
-@media (min-width:901px) and (orientation:landscape){
-
-    .contenedor.multiplesTablas{
-        max-width:none;
-    }
-
-    #tabla.variasTablas{
+    body.multiplesBody #tabla{
         max-width:1300px;
-    }
-
-    #tabla.variasTablas .bloqueTabla{
-        width:400px;
     }
 }
 
@@ -979,12 +947,8 @@ let lista=datosEnlace.lista || "1";
 let ids=lista.split(",").map(n=>parseInt(n,10)).filter(n=>Number.isInteger(n) && n>0);
 
 const contenedor=document.getElementById("tabla");
+if(ids.length>1){ document.body.classList.add("multiplesBody"); }
 const primeraTablaInexistente=ids.find(id=>id>MAXIMO_TABLAS);
-
-if(ids.length>1){
- document.querySelector(".contenedor").classList.add("multiplesTablas");
- contenedor.classList.add("variasTablas");
-}
 
 if(datosEnlace.invalido || enlaceExpirado){
 ids=[];
