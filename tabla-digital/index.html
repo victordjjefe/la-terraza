@@ -584,12 +584,18 @@ grid-template-columns:repeat(auto-fit,400px);
 }
 
 
-/* ===== AJUSTE FINO CELULAR VERTICAL: aumentar ligeramente sin afectar otros dispositivos ===== */
+/* ===== AJUSTE FINAL CELULAR VERTICAL: aprovechar mas ancho sin tocar tabla ===== */
 @media (max-width:600px) and (orientation:portrait){
+  .contenedor.modoMultiplesTablas{
+    width:calc(100vw - 10px);
+    max-width:none;
+  }
+
   #tabla.tablasMultiples{
     width:100%;
-    max-width:395px;
+    max-width:none;
   }
+
   #tabla.tablasMultiples .bloqueTabla{
     width:100%;
   }
