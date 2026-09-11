@@ -634,6 +634,17 @@ grid.appendChild(d);
 }
 
 function guardarPatron(){
+const celdas=document.getElementById("gridPatron").children;
+
+patronPersonalizado=Array(5).fill().map(()=>Array(5).fill(false));
+
+for(let i=0;i<5;i++){
+for(let j=0;j<5;j++){
+if(i===2 && j===2) continue;
+patronPersonalizado[i][j]=celdas[i*5+j].classList.contains("marcado");
+}
+}
+
 document.getElementById("editorPatron").style.display="none";
 alert("Patrón guardado");
 }
