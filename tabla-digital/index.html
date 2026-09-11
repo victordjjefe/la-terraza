@@ -537,6 +537,46 @@ grid-template-columns:repeat(auto-fit,400px);
  }
 }
 
+
+/* ===== CORRECCION FINAL DISTRIBUCION MULTITABLAS V3 ===== */
+#tabla.tablasMultiples{
+  display:grid;
+  gap:25px;
+  align-items:start;
+  justify-content:center;
+  box-sizing:border-box;
+}
+
+#tabla.tablasMultiples .bloqueTabla{
+  width:auto;
+  max-width:none;
+  box-sizing:border-box;
+}
+
+/* Celular vertical: conserva tamaño original del bingo y apila */
+@media (max-width:600px) and (orientation:portrait){
+  #tabla.tablasMultiples{
+    grid-template-columns:1fr;
+    width:100%;
+  }
+}
+
+/* Celular horizontal: dos bloques solo si caben, sin ampliar tablas */
+@media (min-width:601px) and (max-width:900px) and (orientation:landscape){
+  #tabla.tablasMultiples{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    width:100%;
+  }
+}
+
+/* PC y tablet horizontal */
+@media (min-width:901px){
+  #tabla.tablasMultiples{
+    grid-template-columns:repeat(3,400px);
+    width:max-content;
+  }
+}
+
 </style>
 </head>
 
