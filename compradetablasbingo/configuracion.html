@@ -172,6 +172,8 @@
       transition: background-color 0.2s;
     }
     .payment-status-btn.paid { background-color: var(--success); }
+    .payment-status-btn.partial { background-color: #3b82f6; }
+    .payment-status-btn.pending { background-color: var(--warning); }
     .order-actions { margin-top: 10px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .order-badges { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
     .badge { font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
@@ -1175,11 +1177,23 @@
         </div>
       ` : '';
 
-      // Todo pedido con tablas se interpreta como PAGO PENDIENTE salvo que se haya marcado PAGADO.
-      const isPaid = currentStatus === 'PAGADO';
-      const paymentLegend = isPaid ? 'Pagado' : 'Pago pendiente';
-      const paymentClass = isPaid ? 'paid' : 'pending';
-      const paymentButtonClass = isPaid ? 'payment-status-btn paid' : 'payment-status-btn';
+      const resumenPago = resumenFormaPago(o);
+      const porTablaEstado = Object.values(o.destinoPorTabla || {}).map(v => String(v || 'DEBEN').toUpperCase());
+      const totalTablasPedido = Array.isArray(o.tablas) ? o.tablas.length : 0;
+      const totalPagadas = porTablaEstado.filter(v => ['EFECTIVO','CONSIGNACIÓN','GRATIS'].includes(v)).length;
+      const totalPendientes = porTablaEstado.filter(v => v === 'DEBEN').length || 
+        (!porTablaEstado.length && String(o.estado || '').toUpperCase() !== 'PAGADO' ? totalTablasPedido : 0);
+
+      let paymentButtonClass = 'payment-status-btn pending';
+      let paymentButtonText = 'Estado de pago pendiente';
+
+      if (totalPagadas > 0 && totalPendientes > 0) {
+        paymentButtonClass = 'payment-status-btn partial';
+        paymentButtonText = 'Estado de pago parcial';
+      } else if (totalTablasPedido > 0 && totalPagadas === totalTablasPedido) {
+        paymentButtonClass = 'payment-status-btn paid';
+        paymentButtonText = 'Estado de pago completo';
+      }
 
       let actionButtonsHTML = '';
       if (tableList.length === 0) {
@@ -1188,7 +1202,7 @@
         if (o.comprobanteURL || o.comprobante) {
           actionButtonsHTML += `<button class="btn btn-sm btn-dark btn-view-proof" data-order="${o.firestoreId}">Ver Comprobante</button>`;
         }
-        actionButtonsHTML += `<button class="${paymentButtonClass} btn-payment-status" data-order="${o.firestoreId}" data-status="${currentStatus}">Estado de pago</button>`;
+        actionButtonsHTML += `<button class="${paymentButtonClass} btn-payment-status" data-order="${o.firestoreId}" data-status="${currentStatus}">${paymentButtonText}</button>`;
         actionButtonsHTML += `<button class="table-release-btn btn-release-order" data-order="${o.firestoreId}">Liberar tablas</button>`;
       }
 
@@ -1205,7 +1219,7 @@
           <div><b>Fecha/Hora:</b> ${o.fecha || ''}</div>
           <div><b>Tablas (${tableList.length}):</b> ${tableList.length > 0 ? `<span style="color:var(--accent-gold); font-weight:700;">${tableList.join(', ')}</span>` : '<span style="color:var(--danger); font-style:italic;">Ninguna (Liberadas)</span>'}</div>
           ${tableList.length > 0 ? relatedOrdersHTML : ''}
-          ${tableList.length > 0 ? `<div class="payment-status ${paymentClass}">${isPaid ? '✓' : '●'} ${paymentLegend}</div>` : ''}
+          
           ${tableList.length > 0 ? `<div class="payment-status" style="color:var(--accent-gold);">Forma de pago: ${resumenFormaPago(o)}</div>` : ''}
         </div>
         <div class="order-actions">
