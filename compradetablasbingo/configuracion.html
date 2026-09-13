@@ -684,8 +684,18 @@
   function loadMetrics() {
     const total = allTables.length;
     const disp = allTables.filter(t => t.status === 'DISPONIBLE').length;
-    const vend = allTables.filter(t => t.status === 'VENDIDA').length;
     const valor = Number(currentTableValue) || 0;
+
+    // La fuente de verdad son las tablas del bingo (estado VENDIDA).
+    // Si una tabla se libera, vuelve a DISPONIBLE y deja de contar como vendida.
+    const tablasVendidas = new Set(
+      allTables
+        .filter(t => t.status === 'VENDIDA')
+        .map(t => String(t.id ?? t.numero ?? t.table ?? t.codigo ?? '').trim())
+        .filter(Boolean)
+    );
+
+    const vend = tablasVendidas.size;
 
     let consignacion = 0;
     let efectivo = 0;
@@ -700,6 +710,11 @@
 
       order.tablas.forEach(tabla => {
         const clave = String(tabla);
+
+        // Solo contabiliza tablas que realmente están vendidas actualmente.
+        const existeVendida = tablasVendidas.has(clave) || tablasVendidas.has('T' + clave.replace(/^T/i,'')) || tablasVendidas.has(clave.replace(/^T/i,''));
+        if (!existeVendida) return;
+
         const forma = String(
           pagos[clave] ||
           pagos[clave.replace(/^T/i,'')] ||
