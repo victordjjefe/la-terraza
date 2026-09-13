@@ -1049,20 +1049,18 @@
     const porTabla = order.destinoPorTabla || {};
     const conteo = {};
 
-    // Compatibilidad con pedidos antiguos: si no tienen pago por tabla
-    // y siguen pendientes, todas sus tablas quedan como DEBEN.
-    if (Object.keys(porTabla).length === 0 && Array.isArray(order.tablas) && order.tablas.length > 0) {
-      order.tablas.forEach(() => {
-        conteo['DEBEN'] = (conteo['DEBEN'] || 0) + 1;
-      });
-    } else {
-      Object.values(porTabla).forEach(valor => {
-        const estado = String(valor || 'DEBEN').toUpperCase();
-        conteo[estado] = (conteo[estado] || 0) + 1;
-      });
-    }
+    Object.values(porTabla).forEach(valor => {
+      const estado = String(valor || 'DEBEN').toUpperCase();
+      conteo[estado] = (conteo[estado] || 0) + 1;
+    });
 
+    // Pedidos antiguos o nuevos pendientes que todavía no tienen pago por tabla.
+    // Se consideran DEBEN según la cantidad de tablas compradas.
     if (Object.keys(conteo).length === 0) {
+      const cantidadTablas = Array.isArray(order.tablas) ? order.tablas.length : 0;
+      if (cantidadTablas > 0 && String(order.estado || '').toUpperCase() !== 'PAGADO') {
+        return `DEBEN: ${cantidadTablas}`;
+      }
       return order.destino || 'SIN DEFINIR';
     }
 
@@ -1208,7 +1206,7 @@
           <div><b>Tablas (${tableList.length}):</b> ${tableList.length > 0 ? `<span style="color:var(--accent-gold); font-weight:700;">${tableList.join(', ')}</span>` : '<span style="color:var(--danger); font-style:italic;">Ninguna (Liberadas)</span>'}</div>
           ${tableList.length > 0 ? relatedOrdersHTML : ''}
           ${tableList.length > 0 ? `<div class="payment-status ${paymentClass}">${isPaid ? '✓' : '●'} ${paymentLegend}</div>` : ''}
-          ${tableList.length > 0 && isPaid ? `<div class="payment-status" style="color:var(--accent-gold);">Forma de pago: ${resumenFormaPago(o)}</div>` : ''}
+          ${tableList.length > 0 ? `<div class="payment-status" style="color:var(--accent-gold);">Forma de pago: ${resumenFormaPago(o)}</div>` : ''}
         </div>
         <div class="order-actions">
           ${actionButtonsHTML}
