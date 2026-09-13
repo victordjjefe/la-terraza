@@ -1374,11 +1374,33 @@ function seleccionarFormaPago(order){
     const nuevaReferencia = prompt('Referencia, Ciudad, Barrio:', referenciaActual);
     if (nuevaReferencia === null) return;
 
+    const telefonoAnterior = normalizeWhatsapp(telefonoActual);
+    const telefonoNuevo = normalizeWhatsapp(nuevoTelefono.trim());
+
     await updateDoc(doc(db, 'pedidos', orderDocId), {
       cliente: nuevoNombre.trim(),
       telefono: nuevoTelefono.trim(),
       referencia: nuevaReferencia.trim()
     });
+
+    // Actualiza el índice de consulta por WhatsApp.
+    // Si el número cambió, elimina el índice viejo para que el WhatsApp anterior
+    // no siga encontrando tablas.
+    if (telefonoAnterior && telefonoAnterior !== telefonoNuevo) {
+      await deleteDoc(doc(db, 'clientes', telefonoAnterior));
+    }
+
+    if (telefonoNuevo) {
+      await setDoc(doc(db, 'clientes', telefonoNuevo), {
+        cliente: nuevoNombre.trim(),
+        telefono: telefonoNuevo,
+        tablas: order.tablas || [],
+        linkDigital: order.linkDigital || '',
+        fechaBingo: order.fechaBingo || '',
+        linkTransmision: order.linkTransmision || '',
+        pedidoId: order.id || ''
+      }, { merge: true });
+    }
 
     const localOrder = allOrders.find(o => o.firestoreId === orderDocId);
     if (localOrder) {
