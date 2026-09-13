@@ -688,7 +688,7 @@
     // La fuente de verdad son los registros de tablas de Firebase.
     // El ID del documento se conserva para identificar correctamente cada tabla.
     const tablasVendidas = allTables.filter(t => 
-      String(t.status || '').toUpperCase() === 'VENDIDA'
+      String(t.status || '').trim().toUpperCase().includes('VEND')
     );
 
     const vend = tablasVendidas.length;
