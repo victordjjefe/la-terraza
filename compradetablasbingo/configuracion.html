@@ -1213,6 +1213,7 @@
         }
         actionButtonsHTML += `<button class="${paymentButtonClass} btn-payment-status" data-order="${o.firestoreId}" data-status="${currentStatus}">${paymentButtonText}</button>`;
         actionButtonsHTML += `<button class="table-release-btn btn-release-order" data-order="${o.firestoreId}">Liberar tablas</button>`;
+        actionButtonsHTML += `<button class="btn btn-sm btn-dark btn-edit-client" data-order="${o.firestoreId}">Editar datos</button>`;
       }
 
       el.innerHTML = `
@@ -1263,6 +1264,10 @@
 
       el.querySelectorAll('.btn-release-order').forEach(btn => {
         btn.addEventListener('click', () => openReleaseModal(btn.dataset.order));
+      });
+
+      el.querySelectorAll('.btn-edit-client').forEach(btn => {
+        btn.addEventListener('click', () => editarDatosCliente(btn.dataset.order));
       });
 
       container.appendChild(el);
@@ -1350,6 +1355,40 @@ function seleccionarFormaPago(order){
       console.error("Error actualizando estado del pedido:", err);
       alert("Error al actualizar estado del pedido: " + err.message);
     }
+  }
+
+  async function editarDatosCliente(orderDocId) {
+    const order = allOrders.find(o => o.firestoreId === orderDocId);
+    if (!order) return;
+
+    const nombreActual = typeof order.cliente === 'string' ? order.cliente : (order.cliente?.name || '');
+    const telefonoActual = order.telefono || order.cliente?.whatsapp || '';
+    const referenciaActual = order.referencia || '';
+
+    const nuevoNombre = prompt('Nombre y Apellido:', nombreActual);
+    if (nuevoNombre === null) return;
+
+    const nuevoTelefono = prompt('WhatsApp:', telefonoActual);
+    if (nuevoTelefono === null) return;
+
+    const nuevaReferencia = prompt('Referencia, Ciudad, Barrio:', referenciaActual);
+    if (nuevaReferencia === null) return;
+
+    await updateDoc(doc(db, 'pedidos', orderDocId), {
+      cliente: nuevoNombre.trim(),
+      telefono: nuevoTelefono.trim(),
+      referencia: nuevaReferencia.trim()
+    });
+
+    const localOrder = allOrders.find(o => o.firestoreId === orderDocId);
+    if (localOrder) {
+      localOrder.cliente = nuevoNombre.trim();
+      localOrder.telefono = nuevoTelefono.trim();
+      localOrder.referencia = nuevaReferencia.trim();
+    }
+
+    renderOrders();
+    alert('Datos del cliente actualizados correctamente.');
   }
 
   function viewProof(orderDocId) {
