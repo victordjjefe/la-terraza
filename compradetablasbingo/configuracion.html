@@ -685,52 +685,42 @@
     const total = allTables.length;
     const valor = Number(currentTableValue) || 0;
 
-    // La fuente de verdad son los registros de tablas de Firebase.
-    // El ID del documento se conserva para identificar correctamente cada tabla.
-    const tablasVendidas = allTables.filter(t => 
-      String(t.status || '').trim().toUpperCase().includes('VEND')
-    );
+    // La fuente de verdad de ventas son los registros de pedidos.
+    // Se cuentan tablas únicas para evitar duplicados por liberaciones o cambios.
+    const ventasMap = new Map();
 
-    const vend = tablasVendidas.length;
-    const disp = total - vend;
+    allOrders.forEach(order => {
+      if (!order.tablas || order.tablas.length === 0) return;
+      order.tablas.forEach(tabla => {
+        const clave = String(tabla).trim().toUpperCase();
+        if (clave) ventasMap.set(clave, { tabla, order });
+      });
+    });
+
+    const vend = ventasMap.size;
+    const disp = Math.max(total - vend, 0);
 
     let consignacion = 0;
     let efectivo = 0;
     let gratis = 0;
     let deben = 0;
 
-    const vendidasIds = new Set(
-      tablasVendidas.map(t => String(t.id || t.numero || t.codigo || '').trim())
-    );
-
-    allOrders.forEach(order => {
-      if (!order.tablas || order.tablas.length === 0) return;
-
+    ventasMap.forEach(({tabla, order}) => {
       const pagos = order.destinoPorTabla || {};
+      const clave = String(tabla);
       const formaGeneral = String(order.destino || 'DEBEN').trim().toUpperCase();
 
-      order.tablas.forEach(tabla => {
-        const clave = String(tabla);
+      const forma = String(
+        pagos[clave] ||
+        pagos[clave.replace(/^T/i,'')] ||
+        pagos['T' + clave.replace(/^T/i,'')] ||
+        formaGeneral
+      ).trim().toUpperCase();
 
-        const perteneceVenta = 
-          vendidasIds.has(clave) ||
-          vendidasIds.has('T' + clave.replace(/^T/i,'')) ||
-          vendidasIds.has(clave.replace(/^T/i,''));
-
-        if (!perteneceVenta) return;
-
-        const forma = String(
-          pagos[clave] ||
-          pagos[clave.replace(/^T/i,'')] ||
-          pagos['T' + clave.replace(/^T/i,'')] ||
-          formaGeneral
-        ).trim().toUpperCase();
-
-        if (forma.includes('CONSIGN')) consignacion += valor;
-        else if (forma.includes('EFECTIVO')) efectivo += valor;
-        else if (forma.includes('GRATIS')) gratis += valor;
-        else deben += valor;
-      });
+      if (forma.includes('CONSIGN')) consignacion += valor;
+      else if (forma.includes('EFECTIVO')) efectivo += valor;
+      else if (forma.includes('GRATIS')) gratis += valor;
+      else deben += valor;
     });
 
     document.getElementById('m-total').textContent = total;
