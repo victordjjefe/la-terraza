@@ -671,7 +671,7 @@
     onSnapshot(collection(db, 'tablas'), (snapshot) => {
       allTables = [];
       snapshot.forEach(docSnap => {
-        allTables.push(docSnap.data());
+        allTables.push({ ...docSnap.data(), id: docSnap.id });
       });
       loadMetrics();
     });
@@ -683,24 +683,25 @@
 
   function loadMetrics() {
     const total = allTables.length;
-    const disp = allTables.filter(t => t.status === 'DISPONIBLE').length;
     const valor = Number(currentTableValue) || 0;
 
-    // La fuente de verdad son las tablas del bingo (estado VENDIDA).
-    // Si una tabla se libera, vuelve a DISPONIBLE y deja de contar como vendida.
-    const tablasVendidas = new Set(
-      allTables
-        .filter(t => t.status === 'VENDIDA')
-        .map(t => String(t.id ?? t.numero ?? t.table ?? t.codigo ?? '').trim())
-        .filter(Boolean)
+    // La fuente de verdad son los registros de tablas de Firebase.
+    // El ID del documento se conserva para identificar correctamente cada tabla.
+    const tablasVendidas = allTables.filter(t => 
+      String(t.status || '').toUpperCase() === 'VENDIDA'
     );
 
-    const vend = tablasVendidas.size;
+    const vend = tablasVendidas.length;
+    const disp = total - vend;
 
     let consignacion = 0;
     let efectivo = 0;
     let gratis = 0;
     let deben = 0;
+
+    const vendidasIds = new Set(
+      tablasVendidas.map(t => String(t.id || t.numero || t.codigo || '').trim())
+    );
 
     allOrders.forEach(order => {
       if (!order.tablas || order.tablas.length === 0) return;
@@ -711,9 +712,12 @@
       order.tablas.forEach(tabla => {
         const clave = String(tabla);
 
-        // Solo contabiliza tablas que realmente están vendidas actualmente.
-        const existeVendida = tablasVendidas.has(clave) || tablasVendidas.has('T' + clave.replace(/^T/i,'')) || tablasVendidas.has(clave.replace(/^T/i,''));
-        if (!existeVendida) return;
+        const perteneceVenta = 
+          vendidasIds.has(clave) ||
+          vendidasIds.has('T' + clave.replace(/^T/i,'')) ||
+          vendidasIds.has(clave.replace(/^T/i,''));
+
+        if (!perteneceVenta) return;
 
         const forma = String(
           pagos[clave] ||
