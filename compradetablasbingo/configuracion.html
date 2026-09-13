@@ -1341,6 +1341,11 @@ function seleccionarFormaPago(order){
       if (typeof renderOrders === 'function') {
         renderOrders();
       }
+
+      // Actualiza las métricas inmediatamente después de aplicar el pago.
+      if (typeof loadMetrics === 'function') {
+        loadMetrics();
+      }
     } catch (err) {
       console.error("Error actualizando estado del pedido:", err);
       alert("Error al actualizar estado del pedido: " + err.message);
