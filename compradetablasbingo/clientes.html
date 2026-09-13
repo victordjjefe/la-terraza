@@ -894,21 +894,9 @@
     let telefonoFinal = telefonoBusqueda;
 
     try {
-      // Primero revisa el consolidado de clientes
-      const clienteRef = doc(db, 'clientes', telefonoBusqueda);
-      const clienteSnap = await getDoc(clienteRef);
-
-      if(clienteSnap.exists()){
-        const clienteData = clienteSnap.data();
-
-        if(Array.isArray(clienteData.tablas)){
-          tablasEncontradas.push(...clienteData.tablas);
-        }
-
-        nombreCliente = clienteData.cliente || clienteData.nombre || '';
-        telefonoFinal = clienteData.telefono || telefonoBusqueda;
-      }
-
+      // La consulta oficial sale únicamente de pedidos.
+      // No se usa la colección clientes porque puede conservar índices antiguos
+      // cuando un administrador corrige un WhatsApp.
       /*
         Corrección:
         Un mismo WhatsApp puede tener varios documentos en pedidos.
