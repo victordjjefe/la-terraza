@@ -1049,10 +1049,18 @@
     const porTabla = order.destinoPorTabla || {};
     const conteo = {};
 
-    Object.values(porTabla).forEach(valor => {
-      const estado = String(valor || 'DEBEN').toUpperCase();
-      conteo[estado] = (conteo[estado] || 0) + 1;
-    });
+    // Compatibilidad con pedidos antiguos: si no tienen pago por tabla
+    // y siguen pendientes, todas sus tablas quedan como DEBEN.
+    if (Object.keys(porTabla).length === 0 && Array.isArray(order.tablas) && order.tablas.length > 0) {
+      order.tablas.forEach(() => {
+        conteo['DEBEN'] = (conteo['DEBEN'] || 0) + 1;
+      });
+    } else {
+      Object.values(porTabla).forEach(valor => {
+        const estado = String(valor || 'DEBEN').toUpperCase();
+        conteo[estado] = (conteo[estado] || 0) + 1;
+      });
+    }
 
     if (Object.keys(conteo).length === 0) {
       return order.destino || 'SIN DEFINIR';
