@@ -1883,7 +1883,11 @@
           comprobante: comprobanteImagen || null,
           comprobanteURL: null,
           fecha: new Date().toLocaleString(),
-          estado: 'PENDIENTE PAGO'
+          estado: 'PENDIENTE PAGO',
+          destino: 'DEBEN',
+          destinoPorTabla: Object.fromEntries(
+            tablesToBuy.map(tabla => [String(tabla), 'DEBEN'])
+          )
         };
 
         // Pedido y tablas vendidas se guardan juntos: si algo falla, no se
