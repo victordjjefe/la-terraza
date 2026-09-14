@@ -1171,33 +1171,26 @@
     }
   }
 
-  function listenTables() {
-    // Limpieza inicial al entrar.
-    limpiarReservasVencidas();
+  async function listenTables() {
+    // Carga inicial de tablas. Se mantiene la reserva y validación en Firebase,
+    // pero se evita mantener una escucha permanente de toda la colección.
+    await limpiarReservasVencidas();
 
-    // Protección adicional:
-    // si un comprador abandona la página, las reservas vencidas
-    // no quedan bloqueadas indefinidamente mientras exista actividad.
-    setInterval(() => {
-      limpiarReservasVencidas();
-    }, 60000);
+    const snapshot = await getDocs(collection(db, 'tablas'));
+    allTablesData = [];
+    const now = Date.now();
 
-    onSnapshot(collection(db, 'tablas'), (snapshot) => {
-      allTablesData = [];
-      const now = Date.now();
-
-      snapshot.forEach(docSnap => {
-        const data = docSnap.data();
-        if (data.status === 'RESERVADA' && data.reservedUntil && data.reservedUntil <= now) {
-          data.status = 'DISPONIBLE';
-        }
-        allTablesData.push(data);
-      });
-
-      renderTables();
-      const loader = document.getElementById('initial-loader');
-      if (loader) loader.style.display = 'none';
+    snapshot.forEach(docSnap => {
+      const data = docSnap.data();
+      if (data.status === 'RESERVADA' && data.reservedUntil && data.reservedUntil <= now) {
+        data.status = 'DISPONIBLE';
+      }
+      allTablesData.push(data);
     });
+
+    renderTables();
+    const loader = document.getElementById('initial-loader');
+    if (loader) loader.style.display = 'none';
   }
 
   function renderTables() {
