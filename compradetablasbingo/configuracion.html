@@ -667,14 +667,15 @@
     }
   }
 
-  function listenTables() {
-    onSnapshot(collection(db, 'tablas'), (snapshot) => {
-      allTables = [];
-      snapshot.forEach(docSnap => {
-        allTables.push({ ...docSnap.data(), id: docSnap.id });
-      });
-      loadMetrics();
+  async function listenTables() {
+    // Carga puntual de tablas para métricas y administración.
+    // Evita mantener toda la colección escuchando en tiempo real.
+    const snapshot = await getDocs(collection(db, 'tablas'));
+    allTables = [];
+    snapshot.forEach(docSnap => {
+      allTables.push({ ...docSnap.data(), id: docSnap.id });
     });
+    loadMetrics();
   }
 
   function formatMoney(value) {
