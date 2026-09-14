@@ -742,10 +742,10 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  let myClientId = sessionStorage.getItem('ltb_client_id');
+  let myClientId = localStorage.getItem('ltb_client_id');
   if (!myClientId) {
     myClientId = 'cli_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
-    sessionStorage.setItem('ltb_client_id', myClientId);
+    localStorage.setItem('ltb_client_id', myClientId);
   }
 
   let config = null;
@@ -762,6 +762,43 @@
   let ultimoLookupMensaje = '';
   let ultimoLookupTelefono = '';
   let ultimoLookupEnlace = '';
+
+
+  // Recupera reservas activas si el usuario cerró el navegador o reinició el celular.
+  async function recuperarMiReserva() {
+    try {
+      const q = query(
+        collection(db, 'tablas'),
+        where('status', '==', 'RESERVADA'),
+        where('reservedBy', '==', myClientId)
+      );
+
+      const snapshot = await getDocs(q);
+
+      const recuperadas = [];
+      let mayorTiempo = 0;
+
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+
+        if (data.reservedUntil && data.reservedUntil > Date.now()) {
+          recuperadas.push(data.code);
+          if (data.reservedUntil > mayorTiempo) {
+            mayorTiempo = data.reservedUntil;
+          }
+        }
+      });
+
+      if (recuperadas.length > 0) {
+        selectedTables = recuperadas;
+        reservationEndTime = mayorTiempo;
+        startReservationTimer();
+        actualizarResumen();
+      }
+    } catch (error) {
+      console.error('Error recuperando reserva:', error);
+    }
+  }
 
 
 
@@ -1195,6 +1232,7 @@
       });
 
       renderTables();
+      recuperarMiReserva();
       const loader = document.getElementById('initial-loader');
       if (loader) loader.style.display = 'none';
     });
