@@ -1245,20 +1245,19 @@
           const order = allOrders.find(o => o.firestoreId === btn.dataset.order);
           if (!order) return;
 
-          const currentStatus = btn.dataset.status === 'PAGADO' ? 'PAGADO' : 'PENDIENTE PAGO';
-
-          if (currentStatus === 'PAGADO') {
-            const confirmar = confirm('¿Estás seguro que deseas cambiar el estado a pendiente?');
-            if (!confirmar) return;
-            await updateOrderStatus(btn.dataset.order, 'PENDIENTE PAGO', 'DEBEN');
-            return;
-          }
-
+          // El botón de estado de pago funciona como edición,
+          // no como un borrado masivo de pagos.
+          // Siempre abre el detalle por tabla para modificar cada tabla individualmente.
           const formaPago = await seleccionarFormaPago(order);
 
           if (!formaPago) return;
 
-          await updateOrderStatus(btn.dataset.order, 'PAGADO', formaPago.destino, formaPago.porTabla);
+          const valores = Object.values(formaPago.porTabla || {});
+          const nuevoEstado = valores.length && valores.every(v => ['EFECTIVO','CONSIGNACIÓN','GRATIS'].includes(v))
+            ? 'PAGADO'
+            : (valores.some(v => ['EFECTIVO','CONSIGNACIÓN','GRATIS'].includes(v)) ? 'PAGO PARCIAL' : 'PENDIENTE PAGO');
+
+          await updateOrderStatus(btn.dataset.order, nuevoEstado, formaPago.destino, formaPago.porTabla);
         });
       });
 
@@ -1292,10 +1291,10 @@ function seleccionarFormaPago(order){
         <div style="margin-bottom:10px;text-align:left">
           <label style="font-weight:700">Tabla ${tabla}</label>
           <select class="select-pago-tabla" data-tabla="${tabla}" style="width:100%;padding:10px">
-            <option value="DEBEN">Pendiente</option>
-            <option value="EFECTIVO">EFECTIVO</option>
-            <option value="CONSIGNACIÓN">CONSIGNACIÓN</option>
-            <option value="GRATIS">GRATIS</option>
+            <option value="DEBEN" ${String(order.destinoPorTabla?.[tabla] || 'DEBEN').toUpperCase()==='DEBEN' ? 'selected' : ''}>Pendiente</option>
+            <option value="EFECTIVO" ${String(order.destinoPorTabla?.[tabla] || '').toUpperCase()==='EFECTIVO' ? 'selected' : ''}>EFECTIVO</option>
+            <option value="CONSIGNACIÓN" ${String(order.destinoPorTabla?.[tabla] || '').toUpperCase()==='CONSIGNACIÓN' ? 'selected' : ''}>CONSIGNACIÓN</option>
+            <option value="GRATIS" ${String(order.destinoPorTabla?.[tabla] || '').toUpperCase()==='GRATIS' ? 'selected' : ''}>GRATIS</option>
           </select>
         </div>`).join('')}
       <div style="display:flex;gap:10px;margin-top:10px">
