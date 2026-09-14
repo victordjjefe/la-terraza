@@ -1171,10 +1171,16 @@
     }
   }
 
-  async function listenTables() {
-    // Mantiene actualización en tiempo real para que los clientes vean
-    // inmediatamente las tablas reservadas o vendidas.
-    await limpiarReservasVencidas();
+  function listenTables() {
+    // Limpieza inicial al entrar.
+    limpiarReservasVencidas();
+
+    // Protección adicional:
+    // si un comprador abandona la página, las reservas vencidas
+    // no quedan bloqueadas indefinidamente mientras exista actividad.
+    setInterval(() => {
+      limpiarReservasVencidas();
+    }, 60000);
 
     onSnapshot(collection(db, 'tablas'), (snapshot) => {
       allTablesData = [];
@@ -1182,16 +1188,13 @@
 
       snapshot.forEach(docSnap => {
         const data = docSnap.data();
-
         if (data.status === 'RESERVADA' && data.reservedUntil && data.reservedUntil <= now) {
           data.status = 'DISPONIBLE';
         }
-
         allTablesData.push(data);
       });
 
       renderTables();
-
       const loader = document.getElementById('initial-loader');
       if (loader) loader.style.display = 'none';
     });
