@@ -1182,24 +1182,20 @@
       limpiarReservasVencidas();
     }, 60000);
 
-    onSnapshot(collection(db, 'tablas'), (snapshot) => {
+    const tablasQuery = window.configEventoActual
+        ? query(
+            collection(db, 'tablas'),
+            where('code', '>=', formatTableCode(window.configEventoActual.rangoDesde)),
+            where('code', '<=', formatTableCode(window.configEventoActual.tablasHabilitadas))
+          )
+        : collection(db, 'tablas');
+
+     onSnapshot(tablasQuery, (snapshot) => {
        allTablesData = [];
        const now = Date.now();
 
        snapshot.forEach(docSnap => {
          const data = docSnap.data();
-
-         // Filtrado por rango configurado sin modificar datos existentes.
-         if (window.configEventoActual) {
-           const numeroTabla = parseInt(String(data.code).replace(/\D/g, ''));
-
-           if (
-             numeroTabla < window.configEventoActual.rangoDesde ||
-             numeroTabla > window.configEventoActual.tablasHabilitadas
-           ) {
-             return;
-           }
-         }
 
          if (data.status === 'RESERVADA' && data.reservedUntil && data.reservedUntil <= now) {
            data.status = 'DISPONIBLE';
@@ -1208,8 +1204,8 @@
          allTablesData.push(data);
        });
 
-      renderTables();
-      recuperarTiempoReservaPropia();
+       renderTables();
+       recuperarTiempoReservaPropia();
       const loader = document.getElementById('initial-loader');
       if (loader) loader.style.display = 'none';
     });
