@@ -1911,6 +1911,22 @@
         return candidateId;
       }), 20000);
 
+      // Validación final de integridad:
+      // La compra solo continúa si todas las tablas quedaron realmente vendidas.
+      // Evita generar una confirmación cuando existe una diferencia entre pedido e inventario.
+      const tablasVerificadas = await Promise.all(
+        tablesToBuy.map(async (codigo) => {
+          const tablaSnap = await getDoc(doc(db, 'tablas', codigo));
+          if (!tablaSnap.exists()) return false;
+          const data = tablaSnap.data();
+          return data.status === 'VENDIDA' && data.pedido === orderId;
+        })
+      );
+
+      if (tablasVerificadas.some(v => !v)) {
+        throw new Error('La compra no pudo confirmarse completamente. Algunas tablas no quedaron vendidas correctamente.');
+      }
+
       if (progresoGuardadoInterval) {
         clearInterval(progresoGuardadoInterval);
         progresoGuardadoInterval = null;
