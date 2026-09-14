@@ -742,10 +742,10 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  let myClientId = localStorage.getItem('ltb_client_id');
+  let myClientId = sessionStorage.getItem('ltb_client_id');
   if (!myClientId) {
     myClientId = 'cli_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
-    localStorage.setItem('ltb_client_id', myClientId);
+    sessionStorage.setItem('ltb_client_id', myClientId);
   }
 
   let config = null;
@@ -1195,51 +1195,13 @@
       });
 
       renderTables();
-      recuperarReservaFirebase();
+      recuperarTiempoReservaPropia();
       const loader = document.getElementById('initial-loader');
       if (loader) loader.style.display = 'none';
     });
   }
 
-  
-async function recuperarReservaFirebase() {
-  try {
-    const q = query(
-      collection(db, 'tablas'),
-      where('status', '==', 'RESERVADA'),
-      where('reservedBy', '==', myClientId)
-    );
-
-    const snap = await getDocs(q);
-
-    let recuperadas = [];
-    let tiempoFinal = 0;
-
-    snap.forEach((docSnap) => {
-      const data = docSnap.data();
-
-      if (data.reservedUntil && data.reservedUntil > Date.now()) {
-        recuperadas.push(data.code);
-        tiempoFinal = Math.max(tiempoFinal, data.reservedUntil);
-      }
-    });
-
-    if (recuperadas.length) {
-      selectedTables = recuperadas;
-      reservationEndTime = tiempoFinal;
-      renderTables();
-      actualizarResumen();
-
-      if (typeof startReservationTimer === 'function') {
-        startReservationTimer();
-      }
-    }
-  } catch(e) {
-    console.error("No se pudo recuperar la reserva", e);
-  }
-}
-
-function renderTables() {
+  function renderTables() {
     const container = document.getElementById('tables-container');
     const noTablesMessage = document.getElementById('no-tables-message');
     const now = Date.now();
@@ -1303,7 +1265,7 @@ function renderTables() {
         return;
       }
       selectedTables.push(code);
-      if (selectedTables.length === 1 || !reservationEndTime) {
+      if (selectedTables.length === 1 && !reservationEndTime) {
         reservationEndTime = Date.now() + (HOLD_TIME_MINUTES * 60 * 1000);
       }
     }
@@ -1373,7 +1335,47 @@ function renderTables() {
     document.getElementById('btn-finish-order').disabled = qty === 0;
   }
 
-  function startReservationTimer() {
+  
+async function recuperarTiempoReservaPropia() {
+  try {
+    const propias = [];
+
+    const snap = await getDocs(query(
+      collection(db, 'tablas'),
+      where('reservedBy', '==', myClientId),
+      where('status', '==', 'RESERVADA')
+    ));
+
+    let limite = 0;
+
+    snap.forEach(docSnap => {
+      const data = docSnap.data();
+
+      if (data.reservedUntil && data.reservedUntil > Date.now()) {
+        propias.push(data.code);
+        limite = Math.max(limite, data.reservedUntil);
+      }
+    });
+
+    if (propias.length > 0) {
+      selectedTables = propias;
+      reservationEndTime = limite;
+
+      updateSummary();
+      renderTables();
+
+      document.getElementById('reservation-timer-box').classList.remove('hidden');
+      startReservationTimer();
+    } else {
+      selectedTables = [];
+      reservationEndTime = null;
+    }
+  } catch (e) {
+    console.error("Error recuperando tiempo de reserva:", e);
+  }
+}
+
+function startReservationTimer() {
     if (selectedTables.length === 0) {
       document.getElementById('reservation-timer-box').classList.add('hidden');
       return;
