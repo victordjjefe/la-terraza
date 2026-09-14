@@ -742,10 +742,10 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  let myClientId = localStorage.getItem('ltb_client_id');
+  let myClientId = sessionStorage.getItem('ltb_client_id');
   if (!myClientId) {
     myClientId = 'cli_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
-    localStorage.setItem('ltb_client_id', myClientId);
+    sessionStorage.setItem('ltb_client_id', myClientId);
   }
 
   let config = null;
@@ -1183,16 +1183,30 @@
     }, 60000);
 
     onSnapshot(collection(db, 'tablas'), (snapshot) => {
-      allTablesData = [];
-      const now = Date.now();
+       allTablesData = [];
+       const now = Date.now();
 
-      snapshot.forEach(docSnap => {
-        const data = docSnap.data();
-        if (data.status === 'RESERVADA' && data.reservedUntil && data.reservedUntil <= now) {
-          data.status = 'DISPONIBLE';
-        }
-        allTablesData.push(data);
-      });
+       snapshot.forEach(docSnap => {
+         const data = docSnap.data();
+
+         // Filtrado por rango configurado sin modificar datos existentes.
+         if (window.configEventoActual) {
+           const numeroTabla = parseInt(String(data.code).replace(/\D/g, ''));
+
+           if (
+             numeroTabla < window.configEventoActual.rangoDesde ||
+             numeroTabla > window.configEventoActual.tablasHabilitadas
+           ) {
+             return;
+           }
+         }
+
+         if (data.status === 'RESERVADA' && data.reservedUntil && data.reservedUntil <= now) {
+           data.status = 'DISPONIBLE';
+         }
+
+         allTablesData.push(data);
+       });
 
       renderTables();
       recuperarTiempoReservaPropia();
