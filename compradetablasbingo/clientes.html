@@ -756,49 +756,50 @@
   const HOLD_TIME_MINUTES = 3;
   let timerInterval = null;
   let reservationEndTime = null;
+
+  // Recuperación de compra temporal
+  function guardarEstadoCompra() {
+    localStorage.setItem('ltb_estado_compra', JSON.stringify({
+      selectedTables,
+      reservationEndTime,
+      nombre: document.getElementById('buyer-name')?.value || '',
+      direccion: document.getElementById('buyer-address')?.value || '',
+      telefono: document.getElementById('buyer-phone')?.value || ''
+    }));
+  }
+
+  function recuperarEstadoCompra() {
+    try {
+      const data = JSON.parse(localStorage.getItem('ltb_estado_compra'));
+      if (!data) return;
+
+      if (data.reservationEndTime && data.reservationEndTime > Date.now()) {
+        selectedTables = data.selectedTables || [];
+        reservationEndTime = data.reservationEndTime;
+
+        const n = document.getElementById('buyer-name');
+        const d = document.getElementById('buyer-address');
+        const t = document.getElementById('buyer-phone');
+
+        if (n) n.value = data.nombre || '';
+        if (d) d.value = data.direccion || '';
+        if (t) t.value = data. telefono || '';
+
+        actualizarResumen();
+      } else {
+        localStorage.removeItem('ltb_estado_compra');
+      }
+    } catch(e) {
+      localStorage.removeItem('ltb_estado_compra');
+    }
+  }
+
   let orderCompleted = false;
   let ultimoEnlaceDigital = '';
   let ultimoMensajeDigital = '';
   let ultimoLookupMensaje = '';
   let ultimoLookupTelefono = '';
   let ultimoLookupEnlace = '';
-
-
-  // Recupera reservas activas si el usuario cerró el navegador o reinició el celular.
-  async function recuperarMiReserva() {
-    try {
-      const q = query(
-        collection(db, 'tablas'),
-        where('status', '==', 'RESERVADA'),
-        where('reservedBy', '==', myClientId)
-      );
-
-      const snapshot = await getDocs(q);
-
-      const recuperadas = [];
-      let mayorTiempo = 0;
-
-      snapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-
-        if (data.reservedUntil && data.reservedUntil > Date.now()) {
-          recuperadas.push(data.code);
-          if (data.reservedUntil > mayorTiempo) {
-            mayorTiempo = data.reservedUntil;
-          }
-        }
-      });
-
-      if (recuperadas.length > 0) {
-        selectedTables = recuperadas;
-        reservationEndTime = mayorTiempo;
-        startReservationTimer();
-        actualizarResumen();
-      }
-    } catch (error) {
-      console.error('Error recuperando reserva:', error);
-    }
-  }
 
 
 
@@ -1232,7 +1233,7 @@
       });
 
       renderTables();
-      recuperarMiReserva();
+      recuperarEstadoCompra();
       const loader = document.getElementById('initial-loader');
       if (loader) loader.style.display = 'none';
     });
@@ -1296,12 +1297,14 @@
 
     if (index > -1) {
       selectedTables.splice(index, 1);
+      guardarEstadoCompra();
     } else {
       if (selectedTables.length >= 15) {
         alert('Máximo puedes seleccionar 15 tablas.');
         return;
       }
       selectedTables.push(code);
+      guardarEstadoCompra();
       if (selectedTables.length === 1 || !reservationEndTime) {
         reservationEndTime = Date.now() + (HOLD_TIME_MINUTES * 60 * 1000);
       }
@@ -1373,6 +1376,7 @@
   }
 
   function startReservationTimer() {
+    guardarEstadoCompra();
     if (selectedTables.length === 0) {
       document.getElementById('reservation-timer-box').classList.add('hidden');
       return;
@@ -1658,7 +1662,7 @@
 
   // Normaliza los datos al salir del campo, no mientras escribe.
   // Esto permite que el usuario pueda usar espacios normalmente entre nombre y apellido.
-  ['buyer-name', 'buyer-address'].forEach(id => {
+  ['buyer-name', 'buyer-address', 'buyer-phone'].forEach(id => {
     const input = document.getElementById(id);
     input.addEventListener('blur', () => {
       input.value = normalizeText(input.value);
