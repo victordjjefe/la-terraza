@@ -542,7 +542,7 @@
         Las ventas de tablas aún no están habilitadas.
       </p>
 
-      <div class="lookup-card">
+      <div class="lookup-card" id="lookup-card-disabled">
         <div class="card-title" style="justify-content:center;">
           🔎 ¿Ya registraste tus tablas?
         </div>
@@ -1068,6 +1068,13 @@
     }
 });
 
+  // Control del buscador en la pantalla de compras no disponibles.
+  // Se oculta solamente cuando existe configuración pero la venta aún no inicia.
+  function mostrarBuscadorEnEspera(mostrar) {
+    const buscador = document.getElementById('lookup-card-disabled');
+    if (buscador) buscador.classList.toggle('hidden', !mostrar);
+  }
+
   function listenConfig() {
     onSnapshot(doc(db, 'configuracion', 'evento'), (docSnap) => {
       if (!docSnap.exists()) {
@@ -1075,6 +1082,7 @@
         document.getElementById('disabled-screen').classList.remove('hidden');
         document.getElementById('disabled-message-title').textContent = "SIN CONFIGURACIÓN";
         document.getElementById('disabled-message-body').textContent = "El evento todavía no está configurado";
+        mostrarBuscadorEnEspera(false);
         return;
       }
 
@@ -1135,6 +1143,7 @@
         document.getElementById('disabled-screen').classList.remove('hidden');
         document.getElementById('disabled-message-title').textContent = 'TIEMPO DE COMPRA FINALIZADO';
         document.getElementById('disabled-message-body').textContent = 'El periodo para adquirir tablas del bingo ha terminado.';
+        mostrarBuscadorEnEspera(true);
         return;
       }
 
@@ -1143,12 +1152,14 @@
         document.getElementById('disabled-screen').classList.remove('hidden');
         document.getElementById('disabled-message-title').textContent = 'COMPRAS AÚN NO DISPONIBLES';
         document.getElementById('disabled-message-body').textContent = `Las tablas estarán disponibles desde ${config.ventaDesdeFecha} ${config.ventaDesdeHora}.`;
+        mostrarBuscadorEnEspera(false);
         return;
       }
 
 
       document.getElementById('enabled-screen').classList.remove('hidden');
       document.getElementById('disabled-screen').classList.add('hidden');
+      mostrarBuscadorEnEspera(true);
 
       document.getElementById('info-fecha').textContent = fechaBonita(config.fecha);
       document.getElementById('info-hora').textContent = horaBonita(config.hora);
