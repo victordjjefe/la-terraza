@@ -742,16 +742,28 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  let myClientId = sessionStorage.getItem('ltb_client_id');
+  let myClientId = localStorage.getItem('ltb_client_id');
   if (!myClientId) {
     myClientId = 'cli_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
-    sessionStorage.setItem('ltb_client_id', myClientId);
+    localStorage.setItem('ltb_client_id', myClientId);
   }
 
   let config = null;
   let selectedTables = [];
   let proofFile = null;
   let allTablesData = [];
+
+  function saveLocalReservation() {
+    localStorage.setItem('ltb_current_reservation', JSON.stringify({
+      clientId: myClientId,
+      tables: selectedTables,
+      savedAt: Date.now()
+    }));
+  }
+
+  function clearLocalReservation() {
+    localStorage.removeItem('ltb_current_reservation');
+  }
 
   const HOLD_TIME_MINUTES = 3;
   let timerInterval = null;
@@ -1275,6 +1287,7 @@
         return;
       }
       selectedTables.push(code);
+      saveLocalReservation();
       if (selectedTables.length === 1 && !reservationEndTime) {
         reservationEndTime = Date.now() + (HOLD_TIME_MINUTES * 60 * 1000);
       }
@@ -1300,6 +1313,7 @@
         // Nunca liberamos a ciegas: solo se devuelve a DISPONIBLE si la tabla
         // sigue RESERVADA por este mismo comprador. Si ya fue VENDIDA, no se toca.
         await releaseTableIfOwned(code);
+        saveLocalReservation();
       } else {
         const success = await runTransaction(db, async (transaction) => {
           const tRef = doc(db, 'tablas', code);
@@ -1481,17 +1495,8 @@ function startReservationTimer() {
 
   document.getElementById('btn-cancel-purchase').addEventListener('click', cancelarCompraCompleta);
 
-  window.addEventListener('beforeunload', () => {
-    if (!orderCompleted && selectedTables.length > 0) {
-      // Es un intento de liberación inmediata al cerrar la página. El navegador
-      // puede interrumpir operaciones de red durante el cierre; si eso ocurre,
-      // el vencimiento de 5 minutos sigue siendo el respaldo. La transacción
-      // evita que una tabla ya VENDIDA vuelva accidentalmente a DISPONIBLE.
-      selectedTables.forEach(code => {
-        releaseTableIfOwned(code).catch(() => {});
-      });
-    }
-  });
+  // No se libera la reserva al cerrar el navegador.
+  // Firebase controla el vencimiento mediante reservedUntil (3 minutos).
 
   function resetForm() {
     clearInterval(timerInterval);
