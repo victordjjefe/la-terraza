@@ -1184,15 +1184,9 @@
   }
 
   async function listenTables() {
-    // Primero limpia reservas vencidas y luego carga las tablas.
+    // Primero limpiamos reservas vencidas y luego cargamos las tablas.
+    // Una reserva nunca puede sobrevivir después de reservedUntil.
     await limpiarReservasVencidas();
-
-    // Protección adicional:
-    // si un comprador abandona la página, las reservas vencidas
-    // no quedan bloqueadas indefinidamente mientras exista actividad.
-    setInterval(() => {
-      limpiarReservasVencidas();
-    }, 60000);
 
     const tablasQuery = window.configEventoActual
         ? query(
