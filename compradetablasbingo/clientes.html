@@ -1001,20 +1001,24 @@
       );
 
       ultimoLookupMensaje =
-        `🎱✨ LA TERRAZA BINGO ✨🎱\n\n` +
-        `¡Hola ${nombreMostrar}! 👋😄\n\n` +
-        `🎉 ¡Listo! Ya tienes tus tablas contigo… bueno, donde las estés guardando 😅🎱\n` +
-        `Ahora solo falta la suerte, los buenos números y cantar ese esperado ¡BINGO! 🍀\n\n` +
-        `🎟️ Tus tablas para jugar son:\n${tablasEncontradas.map(t=>'🎟️ '+t).join('\n')}\n\n` +
-        `📅 Fecha: ${config?.fecha || ''}\n` +
-        `⏰ Hora: ${config?.hora || ''}\n\n` +
-        `🔗 Guarda este acceso en WhatsApp para consultar tus tablas y disfrutar la transmisión en vivo:\n\n${ultimoLookupEnlace}\n\n` +
-        `💳 Información de pago:\n\n` +
-        `📱 Nequi: 323 437 0590\n` +
-        `📱 Daviplata: 323 437 0590\n` +
-        `🔑 Llave: 323 437 0590\n\n` +
-        `✅ Si ya realizaste el pago, ignora esta información. Tu registro ya está confirmado.\n\n` +
-        `🍀 ¡Que la suerte te acompañe y que esos números se pongan de tu lado! 🎱`;
+        `🎱✨ *LA TERRAZA BINGO* ✨🎱
+
+` +
+        `Hola ${nombreMostrar}! 👋
+
+` +
+        `⬇️ *Ingresa al siguiente enlace para acceder a tus tablas digitales y a la transmisión en vivo:*
+
+` +
+        `🔗 ${ultimoLookupEnlace}
+
+` +
+        `📅 *Fecha del Bingo:* ${config?.fecha || ''}
+` +
+        `⏰ *Hora:* ${config?.hora || ''}
+
+` +
+        `🎟️ *Tablas:* ${tablasEncontradas.join(' | ')}`;
 
       document.getElementById('lookup-link-box').innerHTML =
         ``;
@@ -2031,32 +2035,18 @@ function startReservationTimer() {
         </div>
       `;
 
-      ultimoMensajeDigital = `🎱✨ LA TERRAZA BINGO ✨🎱
+      ultimoMensajeDigital = `🎱✨ *LA TERRAZA BINGO* ✨🎱
 
-¡Hola ${buyerName}! 👋😄
+Hola ${buyerName}! 👋
 
-🎉 ¡Listo! Ya tienes tus tablas contigo… bueno, donde las estés guardando 😅🎱
-Ahora solo falta la suerte, los buenos números y cantar ese esperado ¡BINGO! 🍀
+⬇️ *Ingresa al siguiente enlace para acceder a tus tablas digitales y a la transmisión en vivo:*
 
-🎟️ Tus tablas para jugar son:
-${tablasConsolidadas.map(tabla => '🎟️ ' + tabla).join('\n')}
+🔗 ${ultimoEnlaceDigital}
 
-📅 Fecha: ${config?.fecha || ''}
-⏰ Hora: ${config?.hora || ''}
+📅 *Fecha del Bingo:* ${config?.fecha || ''}
+⏰ *Hora:* ${config?.hora || ''}
 
-🔗 Guarda este acceso en WhatsApp para consultar tus tablas y disfrutar la transmisión en vivo:
-
-${ultimoEnlaceDigital}
-
-💳 Información de pago:
-
-📱 Nequi: 323 437 0590
-📱 Daviplata: 323 437 0590
-🔑 Llave: 323 437 0590
-
-✅ Si ya realizaste el pago, ignora esta información. Tu registro ya está confirmado.
-
-🍀 ¡Que la suerte te acompañe y que esos números se pongan de tu lado! 🎱`;
+🎟️ *Tablas:* ${tablasConsolidadas.join(' | ')}`;
 
       document.getElementById('bingo-info-success').innerHTML = `📅 <b>Fecha del Bingo:</b> ${config?.fecha || '--'}<br>⏰ <b>Hora:</b> ${config?.hora || '--'}`;
       document.getElementById('digital-link-box').innerHTML = '';
