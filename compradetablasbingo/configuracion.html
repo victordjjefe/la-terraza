@@ -1572,8 +1572,39 @@ function seleccionarFormaPago(order){
 
   let tablasPerdidasActuales = [];
 
+  async function limpiarReservasVencidasAdministrador() {
+    const tablasSnap = await getDocs(collection(db, 'tablas'));
+    const batch = writeBatch(db);
+    let cambios = 0;
+    const ahora = Date.now();
+
+    tablasSnap.forEach(docSnap => {
+      const tabla = docSnap.data();
+
+      if (
+        tabla.status === 'RESERVADA' &&
+        tabla.reservedUntil &&
+        tabla.reservedUntil <= ahora
+      ) {
+        batch.update(docSnap.ref, {
+          status: 'DISPONIBLE',
+          reservedUntil: null,
+          reservedBy: null,
+          pedido: null
+        });
+        cambios++;
+      }
+    });
+
+    if (cambios > 0) {
+      await batch.commit();
+    }
+  }
+
   window.verificarIntegridadTablas = async function() {
     try {
+      await limpiarReservasVencidasAdministrador();
+
       const [tablasSnap, pedidosSnap] = await Promise.all([
         getDocs(collection(db, 'tablas')),
         getDocs(collection(db, 'pedidos'))
@@ -1594,7 +1625,12 @@ function seleccionarFormaPago(order){
         const codigo = String(docSnap.id);
         const estado = String(tabla.status || '').toUpperCase();
 
-        if (estado !== 'DISPONIBLE' && !tablasConPedido.has(codigo)) {
+        const reservaVencida =
+          estado === 'RESERVADA' &&
+          tabla.reservedUntil &&
+          tabla.reservedUntil <= Date.now();
+
+        if (estado !== 'DISPONIBLE' && !reservaVencida && !tablasConPedido.has(codigo)) {
           tablasPerdidasActuales.push({
             codigo,
             estado,
