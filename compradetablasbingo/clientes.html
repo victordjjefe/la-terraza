@@ -742,10 +742,10 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  let myClientId = sessionStorage.getItem('ltb_client_id');
+  let myClientId = localStorage.getItem('ltb_client_id');
   if (!myClientId) {
     myClientId = 'cli_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
-    sessionStorage.setItem('ltb_client_id', myClientId);
+    localStorage.setItem('ltb_client_id', myClientId);
   }
 
   let config = null;
