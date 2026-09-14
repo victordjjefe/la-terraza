@@ -2039,14 +2039,14 @@ function startReservationTimer() {
 
 Hola ${buyerName}! 👋
 
-⬇️ *Ingresa al siguiente enlace para acceder a tus tablas digitales y a la transmisión en vivo:*
-
-🔗 ${ultimoEnlaceDigital}
+🎟️ *Tablas:* ${tablasConsolidadas.join(' | ')}
 
 📅 *Fecha del Bingo:* ${config?.fecha || ''}
 ⏰ *Hora:* ${config?.hora || ''}
 
-🎟️ *Tablas:* ${tablasConsolidadas.join(' | ')}`;
+⬇️ *Ingresa al siguiente enlace para acceder a tus tablas digitales y a la transmisión en vivo:*
+
+🔗 ${ultimoEnlaceDigital}`;
 
       document.getElementById('bingo-info-success').innerHTML = `📅 <b>Fecha del Bingo:</b> ${config?.fecha || '--'}<br>⏰ <b>Hora:</b> ${config?.hora || '--'}`;
       document.getElementById('digital-link-box').innerHTML = '';
