@@ -1602,16 +1602,6 @@ function seleccionarFormaPago(order){
             motivo: tabla.reservedBy ? 'Cliente inició compra y quedó reservada sin pedido asociado' : 'Tabla ocupada sin relación con pedido. Posible fallo de liberación o sincronización'
           });
         }
-
-        // Nueva validación: tabla que aparece en un pedido pero quedó libre.
-        // Evita inconsistencias como: pedido con 6 tablas, pero una vuelve a DISPONIBLE.
-        if (estado === 'DISPONIBLE' && tablasConPedido.has(codigo)) {
-          tablasPerdidasActuales.push({
-            codigo,
-            estado,
-            motivo: 'La tabla está registrada en un pedido, pero aparece disponible. Requiere revisión.'
-          });
-        }
       });
 
       mostrarTablasPerdidas();
