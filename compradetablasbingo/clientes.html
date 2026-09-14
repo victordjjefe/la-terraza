@@ -1924,6 +1924,11 @@
       );
 
       if (tablasVerificadas.some(v => !v)) {
+        console.error('Validación final fallida', {
+          orderId,
+          tablesToBuy,
+          tablasVerificadas
+        });
         throw new Error('La compra no pudo confirmarse completamente. Algunas tablas no quedaron vendidas correctamente.');
       }
 
