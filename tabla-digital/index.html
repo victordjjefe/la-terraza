@@ -681,6 +681,17 @@ Esta tabla no existe en el sistema.
 </div>
 
 <script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+ apiKey: "AIzaSyBRF5F14_x0U0Ol5P47VQ93O76u5xuxOa5w",
+ authDomain: "la-terraza-1b2cd.firebaseapp.com",
+ projectId: "la-terraza-1b2cd"
+};
+const appFirebase = initializeApp(firebaseConfig);
+const dbFirebase = getFirestore(appFirebase);
+
 
 let audioCtx=new(window.AudioContext||window.webkitAudioContext)();
 
@@ -999,10 +1010,27 @@ invalido:false
 }
 /* ROUTE_PARSER_END */
 
-const datosEnlace=leerDatosEnlace(
+let datosEnlace=leerDatosEnlace(
 window.location.pathname,
 window.location.search
 );
+
+// Nuevo sistema: el enlace se resuelve por cliente + bingo.
+// Las tablas ya no dependen de los números guardados en la URL.
+if(datosEnlace.cliente && new URLSearchParams(window.location.search).get('bingo')){
+  try{
+    const clienteSnap = await getDoc(doc(dbFirebase,'clientes',datosEnlace.cliente));
+    if(clienteSnap.exists()){
+      const c = clienteSnap.data();
+      const bingoActual = new URLSearchParams(window.location.search).get('bingo');
+      if((c.idBingo || '') === bingoActual && Array.isArray(c.tablas)){
+        datosEnlace.lista = c.tablas.map(t=>String(t).replace(/^T/i,'')).join(',');
+      }
+    }
+  }catch(e){
+    console.error('Error cargando tablas del cliente:', e);
+  }
+}
 
 const videoID=datosEnlace.videoID;
 const vence=datosEnlace.vence;
