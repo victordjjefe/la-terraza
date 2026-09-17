@@ -862,12 +862,18 @@
   // Une las tablas de todas las compras asociadas al mismo WhatsApp.
   // Las tablas de la compra recién terminada se incluyen primero y los
   // duplicados se eliminan para que siempre exista un único enlace digital.
-  function consolidarTablasPorTelefono(pedidos, telefonoActual, tablasNuevas){
+  function consolidarTablasPorTelefono(pedidos, telefonoActual, tablasNuevas, idBingoActual){
     const telefono = normalizarWhatsAppColombia(telefonoActual);
+    const bingo = idBingoActual || config?.idBingo || 'BINGO001';
     const todasLasTablas = [...(Array.isArray(tablasNuevas) ? tablasNuevas : [])];
 
     (Array.isArray(pedidos) ? pedidos : []).forEach(pedido => {
-      if(normalizarWhatsAppColombia(pedido?.telefono) === telefono && Array.isArray(pedido?.tablas)){
+      if(
+        normalizarWhatsAppColombia(pedido?.telefono || pedido?.whatsapp) === telefono &&
+        (pedido?.idBingo || '') === bingo &&
+        pedido?.estado !== 'CANCELADO' &&
+        Array.isArray(pedido?.tablas)
+      ){
         todasLasTablas.push(...pedido.tablas);
       }
     });
@@ -883,7 +889,7 @@
       pedidos.push(docSnap.data());
     });
 
-    return consolidarTablasPorTelefono(pedidos, telefonoActual, tablasNuevas);
+    return consolidarTablasPorTelefono(pedidos, telefonoActual, tablasNuevas, config?.idBingo || 'BINGO001');
   }
 
   async function consultarTablas(){
@@ -923,14 +929,12 @@
           pedido.telefono || pedido.whatsapp || ''
         );
 
-        if(telefonoPedido === telefonoBusqueda){
+        if(telefonoPedido === telefonoBusqueda && (pedido.idBingo || '') === (config?.idBingo || 'BINGO001') && pedido.estado !== 'CANCELADO'){
           if(Array.isArray(pedido.tablas)){
             tablasEncontradas.push(...pedido.tablas);
           }
 
-          if(!nombreCliente){
-            nombreCliente = pedido.cliente || pedido.nombre || '';
-          }
+          nombreCliente = pedido.cliente || pedido.nombre || nombreCliente;
 
           telefonoFinal = pedido.telefono || telefonoFinal;
         }
@@ -1921,6 +1925,7 @@ function startReservationTimer() {
           documentoId: candidateRef.id,
           cliente: buyerName,
           telefono: buyerPhone,
+          idBingo: config?.idBingo || 'BINGO001',
           referencia: buyerAddress,
           tablas: tablesToBuy,
           linkDigital: enlaceDigital,
@@ -1958,8 +1963,6 @@ function startReservationTimer() {
         transaction.set(clientIndexRef, {
           cliente: buyerName,
           telefono: normalizarWhatsAppColombia(buyerPhone),
-          tablas: tablesToBuy,
-          linkDigital: enlaceDigital,
           fechaBingo: config?.fecha || '',
           linkTransmision: config?.linkTransmision || '',
           pedidoId: candidateId,
