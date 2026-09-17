@@ -780,7 +780,7 @@
   // Genera el mismo enlace dinámico usado por el sistema contable.
   // Ejemplo:
   // tabla-digital/?tablas=14,22&vence=20260902&nombre=cliente&video=ID_YOUTUBE
-  function generarLinkDigitalCliente(tablas, nombre, fecha, linkTransmision, clienteId){
+  function generarLinkDigitalCliente(tablas, nombre, fecha, linkTransmision, clienteId, idBingo){
 
     const base = 'https://laterrazacalipodcast.top/tabla-digital/';
 
@@ -827,7 +827,7 @@
       ? tablas.map(t => String(t).replace(/^T/i,'')).join(',')
       : '';
 
-    return `${base}?cliente=${encodeURIComponent(clienteId || '')}&vence=${fechaCodigo}&nombre=${nombreUrl}&video=${videoId}`;
+    return `${base}?cliente=${encodeURIComponent(clienteId || '')}&bingo=${encodeURIComponent(idBingo || '')}&vence=${fechaCodigo}&nombre=${nombreUrl}&video=${videoId}`;
   }
 
   function cleanSearch(value){
@@ -997,7 +997,8 @@
         tablasEncontradas,
         nombreMostrar,
         config?.fecha || '',
-        config?.linkTransmision || ''
+        config?.linkTransmision || '',
+        config?.idBingo || 'BINGO001'
       );
 
       ultimoLookupMensaje =
@@ -1907,7 +1908,8 @@ function startReservationTimer() {
           buyerName,
           config.fecha,
           config.linkTransmision,
-          normalizarWhatsAppColombia(buyerPhone)
+          normalizarWhatsAppColombia(buyerPhone),
+          config?.idBingo || 'BINGO001'
         );
 
         const newOrder = {
@@ -2015,7 +2017,8 @@ function startReservationTimer() {
         tablasConsolidadas,
         buyerName,
         config?.fecha || '',
-        config?.linkTransmision || ''
+        config?.linkTransmision || '',
+        config?.idBingo || 'BINGO001'
       );
 
       document.getElementById('success-exclusive-screen').classList.remove('hidden');
