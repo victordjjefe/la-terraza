@@ -343,7 +343,10 @@
         <form id="form-config">
           <div class="form-group">
               <label>Número de Bingo Actual</label>
-              <input type="text" id="cfg-id-bingo" class="form-control" placeholder="BINGO001" readonly>
+              <div class="form-control" style="background:#f8fafc;font-weight:800;color:#d97706;display:flex;align-items:center;gap:8px;">
+                🔒 <span id="cfg-id-bingo-display">BINGO001</span>
+              </div>
+              <input type="hidden" id="cfg-id-bingo" value="BINGO001">
             </div>
 
           <div class="form-row">
@@ -643,7 +646,7 @@
       if (docSnap.exists()) {
         const cfg = docSnap.data();
         currentTableValue = Number(cfg.valor) || 0;
-        document.getElementById('cfg-id-bingo').value = cfg.idBingo ?? 'BINGO001';
+        document.getElementById('cfg-id-bingo').value = cfg.idBingo ?? 'BINGO001'; document.getElementById('cfg-id-bingo-display').textContent = cfg.idBingo ?? 'BINGO001';
         document.getElementById('cfg-fecha').value = firestoreDateToInput(cfg.fecha);
         document.getElementById('cfg-hora').value = firestoreTimeToInput(cfg.hora);
         document.getElementById('cfg-venta-desde-fecha').value = firestoreDateToInput(cfg.ventaDesdeFecha);
@@ -656,7 +659,7 @@
         document.getElementById('cfg-hasta').value = cfg.tablasHabilitadas ?? '';
       } else {
         currentTableValue = 0;
-          document.getElementById('cfg-id-bingo').value = 'BINGO001';
+          document.getElementById('cfg-id-bingo').value = 'BINGO001'; document.getElementById('cfg-id-bingo-display').textContent = 'BINGO001';
           document.getElementById('cfg-fecha').value = '';
         document.getElementById('cfg-hora').value = '';
         document.getElementById('cfg-venta-desde-fecha').value = '';
