@@ -998,6 +998,7 @@
         nombreMostrar,
         config?.fecha || '',
         config?.linkTransmision || '',
+        ultimoLookupTelefono || '',
         config?.idBingo || 'BINGO001'
       );
 
@@ -2018,6 +2019,7 @@ function startReservationTimer() {
         buyerName,
         config?.fecha || '',
         config?.linkTransmision || '',
+        normalizarWhatsAppColombia(buyerPhone),
         config?.idBingo || 'BINGO001'
       );
 
