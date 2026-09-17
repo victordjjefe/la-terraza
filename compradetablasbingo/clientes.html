@@ -1294,11 +1294,13 @@
         alert('Máximo puedes seleccionar 15 tablas.');
         return;
       }
-      selectedTables.push(code);
-      saveLocalReservation();
-      if (selectedTables.length === 1 && !reservationEndTime) {
+      // El tiempo de reserva debe existir ANTES de guardar la reserva en Firebase.
+      // Evita que una tabla quede RESERVADA sin vencimiento.
+      if (selectedTables.length === 0 || !reservationEndTime) {
         reservationEndTime = Date.now() + (HOLD_TIME_MINUTES * 60 * 1000);
       }
+      selectedTables.push(code);
+      saveLocalReservation();
     }
 
     if (selectedTables.length > 0) {
@@ -1334,6 +1336,11 @@
 
           if (tData.status === 'VENDIDA' || (tData.status === 'RESERVADA' && tData.reservedBy !== myClientId && !isExpired)) {
             return false;
+          }
+
+          // Nunca crear una reserva sin tiempo de expiración.
+          if (!reservationEndTime) {
+            throw new Error('No fue posible iniciar el tiempo de reserva.');
           }
 
           transaction.update(tRef, {
