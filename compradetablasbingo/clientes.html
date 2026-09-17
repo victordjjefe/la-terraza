@@ -1059,7 +1059,7 @@
         alert('No encontramos un número de WhatsApp válido.');
         return;
       }
-      const url = 'https://wa.me/' + telefono + '?text=' + encodeURIComponent(ultimoLookupMensaje || ultimoLookupEnlace);
+      const url = 'https://wa.me/57' + telefono + '?text=' + encodeURIComponent(ultimoLookupMensaje || ultimoLookupEnlace);
       window.location.href = url;
     }catch(error){
       console.error('Error abriendo WhatsApp:', error);
@@ -2149,7 +2149,7 @@ Hola ${buyerName}! 👋
       return;
     }
     const telefono = cleanPhone(document.getElementById('buyer-phone').value);
-    const destino = telefono ? 'https://wa.me/' + normalizarWhatsAppColombia(telefono) : 'https://wa.me/';
+    const destino = telefono ? 'https://wa.me/57' + normalizarWhatsAppColombia(telefono) : 'https://wa.me/';
     const url = destino + '?text=' + encodeURIComponent(ultimoMensajeDigital);
     window.location.href = url;
   }
