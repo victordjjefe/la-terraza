@@ -840,21 +840,12 @@
 
 
   function normalizarWhatsAppColombia(numero){
-    let original = String(numero || '').trim();
-    let tieneCodigoInternacional = original.startsWith('+') || original.startsWith('00');
-    let n = cleanPhone(original);
+    let n = cleanPhone(numero);
 
-    // Acepta números internacionales escritos por el usuario.
-    if(tieneCodigoInternacional){
-      if(n.startsWith('00')) n = n.substring(2);
-      return n;
+    // Un solo formato interno: número colombiano sin prefijo 57.
+    if(n.startsWith('57') && n.length === 12){
+      n = n.substring(2);
     }
-
-    // Colombia: el usuario solo escribe los 10 dígitos.
-    if(n.length === 10 && n.startsWith('3')) return '57' + n;
-
-    // También acepta si alguien escribe el código de Colombia.
-    if(n.startsWith('57') && n.length >= 12) return n;
 
     return n;
   }
