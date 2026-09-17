@@ -780,7 +780,7 @@
   // Genera el mismo enlace dinámico usado por el sistema contable.
   // Ejemplo:
   // tabla-digital/?tablas=14,22&vence=20260902&nombre=cliente&video=ID_YOUTUBE
-  function generarLinkDigitalCliente(tablas, nombre, fecha, linkTransmision){
+  function generarLinkDigitalCliente(tablas, nombre, fecha, linkTransmision, clienteId){
 
     const base = 'https://laterrazacalipodcast.top/tabla-digital/';
 
@@ -827,7 +827,7 @@
       ? tablas.map(t => String(t).replace(/^T/i,'')).join(',')
       : '';
 
-    return `${base}?tablas=${listaTablas}&vence=${fechaCodigo}&nombre=${nombreUrl}&video=${videoId}`;
+    return `${base}?cliente=${encodeURIComponent(clienteId || '')}&vence=${fechaCodigo}&nombre=${nombreUrl}&video=${videoId}`;
   }
 
   function cleanSearch(value){
@@ -1906,7 +1906,8 @@ function startReservationTimer() {
           tablesToBuy,
           buyerName,
           config.fecha,
-          config.linkTransmision
+          config.linkTransmision,
+          normalizarWhatsAppColombia(buyerPhone)
         );
 
         const newOrder = {
@@ -1918,7 +1919,6 @@ function startReservationTimer() {
           referencia: buyerAddress,
           tablas: tablesToBuy,
           linkDigital: enlaceDigital,
-          idBingo: config?.idBingo || '',
           // Datos preparados para sincronización con SISTEMA CONTABLE v34
           clienteId: 'CLI_' + cleanPhone(buyerPhone),
           eventoId: 'BINGO_' + String(config?.fecha || '').replace(/\D/g,''),
@@ -1955,10 +1955,10 @@ function startReservationTimer() {
           telefono: normalizarWhatsAppColombia(buyerPhone),
           tablas: tablesToBuy,
           linkDigital: enlaceDigital,
-          idBingo: config?.idBingo || '',
           fechaBingo: config?.fecha || '',
           linkTransmision: config?.linkTransmision || '',
-          pedidoId: candidateId
+          pedidoId: candidateId,
+          idBingo: config?.idBingo || 'BINGO001'
         });
 
         // Guarda únicamente el último consecutivo utilizado.
