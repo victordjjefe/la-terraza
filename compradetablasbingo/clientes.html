@@ -993,12 +993,14 @@
       document.getElementById('lookup-tables').textContent =
         tablasEncontradas.join(', ');
 
+      ultimoLookupTelefono = cleanPhone(telefonoFinal || telefonoBusqueda);
+
       ultimoLookupEnlace = generarLinkDigitalCliente(
         tablasEncontradas,
         nombreMostrar,
         config?.fecha || '',
         config?.linkTransmision || '',
-        ultimoLookupTelefono || '',
+        ultimoLookupTelefono,
         config?.idBingo || 'BINGO001'
       );
 
@@ -1962,7 +1964,7 @@ function startReservationTimer() {
           linkTransmision: config?.linkTransmision || '',
           pedidoId: candidateId,
           idBingo: config?.idBingo || 'BINGO001'
-        });
+        }, { merge: true });
 
         // Guarda únicamente el último consecutivo utilizado.
         transaction.set(counterRef, { ultimo: nextNumber }, { merge: true });
