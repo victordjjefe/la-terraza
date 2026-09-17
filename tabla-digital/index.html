@@ -680,7 +680,7 @@ Esta tabla no existe en el sistema.
 </div>
 </div>
 
-<script>
+<script type="module">
 
 let audioCtx=new(window.AudioContext||window.webkitAudioContext)();
 
@@ -966,6 +966,7 @@ vence:venceRuta,
 nombre:nombreRuta,
 videoID:videoRuta,
 logo:params.get("logo") || "",
+cliente: params.get("cliente") || "",
 formato:"ruta",
 invalido:false
 };
@@ -977,6 +978,7 @@ vence:"",
 nombre:"",
 videoID:"",
 logo:"",
+cliente: "",
 formato:"ruta",
 invalido:true
 };
@@ -986,6 +988,7 @@ const listaConsulta=params.get("tablas") || "1";
 
 return {
 lista:/^\d+(,\d+)*$/.test(listaConsulta) ? listaConsulta : "1",
+cliente: params.get("cliente") || "",
 vence:normalizarFecha(params.get("vence") || ""),
 nombre:nombreDesdeSlug(params.get("nombre") || ""),
 videoID:params.get("video") || "",
@@ -1067,6 +1070,21 @@ document.querySelector(".videoContainer").style.display="none";
 function volverATablas(){
 window.location.href=baseArchivos();
 }
+
+async function cargarTablasActuales(){
+  if(!datosEnlace.cliente) return;
+  try{
+    const r=await fetch('https://firestore.googleapis.com/v1/projects/la-terraza-1b2cd/databases/(default)/documents/clientes/'+encodeURIComponent(datosEnlace.cliente));
+    if(!r.ok) return;
+    const d=await r.json();
+    const campos=d.fields || {};
+    const tablas=campos.tablas?.arrayValue?.values || [];
+    datosEnlace.lista=tablas.map(t=>t.stringValue || '').map(t=>String(t).replace(/^T/i,'')).join(',');
+    if(campos.cliente?.stringValue) document.getElementById('nombreJugador').textContent=campos.cliente.stringValue.toUpperCase();
+  }catch(e){ console.warn('No se pudieron actualizar tablas',e); }
+}
+
+await cargarTablasActuales();
 
 let lista=datosEnlace.lista || "1";
 let ids=lista.split(",").map(n=>parseInt(n,10)).filter(n=>Number.isInteger(n) && n>0);
