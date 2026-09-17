@@ -763,6 +763,7 @@
 
       await setDoc(doc(db, 'configuracion', 'evento'), {
         nombre: "LA TERRAZA BINGO",
+        idBingo: (document.getElementById('cfg-id-bingo')?.value || '').trim(),
         enabled: true,
         fecha: fecha,
         hora: hora,
