@@ -341,6 +341,11 @@
       <div class="card" style="margin-bottom: 16px;">
         <div class="card-title">Ajustes del Evento</div>
         <form id="form-config">
+          <div class="form-group">
+              <label>Número de Bingo Actual</label>
+              <input type="text" id="cfg-id-bingo" class="form-control" placeholder="BINGO001" readonly>
+            </div>
+
           <div class="form-row">
             <div class="form-group">
               <label>Fecha del Bingo</label>
@@ -638,6 +643,7 @@
       if (docSnap.exists()) {
         const cfg = docSnap.data();
         currentTableValue = Number(cfg.valor) || 0;
+        document.getElementById('cfg-id-bingo').value = cfg.idBingo ?? 'BINGO001';
         document.getElementById('cfg-fecha').value = firestoreDateToInput(cfg.fecha);
         document.getElementById('cfg-hora').value = firestoreTimeToInput(cfg.hora);
         document.getElementById('cfg-venta-desde-fecha').value = firestoreDateToInput(cfg.ventaDesdeFecha);
@@ -650,6 +656,7 @@
         document.getElementById('cfg-hasta').value = cfg.tablasHabilitadas ?? '';
       } else {
         currentTableValue = 0;
+          document.getElementById('cfg-id-bingo').value = 'BINGO001';
           document.getElementById('cfg-fecha').value = '';
         document.getElementById('cfg-hora').value = '';
         document.getElementById('cfg-venta-desde-fecha').value = '';
