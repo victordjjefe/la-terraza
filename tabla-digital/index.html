@@ -995,7 +995,7 @@ invalido:true
 };
 }
 
-const listaConsulta=params.get("tablas") || "";
+const listaConsulta="";
 
 return {
 lista:/^\d+(,\d+)*$/.test(listaConsulta) ? listaConsulta : "",
@@ -1016,38 +1016,33 @@ window.location.search
 );
 
 // Sistema definitivo: las tablas se resuelven por WhatsApp + Bingo actual.
-// No se usan listas antiguas guardadas ni tablas dentro del enlace.
 if(datosEnlace.cliente && new URLSearchParams(window.location.search).get('bingo')){
   try{
-    const bingoActual = new URLSearchParams(window.location.search).get('bingo');
+    const params = new URLSearchParams(window.location.search);
+    const bingoActual = String(params.get('bingo') || '');
     const telefonoBuscado = String(datosEnlace.cliente).replace(/\D/g,'');
     const pedidosSnap = await getDocs(collection(dbFirebase,'pedidos'));
     const tablasActuales = [];
-    let encontrado = false;
 
     pedidosSnap.forEach((pedidoDoc)=>{
       const pedido = pedidoDoc.data();
       const telefonoPedido = String(pedido.telefono || pedido.whatsapp || '').replace(/\D/g,'');
-
-      if(telefonoPedido === telefonoBuscado &&
-         String(pedido.idBingo || '') === String(bingoActual) &&
-         pedido.estado !== 'CANCELADO'){
-          encontrado = true;
-          const tablas = Array.isArray(pedido.tablas) ? pedido.tablas : [];
-          tablas.forEach(t=>{
-            const limpio = String(t).replace(/^T/i,'');
-            if(limpio && !tablasActuales.includes(limpio)) tablasActuales.push(limpio);
-          });
+      if(
+        telefonoPedido === telefonoBuscado &&
+        String(pedido.idBingo || '') === bingoActual &&
+        String(pedido.estado || '') !== 'CANCELADO' &&
+        Array.isArray(pedido.tablas)
+      ){
+        pedido.tablas.forEach(t=>{
+          const limpio = String(t).replace(/^T/i,'');
+          if(limpio && !tablasActuales.includes(limpio)) tablasActuales.push(limpio);
+        });
       }
     });
 
     datosEnlace.lista = tablasActuales.join(',');
-
-    if(!encontrado || tablasActuales.length===0){
-      datosEnlace.lista = '';
-    }
   }catch(e){
-    console.error('Error consultando tablas vigentes:', e);
+    console.error('Error consultando tablas vigentes:',e);
     datosEnlace.lista='';
   }
 }
@@ -1120,46 +1115,7 @@ window.location.href=baseArchivos();
 }
 
 async function cargarTablasActuales(){
-  if(!datosEnlace.cliente) {
-    datosEnlace.lista="";
-    return;
-  }
-
-  try{
-    const r=await fetch('https://firestore.googleapis.com/v1/projects/la-terraza-1b2cd/databases/(default)/documents/clientes/'+encodeURIComponent(datosEnlace.cliente));
-
-    if(!r.ok){
-      datosEnlace.lista="";
-      return;
-    }
-
-    const d=await r.json();
-    const campos=d.fields || {};
-
-    const bingoUrl = new URLSearchParams(window.location.search).get('bingo') || "";
-    const bingoGuardado = campos.idBingo?.stringValue || "";
-
-    if(!bingoUrl || !bingoGuardado || bingoUrl !== bingoGuardado){
-      datosEnlace.lista="";
-      return;
-    }
-
-    const tablas=campos.tablas?.arrayValue?.values || [];
-
-    datosEnlace.lista=tablas
-      .map(t=>t.stringValue || '')
-      .map(t=>String(t).replace(/^T/i,''))
-      .filter(Boolean)
-      .join(',');
-
-    if(campos.cliente?.stringValue) {
-      document.getElementById('nombreJugador').textContent=campos.cliente.stringValue.toUpperCase();
-    }
-
-  }catch(e){
-    console.warn('No se pudieron actualizar tablas',e);
-    datosEnlace.lista="";
-  }
+  return;
 }
 
 await cargarTablasActuales();
@@ -1167,7 +1123,7 @@ await cargarTablasActuales();
 let lista=datosEnlace.lista || "";
 
 if(!lista){
-  document.getElementById("expiradoMsg").textContent="⛔ No se encontraron tablas asociadas a este enlace ⛔";
+  document.getElementById("expiradoMsg").textContent="No se encontraron tablas asociadas a este enlace.";
   document.getElementById("expiradoMsg").style.display="flex";
   document.querySelector(".contenedor").style.display="none";
   document.querySelector(".videoContainer").style.display="none";
