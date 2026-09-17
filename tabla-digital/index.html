@@ -995,10 +995,10 @@ invalido:true
 };
 }
 
-const listaConsulta=params.get("tablas") || "1";
+const listaConsulta=params.get("tablas") || "";
 
 return {
-lista:/^\d+(,\d+)*$/.test(listaConsulta) ? listaConsulta : "1",
+lista:/^\d+(,\d+)*$/.test(listaConsulta) ? listaConsulta : "",
 cliente: params.get("cliente") || "",
 vence:normalizarFecha(params.get("vence") || ""),
 nombre:nombreDesdeSlug(params.get("nombre") || ""),
@@ -1100,22 +1100,60 @@ window.location.href=baseArchivos();
 }
 
 async function cargarTablasActuales(){
-  if(!datosEnlace.cliente) return;
+  if(!datosEnlace.cliente) {
+    datosEnlace.lista="";
+    return;
+  }
+
   try{
     const r=await fetch('https://firestore.googleapis.com/v1/projects/la-terraza-1b2cd/databases/(default)/documents/clientes/'+encodeURIComponent(datosEnlace.cliente));
-    if(!r.ok) return;
+
+    if(!r.ok){
+      datosEnlace.lista="";
+      return;
+    }
+
     const d=await r.json();
     const campos=d.fields || {};
+
+    const bingoUrl = new URLSearchParams(window.location.search).get('bingo') || "";
+    const bingoGuardado = campos.idBingo?.stringValue || "";
+
+    if(!bingoUrl || !bingoGuardado || bingoUrl !== bingoGuardado){
+      datosEnlace.lista="";
+      return;
+    }
+
     const tablas=campos.tablas?.arrayValue?.values || [];
-    datosEnlace.lista=tablas.map(t=>t.stringValue || '').map(t=>String(t).replace(/^T/i,'')).join(',');
-    if(campos.cliente?.stringValue) document.getElementById('nombreJugador').textContent=campos.cliente.stringValue.toUpperCase();
-  }catch(e){ console.warn('No se pudieron actualizar tablas',e); }
+
+    datosEnlace.lista=tablas
+      .map(t=>t.stringValue || '')
+      .map(t=>String(t).replace(/^T/i,''))
+      .filter(Boolean)
+      .join(',');
+
+    if(campos.cliente?.stringValue) {
+      document.getElementById('nombreJugador').textContent=campos.cliente.stringValue.toUpperCase();
+    }
+
+  }catch(e){
+    console.warn('No se pudieron actualizar tablas',e);
+    datosEnlace.lista="";
+  }
 }
 
 await cargarTablasActuales();
 
-let lista=datosEnlace.lista || "1";
-let ids=lista.split(",").map(n=>parseInt(n,10)).filter(n=>Number.isInteger(n) && n>0);
+let lista=datosEnlace.lista || "";
+
+if(!lista){
+  document.getElementById("expiradoMsg").textContent="⛔ No se encontraron tablas asociadas a este enlace ⛔";
+  document.getElementById("expiradoMsg").style.display="flex";
+  document.querySelector(".contenedor").style.display="none";
+  document.querySelector(".videoContainer").style.display="none";
+}
+
+let ids=lista ? lista.split(",").map(n=>parseInt(n,10)).filter(n=>Number.isInteger(n) && n>0) : [];
 
 const contenedor=document.getElementById("tabla");
 
