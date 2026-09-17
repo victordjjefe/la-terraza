@@ -781,54 +781,10 @@
   // Ejemplo:
   // tabla-digital/?tablas=14,22&vence=20260902&nombre=cliente&video=ID_YOUTUBE
   function generarLinkDigitalCliente(tablas, nombre, fecha, linkTransmision, clienteId, idBingo){
-
     const base = 'https://laterrazacalipodcast.top/tabla-digital/';
-
-    // Convierte la fecha del bingo al formato YYYYMMDD
-    let fechaCodigo = '';
-    if(fecha){
-      const f = String(fecha).trim();
-
-      if(f.includes('-')){
-        fechaCodigo = f.replaceAll('-','');
-      }else if(f.includes('/')){
-        const partes = f.split('/');
-        if(partes.length === 3){
-          fechaCodigo = `${partes[2]}${partes[1].padStart(2,'0')}${partes[0].padStart(2,'0')}`;
-        }
-      }
-    }
-
-    // Obtiene únicamente el ID del video de YouTube
-    let videoId = '';
-    if(linkTransmision){
-      const link = String(linkTransmision).trim();
-
-      const match =
-        link.match(/[?&]v=([^&]+)/) ||
-        link.match(/youtu\.be\/([^?&]+)/) ||
-        link.match(/live\/([^?&]+)/);
-
-      if(match){
-        videoId = match[1];
-      }else{
-        videoId = link;
-      }
-    }
-
-    const nombreUrl = String(nombre || '')
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g,'')
-      .replace(/[^a-z0-9]+/g,'-')
-      .replace(/^-+|-+$/g,'');
-
-    const listaTablas = Array.isArray(tablas)
-      ? tablas.map(t => String(t).replace(/^T/i,'')).join(',')
-      : '';
-
-    return `${base}?cliente=${encodeURIComponent(clienteId || '')}&bingo=${encodeURIComponent(idBingo || '')}&vence=${fechaCodigo}&nombre=${nombreUrl}&video=${videoId}`;
-  }
+    const telefono = normalizarWhatsAppColombia(clienteId);
+    return `${base}?cliente=${encodeURIComponent(telefono)}&bingo=${encodeURIComponent(idBingo || 'BINGO001')}`;
+}
 
   function cleanSearch(value){
     return String(value || '').toLowerCase().trim();
@@ -856,21 +812,23 @@
   function consolidarTablasPorTelefono(pedidos, telefonoActual, tablasNuevas, idBingoActual){
     const telefono = normalizarWhatsAppColombia(telefonoActual);
     const bingo = idBingoActual || config?.idBingo || 'BINGO001';
-    const todasLasTablas = [...(Array.isArray(tablasNuevas) ? tablasNuevas : [])];
+    const todasLasTablas = [];
 
     (Array.isArray(pedidos) ? pedidos : []).forEach(pedido => {
       if(
         normalizarWhatsAppColombia(pedido?.telefono || pedido?.whatsapp) === telefono &&
-        (pedido?.idBingo || '') === bingo &&
-        pedido?.estado !== 'CANCELADO' &&
+        String(pedido?.idBingo || '') === String(bingo) &&
+        String(pedido?.estado || '') !== 'CANCELADO' &&
         Array.isArray(pedido?.tablas)
       ){
         todasLasTablas.push(...pedido.tablas);
       }
     });
 
-    return [...new Set(todasLasTablas)];
-  }
+    if(Array.isArray(tablasNuevas)) todasLasTablas.push(...tablasNuevas);
+
+    return [...new Set(todasLasTablas.map(t=>String(t)))];
+}
 
   async function obtenerTodasLasTablasClienteRegistro(telefonoActual, tablasNuevas){
     const snapshot = await getDocs(collection(db, 'pedidos'));
