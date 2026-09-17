@@ -2014,6 +2014,19 @@ function startReservationTimer() {
         console.error('No fue posible consolidar compras anteriores:', consolidationError);
       }
 
+      // Actualiza el índice del cliente con las tablas vigentes consolidadas
+      // para que el enlace digital siempre consulte la información actual.
+      try {
+        const clienteIndexRef = doc(db, 'clientes', normalizarWhatsAppColombia(buyerPhone));
+        await updateDoc(clienteIndexRef, {
+          tablas: tablasConsolidadas,
+          idBingo: config?.idBingo || 'BINGO001',
+          linkDigital: ''
+        });
+      } catch(e) {
+        console.error('No fue posible actualizar índice consolidado:', e);
+      }
+
       ultimoEnlaceDigital = generarLinkDigitalCliente(
         tablasConsolidadas,
         buyerName,
