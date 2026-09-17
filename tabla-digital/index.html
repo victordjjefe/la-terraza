@@ -682,7 +682,7 @@ Esta tabla no existe en el sistema.
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, doc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
  apiKey: "AIzaSyBRF5F14_x0U0Ol5P47VQ93O76u5xuxOa5w",
@@ -1015,20 +1015,40 @@ window.location.pathname,
 window.location.search
 );
 
-// Nuevo sistema: el enlace se resuelve por cliente + bingo.
-// Las tablas ya no dependen de los números guardados en la URL.
+// Sistema definitivo: las tablas se resuelven por WhatsApp + Bingo actual.
+// No se usan listas antiguas guardadas ni tablas dentro del enlace.
 if(datosEnlace.cliente && new URLSearchParams(window.location.search).get('bingo')){
   try{
-    const clienteSnap = await getDoc(doc(dbFirebase,'clientes',datosEnlace.cliente));
-    if(clienteSnap.exists()){
-      const c = clienteSnap.data();
-      const bingoActual = new URLSearchParams(window.location.search).get('bingo');
-      if((c.idBingo || '') === bingoActual && Array.isArray(c.tablas)){
-        datosEnlace.lista = c.tablas.map(t=>String(t).replace(/^T/i,'')).join(',');
+    const bingoActual = new URLSearchParams(window.location.search).get('bingo');
+    const telefonoBuscado = String(datosEnlace.cliente).replace(/\D/g,'');
+    const pedidosSnap = await getDocs(collection(dbFirebase,'pedidos'));
+    const tablasActuales = [];
+    let encontrado = false;
+
+    pedidosSnap.forEach((pedidoDoc)=>{
+      const pedido = pedidoDoc.data();
+      const telefonoPedido = String(pedido.telefono || pedido.whatsapp || '').replace(/\D/g,'');
+
+      if(telefonoPedido === telefonoBuscado &&
+         String(pedido.idBingo || '') === String(bingoActual) &&
+         pedido.estado !== 'CANCELADO'){
+          encontrado = true;
+          const tablas = Array.isArray(pedido.tablas) ? pedido.tablas : [];
+          tablas.forEach(t=>{
+            const limpio = String(t).replace(/^T/i,'');
+            if(limpio && !tablasActuales.includes(limpio)) tablasActuales.push(limpio);
+          });
       }
+    });
+
+    datosEnlace.lista = tablasActuales.join(',');
+
+    if(!encontrado || tablasActuales.length===0){
+      datosEnlace.lista = '';
     }
   }catch(e){
-    console.error('Error cargando tablas del cliente:', e);
+    console.error('Error consultando tablas vigentes:', e);
+    datosEnlace.lista='';
   }
 }
 
