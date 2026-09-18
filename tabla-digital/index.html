@@ -995,16 +995,17 @@ invalido:true
 };
 }
 
-const listaConsulta="";
+const tablaDirecta = String(params.get("tabla") || "").replace(/^T/i, "");
+const listaConsulta = /^\d+(,\d+)*$/.test(tablaDirecta) ? tablaDirecta : "";
 
 return {
-lista:/^\d+(,\d+)*$/.test(listaConsulta) ? listaConsulta : "",
+lista:listaConsulta,
 cliente: params.get("cliente") || "",
 vence:normalizarFecha(params.get("vence") || ""),
 nombre:nombreDesdeSlug(params.get("nombre") || ""),
 videoID:params.get("video") || "",
 logo:params.get("logo") || "",
-formato:"consulta",
+formato:listaConsulta ? "tabla-directa" : "consulta",
 invalido:false
 };
 }
