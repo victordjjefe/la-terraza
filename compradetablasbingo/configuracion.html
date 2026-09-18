@@ -639,6 +639,35 @@
     return '';
   }
 
+
+  function obtenerNumeroBingo(idBingo) {
+    const match = String(idBingo || '').match(/BINGO(\d+)/i);
+    return match ? Number(match[1]) : 0;
+  }
+
+  async function obtenerSiguienteBingo() {
+    const contadorRef = doc(db, 'sistema', 'contadorBingo');
+    const snap = await getDoc(contadorRef);
+    let ultimo = 0;
+
+    if (snap.exists()) {
+      ultimo = Number(snap.data().ultimo || 0);
+    } else {
+      const cfgSnap = await getDoc(doc(db, 'configuracion', 'evento'));
+      if (cfgSnap.exists()) {
+        ultimo = obtenerNumeroBingo(cfgSnap.data().idBingo);
+      }
+    }
+
+    const siguiente = ultimo + 1;
+
+    await setDoc(contadorRef, {
+      ultimo: siguiente
+    }, { merge:true });
+
+    return 'BINGO' + String(siguiente).padStart(3,'0');
+  }
+
   async function loadInitialConfig() {
     try {
       const docRef = doc(db, 'configuracion', 'evento');
@@ -646,7 +675,7 @@
       if (docSnap.exists()) {
         const cfg = docSnap.data();
         currentTableValue = Number(cfg.valor) || 0;
-        document.getElementById('cfg-id-bingo').value = cfg.idBingo ?? 'BINGO001'; document.getElementById('cfg-id-bingo-display').textContent = cfg.idBingo ?? 'BINGO001';
+        document.getElementById('cfg-id-bingo').value = cfg.idBingo ?? ''; document.getElementById('cfg-id-bingo-display').textContent = cfg.idBingo ?? '';
         document.getElementById('cfg-fecha').value = firestoreDateToInput(cfg.fecha);
         document.getElementById('cfg-hora').value = firestoreTimeToInput(cfg.hora);
         document.getElementById('cfg-venta-desde-fecha').value = firestoreDateToInput(cfg.ventaDesdeFecha);
@@ -659,7 +688,7 @@
         document.getElementById('cfg-hasta').value = cfg.tablasHabilitadas ?? '';
       } else {
         currentTableValue = 0;
-          document.getElementById('cfg-id-bingo').value = 'BINGO001'; document.getElementById('cfg-id-bingo-display').textContent = 'BINGO001';
+          document.getElementById('cfg-id-bingo').value = ''; document.getElementById('cfg-id-bingo-display').textContent = '';
           document.getElementById('cfg-fecha').value = '';
         document.getElementById('cfg-hora').value = '';
         document.getElementById('cfg-venta-desde-fecha').value = '';
@@ -771,9 +800,17 @@
         return;
       }
 
+      let idBingoActual = (document.getElementById('cfg-id-bingo')?.value || '').trim();
+
+      if (!idBingoActual) {
+        idBingoActual = await obtenerSiguienteBingo();
+        document.getElementById('cfg-id-bingo').value = idBingoActual;
+        document.getElementById('cfg-id-bingo-display').textContent = idBingoActual;
+      }
+
       await setDoc(doc(db, 'configuracion', 'evento'), {
         nombre: "LA TERRAZA BINGO",
-        idBingo: (document.getElementById('cfg-id-bingo')?.value || '').trim(),
+        idBingo: idBingoActual,
         enabled: true,
         fecha: fecha,
         hora: hora,
@@ -1486,6 +1523,15 @@ function seleccionarFormaPago(order){
         ultimo: 0
       });
 
+      // Guarda el consecutivo actual antes de cerrar para crear el siguiente bingo.
+      const configActual = await getDoc(doc(db, 'configuracion', 'evento'));
+      if (configActual.exists()) {
+        const numeroActual = obtenerNumeroBingo(configActual.data().idBingo);
+        await setDoc(doc(db, 'sistema', 'contadorBingo'), {
+          ultimo: numeroActual
+        }, { merge:true });
+      }
+
       // La configuración se borra al final. Así el evento solo se considera
       // cerrado cuando las tablas y los pedidos ya terminaron de eliminarse.
       await deleteDoc(doc(db, 'configuracion', 'evento'));
@@ -1517,6 +1563,8 @@ function seleccionarFormaPago(order){
         document.getElementById('cfg-link-transmision').value = '';
       document.getElementById('cfg-desde').value = '';
       document.getElementById('cfg-hasta').value = '';
+      document.getElementById('cfg-id-bingo').value = '';
+      document.getElementById('cfg-id-bingo-display').textContent = '';
       document.getElementById('orders-list').innerHTML = '';
       loadMetrics();
 
