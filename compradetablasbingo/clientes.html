@@ -777,14 +777,28 @@
 
 
 
-  // Genera el mismo enlace dinámico usado por el sistema contable.
-  // Ejemplo:
-  // tabla-digital/?tablas=14,22&vence=20260902&nombre=cliente&video=ID_YOUTUBE
+  // Genera el enlace digital conservando los parámetros funcionales del enlace original.
+  // Las tablas ya no viajan en la URL: se consultan por cliente + bingo.
   function generarLinkDigitalCliente(tablas, nombre, fecha, linkTransmision, clienteId, idBingo){
     const base = 'https://laterrazacalipodcast.top/tabla-digital/';
     const telefono = normalizarWhatsAppColombia(clienteId);
-    return `${base}?cliente=${encodeURIComponent(telefono)}&bingo=${encodeURIComponent(idBingo || 'BINGO001')}`;
-}
+
+    let vence = '';
+    if(fecha){
+      const f = String(fecha).split('-');
+      if(f.length === 3){
+        vence = f[0] + f[1] + f[2];
+      }
+    }
+
+    let video = '';
+    if(linkTransmision){
+      const match = String(linkTransmision).match(/(?:v=|youtu\.be\/|live\/)([^&?\/]+)/);
+      video = match ? match[1] : String(linkTransmision);
+    }
+
+    return `${base}?cliente=${encodeURIComponent(telefono)}&bingo=${encodeURIComponent(idBingo || 'BINGO001')}&vence=${encodeURIComponent(vence)}&nombre=${encodeURIComponent(String(nombre || '').toLowerCase().replace(/\s+/g,'-'))}&video=${encodeURIComponent(video)}`;
+  }
 
   function cleanSearch(value){
     return String(value || '').toLowerCase().trim();
