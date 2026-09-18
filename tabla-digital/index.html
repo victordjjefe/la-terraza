@@ -682,7 +682,7 @@ Esta tabla no existe en el sistema.
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, doc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, doc, getDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
  apiKey: "AIzaSyBRF5F14_x0U0Ol5P47VQ93O76u5xuxOa5w",
@@ -1021,15 +1021,18 @@ if(datosEnlace.cliente && new URLSearchParams(window.location.search).get('bingo
     const params = new URLSearchParams(window.location.search);
     const bingoActual = String(params.get('bingo') || '');
     const telefonoBuscado = String(datosEnlace.cliente).replace(/\D/g,'');
-    const pedidosSnap = await getDocs(collection(dbFirebase,'pedidos'));
+    const pedidosConsulta = query(
+      collection(dbFirebase,'pedidos'),
+      where('idBingo','==',bingoActual),
+      where('telefono','==',telefonoBuscado)
+    );
+
+    const pedidosSnap = await getDocs(pedidosConsulta);
     const tablasActuales = [];
 
     pedidosSnap.forEach((pedidoDoc)=>{
       const pedido = pedidoDoc.data();
-      const telefonoPedido = String(pedido.telefono || pedido.whatsapp || '').replace(/\D/g,'');
       if(
-        telefonoPedido === telefonoBuscado &&
-        String(pedido.idBingo || '') === bingoActual &&
         String(pedido.estado || '') !== 'CANCELADO' &&
         Array.isArray(pedido.tablas)
       ){
