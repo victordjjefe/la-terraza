@@ -785,9 +785,17 @@
 
     let vence = '';
     if(fecha){
-      const f = String(fecha).split('-');
-      if(f.length === 3){
+      const fechaTexto = String(fecha).trim();
+      let f = fechaTexto.split('-');
+
+      // Soporta formatos YYYY-MM-DD y DD/MM/YYYY sin cambiar la lógica existente.
+      if(f.length === 3 && f[0].length === 4){
         vence = f[0] + f[1] + f[2];
+      } else {
+        f = fechaTexto.split('/');
+        if(f.length === 3 && f[2].length === 4){
+          vence = f[2] + String(f[1]).padStart(2,'0') + String(f[0]).padStart(2,'0');
+        }
       }
     }
 
