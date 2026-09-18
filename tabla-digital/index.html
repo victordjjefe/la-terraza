@@ -995,8 +995,14 @@ invalido:true
 };
 }
 
+const tablasRutaDirecta = String(params.get("tablas") || "")
+  .split(",")
+  .map(t=>String(t).replace(/^T/i, "").trim())
+  .filter(t=>/^\d+$/.test(t))
+  .join(",");
+
 const tablaDirecta = String(params.get("tabla") || "").replace(/^T/i, "");
-const listaConsulta = /^\d+(,\d+)*$/.test(tablaDirecta) ? tablaDirecta : "";
+const listaConsulta = tablasRutaDirecta || (/^\d+(,\d+)*$/.test(tablaDirecta) ? tablaDirecta : "");
 
 return {
 lista:listaConsulta,
@@ -1005,7 +1011,7 @@ vence:normalizarFecha(params.get("vence") || ""),
 nombre:nombreDesdeSlug(params.get("nombre") || ""),
 videoID:params.get("video") || "",
 logo:params.get("logo") || "",
-formato:listaConsulta ? "tabla-directa" : "consulta",
+formato:listaConsulta ? (tablasRutaDirecta ? "tablas-directas" : "tabla-directa") : "consulta",
 invalido:false
 };
 }
