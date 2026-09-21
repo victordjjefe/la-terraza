@@ -1027,7 +1027,7 @@ if(datosEnlace.cliente && new URLSearchParams(window.location.search).get('bingo
   try{
     const params = new URLSearchParams(window.location.search);
     const bingoActual = String(params.get('bingo') || '');
-    const telefonoBuscado = String(datosEnlace.cliente).replace(/\D/g,'');
+    const telefonoBuscado = String(datosEnlace.cliente || '').trim();
     const pedidosConsulta = query(
       collection(dbFirebase,'pedidos'),
       where('idBingo','==',bingoActual),
