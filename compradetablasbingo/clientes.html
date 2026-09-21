@@ -2184,7 +2184,33 @@ Gracias por tu compra.`;
     enviarWhatsAppDigital();
   });
 
-  document.getElementById('btn-finish-order').addEventListener('click', finishOrder);
+  document.getElementById('btn-finish-order').addEventListener('click', async () => {
+    const phoneInput = document.getElementById('buyer-phone');
+    const countryInput = document.getElementById('buyer-country');
+    const phone = normalizarWhatsAppColombia(phoneInput?.value || '', countryInput?.value || '+57');
+
+    if (!phone) {
+      alert('Por favor ingrese un número de WhatsApp.');
+      return;
+    }
+
+    const modal = document.getElementById('phone-confirm');
+    const text = document.getElementById('phone-confirm-text');
+    text.textContent = phone;
+    modal.classList.add('active');
+
+    document.getElementById('phone-edit').onclick = () => {
+      modal.classList.remove('active');
+      phoneInput.focus();
+      document.getElementById('btn-finish-order').disabled = false;
+    };
+
+    document.getElementById('phone-ok').onclick = async () => {
+      modal.classList.remove('active');
+      phoneInput.value = phone;
+      await finishOrder();
+    };
+});
   
   document.querySelectorAll('.btn-restart-action').forEach(btn => {
     btn.addEventListener('click', resetForm);
@@ -2194,7 +2220,7 @@ Gracias por tu compra.`;
   listenTables();
 
 </script>
-<div id="phone-confirm" class="phone-confirm"><div class="phone-confirm-box"><h3>Confirma tu número</h3><p id="phone-confirm-text"></p><div class="phone-confirm-actions"><button id="phone-edit" class="btn btn-danger">Editar</button><button id="phone-ok" class="btn btn-success">Confirmar</button></div></div></div>
+<div id="phone-confirm" class="phone-confirm"><div class="phone-confirm-box"><h3>¿Tu número está correcto?</h3><p id="phone-confirm-text" style="font-size:1.2rem;font-weight:800;margin-top:12px"></p><div class="phone-confirm-actions"><button id="phone-edit" class="btn btn-danger">Editar</button><button id="phone-ok" class="btn btn-success">Confirmar registro</button></div></div></div>
 
 <script>
 (function(){
