@@ -297,6 +297,30 @@
       max-width: 380px;
       box-shadow: var(--shadow-lg);
     }
+
+    /* Edición de WhatsApp con indicativo separado, igual al registro de clientes */
+    .edit-phone-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .edit-country-code {
+      width: 78px !important;
+      flex: 0 0 78px;
+      text-align: center;
+      font-weight: 700;
+    }
+    .edit-phone-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+    }
+    .edit-phone-help {
+      margin-top: 6px;
+      font-size: .78rem;
+      color: var(--text-muted);
+      line-height: 1.35;
+    }
   </style>
 </head>
 <body>
@@ -516,6 +540,42 @@
   </div>
 </div>
 
+<!-- MODAL EDITAR DATOS DEL CLIENTE -->
+<div id="modal-edit-client" class="modal">
+  <div class="modal-content">
+    <div class="card-title">
+      Editar datos del cliente
+      <button type="button" class="btn btn-sm btn-dark" id="btn-close-edit-client">✕</button>
+    </div>
+
+    <form id="form-edit-client">
+      <div class="form-group">
+        <label>Nombre y Apellido</label>
+        <input type="text" id="edit-client-name" class="form-control" required>
+      </div>
+
+      <div class="form-group">
+        <label>Número de WhatsApp</label>
+        <div class="edit-phone-row">
+          <input type="tel" id="edit-client-country" class="form-control edit-country-code" value="+57" inputmode="tel" maxlength="5" aria-label="Indicativo internacional">
+          <input type="tel" id="edit-client-phone" class="form-control" inputmode="numeric" placeholder="Ej: 3001234567" required>
+        </div>
+        <div class="edit-phone-help">El indicativo internacional se guarda separado del número visible. Puedes cambiar +57 por el indicativo de otro país.</div>
+      </div>
+
+      <div class="form-group">
+        <label>Referencia, Ciudad, Barrio</label>
+        <input type="text" id="edit-client-reference" class="form-control">
+      </div>
+
+      <div class="edit-phone-actions">
+        <button type="button" class="btn btn-dark" id="btn-cancel-edit-client">Cancelar</button>
+        <button type="submit" class="btn btn-success" id="btn-save-edit-client">Guardar cambios</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
   import {  
@@ -540,7 +600,59 @@
     let n=String(v||'').replace(/\D/g,'');
     if(n.startsWith('57') && n.length===12) return '+'+n;
     if(n.length===10) return '+57'+n;
-    return '+'+n;
+    return n ? '+'+n : '';
+  }
+
+  function cleanPhone(value){
+    return String(value || '').replace(/\D/g, '');
+  }
+
+  // Construye siempre el WhatsApp completo con formato internacional.
+  // Ej.: (+57, 3151938528) => +573151938528
+  //      (+1, 3055551234)  => +13055551234
+  function normalizarTelefonoInternacional(numero, indicativo='+57') {
+    const raw = String(numero || '').trim();
+    let n = cleanPhone(raw);
+    let c = cleanPhone(indicativo || '+57');
+    if (!c) c = '57';
+    if (!n) return '';
+
+    // Igual que en el formulario público: si pegaron el teléfono completo
+    // (por ejemplo +573151938528), retira el indicativo del campo derecho
+    // antes de reconstruir el valor internacional definitivo.
+    if (n.startsWith(c) && (raw.startsWith('+') || n.length > 10)) {
+      n = n.substring(c.length);
+    }
+
+    return '+' + c + n;
+  }
+
+  // Separa un teléfono guardado para mostrarlo en dos campos.
+  // Los registros colombianos existentes se reconocen automáticamente.
+  // Para otros países se conserva el indicativo guardado en el pedido cuando exista.
+  function separarTelefonoParaEdicion(telefono, indicativoGuardado='') {
+    const digits = cleanPhone(telefono);
+    let code = cleanPhone(indicativoGuardado);
+
+    if (code && digits.startsWith(code) && digits.length > code.length) {
+      return { indicativo: '+' + code, numero: digits.substring(code.length) };
+    }
+
+    if (digits.startsWith('57') && digits.length > 10) {
+      return { indicativo: '+57', numero: digits.substring(2) };
+    }
+
+    if (digits.length === 10) {
+      return { indicativo: '+57', numero: digits };
+    }
+
+    // Si el registro antiguo es internacional y no existe indicativo separado,
+    // no se inventa un país: se deja '+' para que el administrador lo confirme.
+    if (String(telefono || '').trim().startsWith('+') && digits) {
+      return { indicativo: '+', numero: digits };
+    }
+
+    return { indicativo: '+57', numero: digits };
   }
 
   let allOrders = [];
@@ -1411,61 +1523,163 @@ function seleccionarFormaPago(order){
     }
   }
 
-  async function editarDatosCliente(orderDocId) {
+  let editingClientOrderId = null;
+
+  function cerrarModalEditarCliente() {
+    document.getElementById('modal-edit-client').style.display = 'none';
+    editingClientOrderId = null;
+  }
+
+  function editarDatosCliente(orderDocId) {
     const order = allOrders.find(o => o.firestoreId === orderDocId);
     if (!order) return;
+
+    editingClientOrderId = orderDocId;
 
     const nombreActual = typeof order.cliente === 'string' ? order.cliente : (order.cliente?.name || '');
     const telefonoActual = order.telefono || order.cliente?.whatsapp || '';
     const referenciaActual = order.referencia || '';
+    const telefonoSeparado = separarTelefonoParaEdicion(telefonoActual, order.indicativoTelefono || '');
 
-    const nuevoNombre = prompt('Nombre y Apellido:', nombreActual);
-    if (nuevoNombre === null) return;
+    document.getElementById('edit-client-name').value = nombreActual;
+    document.getElementById('edit-client-country').value = telefonoSeparado.indicativo;
+    document.getElementById('edit-client-phone').value = telefonoSeparado.numero;
+    document.getElementById('edit-client-reference').value = referenciaActual;
 
-    const nuevoTelefono = prompt('WhatsApp:', telefonoActual);
-    if (nuevoTelefono === null) return;
+    document.getElementById('modal-edit-client').style.display = 'flex';
+  }
 
-    const nuevaReferencia = prompt('Referencia, Ciudad, Barrio:', referenciaActual);
-    if (nuevaReferencia === null) return;
+  document.getElementById('btn-close-edit-client').addEventListener('click', cerrarModalEditarCliente);
+  document.getElementById('btn-cancel-edit-client').addEventListener('click', cerrarModalEditarCliente);
 
-    const telefonoAnterior = normalizeWhatsapp(telefonoActual);
-    const telefonoNuevo = normalizeWhatsapp(nuevoTelefono.trim());
+  // Mantiene la misma experiencia del formulario público: indicativo a la izquierda
+  // y número local en el campo derecho. Si pegan +57 completo, se retira del campo derecho.
+  document.getElementById('edit-client-country').addEventListener('blur', (e) => {
+    let code = cleanPhone(e.target.value);
+    if (!code) code = '57';
+    e.target.value = '+' + code;
+  });
 
-    await updateDoc(doc(db, 'pedidos', orderDocId), {
-      cliente: nuevoNombre.trim(),
-      telefono: nuevoTelefono.trim(),
-      referencia: nuevaReferencia.trim()
-    });
+  document.getElementById('edit-client-phone').addEventListener('blur', () => {
+    const countryInput = document.getElementById('edit-client-country');
+    const phoneInput = document.getElementById('edit-client-phone');
+    let code = cleanPhone(countryInput.value);
+    if (!code) code = '57';
+    countryInput.value = '+' + code;
 
-    // Actualiza el índice de consulta por WhatsApp.
-    // Si el número cambió, elimina el índice viejo para que el WhatsApp anterior
-    // no siga encontrando tablas.
-    if (telefonoAnterior && telefonoAnterior !== telefonoNuevo) {
-      await deleteDoc(doc(db, 'clientes', telefonoAnterior));
+    const full = normalizarTelefonoInternacional(phoneInput.value, '+' + code);
+    phoneInput.value = full ? full.replace('+' + code, '') : '';
+  });
+
+  document.getElementById('form-edit-client').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const orderDocId = editingClientOrderId;
+    const order = allOrders.find(o => o.firestoreId === orderDocId);
+    if (!order) {
+      cerrarModalEditarCliente();
+      return;
     }
 
-    if (telefonoNuevo) {
-      await setDoc(doc(db, 'clientes', telefonoNuevo), {
-        cliente: nuevoNombre.trim(),
+    const nuevoNombre = document.getElementById('edit-client-name').value.trim();
+    const nuevoIndicativoInput = document.getElementById('edit-client-country').value;
+    const nuevoNumeroInput = document.getElementById('edit-client-phone').value;
+    const nuevaReferencia = document.getElementById('edit-client-reference').value.trim();
+
+    const codigoPais = cleanPhone(nuevoIndicativoInput);
+    const numeroLocal = cleanPhone(nuevoNumeroInput);
+
+    if (!nuevoNombre) {
+      alert('Ingrese el nombre y apellido del cliente.');
+      return;
+    }
+    if (!codigoPais) {
+      alert('Ingrese el indicativo internacional. Ejemplo: +57.');
+      return;
+    }
+    if (!numeroLocal) {
+      alert('Ingrese el número de WhatsApp.');
+      return;
+    }
+
+    const telefonoNuevo = normalizarTelefonoInternacional(numeroLocal, '+' + codigoPais);
+    const telefonoActual = order.telefono || order.cliente?.whatsapp || '';
+    const telefonoAnteriorCompleto = formatoTelefono(telefonoActual);
+
+    const saveButton = document.getElementById('btn-save-edit-client');
+    saveButton.disabled = true;
+    saveButton.textContent = 'Guardando...';
+
+    try {
+      // El pedido siempre queda guardado con el número internacional completo.
+      await updateDoc(doc(db, 'pedidos', orderDocId), {
+        cliente: nuevoNombre,
         telefono: telefonoNuevo,
+        indicativoTelefono: '+' + codigoPais,
+        referencia: nuevaReferencia
+      });
+
+      // Limpia índices anteriores o heredados del error antiguo.
+      // Esto corrige tanto IDs con +57 como IDs que hayan quedado solo con 10 dígitos.
+      const telefonoActualTexto = String(telefonoActual || '').trim();
+      const telefonoActualDigitos = cleanPhone(telefonoActual);
+      const posiblesClavesAntiguas = new Set([
+        telefonoActualTexto,
+        telefonoAnteriorCompleto
+      ].filter(Boolean));
+
+      // La versión anterior del editor podía crear un ID de 10 dígitos.
+      // Solo buscamos esa variante heredada para números colombianos/legados,
+      // evitando alterar posibles números internacionales de otros países.
+      if (telefonoActualDigitos.length === 10) {
+        posiblesClavesAntiguas.add(telefonoActualDigitos);
+      } else if (telefonoActualDigitos.startsWith('57') && telefonoActualDigitos.length === 12) {
+        posiblesClavesAntiguas.add(telefonoActualDigitos.slice(2));
+      }
+
+      for (const clave of posiblesClavesAntiguas) {
+        if (clave !== telefonoNuevo) {
+          try {
+            await deleteDoc(doc(db, 'clientes', clave));
+          } catch (deleteError) {
+            console.warn('No fue posible eliminar un índice antiguo de cliente:', clave, deleteError);
+          }
+        }
+      }
+
+      // El índice de clientes se crea/actualiza usando exactamente el mismo
+      // teléfono internacional que queda guardado en el pedido.
+      await setDoc(doc(db, 'clientes', telefonoNuevo), {
+        cliente: nuevoNombre,
+        telefono: telefonoNuevo,
+        indicativoTelefono: '+' + codigoPais,
         tablas: order.tablas || [],
         linkDigital: order.linkDigital || '',
         fechaBingo: order.fechaBingo || '',
         linkTransmision: order.linkTransmision || '',
-        pedidoId: order.id || ''
+        pedidoId: order.id || '',
+        idBingo: order.idBingo || ''
       }, { merge: true });
-    }
 
-    const localOrder = allOrders.find(o => o.firestoreId === orderDocId);
-    if (localOrder) {
-      localOrder.cliente = nuevoNombre.trim();
-      localOrder.telefono = nuevoTelefono.trim();
-      localOrder.referencia = nuevaReferencia.trim();
-    }
+      const localOrder = allOrders.find(o => o.firestoreId === orderDocId);
+      if (localOrder) {
+        localOrder.cliente = nuevoNombre;
+        localOrder.telefono = telefonoNuevo;
+        localOrder.indicativoTelefono = '+' + codigoPais;
+        localOrder.referencia = nuevaReferencia;
+      }
 
-    renderOrders();
-    alert('Datos del cliente actualizados correctamente.');
-  }
+      renderOrders();
+      cerrarModalEditarCliente();
+      alert('Datos del cliente actualizados correctamente.');
+    } catch (err) {
+      console.error('Error actualizando datos del cliente:', err);
+      alert('No fue posible actualizar los datos del cliente: ' + err.message);
+    } finally {
+      saveButton.disabled = false;
+      saveButton.textContent = 'Guardar cambios';
+    }
+  });
 
   function viewProof(orderDocId) {
     const order = allOrders.find(o => o.firestoreId === orderDocId);
