@@ -521,6 +521,20 @@
 @keyframes acceptPulse { 50% { transform:scale(1.04); } }
 .phone-row{display:flex;gap:8px;align-items:center}.country-code{max-width:130px;font-weight:700}.phone-confirm{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:30000}.phone-confirm.active{display:flex}.phone-confirm-box{background:#fff;border-radius:18px;padding:25px;max-width:360px;width:90%;text-align:center}.phone-confirm-actions{display:flex;gap:10px;margin-top:18px}
 </style>
+
+<style>
+.phone-row{
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+.country-code{
+  width:72px !important;
+  flex:0 0 72px;
+  text-align:center;
+}
+</style>
+
 </head>
 <body>
 <div id="initial-loader" class="initial-loader">
@@ -550,7 +564,7 @@
         <p style="color:var(--text-muted); margin-bottom:12px;">
           Consulta aquí usando tu número de WhatsApp registrado.
         </p>
-        <div class="phone-row"><select id="lookup-country" class="form-control country-code"><option value="57">🇨🇴 +57</option></select><input id="lookup-input" class="form-control" type="tel" inputmode="numeric" placeholder="Ej: 3001234567"></div>
+        <div class="phone-row"><input id="lookup-country" class="form-control country-code" value="+57" inputmode="tel" maxlength="5"><input id="lookup-input" class="form-control" type="tel" inputmode="numeric" placeholder="Ej: 3001234567"></div>
         <button class="btn btn-success" id="btn-lookup" style="margin-top:12px;">
           Consultar mis tablas
         </button>
@@ -580,7 +594,7 @@
         <p style="color:var(--text-muted); margin-bottom:12px;">
           Consulta aquí usando tu número de WhatsApp registrado.
         </p>
-        <div class="phone-row"><select id="lookup-country-active" class="form-control country-code"><option value="57">🇨🇴 +57</option></select><input id="lookup-input-active" class="form-control" type="tel" inputmode="numeric" placeholder="Ej: 3001234567"></div>
+        <div class="phone-row"><input id="lookup-country-active" class="form-control country-code" value="+57" inputmode="tel" maxlength="5"><input id="lookup-input-active" class="form-control" type="tel" inputmode="numeric" placeholder="Ej: 3001234567"></div>
         <button class="btn btn-success" id="btn-lookup-active" style="margin-top:12px;">
           Consultar mis tablas
         </button>
@@ -632,7 +646,7 @@
         </div>
         <div class="form-group">
           <label>Número de WhatsApp</label>
-          <input type="tel" id="buyer-phone" class="form-control" placeholder="Ej: 3001234567">
+          <div class="phone-row"><input type="tel" id="buyer-country" class="form-control country-code" value="+57" inputmode="tel" maxlength="5"><input type="tel" id="buyer-phone" class="form-control" placeholder="Ej: 3001234567"></div>
         </div>
       </div>
 
@@ -821,8 +835,11 @@
   function normalizarWhatsAppColombia(numero, codigo='57'){
     let n = cleanPhone(numero);
     let c = cleanPhone(codigo || '57');
-    if(n.startsWith(c) && n.length > 10){ n = n.substring(c.length); }
-    return c + n;
+    if(!c) c='57';
+    if(n.startsWith(c) && n.length > 10){
+      n = n.substring(c.length);
+    }
+    return '+' + c + n;
   }
 
   // Une las tablas de todas las compras asociadas al mismo WhatsApp.
@@ -1036,7 +1053,7 @@
         alert('No encontramos un número de WhatsApp válido.');
         return;
       }
-      const url = 'https://wa.me/57' + telefono + '?text=' + encodeURIComponent(ultimoLookupMensaje || ultimoLookupEnlace);
+      const url = 'https://wa.me/' + telefono.replace('+','') + '?text=' + encodeURIComponent(ultimoLookupMensaje || ultimoLookupEnlace);
       window.location.href = url;
     }catch(error){
       console.error('Error abriendo WhatsApp:', error);
@@ -1672,7 +1689,9 @@ function startReservationTimer() {
   const buyerPhoneField = document.getElementById('buyer-phone');
   if (buyerPhoneField) {
     buyerPhoneField.addEventListener('blur', () => {
-      buyerPhoneField.value = cleanPhone(buyerPhoneField.value);
+      const code = document.getElementById('buyer-country')?.value || '+57';
+      const full = normalizarWhatsAppColombia(buyerPhoneField.value, code);
+      buyerPhoneField.value = full.replace('+' + cleanPhone(code), '');
     });
   }
 
@@ -1769,7 +1788,7 @@ function startReservationTimer() {
 
     const buyerName = normalizeText(buyerNameInput.value);
     const buyerAddress = normalizeText(buyerAddressInput.value);
-    const buyerPhone = normalizarWhatsAppColombia(buyerPhoneInput.value, document.getElementById('buyer-country')?.value || '57');
+    const buyerPhone = normalizarWhatsAppColombia(buyerPhoneInput.value, document.getElementById('buyer-country')?.value || '+57');
 
     buyerNameInput.value = buyerName;
     buyerAddressInput.value = buyerAddress;
@@ -2126,7 +2145,7 @@ Hola ${buyerName}! 👋
       return;
     }
     const telefono = cleanPhone(document.getElementById('buyer-phone').value);
-    const destino = telefono ? 'https://wa.me/57' + normalizarWhatsAppColombia(telefono) : 'https://wa.me/';
+    const destino = telefono ? 'https://wa.me/' + normalizarWhatsAppColombia(telefono).replace('+','') : 'https://wa.me/';
     const url = destino + '?text=' + encodeURIComponent(ultimoMensajeDigital);
     window.location.href = url;
   }
