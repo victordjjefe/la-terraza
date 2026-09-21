@@ -796,7 +796,7 @@
   // Las tablas ya no viajan en la URL: se consultan por cliente + bingo.
   function generarLinkDigitalCliente(tablas, nombre, fecha, linkTransmision, clienteId, idBingo){
     const base = 'https://laterrazacalipodcast.top/tabla-digital/';
-    const telefono = String(clienteId || '').trim();
+    const telefono = normalizarWhatsAppColombia(clienteId);
 
     let vence = '';
     if(fecha){
@@ -982,7 +982,7 @@
       document.getElementById('lookup-tables').textContent =
         tablasEncontradas.join(', ');
 
-      ultimoLookupTelefono = cleanPhone(telefonoFinal || telefonoBusqueda);
+      ultimoLookupTelefono = normalizarWhatsAppColombia(telefonoFinal || telefonoBusqueda);
 
       ultimoLookupEnlace = generarLinkDigitalCliente(
         tablasEncontradas,
