@@ -2195,5 +2195,42 @@ Gracias por tu compra.`;
 
 </script>
 <div id="phone-confirm" class="phone-confirm"><div class="phone-confirm-box"><h3>Confirma tu número</h3><p id="phone-confirm-text"></p><div class="phone-confirm-actions"><button id="phone-edit" class="btn btn-danger">Editar</button><button id="phone-ok" class="btn btn-success">Confirmar</button></div></div></div>
+
+<script>
+(function(){
+  function normalizarVisibleBusqueda(countryId, inputId){
+    const c = document.getElementById(countryId);
+    const i = document.getElementById(inputId);
+    if(!c || !i) return;
+    let raw = (i.value || '').replace(/[^\d+]/g,'');
+    let codigo = (c.value || '+57').replace(/\D/g,'') || '57';
+
+    if(raw.startsWith('+')) raw = raw.substring(1);
+
+    if(raw.startsWith(codigo)){
+      raw = raw.substring(codigo.length);
+    } else if(raw.startsWith('57') && codigo !== '57'){
+      raw = raw.substring(2);
+    }
+
+    i.value = raw;
+    c.value = '+' + codigo;
+  }
+
+  ['btn-lookup','btn-lookup-active'].forEach(id=>{
+    const btn=document.getElementById(id);
+    if(btn){
+      btn.addEventListener('click',()=>{
+        if(id==='btn-lookup'){
+          normalizarVisibleBusqueda('lookup-country','lookup-input');
+        }else{
+          normalizarVisibleBusqueda('lookup-country-active','lookup-input-active');
+        }
+      }, true);
+    }
+  });
+})();
+</script>
+
 </body>
 </html>
