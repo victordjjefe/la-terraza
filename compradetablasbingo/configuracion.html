@@ -536,6 +536,13 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
+  function formatoTelefono(v){
+    let n=String(v||'').replace(/\D/g,'');
+    if(n.startsWith('57') && n.length===12) return '+'+n;
+    if(n.length===10) return '+57'+n;
+    return '+'+n;
+  }
+
   let allOrders = [];
   let allTables = [];
   let currentTableValue = 0;
