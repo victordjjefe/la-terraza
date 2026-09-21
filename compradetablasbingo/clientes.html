@@ -1210,7 +1210,7 @@
        snapshot.forEach(docSnap => {
          const data = docSnap.data();
 
-         if (data.status === 'RESERVADA' && data.reservedUntil && data.reservedUntil <= now) {
+         if (data.status === 'RESERVADA' && (!data.reservedUntil || data.reservedUntil <= now)) {
            data.status = 'DISPONIBLE';
          }
 
@@ -1237,7 +1237,7 @@
 
     allTablesData.forEach(t => {
       const isReservedByMe = selectedTables.includes(t.code);
-      const isExpired = t.reservedUntil && t.reservedUntil <= now;
+      const isExpired = t.status === 'RESERVADA' && (!t.reservedUntil || t.reservedUntil <= now);
 
       if (t.status === 'VENDIDA') return;
       if (t.status === 'RESERVADA' && t.reservedBy !== myClientId && !isExpired) return;
@@ -1277,75 +1277,99 @@
     }
   }
 
-  async function toggleTableSelection(code) {
-    const index = selectedTables.indexOf(code);
+  // Evita dos operaciones simultáneas sobre la misma tabla (doble clic / conexión lenta).
+  const tableOperationsInFlight = new Set();
 
-    if (index > -1) {
-      selectedTables.splice(index, 1);
-    } else {
+  async function toggleTableSelection(code) {
+    if (tableOperationsInFlight.has(code)) return;
+    tableOperationsInFlight.add(code);
+
+    const index = selectedTables.indexOf(code);
+    let reservationDeadline = reservationEndTime;
+
+    try {
+      if (index > -1) {
+        // Primero confirmamos la liberación en Firebase; luego cambiamos la interfaz.
+        await releaseTableIfOwned(code);
+        selectedTables = selectedTables.filter(c => c !== code);
+
+        if (selectedTables.length === 0) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+          reservationEndTime = null;
+          document.getElementById('timer-display').textContent = '03:00';
+          document.getElementById('reservation-timer-box').classList.add('hidden');
+        }
+
+        saveLocalReservation();
+        updateSummary();
+        renderTables();
+        return;
+      }
+
       if (selectedTables.length >= 15) {
         alert('Máximo puedes seleccionar 15 tablas.');
         return;
       }
-      selectedTables.push(code);
-      saveLocalReservation();
-      if (selectedTables.length === 1 && !reservationEndTime) {
-        reservationEndTime = Date.now() + (HOLD_TIME_MINUTES * 60 * 1000);
-      }
-    }
 
-    if (selectedTables.length > 0) {
+      // El vencimiento se fija ANTES de iniciar cualquier operación asíncrona y
+      // se captura en una constante. Así nunca puede terminar escrito como null
+      // aunque el navegador se cierre, haya doble clic o cambie el estado local.
+      if (!reservationDeadline || reservationDeadline <= Date.now()) {
+        reservationDeadline = Date.now() + (HOLD_TIME_MINUTES * 60 * 1000);
+      }
+
+      const success = await runTransaction(db, async (transaction) => {
+        const tRef = doc(db, 'tablas', code);
+        const tDoc = await transaction.get(tRef);
+
+        if (!tDoc.exists()) throw new Error("La tabla no existe.");
+        const tData = tDoc.data();
+        const now = Date.now();
+
+        // Una RESERVADA sin reservedUntil es inválida y se considera vencida.
+        // También permite recuperar automáticamente registros antiguos como T009.
+        const isExpired = tData.status === 'RESERVADA' &&
+          (!tData.reservedUntil || tData.reservedUntil <= now);
+
+        if (tData.status === 'VENDIDA' ||
+            (tData.status === 'RESERVADA' && tData.reservedBy !== myClientId && !isExpired)) {
+          return false;
+        }
+
+        // Una sola escritura atómica: estado, propietario y vencimiento nacen juntos.
+        transaction.update(tRef, {
+          status: 'RESERVADA',
+          reservedUntil: reservationDeadline,
+          reservedBy: myClientId
+        });
+        return true;
+      });
+
+      if (!success) {
+        alert(`La tabla ${code} ya ha sido reservada o comprada por otra persona.`);
+        return;
+      }
+
+      // La interfaz solo muestra la reserva después de que Firebase la confirmó.
+      reservationEndTime = reservationDeadline;
+      if (!selectedTables.includes(code)) selectedTables.push(code);
+      saveLocalReservation();
       startReservationTimer();
       document.getElementById('reservation-timer-box').classList.remove('hidden');
-    } else {
-      // Sin tablas seleccionadas NO existe reserva activa.
-      // Se detiene el contador y se oculta completamente.
-      clearInterval(timerInterval);
-      timerInterval = null;
-      reservationEndTime = null;
-      document.getElementById('timer-display').textContent = '03:00';
-      document.getElementById('reservation-timer-box').classList.add('hidden');
-    }
-    updateSummary();
-    renderTables();
+      updateSummary();
+      renderTables();
 
-    try {
-      if (index > -1) {
-        // Nunca liberamos a ciegas: solo se devuelve a DISPONIBLE si la tabla
-        // sigue RESERVADA por este mismo comprador. Si ya fue VENDIDA, no se toca.
-        await releaseTableIfOwned(code);
-        saveLocalReservation();
-      } else {
-        const success = await runTransaction(db, async (transaction) => {
-          const tRef = doc(db, 'tablas', code);
-          const tDoc = await transaction.get(tRef);
-
-          if (!tDoc.exists()) throw new Error("La tabla no existe.");
-          const tData = tDoc.data();
-          const now = Date.now();
-          const isExpired = tData.reservedUntil && tData.reservedUntil <= now;
-
-          if (tData.status === 'VENDIDA' || (tData.status === 'RESERVADA' && tData.reservedBy !== myClientId && !isExpired)) {
-            return false;
-          }
-
-          transaction.update(tRef, {
-            status: 'RESERVADA',
-            reservedUntil: reservationEndTime,
-            reservedBy: myClientId
-          });
-          return true;
-        });
-
-        if (!success) {
-          selectedTables = selectedTables.filter(c => c !== code);
-          alert(`La tabla ${code} ya ha sido reservada o comprada por otra persona.`);
-          updateSummary();
-          renderTables();
-        }
-      }
     } catch (err) {
       console.error("Error al sincronizar selección:", err);
+      // No dejamos una reserva ficticia en pantalla si Firebase no la confirmó.
+      selectedTables = selectedTables.filter(c => c !== code);
+      if (selectedTables.length === 0) reservationEndTime = null;
+      saveLocalReservation();
+      updateSummary();
+      renderTables();
+    } finally {
+      tableOperationsInFlight.delete(code);
     }
   }
 
@@ -1890,7 +1914,7 @@ function startReservationTimer() {
           }
 
           const tData = tDoc.data();
-          const isExpired = tData.reservedUntil && tData.reservedUntil <= now;
+          const isExpired = tData.status === 'RESERVADA' && (!tData.reservedUntil || tData.reservedUntil <= now);
 
           if (tData.status !== 'RESERVADA' || tData.reservedBy !== myClientId || isExpired) {
             throw new Error(`La reserva de la tabla ${code} ya no está disponible. Selecciona nuevamente tus tablas.`);
