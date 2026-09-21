@@ -519,6 +519,7 @@
 }
 #btn-accept-whatsapp:active { transform:translateY(5px); box-shadow:0 2px 0 #075E54; }
 @keyframes acceptPulse { 50% { transform:scale(1.04); } }
+.phone-row{display:flex;gap:8px;align-items:center}.country-code{max-width:130px;font-weight:700}.phone-confirm{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:30000}.phone-confirm.active{display:flex}.phone-confirm-box{background:#fff;border-radius:18px;padding:25px;max-width:360px;width:90%;text-align:center}.phone-confirm-actions{display:flex;gap:10px;margin-top:18px}
 </style>
 </head>
 <body>
@@ -549,7 +550,7 @@
         <p style="color:var(--text-muted); margin-bottom:12px;">
           Consulta aquí usando tu número de WhatsApp registrado.
         </p>
-        <input id="lookup-input" class="form-control" type="tel" inputmode="numeric" pattern="[0-9+ ]*" placeholder="Ej: 3001234567">
+        <div class="phone-row"><select id="lookup-country" class="form-control country-code"><option value="57">🇨🇴 +57</option></select><input id="lookup-input" class="form-control" type="tel" inputmode="numeric" placeholder="Ej: 3001234567"></div>
         <button class="btn btn-success" id="btn-lookup" style="margin-top:12px;">
           Consultar mis tablas
         </button>
@@ -579,7 +580,7 @@
         <p style="color:var(--text-muted); margin-bottom:12px;">
           Consulta aquí usando tu número de WhatsApp registrado.
         </p>
-        <input id="lookup-input-active" class="form-control" type="tel" inputmode="numeric" pattern="[0-9+ ]*" placeholder="Ej: 3001234567">
+        <div class="phone-row"><select id="lookup-country-active" class="form-control country-code"><option value="57">🇨🇴 +57</option></select><input id="lookup-input-active" class="form-control" type="tel" inputmode="numeric" placeholder="Ej: 3001234567"></div>
         <button class="btn btn-success" id="btn-lookup-active" style="margin-top:12px;">
           Consultar mis tablas
         </button>
@@ -817,15 +818,11 @@
   }
 
 
-  function normalizarWhatsAppColombia(numero){
+  function normalizarWhatsAppColombia(numero, codigo='57'){
     let n = cleanPhone(numero);
-
-    // Un solo formato interno: número colombiano sin prefijo 57.
-    if(n.startsWith('57') && n.length === 12){
-      n = n.substring(2);
-    }
-
-    return n;
+    let c = cleanPhone(codigo || '57');
+    if(n.startsWith(c) && n.length > 10){ n = n.substring(c.length); }
+    return c + n;
   }
 
   // Une las tablas de todas las compras asociadas al mismo WhatsApp.
@@ -1772,7 +1769,7 @@ function startReservationTimer() {
 
     const buyerName = normalizeText(buyerNameInput.value);
     const buyerAddress = normalizeText(buyerAddressInput.value);
-    const buyerPhone = cleanPhone(buyerPhoneInput.value);
+    const buyerPhone = normalizarWhatsAppColombia(buyerPhoneInput.value, document.getElementById('buyer-country')?.value || '57');
 
     buyerNameInput.value = buyerName;
     buyerAddressInput.value = buyerAddress;
@@ -2178,5 +2175,6 @@ Gracias por tu compra.`;
   listenTables();
 
 </script>
+<div id="phone-confirm" class="phone-confirm"><div class="phone-confirm-box"><h3>Confirma tu número</h3><p id="phone-confirm-text"></p><div class="phone-confirm-actions"><button id="phone-edit" class="btn btn-danger">Editar</button><button id="phone-ok" class="btn btn-success">Confirmar</button></div></div></div>
 </body>
 </html>
