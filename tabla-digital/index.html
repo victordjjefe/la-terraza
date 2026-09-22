@@ -770,6 +770,13 @@ document.getElementById("editorPatron").style.display="none";
 
 function limpiarTabla(){
 
+/*
+ Limpieza segura:
+ - No modifica enlaces.
+ - No modifica carga de tablas desde Firebase.
+ - Solo reinicia el estado visual y lógico del bingo actual.
+*/
+
 document.querySelectorAll(".celda.marcado").forEach(c=>{
 c.classList.remove("marcado");
 });
@@ -783,12 +790,23 @@ tabla[i][j]=(i===2 && j===2);
 });
 
 modoActual="";
-document.getElementById("modoSelect").value="";
-document.getElementById("editorPatron").style.display="none";
+const selector=document.getElementById("modoSelect");
+if(selector) selector.value="";
+
+const editor=document.getElementById("editorPatron");
+if(editor) editor.style.display="none";
+
 bingoActivo=false;
 bingoYaMostrado=false;
 
 }
+
+// El botón HTML usa onclick y los módulos ES no exponen funciones al navegador.
+// Se publica únicamente esta función para conservar el botón existente.
+window.limpiarTabla = limpiarTabla;
+window.seleccionarModo = seleccionarModo;
+window.guardarPatron = guardarPatron;
+window.volverATablas = volverATablas;
 
 function crearEditorPatron(){
 
