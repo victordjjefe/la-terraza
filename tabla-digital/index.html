@@ -601,10 +601,56 @@ grid-template-columns:repeat(auto-fit,400px);
   }
 }
 
+
+/* ===== PANTALLA DE CARGA INICIAL ===== */
+.cargandoTabla{
+position:fixed;
+inset:0;
+display:flex;
+align-items:center;
+justify-content:center;
+background:radial-gradient(circle,#1a0033,#000);
+z-index:200000;
+}
+.cargandoCaja{
+text-align:center;
+padding:35px;
+border-radius:25px;
+border:2px solid #ffd700;
+background:rgba(0,0,0,.75);
+box-shadow:0 0 25px #ffd700;
+}
+.cargandoIcono{
+font-size:55px;
+animation:giroBingo 1.5s infinite linear;
+}
+.cargandoTitulo{
+margin-top:15px;
+font-size:26px;
+font-weight:bold;
+color:#ffd700;
+}
+.cargandoTexto{
+margin-top:10px;
+font-size:16px;
+color:white;
+}
+@keyframes giroBingo{
+from{transform:rotate(0deg);}
+to{transform:rotate(360deg);}
+}
+
 </style>
 </head>
 
 <body>
+<div id="pantallaCarga" class="cargandoTabla">
+<div class="cargandoCaja">
+<div class="cargandoIcono">🎱</div>
+<div class="cargandoTitulo">Abriendo tu tabla digital</div>
+<div class="cargandoTexto">Estamos verificando tus tablas asignadas...</div>
+</div>
+</div>
 
 <div class="videoContainer">
 <iframe
@@ -1159,6 +1205,8 @@ if(!lista){
 
 let ids=lista ? lista.split(",").map(n=>parseInt(n,10)).filter(n=>Number.isInteger(n) && n>0) : [];
 
+const pantallaCarga=document.getElementById("pantallaCarga");
+
 const contenedor=document.getElementById("tabla");
 
 /* ===== CLASE DE DISTRIBUCION MULTITABLA ===== */
@@ -1249,6 +1297,8 @@ bloque.appendChild(grid);
 contenedor.appendChild(bloque);
 
 });
+
+if(pantallaCarga) pantallaCarga.style.display="none";
 
 </script>
 
