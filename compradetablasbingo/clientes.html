@@ -1284,19 +1284,14 @@
     if (tableOperationsInFlight.has(code)) return;
     tableOperationsInFlight.add(code);
 
+    const index = selectedTables.indexOf(code);
     let reservationDeadline = reservationEndTime;
 
     try {
-      const index = selectedTables.indexOf(code);
-
-      // Respuesta inmediata en pantalla (optimista)
       if (index > -1) {
-        selectedTables = selectedTables.filter(c => c !== code);
-        saveLocalReservation();
-        updateSummary();
-        renderTables();
-
+        // Primero confirmamos la liberación en Firebase; luego cambiamos la interfaz.
         await releaseTableIfOwned(code);
+        selectedTables = selectedTables.filter(c => c !== code);
 
         if (selectedTables.length === 0) {
           clearInterval(timerInterval);
@@ -1305,6 +1300,10 @@
           document.getElementById('timer-display').textContent = '03:00';
           document.getElementById('reservation-timer-box').classList.add('hidden');
         }
+
+        saveLocalReservation();
+        updateSummary();
+        renderTables();
         return;
       }
 
@@ -1313,29 +1312,32 @@
         return;
       }
 
+      // El vencimiento se fija ANTES de iniciar cualquier operación asíncrona y
+      // se captura en una constante. Así nunca puede terminar escrito como null
+      // aunque el navegador se cierre, haya doble clic o cambie el estado local.
       if (!reservationDeadline || reservationDeadline <= Date.now()) {
         reservationDeadline = Date.now() + (HOLD_TIME_MINUTES * 60 * 1000);
       }
 
-      // Pintar inmediatamente sin esperar Firebase
-      selectedTables.push(code);
-      reservationEndTime = reservationDeadline;
+      // Respuesta inmediata: la interfaz cambia primero y Firebase valida en segundo plano.
+      // Si Firebase rechaza la tabla, se revierte la selección.
+      if (!selectedTables.includes(code)) selectedTables.push(code);
       saveLocalReservation();
       startReservationTimer();
       document.getElementById('reservation-timer-box').classList.remove('hidden');
       updateSummary();
       renderTables();
 
-      // Validación real en Firebase después
       const success = await runTransaction(db, async (transaction) => {
         const tRef = doc(db, 'tablas', code);
         const tDoc = await transaction.get(tRef);
 
         if (!tDoc.exists()) throw new Error("La tabla no existe.");
-
         const tData = tDoc.data();
         const now = Date.now();
 
+        // Una RESERVADA sin reservedUntil es inválida y se considera vencida.
+        // También permite recuperar automáticamente registros antiguos como T009.
         const isExpired = tData.status === 'RESERVADA' &&
           (!tData.reservedUntil || tData.reservedUntil <= now);
 
@@ -1344,25 +1346,26 @@
           return false;
         }
 
+        // Una sola escritura atómica: estado, propietario y vencimiento nacen juntos.
         transaction.update(tRef, {
           status: 'RESERVADA',
           reservedUntil: reservationDeadline,
           reservedBy: myClientId
         });
-
         return true;
       });
 
       if (!success) {
-        selectedTables = selectedTables.filter(c => c !== code);
-        saveLocalReservation();
-        updateSummary();
-        renderTables();
         alert(`La tabla ${code} ya ha sido reservada o comprada por otra persona.`);
+        return;
       }
+
+      // Firebase confirmó la reserva. La interfaz ya estaba actualizada.
+      reservationEndTime = reservationDeadline;
 
     } catch (err) {
       console.error("Error al sincronizar selección:", err);
+      // No dejamos una reserva ficticia en pantalla si Firebase no la confirmó.
       selectedTables = selectedTables.filter(c => c !== code);
       if (selectedTables.length === 0) reservationEndTime = null;
       saveLocalReservation();
