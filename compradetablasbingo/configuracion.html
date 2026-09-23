@@ -370,17 +370,17 @@
               <div class="form-control" style="background:#f8fafc;font-weight:800;color:#d97706;display:flex;align-items:center;gap:8px;">
                 🔒 <span id="cfg-id-bingo-display">BINGO001</span>
               </div>
-              <input type="hidden" id="cfg-id-bingo" value="BINGO001">
+              <input type="hidden" id="cfg-id-bingo" value="BINGO001" autocomplete="off">
             </div>
 
           <div class="form-row">
             <div class="form-group">
               <label>Fecha del Bingo</label>
-              <input type="date" id="cfg-fecha" class="form-control">
+              <input type="date" id="cfg-fecha" class="form-control" autocomplete="off">
             </div>
             <div class="form-group">
               <label>Hora del Bingo</label>
-              <input type="time" id="cfg-hora" class="form-control">
+              <input type="time" id="cfg-hora" class="form-control" autocomplete="off">
             </div>
           </div>
 
@@ -389,21 +389,21 @@
             <div class="form-row">
               <div class="form-group">
                 <label>Disponible Desde - Fecha</label>
-                <input type="date" id="cfg-venta-desde-fecha" class="form-control">
+                <input type="date" id="cfg-venta-desde-fecha" class="form-control" autocomplete="off">
               </div>
               <div class="form-group">
                 <label>Hora</label>
-                <input type="time" id="cfg-venta-desde-hora" class="form-control">
+                <input type="time" id="cfg-venta-desde-hora" class="form-control" autocomplete="off">
               </div>
             </div>
             <div class="form-row">
               <div class="form-group">
                 <label>Disponible Hasta - Fecha</label>
-                <input type="date" id="cfg-venta-hasta-fecha" class="form-control">
+                <input type="date" id="cfg-venta-hasta-fecha" class="form-control" autocomplete="off">
               </div>
               <div class="form-group">
                 <label>Hora</label>
-                <input type="time" id="cfg-venta-hasta-hora" class="form-control">
+                <input type="time" id="cfg-venta-hasta-hora" class="form-control" autocomplete="off">
               </div>
             </div>
             <div class="range-help">Al llegar a la fecha y hora final, las compras se bloquearán automáticamente.</div>
@@ -411,21 +411,21 @@
 
           <div class="form-group">
              <label>Valor por Tabla ($)</label>
-            <input type="number" id="cfg-valor" class="form-control" placeholder="$ Valor por tabla" min="0" required>
+            <input type="number" id="cfg-valor" class="form-control" placeholder="$ Valor por tabla" min="0" required autocomplete="off">
 
             <div class="form-group">
               <label>Enlace de transmisión YouTube</label>
-              <input type="text" id="cfg-link-transmision" class="form-control" placeholder="https://www.youtube.com/live/...">
+              <input type="text" id="cfg-link-transmision" class="form-control" placeholder="https://www.youtube.com/live/..." autocomplete="off">
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
               <label>Rango Desde</label>
-              <input type="number" id="cfg-desde" class="form-control" min="1" required>
+              <input type="number" id="cfg-desde" class="form-control" min="1" required autocomplete="off">
             </div>
             <div class="form-group">
               <label>Rango Hasta</label>
-              <input type="number" id="cfg-hasta" class="form-control" min="1" required>
+              <input type="number" id="cfg-hasta" class="form-control" min="1" required autocomplete="off">
             </div>
           </div>
           <div class="range-help">DEFINE DESDE QUÉ NÚMERO HASTA QUÉ NÚMERO ESTARÁN HABILITADAS LAS TABLAS (ENTRE 1 Y 5000).</div>
@@ -478,10 +478,10 @@
       <div class="card">
         <div class="card-title">Gestión de Pedidos <button class="btn btn-sm btn-dark" onclick="verificarIntegridadTablas()">Verificar integridad</button></div>
         <div class="search-box">
-          <input type="text" id="search-input" class="form-control" placeholder="Buscar por pedido, nombre o whatsapp...">
+          <input type="text" id="search-input" class="form-control" placeholder="Buscar por pedido, nombre o whatsapp..." autocomplete="off">
         </div>
         <div class="form-group">
-          <select id="filter-status" class="form-control">
+          <select id="filter-status" class="form-control" autocomplete="off">
             <option value="TODOS">Todos los estados</option>
             <option value="PENDIENTE PAGO">PENDIENTE PAGO</option>
             <option value="PAGADO">PAGADO</option>
@@ -551,21 +551,21 @@
     <form id="form-edit-client">
       <div class="form-group">
         <label>Nombre y Apellido</label>
-        <input type="text" id="edit-client-name" class="form-control" required>
+        <input type="text" id="edit-client-name" class="form-control" required autocomplete="off">
       </div>
 
       <div class="form-group">
         <label>Número de WhatsApp</label>
         <div class="edit-phone-row">
-          <input type="tel" id="edit-client-country" class="form-control edit-country-code" value="+57" inputmode="tel" maxlength="5" aria-label="Indicativo internacional">
-          <input type="tel" id="edit-client-phone" class="form-control" inputmode="numeric" placeholder="Ej: 3001234567" required>
+          <input type="tel" id="edit-client-country" class="form-control edit-country-code" value="+57" inputmode="tel" maxlength="5" aria-label="Indicativo internacional" autocomplete="off">
+          <input type="tel" id="edit-client-phone" class="form-control" inputmode="numeric" placeholder="Ej: 3001234567" required autocomplete="off">
         </div>
         <div class="edit-phone-help">El indicativo internacional se guarda separado del número visible. Puedes cambiar +57 por el indicativo de otro país.</div>
       </div>
 
       <div class="form-group">
         <label>Referencia, Ciudad, Barrio</label>
-        <input type="text" id="edit-client-reference" class="form-control">
+        <input type="text" id="edit-client-reference" class="form-control" autocomplete="off">
       </div>
 
       <div class="edit-phone-actions">
@@ -730,7 +730,7 @@
 
     const raw = String(value).trim();
 
-    // Formato que acepta directamente <input type="time">: HH:MM o HH:MM:SS.
+    // Formato que acepta directamente <input type="time" autocomplete="off">: HH:MM o HH:MM:SS.
     let match = raw.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
     if (match) {
       const hours = Number(match[1]);
@@ -1457,7 +1457,7 @@ function seleccionarFormaPago(order){
       ${tablas.map(tabla=>`
         <div style="margin-bottom:10px;text-align:left">
           <label style="font-weight:700">Tabla ${tabla}</label>
-          <select class="select-pago-tabla" data-tabla="${tabla}" style="width:100%;padding:10px">
+          <select class="select-pago-tabla" data-tabla="${tabla}" style="width:100%;padding:10px" autocomplete="off">
             <option value="DEBEN" ${String(order.destinoPorTabla?.[tabla] || 'DEBEN').toUpperCase()==='DEBEN' ? 'selected' : ''}>Pendiente</option>
             <option value="EFECTIVO" ${String(order.destinoPorTabla?.[tabla] || '').toUpperCase()==='EFECTIVO' ? 'selected' : ''}>EFECTIVO</option>
             <option value="CONSIGNACIÓN" ${String(order.destinoPorTabla?.[tabla] || '').toUpperCase()==='CONSIGNACIÓN' ? 'selected' : ''}>CONSIGNACIÓN</option>
