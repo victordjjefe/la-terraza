@@ -1323,8 +1323,6 @@
       // Si Firebase rechaza la tabla, se revierte la selección.
       if (!selectedTables.includes(code)) selectedTables.push(code);
       saveLocalReservation();
-      startReservationTimer();
-      document.getElementById('reservation-timer-box').classList.remove('hidden');
       updateSummary();
       renderTables();
 
@@ -1360,8 +1358,11 @@
         return;
       }
 
-      // Firebase confirmó la reserva. La interfaz ya estaba actualizada.
+      // Firebase confirmó la reserva. Ahora sí inicia oficialmente el contador.
       reservationEndTime = reservationDeadline;
+      saveLocalReservation();
+      startReservationTimer();
+      document.getElementById('reservation-timer-box').classList.remove('hidden');
 
     } catch (err) {
       console.error("Error al sincronizar selección:", err);
