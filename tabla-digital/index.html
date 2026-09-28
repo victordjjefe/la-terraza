@@ -1268,10 +1268,12 @@ d.onclick=()=>{
 
 if(bingoActivo) return;
 
-beep();
-
+// Primero se actualiza la marca visual para respuesta inmediata.
+// El sonido se ejecuta después para evitar retrasar la pulsación.
 d.classList.toggle("marcado");
 estado[i][j]=d.classList.contains("marcado");
+
+beep();
 
 if(verificar(estado)){
 
