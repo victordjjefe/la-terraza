@@ -587,7 +587,7 @@
         <p style="color:var(--text-muted); margin-bottom:12px;">
           Consulta aquí usando tu número de WhatsApp registrado.
         </p>
-        <div class="phone-row"><input id="lookup-country" class="form-control country-code" value="+57" readonly><button type="button" class="btn btn-dark btn-country-edit" onclick="editarCodigo('lookup-country')">🌎 Otro</button><input id="lookup-input" class="form-control" type="tel" inputmode="numeric" placeholder="Ej: 3001234567"></div>
+        <div class="phone-row"><input id="lookup-country" class="form-control country-code" value="+57" readonly><input id="lookup-input" class="form-control" type="tel" inputmode="numeric" placeholder="Ej: 3001234567"></div>
         <button class="btn btn-success" id="btn-lookup" style="margin-top:12px;">
           Consultar mis tablas
         </button>
@@ -617,7 +617,7 @@
         <p style="color:var(--text-muted); margin-bottom:12px;">
           Consulta aquí usando tu número de WhatsApp registrado.
         </p>
-        <div class="phone-row"><input id="lookup-country-active" class="form-control country-code" value="+57" readonly><button type="button" class="btn btn-dark btn-country-edit" onclick="editarCodigo('lookup-country-active')">🌎 Otro</button><input id="lookup-input-active" class="form-control" type="tel" inputmode="numeric" placeholder="Ej: 3001234567"></div>
+        <div class="phone-row"><input id="lookup-country-active" class="form-control country-code" value="+57" readonly><input id="lookup-input-active" class="form-control" type="tel" inputmode="numeric" placeholder="Ej: 3001234567"></div>
         <button class="btn btn-success" id="btn-lookup-active" style="margin-top:12px;">
           Consultar mis tablas
         </button>
@@ -669,7 +669,8 @@
         </div>
         <div class="form-group">
           <label>Número de WhatsApp</label>
-          <div class="phone-row"><input type="tel" id="buyer-country" class="form-control country-code" value="+57" readonly><button type="button" class="btn btn-dark btn-country-edit" onclick="editarCodigo('buyer-country')">🌎 Otro</button><input type="tel" id="buyer-phone" class="form-control" placeholder="Ej: 3001234567"></div>
+          <div class="phone-row"><select id="buyer-country" class="form-control country-code"><option value="57">+57 Colombia</option><option value="otro">Otro código internacional</option></select><input type="tel" id="buyer-phone" class="form-control" placeholder="Ej: 3001234567" maxlength="10">
+<input type="tel" id="buyer-phone-confirm" class="form-control" placeholder="Confirma tu número de WhatsApp" maxlength="10" style="margin-top:8px;"></div>
         </div>
       </div>
 
@@ -2319,6 +2320,28 @@ function editarCodigo(id){
   campo.placeholder = '+código';
   campo.focus();
 }
+</script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+ const codigo=document.getElementById('buyer-country');
+ if(codigo){
+   codigo.addEventListener('change',()=>{
+     if(codigo.value==='otro'){
+       codigo.outerHTML='<input id="buyer-country" class="form-control country-code" value="+" placeholder="+código">';
+     }
+   });
+ }
+ const telefono=document.getElementById('buyer-phone');
+ if(telefono){
+   telefono.addEventListener('input',()=>{ telefono.value=telefono.value.replace(/\D/g,'').slice(0,10); });
+ }
+ const confirmar=document.getElementById('buyer-phone-confirm');
+ if(confirmar){
+   confirmar.addEventListener('input',()=>{ confirmar.value=confirmar.value.replace(/\D/g,'').slice(0,10); });
+ }
+});
 </script>
 
 </body>
