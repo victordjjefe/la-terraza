@@ -2447,4 +2447,18 @@ document.addEventListener("DOMContentLoaded",()=>{
     });
 
     campo.addEventListener("click",()=>{
-      if(campo.rea
+      if(campo.readOnly){
+        setTimeout(()=>{
+          if(campo.value.toUpperCase() === "OTRO") {
+            campo.value = "+";
+            campo.readOnly = false;
+            campo.focus();
+          }
+        },50);
+      }
+    });
+  });
+});
+</script>
+</body>
+</html>
