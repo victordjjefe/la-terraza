@@ -2460,5 +2460,25 @@ document.addEventListener("DOMContentLoaded",()=>{
   });
 });
 </script>
+
+<script>/* Control único del indicativo internacional WhatsApp */
+(function(){
+  function configurarIndicativo(id){
+    const campo=document.getElementById(id);
+    if(!campo) return;
+    const bloquear=()=>{ 
+      if(campo.value.trim().toUpperCase()==='OTRO') campo.value='+57';
+      if(!campo.value.trim()) campo.value='+57';
+      if(campo.value.charAt(0)!=='+') campo.value='+'+campo.value.replace(/\D/g,'');
+      campo.readOnly=true;
+    };
+    const editar=()=>{ campo.readOnly=false; campo.value=''; campo.focus(); };
+    campo.readOnly=true;
+    campo.addEventListener('input',()=>{ if(campo.value.trim().toUpperCase()==='OTRO') editar(); });
+    campo.addEventListener('change',()=>{ if(campo.value.trim().toUpperCase()==='OTRO') editar(); else bloquear(); });
+    campo.addEventListener('blur',()=>{ if(!campo.readOnly) bloquear(); });
+  }
+  ['buyer-country','lookup-country','lookup-country-active'].forEach(configurarIndicativo);
+})();</script>
 </body>
 </html>
