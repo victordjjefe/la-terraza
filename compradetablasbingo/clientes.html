@@ -596,7 +596,7 @@
         <p style="color:var(--text-muted); margin-bottom:12px;">
           Consulta aquí usando tu número de WhatsApp registrado.
         </p>
-        <div class="phone-row"><input id="lookup-country" class="form-control country-code" list="country-options-lookup" value="+57" readonly><datalist id="country-options-lookup"><option value="+57"><option value="+34"><option value="+1"><option value="+52"></datalist><input id="lookup-input" class="form-control" type="tel" inputmode="numeric" placeholder="Ej: 3001234567"></div>
+        <div class="phone-row"><input id="lookup-country" class="form-control country-code" list="country-options-lookup" value="+57" readonly><datalist id="country-options-lookup"><option value="+57"><option value="OTRO" label="Otro código internacional"></datalist><input id="lookup-input" class="form-control" type="tel" inputmode="numeric" placeholder="Ej: 3001234567"></div>
         <button class="btn btn-success" id="btn-lookup" style="margin-top:12px;">
           Consultar mis tablas
         </button>
@@ -626,7 +626,7 @@
         <p style="color:var(--text-muted); margin-bottom:12px;">
           Consulta aquí usando tu número de WhatsApp registrado.
         </p>
-        <div class="phone-row"><input id="lookup-country-active" class="form-control country-code" list="country-options-lookup-active" value="+57" readonly><datalist id="country-options-lookup-active"><option value="+57"><option value="+34"><option value="+1"><option value="+52"></datalist><input id="lookup-input-active" class="form-control" type="tel" inputmode="numeric" placeholder="Ej: 3001234567"></div>
+        <div class="phone-row"><input id="lookup-country-active" class="form-control country-code" list="country-options-lookup-active" value="+57" readonly><datalist id="country-options-lookup-active"><option value="+57"><option value="OTRO" label="Otro código internacional"></datalist><input id="lookup-input-active" class="form-control" type="tel" inputmode="numeric" placeholder="Ej: 3001234567"></div>
         <button class="btn btn-success" id="btn-lookup-active" style="margin-top:12px;">
           Consultar mis tablas
         </button>
@@ -678,7 +678,7 @@
         </div>
         <div class="form-group">
           <label>Número de WhatsApp</label>
-          <div class="phone-row"><input id="buyer-country" class="form-control country-code" list="country-options-buyer" value="+57" readonly><datalist id="country-options-buyer"><option value="+57"><option value="+34"><option value="+1"><option value="+52"></datalist><input type="tel" id="buyer-phone" class="form-control" placeholder="Ej: 3001234567" maxlength="10">
+          <div class="phone-row"><input id="buyer-country" class="form-control country-code" list="country-options-buyer" value="+57" readonly><datalist id="country-options-buyer"><option value="+57"><option value="OTRO" label="Otro código internacional"></datalist><input type="tel" id="buyer-phone" class="form-control" placeholder="Ej: 3001234567" maxlength="10">
 </div>
         </div>
       </div>
@@ -2416,25 +2416,31 @@ document.addEventListener("DOMContentLoaded",()=>{
   ["buyer-country","lookup-country","lookup-country-active"].forEach(id=>{
     const campo=document.getElementById(id);
     if(!campo) return;
-    campo.addEventListener("input",()=>{
-      let v=campo.value.trim();
-      if(v==="+57" || v==="57") {
-        campo.value="+57";
-        campo.readOnly=true;
+
+    campo.value = "+57";
+    campo.readOnly = true;
+
+    campo.addEventListener("change",()=>{
+      if(campo.value === "OTRO") {
+        campo.value = "+";
+        campo.readOnly = false;
+        campo.focus();
       } else {
-        campo.readOnly=false;
+        campo.value = "+57";
+        campo.readOnly = true;
       }
     });
-    campo.addEventListener("change",()=>{
-      if(campo.value!=="+57") campo.readOnly=false;
+
+    campo.addEventListener("input",()=>{
+      if(campo.value !== "+57" && campo.value !== "OTRO") {
+        campo.readOnly = false;
+      }
     });
-    campo.addEventListener("focus",()=>{
-      if(campo.value!=="+57") campo.readOnly=false;
-    });
+
     campo.addEventListener("blur",()=>{
-      if(campo.value==="" || campo.value==="+"){
-        campo.value="+57";
-        campo.readOnly=true;
+      if(campo.value.trim()==="" || campo.value === "+") {
+        campo.value = "+57";
+        campo.readOnly = true;
       }
     });
   });
