@@ -2443,5 +2443,61 @@ document.addEventListener('input', function(e){
 });
 </script>
 
+
+<script>
+function activarOtroCodigo(id){
+    const campo = document.getElementById(id);
+    if(!campo) return;
+
+    const input = document.createElement('input');
+    input.id = id;
+    input.className = 'form-control country-code';
+    input.type = 'tel';
+    input.placeholder = '+código';
+    input.value = '+';
+
+    input.addEventListener('blur', function(){
+        if(input.value === '+' || input.value.trim() === ''){
+            restaurarCodigo(id);
+        }
+    });
+
+    campo.replaceWith(input);
+    input.focus();
+}
+
+function restaurarCodigo(id){
+    const campo = document.getElementById(id);
+    if(!campo) return;
+
+    const select = document.createElement('select');
+    select.id = id;
+    select.className = 'form-control country-code';
+    select.innerHTML = '<option value="57">+57</option><option value="otro">Otro código internacional</option>';
+    select.addEventListener('change', function(){
+        if(this.value === 'otro'){
+            activarOtroCodigo(id);
+        }
+    });
+
+    campo.replaceWith(select);
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+
+    ['buyer-country','lookup-country','lookup-country-active'].forEach(function(id){
+        const campo=document.getElementById(id);
+        if(campo && campo.tagName==='SELECT'){
+            campo.addEventListener('change', function(){
+                if(this.value==='otro'){
+                    activarOtroCodigo(id);
+                }
+            });
+        }
+    });
+
+});
+</script>
+
 </body>
 </html>
