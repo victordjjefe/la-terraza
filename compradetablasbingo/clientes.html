@@ -2323,24 +2323,79 @@ function editarCodigo(id){
 </script>
 
 
+
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
- const codigo=document.getElementById('buyer-country');
+
+ const codigo = document.getElementById('buyer-country');
+
  if(codigo){
    codigo.addEventListener('change',()=>{
-     if(codigo.value==='otro'){
-       codigo.outerHTML='<input id="buyer-country" class="form-control country-code" value="+" placeholder="+código">';
+     if(codigo.value === 'otro'){
+       const nuevo = document.createElement('input');
+       nuevo.id = 'buyer-country';
+       nuevo.className = 'form-control country-code';
+       nuevo.value = '+';
+       nuevo.placeholder = '+código internacional';
+       codigo.replaceWith(nuevo);
+       nuevo.focus();
      }
    });
  }
- const telefono=document.getElementById('buyer-phone');
- if(telefono){
-   telefono.addEventListener('input',()=>{ telefono.value=telefono.value.replace(/\D/g,'').slice(0,10); });
- }
- const confirmar=document.getElementById('buyer-phone-confirm');
- if(confirmar){
-   confirmar.addEventListener('input',()=>{ confirmar.value=confirmar.value.replace(/\D/g,'').slice(0,10); });
- }
+
+ ['buyer-phone','buyer-phone-confirm'].forEach(id=>{
+   const campo=document.getElementById(id);
+   if(campo){
+     campo.addEventListener('input',()=>{
+       campo.value=campo.value.replace(/\D/g,'').slice(0,10);
+     });
+   }
+ });
+
+});
+</script>
+
+
+
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+
+  function limitarDiezDigitos(id){
+    const campo = document.getElementById(id);
+    if(!campo) return;
+
+    campo.setAttribute('maxlength','10');
+
+    campo.addEventListener('input',()=>{
+      let valor = campo.value.replace(/\D/g,'');
+      if(valor.length > 10){
+        valor = valor.substring(0,10);
+      }
+      campo.value = valor;
+    });
+
+    campo.addEventListener('keydown',(e)=>{
+      const teclasPermitidas = [
+        'Backspace','Delete','ArrowLeft','ArrowRight',
+        'Tab'
+      ];
+
+      if(teclasPermitidas.includes(e.key)) return;
+
+      if(!/\d/.test(e.key)) {
+        e.preventDefault();
+        return;
+      }
+
+      if(campo.value.length >= 10){
+        e.preventDefault();
+      }
+    });
+  }
+
+  limitarDiezDigitos('buyer-phone');
+  limitarDiezDigitos('buyer-phone-confirm');
+
 });
 </script>
 
