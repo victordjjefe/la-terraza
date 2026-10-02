@@ -596,7 +596,7 @@
         <p style="color:var(--text-muted); margin-bottom:12px;">
           Consulta aquí usando tu número de WhatsApp registrado.
         </p>
-        <div class="phone-row"><select id="lookup-country" class="form-control country-code"><option value="57">+57</option><option value="otro">Otro código internacional</option></select><input id="lookup-input" class="form-control" type="tel" inputmode="numeric" placeholder="Ej: 3001234567"></div>
+        <div class="phone-row"><input id="lookup-country" class="form-control country-code" list="country-options-lookup" value="+57" readonly><datalist id="country-options-lookup"><option value="+57"><option value="+34"><option value="+1"><option value="+52"></datalist><input id="lookup-input" class="form-control" type="tel" inputmode="numeric" placeholder="Ej: 3001234567"></div>
         <button class="btn btn-success" id="btn-lookup" style="margin-top:12px;">
           Consultar mis tablas
         </button>
@@ -626,7 +626,7 @@
         <p style="color:var(--text-muted); margin-bottom:12px;">
           Consulta aquí usando tu número de WhatsApp registrado.
         </p>
-        <div class="phone-row"><select id="lookup-country-active" class="form-control country-code"><option value="57">+57</option><option value="otro">Otro código internacional</option></select><input id="lookup-input-active" class="form-control" type="tel" inputmode="numeric" placeholder="Ej: 3001234567"></div>
+        <div class="phone-row"><input id="lookup-country-active" class="form-control country-code" list="country-options-lookup-active" value="+57" readonly><datalist id="country-options-lookup-active"><option value="+57"><option value="+34"><option value="+1"><option value="+52"></datalist><input id="lookup-input-active" class="form-control" type="tel" inputmode="numeric" placeholder="Ej: 3001234567"></div>
         <button class="btn btn-success" id="btn-lookup-active" style="margin-top:12px;">
           Consultar mis tablas
         </button>
@@ -678,7 +678,7 @@
         </div>
         <div class="form-group">
           <label>Número de WhatsApp</label>
-          <div class="phone-row"><select id="buyer-country" class="form-control country-code"><option value="57">+57</option><option value="otro">Otro código internacional</option></select><input type="tel" id="buyer-phone" class="form-control" placeholder="Ej: 3001234567" maxlength="10">
+          <div class="phone-row"><input id="buyer-country" class="form-control country-code" list="country-options-buyer" value="+57" readonly><datalist id="country-options-buyer"><option value="+57"><option value="+34"><option value="+1"><option value="+52"></datalist><input type="tel" id="buyer-phone" class="form-control" placeholder="Ej: 3001234567" maxlength="10">
 </div>
         </div>
       </div>
@@ -1750,7 +1750,7 @@ function startReservationTimer() {
   const buyerPhoneField = document.getElementById('buyer-phone');
   if (buyerPhoneField) {
     buyerPhoneField.addEventListener('blur', () => {
-      const code = obtenerCodigoWhatsApp('buyer-country');
+      const code = document.getElementById('buyer-country')?.value || '+57';
       const full = normalizarWhatsAppColombia(buyerPhoneField.value, code);
       buyerPhoneField.value = full.replace('+' + cleanPhone(code), '');
     });
@@ -1849,7 +1849,7 @@ function startReservationTimer() {
 
     const buyerName = normalizeText(buyerNameInput.value);
     const buyerAddress = normalizeText(buyerAddressInput.value);
-    const buyerPhone = normalizarWhatsAppColombia(buyerPhoneInput.value, obtenerCodigoWhatsApp('buyer-country'));
+    const buyerPhone = normalizarWhatsAppColombia(buyerPhoneInput.value, document.getElementById('buyer-country')?.value || '+57');
 
     buyerNameInput.value = buyerName;
     buyerAddressInput.value = buyerAddress;
@@ -2285,29 +2285,23 @@ Gracias por tu compra.`;
 
 <script>
 (function(){
-  function obtenerCodigoWhatsApp(id){
-  const select = document.getElementById(id);
-  const custom = document.getElementById(id + '-custom');
-  if(!select) return '57';
-  if(select.value === 'otro'){
-    return (custom?.value || '').replace(/\D/g,'') || '57';
-  }
-  return String(select.value).replace(/\D/g,'') || '57';
-}
-
-function normalizarVisibleBusqueda(countryId, inputId){
+  function normalizarVisibleBusqueda(countryId, inputId){
+    const c = document.getElementById(countryId);
     const i = document.getElementById(inputId);
-    if(!i) return;
+    if(!c || !i) return;
     let raw = (i.value || '').replace(/[^\d+]/g,'');
-    let codigo = obtenerCodigoWhatsApp(countryId);
+    let codigo = (c.value || '+57').replace(/\D/g,'') || '57';
 
     if(raw.startsWith('+')) raw = raw.substring(1);
 
     if(raw.startsWith(codigo)){
       raw = raw.substring(codigo.length);
+    } else if(raw.startsWith('57') && codigo !== '57'){
+      raw = raw.substring(2);
     }
 
     i.value = raw;
+    c.value = '+' + codigo;
   }
 
   ['btn-lookup','btn-lookup-active'].forEach(id=>{
@@ -2326,49 +2320,124 @@ function normalizarVisibleBusqueda(countryId, inputId){
 </script>
 
 
+<script>
+function editarCodigo(id){
+  const campo = document.getElementById(id);
+  if(!campo) return;
+  campo.readOnly = false;
+  campo.value = '';
+  campo.placeholder = '+código';
+  campo.focus();
+}
+</script>
+
+
+
+
+
+
 
 <script>
-function configurarSelectorCodigo(id){
-  const select=document.getElementById(id);
-  if(!select || select.dataset.configurado) return;
-  select.dataset.configurado='1';
+document.addEventListener('DOMContentLoaded',()=>{
 
-  const custom=document.createElement('input');
-  custom.id=id+'-custom';
-  custom.type='tel';
-  custom.className='form-control country-code';
-  custom.placeholder='+código internacional';
-  custom.style.display='none';
-  custom.value='';
+  function limitarDiezDigitos(id){
+    const campo = document.getElementById(id);
+    if(!campo) return;
 
-  select.parentNode.insertBefore(custom, select.nextSibling);
+    campo.setAttribute('maxlength','10');
 
-  function actualizar(){
-    if(select.value==='otro'){
-      custom.style.display='block';
-      custom.focus();
-    }else{
-      custom.style.display='none';
-      custom.value='';
-    }
+    campo.addEventListener('input',()=>{
+      let valor = campo.value.replace(/\D/g,'');
+      if(valor.length > 10){
+        valor = valor.substring(0,10);
+      }
+      campo.value = valor;
+    });
+
+    campo.addEventListener('keydown',(e)=>{
+      const teclasPermitidas = [
+        'Backspace','Delete','ArrowLeft','ArrowRight',
+        'Tab'
+      ];
+
+      if(teclasPermitidas.includes(e.key)) return;
+
+      if(!/\d/.test(e.key)) {
+        e.preventDefault();
+        return;
+      }
+
+      if(campo.value.length >= 10){
+        e.preventDefault();
+      }
+    });
   }
 
-  select.addEventListener('change', actualizar);
-  actualizar();
+  limitarDiezDigitos('buyer-phone');
+  limitarDiezDigitos('buyer-phone-confirm');
+
+});
+</script>
+
+
+<script>
+function validarConfirmacionWhatsapp(numero){
+  return new Promise((resolve)=>{
+    const valor = prompt("Digite nuevamente su número de celular:");
+    if(valor === null){
+      resolve(false);
+      return;
+    }
+    if(valor.replace(/\D/g,'') !== numero.replace(/\D/g,'')){
+      alert("El número de WhatsApp no coincide.");
+      resolve(false);
+      return;
+    }
+    resolve(true);
+  });
 }
+</script>
 
-document.addEventListener('DOMContentLoaded',()=>{
- ['buyer-country','lookup-country','lookup-country-active'].forEach(configurarSelectorCodigo);
 
- const inputs=['buyer-phone','lookup-input','lookup-input-active'];
- inputs.forEach(id=>{
-   const campo=document.getElementById(id);
-   if(campo){
-     campo.addEventListener('input',()=>{
-       campo.value=campo.value.replace(/\D/g,'');
-     });
-   }
- });
+<script>
+document.addEventListener('input', function(e){
+ if(e.target && (e.target.id==='buyer-phone' || e.target.id==='lookup-phone' || e.target.id==='lookup-phone-active')){
+   e.target.value=e.target.value.replace(/\D/g,'').slice(0,10);
+ }
+});
+</script>
+
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded",()=>{
+  ["buyer-country","lookup-country","lookup-country-active"].forEach(id=>{
+    const campo=document.getElementById(id);
+    if(!campo) return;
+    campo.addEventListener("input",()=>{
+      let v=campo.value.trim();
+      if(v==="+57" || v==="57") {
+        campo.value="+57";
+        campo.readOnly=true;
+      } else {
+        campo.readOnly=false;
+      }
+    });
+    campo.addEventListener("change",()=>{
+      if(campo.value!=="+57") campo.readOnly=false;
+    });
+    campo.addEventListener("focus",()=>{
+      if(campo.value!=="+57") campo.readOnly=false;
+    });
+    campo.addEventListener("blur",()=>{
+      if(campo.value==="" || campo.value==="+"){
+        campo.value="+57";
+        campo.readOnly=true;
+      }
+    });
+  });
 });
 </script>
 </body>
