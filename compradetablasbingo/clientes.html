@@ -535,6 +535,8 @@
 }
 </style>
 
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#24103f">
 </head>
 <body>
 <div id="initial-loader" class="initial-loader">
@@ -2286,5 +2288,12 @@ Gracias por tu compra.`;
 })();
 </script>
 
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js');
+  });
+}
+</script>
 </body>
 </html>
