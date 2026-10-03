@@ -2409,77 +2409,54 @@ document.addEventListener('input', function(e){
 
 <script>
 (function(){
-  function activarIndicativo(id){
+  function controlarIndicativo(id){
     const campo=document.getElementById(id);
     if(!campo) return;
 
+    let editable=false;
     campo.value='+57';
-    campo.readOnly=true;
-    campo.setAttribute('aria-label','Código internacional WhatsApp');
 
-    const menu=document.createElement('div');
-    menu.style.position='absolute';
-    menu.style.background='#fff';
-    menu.style.border='1px solid #e2e8f0';
-    menu.style.borderRadius='8px';
-    menu.style.padding='8px';
-    menu.style.boxShadow='0 4px 12px rgba(0,0,0,.15)';
-    menu.style.display='none';
-    menu.style.zIndex='99999';
-    menu.innerHTML='<div data-code="OTRO" style="padding:8px;cursor:pointer;font-weight:700;">Digitar otro código internacional</div><div data-code="+57" style="padding:8px;cursor:pointer;font-weight:700;">+57</div>';
-    document.body.appendChild(menu);
-
-    function cerrar(){menu.style.display='none';}
-
-    campo.addEventListener('click',()=>{
-      const r=campo.getBoundingClientRect();
-      menu.style.left=r.left+'px';
-      menu.style.top=(r.bottom+5)+'px';
-      menu.style.display='block';
+    campo.addEventListener('keydown', function(e){
+      if(editable) return;
+      const permitidas=['ArrowDown','ArrowUp','Tab','Enter'];
+      if(!permitidas.includes(e.key)){
+        e.preventDefault();
+      }
     });
 
-    menu.addEventListener('click',(e)=>{
-      const opcion=e.target.closest('[data-code]');
-      if(!opcion) return;
+    campo.addEventListener('beforeinput', function(e){
+      if(!editable) e.preventDefault();
+    });
 
-      const codigo=opcion.dataset.code;
-      cerrar();
+    campo.addEventListener('change', function(){
+      const valor=campo.value.trim().toUpperCase();
 
-      if(codigo==='OTRO'){
-        campo.readOnly=false;
+      if(valor==='OTRO' || valor.includes('OTRO')){
+        editable=true;
         campo.value='';
         campo.focus();
-      }else{
+      }else if(valor==='+57'){
+        editable=false;
         campo.value='+57';
-        campo.readOnly=true;
       }
     });
 
-    campo.addEventListener('input',()=>{
-      if(campo.readOnly) return;
-      let v=campo.value.replace(/[^0-9+]/g,'');
-      if(v && !v.startsWith('+')) v='+'+v;
-      campo.value=v;
-    });
-
-    campo.addEventListener('blur',()=>{
-      if(!campo.readOnly){
-        if(!campo.value.trim() || campo.value.trim()==='+'){
+    campo.addEventListener('blur', function(){
+      if(editable){
+        let valor=campo.value.trim();
+        if(!valor || valor==='+'){
           campo.value='+57';
-        }else if(!campo.value.startsWith('+')){
-          campo.value='+'+campo.value;
+        }else{
+          if(!valor.startsWith('+')) valor='+'+valor;
+          campo.value=valor;
         }
-        campo.readOnly=true;
+        editable=false;
       }
-    });
-
-    document.addEventListener('click',(e)=>{
-      if(e.target!==campo && !menu.contains(e.target)) cerrar();
     });
   }
 
   document.addEventListener('DOMContentLoaded',()=>{
-    ['buyer-country','lookup-country','lookup-country-active'].forEach(activarIndicativo);
+    ['buyer-country','lookup-country','lookup-country-active'].forEach(controlarIndicativo);
   });
 })();
 </script>
