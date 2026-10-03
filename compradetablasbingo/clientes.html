@@ -2406,66 +2406,80 @@ document.addEventListener('input', function(e){
 
 
 
+
 <script>
-/* Control definitivo indicativo WhatsApp */
-document.addEventListener('DOMContentLoaded',()=>{
-  ['buyer-country','lookup-country','lookup-country-active'].forEach(id=>{
+(function(){
+  function activarIndicativo(id){
     const campo=document.getElementById(id);
     if(!campo) return;
 
-    campo.value='+57';
-    campo.readOnly=true;
+    campo.value = '+57';
+    campo.readOnly = true;
 
-    const bloquear=()=>{
-      let valor=(campo.value||'').trim();
-      if(!valor || valor.toUpperCase()==='OTRO') valor='+57';
-      if(valor.charAt(0)!=='+') valor='+'+valor.replace(/\D/g,'');
-      campo.value=valor;
+    let editando = false;
+
+    campo.addEventListener('mousedown', function(){
+      if(campo.readOnly){
+        editando = true;
+        campo.readOnly = false;
+        setTimeout(()=>campo.showPicker ? campo.showPicker() : null, 50);
+      }
+    });
+
+    campo.addEventListener('change', function(){
+      const valor = campo.value.trim().toUpperCase();
+
+      if(valor === 'OTRO'){
+        campo.value = '';
+        campo.readOnly = false;
+        campo.focus();
+        editando = true;
+        return;
+      }
+
+      if(valor === '+57'){
+        campo.value = '+57';
+      }
+
+      campo.readOnly = true;
+      editando = false;
+    });
+
+    campo.addEventListener('input', function(){
+      if(!editando && campo.readOnly) return;
+
+      let valor = campo.value.replace(/[^0-9+]/g,'');
+
+      if(valor && valor.charAt(0)!=='+'){
+        valor='+'+valor;
+      }
+
+      campo.value = valor;
+    });
+
+    campo.addEventListener('blur', function(){
+      let valor = campo.value.trim();
+
+      if(!valor || valor === '+'){
+        campo.value='+57';
+      }else if(valor !== '+57'){
+        if(valor.charAt(0)!=='+') valor='+'+valor;
+        campo.value=valor;
+      }
+
       campo.readOnly=true;
-    };
-
-    const activarOtro=()=>{
-      campo.readOnly=false;
-      campo.value='';
-      campo.focus();
-    };
-
-    campo.addEventListener('change',()=>{
-      const valor=campo.value.trim().toUpperCase();
-
-      if(valor==='OTRO'){
-        activarOtro();
-        return;
-      }
-
-      if(valor==='+57'){
-        bloquear();
-        return;
-      }
-
-      bloquear();
+      editando=false;
     });
+  }
 
-    campo.addEventListener('input',()=>{
-      if(campo.readOnly) return;
-
-      campo.value=campo.value.replace(/[^0-9+]/g,'');
-
-      if(campo.value.length>0){
-        if(campo.value.charAt(0)!=='+'){
-          campo.value='+'+campo.value;
-        }
-        campo.readOnly=true;
-      }
-    });
-
-    campo.addEventListener('blur',()=>{
-      if(!campo.readOnly){
-        bloquear();
-      }
-    });
+  document.addEventListener('DOMContentLoaded',()=>{
+    [
+      'buyer-country',
+      'lookup-country',
+      'lookup-country-active'
+    ].forEach(activarIndicativo);
   });
-});
+})();
 </script>
 </body>
 </html>
