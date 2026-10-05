@@ -321,6 +321,148 @@
       color: var(--text-muted);
       line-height: 1.35;
     }
+
+
+    /* =========================================================
+       PANEL ADMINISTRADOR RESPONSIVE
+       - Móvil conserva el diseño actual
+       - Escritorio aprovecha el ancho disponible
+       ========================================================= */
+
+    @media (min-width: 820px) {
+      body {
+        align-items: flex-start;
+      }
+
+      .app-container {
+        width: 96vw;
+        max-width: 2200px;
+        min-height: 100vh;
+        margin: 0 auto;
+      }
+
+      .main-content {
+        padding: 24px clamp(20px, 2.2vw, 42px) 36px;
+      }
+
+      /* Configuración: bloque principal a la izquierda y paneles de apoyo a la derecha. */
+      #tab-config {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr);
+        gap: 18px;
+        align-items: start;
+      }
+
+      #tab-config > .card:first-child {
+        grid-column: 1;
+        grid-row: 1 / span 2;
+        margin-bottom: 0 !important;
+      }
+
+      #tab-config > .card:nth-child(2) {
+        grid-column: 2;
+        grid-row: 1;
+        margin-bottom: 0 !important;
+      }
+
+      #tab-config > .card:nth-child(3) {
+        grid-column: 2;
+        grid-row: 2;
+        margin-bottom: 0 !important;
+      }
+
+      /* Pedidos: buscador y filtro arriba, tarjetas debajo. */
+      #tab-pedidos > .card {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(230px, .8fr);
+        column-gap: 14px;
+        align-items: end;
+      }
+
+      #tab-pedidos > .card > .card-title,
+      #tab-pedidos > .card > .orders-scroll-container {
+        grid-column: 1 / -1;
+      }
+
+      #tab-pedidos .search-box,
+      #tab-pedidos > .card > .form-group {
+        margin-bottom: 14px;
+      }
+
+      .orders-scroll-container {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+        max-height: none;
+        overflow: visible;
+      }
+
+      .order-item {
+        margin-bottom: 0;
+        min-width: 0;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .order-info {
+        overflow-wrap: anywhere;
+      }
+
+      .order-actions {
+        margin-top: auto;
+        padding-top: 12px;
+      }
+
+      /* Listado: tabla amplia y sin ventana de scroll interna limitada. */
+      #tab-listado .listing-table-wrapper {
+        max-height: none;
+        overflow-y: visible;
+      }
+
+      #tab-listado .listing-table {
+        font-size: .95rem;
+      }
+
+      #tab-listado .listing-copy-btn {
+        width: auto;
+        min-width: 250px;
+        margin: 0 10px 10px 0 !important;
+      }
+    }
+
+    /* Escritorio amplio: tres pedidos por fila. */
+    @media (min-width: 1180px) {
+      .orders-scroll-container {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: clamp(14px, 1.3vw, 24px);
+      }
+
+      .order-item {
+        padding: clamp(14px, 1vw, 20px);
+      }
+    }
+
+    /* Monitores grandes: más aire sin crear una cuarta columna. */
+    @media (min-width: 1700px) {
+      .app-container {
+        width: 94vw;
+      }
+
+      .main-content {
+        padding-left: clamp(34px, 3vw, 60px);
+        padding-right: clamp(34px, 3vw, 60px);
+      }
+
+      #tab-config {
+        grid-template-columns: minmax(0, 2.25fr) minmax(360px, .95fr);
+        gap: 24px;
+      }
+
+      .orders-scroll-container {
+        gap: 24px;
+      }
+    }
   </style>
 </head>
 <body>
