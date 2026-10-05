@@ -429,6 +429,32 @@
         min-width: 250px;
         margin: 0 10px 10px 0 !important;
       }
+
+      /* En escritorio los botones recuperan proporciones de botón, no de barra. */
+      #tab-config .btn,
+      #tab-pedidos .btn,
+      #tab-listado .btn {
+        width: auto;
+        max-width: 100%;
+      }
+
+      #tab-config #btn-submit-config {
+        min-width: 280px;
+      }
+
+      #tab-config #btn-exportar-contable,
+      #tab-config #btn-cerrar-bingo {
+        min-width: 220px;
+      }
+
+      #tab-pedidos .order-actions > button {
+        width: auto !important;
+        flex: 0 0 auto;
+      }
+
+      #tab-pedidos .order-actions {
+        justify-content: flex-start;
+      }
     }
 
     /* Escritorio amplio: tres pedidos por fila. */
@@ -843,7 +869,9 @@
     
     if (tab === 'config') {
       document.getElementById('tab-btn-config').classList.add('active');
-      document.getElementById('tab-config').style.display = 'block';
+      // Deja que el CSS responsive decida si Configuración se muestra como bloque o grid.
+      // Evita que al volver desde otra pestaña quede forzado en display:block.
+      document.getElementById('tab-config').style.display = '';
     } else if (tab === 'pedidos') {
       document.getElementById('tab-btn-pedidos').classList.add('active');
       document.getElementById('tab-pedidos').style.display = 'block';
