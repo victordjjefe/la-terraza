@@ -837,7 +837,7 @@
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('app-wrapper').style.display = 'flex';
       loadInitialConfig();
-      listenTables();
+      loadTablesOnce();
       listenOrders();
     } else {
       errorMsg.style.display = 'block';
@@ -1005,14 +1005,20 @@
     }
   }
 
-  function listenTables() {
-    onSnapshot(collection(db, 'tablas'), (snapshot) => {
+  async function loadTablesOnce() {
+    // Las tablas se cargan una sola vez al entrar al panel.
+    // Los pedidos sí permanecen en tiempo real, porque son los que el
+    // administrador necesita ver aparecer inmediatamente.
+    try {
+      const snapshot = await getDocs(collection(db, 'tablas'));
       allTables = [];
       snapshot.forEach(docSnap => {
         allTables.push({ ...docSnap.data(), id: docSnap.id });
       });
       loadMetrics();
-    });
+    } catch (err) {
+      console.error('Error cargando tablas:', err);
+    }
   }
 
   function formatMoney(value) {
@@ -1126,11 +1132,12 @@
       currentTableValue = valor;
       loadMetrics();
 
-      const existingSnapshot = await getDocs(collection(db, 'tablas'));
-      const existingMap = new Map();
-      existingSnapshot.forEach(docSnap => {
-        existingMap.set(docSnap.id, docSnap.data());
-      });
+      // Ya conocemos las tablas existentes desde la carga inicial.
+      // No volvemos a leer las 200 tablas cada vez que solo se cambia una hora.
+      const existingMap = new Map(
+        allTables.map(t => [t.id || t.code, t])
+      );
+      const nuevasTablasLocales = [];
 
       let batch = writeBatch(db);
       let count = 0;
@@ -1139,13 +1146,16 @@
         const code = formatTableCode(i);
         if (!existingMap.has(code)) {
           const tableRef = doc(db, 'tablas', code);
-          batch.set(tableRef, {
+          const nuevaTabla = {
             code: code,
             status: 'DISPONIBLE',
             reservedUntil: null,
             reservedBy: null,
             pedido: null
-          });
+          };
+          batch.set(tableRef, nuevaTabla);
+          nuevasTablasLocales.push({ ...nuevaTabla, id: code });
+          existingMap.set(code, nuevaTabla);
           count++;
 
           if (count === 500) {
@@ -1158,6 +1168,11 @@
 
       if (count > 0) {
         await batch.commit();
+      }
+
+      if (nuevasTablasLocales.length > 0) {
+        allTables.push(...nuevasTablasLocales);
+        loadMetrics();
       }
 
       alert('Configuración y tablas actualizadas correctamente.');
