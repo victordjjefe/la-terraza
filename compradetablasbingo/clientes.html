@@ -581,6 +581,46 @@
 .country-code-option + .country-code-option{border-top:1px solid #e2e8f0;}
 .country-code-option:hover,.country-code-option:active{background:#fff7ed;}
 </style>
+
+<style>
+/* Paginación escalable: máximo 200 tablas visuales por página. */
+.tables-pagination{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  flex-wrap:wrap;
+  margin:16px 0 4px;
+}
+.tables-pagination.hidden{display:none !important;}
+.tables-page-btn{
+  min-width:38px;
+  height:36px;
+  padding:0 10px;
+  border:1px solid #cbd5e1;
+  border-radius:9px;
+  background:#fff;
+  color:#1e293b;
+  font-weight:800;
+  cursor:pointer;
+}
+.tables-page-btn:hover{background:#f8fafc;border-color:#94a3b8;}
+.tables-page-btn.active{
+  background:#111827;
+  color:#fff;
+  border-color:#111827;
+}
+.tables-page-btn:disabled{opacity:.45;cursor:not-allowed;}
+.tables-page-info{
+  width:100%;
+  text-align:center;
+  font-size:.86rem;
+  color:#64748b;
+  margin-bottom:4px;
+  font-weight:700;
+}
+</style>
+
 </head>
 <body>
 <div id="initial-loader" class="initial-loader">
@@ -663,6 +703,7 @@
           </div>
         </div>
         <div class="tables-grid" id="tables-container"></div>
+        <div id="tables-pagination" class="tables-pagination hidden" aria-label="Páginas de tablas"></div>
         
         <div class="summary-box" style="margin-top: 14px;">
           <div class="summary-row">
@@ -1155,7 +1196,18 @@
         return;
       }
 
+      const configAnterior = config;
       config = docSnap.data();
+
+      // Si el administrador cambia el rango mientras esta pantalla está abierta,
+      // reconstruimos los botones desde la configuración, sin leer toda la colección.
+      if (configAnterior && (
+          Number(configAnterior.rangoDesde) !== Number(config.rangoDesde) ||
+          Number(configAnterior.tablasHabilitadas) !== Number(config.tablasHabilitadas)
+      )) {
+        construirTablasDesdeRango();
+        cargarEstadosOcupados().then(renderTables).catch(console.error);
+      }
 
       const convertirFecha = (f,h) => f && h ? new Date(`${f.split('/').reverse().join('-')}T${h}`) : null;
       const ahora = new Date();
@@ -1266,31 +1318,72 @@
     }
   }
 
-  async function listenTables() {
-    // OPTIMIZACIÓN FIREBASE:
-    // Las tablas se cargan UNA sola vez al abrir la página. Antes se mantenía un
-    // onSnapshot permanente y cada reserva/venta de cualquier cliente generaba
-    // nuevas lecturas en todos los navegadores conectados.
-    await limpiarReservasVencidas();
+  const TABLES_PER_PAGE = 200;
+  let currentTablesPage = 1;
 
-    const snapshot = await getDocs(collection(db, 'tablas'));
+  async function esperarConfiguracion(maxMs = 6000) {
+    const inicio = Date.now();
+    while (!config && (Date.now() - inicio) < maxMs) {
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+    return config;
+  }
+
+  function construirTablasDesdeRango() {
+    const desde = Math.max(1, Number(config?.rangoDesde) || 1);
+    const hasta = Math.max(0, Number(config?.tablasHabilitadas) || 0);
+
     allTablesData = [];
+    if (hasta < desde) return;
+
+    for (let i = desde; i <= hasta; i++) {
+      allTablesData.push({
+        code: formatTableCode(i),
+        status: 'DISPONIBLE',
+        reservedUntil: null,
+        reservedBy: null,
+        pedido: null
+      });
+    }
+
+    const totalPaginas = Math.max(1, Math.ceil(allTablesData.length / TABLES_PER_PAGE));
+    if (currentTablesPage > totalPaginas) currentTablesPage = totalPaginas;
+  }
+
+  async function cargarEstadosOcupados() {
+    const snapshot = await getDocs(query(
+      collection(db, 'tablas'),
+      where('status', 'in', ['RESERVADA', 'VENDIDA'])
+    ));
+
+    const porCodigo = new Map(allTablesData.map(t => [String(t.code), t]));
     const now = Date.now();
 
     snapshot.forEach(docSnap => {
       const data = docSnap.data();
+      const code = String(data.code || docSnap.id);
+      const tabla = porCodigo.get(code);
+      if (!tabla) return;
 
       if (data.status === 'RESERVADA' && (!data.reservedUntil || data.reservedUntil <= now)) {
-        data.status = 'DISPONIBLE';
+        return;
       }
-
-      allTablesData.push(data);
+      Object.assign(tabla, data, { code });
     });
+  }
 
+  async function listenTables() {
+    // ARQUITECTURA ESCALABLE:
+    // Los botones se generan desde el rango configurado (1..200, 1..1000, etc.).
+    // Firestore solo se consulta para conocer las excepciones RESERVADA/VENDIDA.
+    // Así 5.000 tablas no significan 5.000 lecturas al abrir la página.
+    await esperarConfiguracion();
+    await limpiarReservasVencidas();
+
+    construirTablasDesdeRango();
+    await cargarEstadosOcupados();
     renderTables();
 
-    // Esta consulta se hace una sola vez al entrar, no cada vez que otro cliente
-    // reserva o compra una tabla.
     await recuperarTiempoReservaPropia();
 
     const loader = document.getElementById('initial-loader');
@@ -1305,7 +1398,13 @@
   async function refrescarTablaLocal(code) {
     try {
       const snap = await getDoc(doc(db, 'tablas', code));
-      if (!snap.exists()) return;
+      if (!snap.exists()) {
+        actualizarTablaLocal(code, {
+          status: 'DISPONIBLE', reservedUntil: null, reservedBy: null, pedido: null
+        });
+        renderTables();
+        return;
+      }
       const data = snap.data();
       const index = allTablesData.findIndex(t => String(t.code) === String(code));
       if (index >= 0) allTablesData[index] = data;
@@ -1389,6 +1488,64 @@
     refrescarDisponibilidadAlVolver();
   });
 
+  function renderPagination(totalPages) {
+    const pagination = document.getElementById('tables-pagination');
+    if (!pagination) return;
+
+    pagination.innerHTML = '';
+    if (totalPages <= 1) {
+      pagination.classList.add('hidden');
+      return;
+    }
+
+    pagination.classList.remove('hidden');
+
+    const info = document.createElement('div');
+    info.className = 'tables-page-info';
+    const inicio = ((currentTablesPage - 1) * TABLES_PER_PAGE) + 1;
+    const fin = Math.min(currentTablesPage * TABLES_PER_PAGE, allTablesData.length);
+    info.textContent = `Mostrando tablas ${inicio}–${fin} de ${allTablesData.length}`;
+    pagination.appendChild(info);
+
+    const crearBoton = (texto, pagina, disabled = false, active = false) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'tables-page-btn' + (active ? ' active' : '');
+      btn.textContent = texto;
+      btn.disabled = disabled;
+      btn.onclick = () => {
+        currentTablesPage = pagina;
+        renderTables();
+        const section = document.getElementById('card-tables-section');
+        if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      };
+      pagination.appendChild(btn);
+    };
+
+    crearBoton('‹', Math.max(1, currentTablesPage - 1), currentTablesPage === 1);
+
+    // Ventana compacta de páginas para no llenar la pantalla cuando hay 5.000+ tablas.
+    const visibles = new Set([1, totalPages]);
+    for (let p = Math.max(1, currentTablesPage - 2); p <= Math.min(totalPages, currentTablesPage + 2); p++) {
+      visibles.add(p);
+    }
+
+    let anterior = 0;
+    [...visibles].sort((a,b)=>a-b).forEach(p => {
+      if (anterior && p - anterior > 1) {
+        const sep = document.createElement('span');
+        sep.textContent = '…';
+        sep.style.fontWeight = '900';
+        sep.style.padding = '0 2px';
+        pagination.appendChild(sep);
+      }
+      crearBoton(String(p), p, false, p === currentTablesPage);
+      anterior = p;
+    });
+
+    crearBoton('›', Math.min(totalPages, currentTablesPage + 1), currentTablesPage === totalPages);
+  }
+
   function renderTables() {
     const container = document.getElementById('tables-container');
     const noTablesMessage = document.getElementById('no-tables-message');
@@ -1398,9 +1555,17 @@
 
     allTablesData.sort((a,b) => a.code.localeCompare(b.code, undefined, {numeric: true, sensitivity: 'base'}));
 
+    const totalPages = Math.max(1, Math.ceil(allTablesData.length / TABLES_PER_PAGE));
+    if (currentTablesPage > totalPages) currentTablesPage = totalPages;
+    if (currentTablesPage < 1) currentTablesPage = 1;
+
+    const pageStart = (currentTablesPage - 1) * TABLES_PER_PAGE;
+    const pageEnd = pageStart + TABLES_PER_PAGE;
+    const pageTables = allTablesData.slice(pageStart, pageEnd);
+
     let availableCount = 0;
 
-    allTablesData.forEach(t => {
+    pageTables.forEach(t => {
       const isReservedByMe = selectedTables.includes(t.code);
       const isExpired = t.status === 'RESERVADA' && (!t.reservedUntil || t.reservedUntil <= now);
 
@@ -1413,13 +1578,13 @@
       btn.className = 'btn-table';
       btn.textContent = t.code;
 
-      if (isReservedByMe) {
-        btn.classList.add('selected');
-      }
+      if (isReservedByMe) btn.classList.add('selected');
 
       btn.onclick = () => toggleTableSelection(t.code);
       container.appendChild(btn);
     });
+
+    renderPagination(totalPages);
 
     const sectionsToHide = [
       'card-tables-section',
@@ -1427,7 +1592,8 @@
       'payment-section-card'
     ];
 
-    if (availableCount === 0) {
+    // Solo ocultamos la compra completa si no existe ninguna tabla en el rango.
+    if (allTablesData.length === 0) {
       noTablesMessage.classList.remove('hidden');
       sectionsToHide.forEach(id => {
         const el = document.getElementById(id);
@@ -1439,6 +1605,19 @@
         const el = document.getElementById(id);
         if (el) el.classList.remove('hidden');
       });
+
+      // Una página puede quedar sin botones porque sus 200 tablas fueron vendidas.
+      // Mostramos una indicación local sin bloquear las demás páginas.
+      if (availableCount === 0) {
+        const aviso = document.createElement('div');
+        aviso.style.gridColumn = '1 / -1';
+        aviso.style.textAlign = 'center';
+        aviso.style.padding = '18px';
+        aviso.style.fontWeight = '800';
+        aviso.style.color = '#64748b';
+        aviso.textContent = 'No hay tablas disponibles en esta página. Puedes revisar otra página.';
+        container.appendChild(aviso);
+      }
     }
   }
 
@@ -1495,12 +1674,22 @@
         const tRef = doc(db, 'tablas', code);
         const tDoc = await transaction.get(tRef);
 
-        if (!tDoc.exists()) throw new Error("La tabla no existe.");
-        const tData = tDoc.data();
         const now = Date.now();
 
-        // Una RESERVADA sin reservedUntil es inválida y se considera vencida.
-        // También permite recuperar automáticamente registros antiguos como T009.
+        // En el modelo escalable una tabla DISPONIBLE puede no tener documento.
+        // Si no existe, la reserva crea únicamente ese documento.
+        if (!tDoc.exists()) {
+          transaction.set(tRef, {
+            code: code,
+            status: 'RESERVADA',
+            reservedUntil: reservationDeadline,
+            reservedBy: myClientId,
+            pedido: null
+          });
+          return true;
+        }
+
+        const tData = tDoc.data();
         const isExpired = tData.status === 'RESERVADA' &&
           (!tData.reservedUntil || tData.reservedUntil <= now);
 
@@ -1509,12 +1698,13 @@
           return false;
         }
 
-        // Una sola escritura atómica: estado, propietario y vencimiento nacen juntos.
-        transaction.update(tRef, {
+        transaction.set(tRef, {
+          code: code,
           status: 'RESERVADA',
           reservedUntil: reservationDeadline,
-          reservedBy: myClientId
-        });
+          reservedBy: myClientId,
+          pedido: tData.pedido || null
+        }, { merge: true });
         return true;
       });
 
