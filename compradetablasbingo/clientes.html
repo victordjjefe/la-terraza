@@ -1350,16 +1350,23 @@
     if (currentTablesPage > totalPaginas) currentTablesPage = totalPaginas;
   }
 
-  async function cargarEstadosOcupados() {
-    const snapshot = await getDocs(query(
-      collection(db, 'tablas'),
-      where('status', 'in', ['RESERVADA', 'VENDIDA'])
-    ));
+  async function obtenerDocumentosOcupados() {
+    // Se hacen dos consultas simples por estado. Esto evita depender de una consulta
+    // con operador IN y mantiene el consumo limitado a tablas realmente ocupadas.
+    const [reservadasSnap, vendidasSnap] = await Promise.all([
+      getDocs(query(collection(db, 'tablas'), where('status', '==', 'RESERVADA'))),
+      getDocs(query(collection(db, 'tablas'), where('status', '==', 'VENDIDA')))
+    ]);
 
+    return [...reservadasSnap.docs, ...vendidasSnap.docs];
+  }
+
+  async function cargarEstadosOcupados() {
+    const docsOcupados = await obtenerDocumentosOcupados();
     const porCodigo = new Map(allTablesData.map(t => [String(t.code), t]));
     const now = Date.now();
 
-    snapshot.forEach(docSnap => {
+    docsOcupados.forEach(docSnap => {
       const data = docSnap.data();
       const code = String(data.code || docSnap.id);
       const tabla = porCodigo.get(code);
@@ -1377,17 +1384,47 @@
     // Los botones se generan desde el rango configurado (1..200, 1..1000, etc.).
     // Firestore solo se consulta para conocer las excepciones RESERVADA/VENDIDA.
     // Así 5.000 tablas no significan 5.000 lecturas al abrir la página.
-    await esperarConfiguracion();
-    await limpiarReservasVencidas();
-
-    construirTablasDesdeRango();
-    await cargarEstadosOcupados();
-    renderTables();
-
-    await recuperarTiempoReservaPropia();
-
     const loader = document.getElementById('initial-loader');
-    if (loader) loader.style.display = 'none';
+
+    try {
+      const cfg = await esperarConfiguracion(15000);
+      if (!cfg) {
+        throw new Error('No fue posible cargar la configuración del bingo.');
+      }
+
+      await limpiarReservasVencidas();
+      construirTablasDesdeRango();
+      await cargarEstadosOcupados();
+      renderTables();
+
+      // Esta recuperación es útil, pero un fallo aquí no debe bloquear toda la página.
+      try {
+        await recuperarTiempoReservaPropia();
+      } catch (e) {
+        console.error('No fue posible recuperar la reserva previa:', e);
+      }
+    } catch (error) {
+      console.error('Error inicializando las tablas:', error);
+
+      // Si la configuración ya llegó, mostramos al menos el rango generado.
+      // La validación transaccional seguirá protegiendo cada selección.
+      if (config) {
+        construirTablasDesdeRango();
+        renderTables();
+      } else {
+        const enabled = document.getElementById('enabled-screen');
+        const disabled = document.getElementById('disabled-screen');
+        if (enabled) enabled.classList.add('hidden');
+        if (disabled) disabled.classList.remove('hidden');
+        const title = document.getElementById('disabled-message-title');
+        const body = document.getElementById('disabled-message-body');
+        if (title) title.textContent = 'NO FUE POSIBLE CARGAR EL BINGO';
+        if (body) body.textContent = 'Verifica tu conexión e intenta ingresar nuevamente.';
+      }
+    } finally {
+      // El cargador nunca debe quedar bloqueando la página indefinidamente.
+      if (loader) loader.style.display = 'none';
+    }
   }
 
   function actualizarTablaLocal(code, cambios) {
@@ -1434,15 +1471,12 @@
       // Solo traemos tablas que actualmente NO están disponibles.
       // Con esto una tabla reservada o vendida desaparece de la lista sin tener
       // que volver a leer las 200 tablas completas.
-      const snapshot = await getDocs(query(
-        collection(db, 'tablas'),
-        where('status', 'in', ['RESERVADA', 'VENDIDA'])
-      ));
+      const docsOcupados = await obtenerDocumentosOcupados();
 
       const noDisponibles = new Map();
       const ahoraFirebase = Date.now();
 
-      snapshot.forEach(docSnap => {
+      docsOcupados.forEach(docSnap => {
         const data = docSnap.data();
 
         // Una reserva vencida se considera disponible visualmente. La transacción
