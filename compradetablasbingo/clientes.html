@@ -929,14 +929,21 @@
 }
 
   async function obtenerTodasLasTablasClienteRegistro(telefonoActual, tablasNuevas){
-    const snapshot = await getDocs(collection(db, 'pedidos'));
+    // OPTIMIZACIÓN FIREBASE:
+    // Antes se descargaban TODOS los pedidos del bingo para consolidar un solo cliente.
+    // Ahora Firestore devuelve únicamente los pedidos del WhatsApp solicitado.
+    const telefono = normalizarWhatsAppColombia(telefonoActual);
+    const snapshot = await getDocs(query(
+      collection(db, 'pedidos'),
+      where('telefono', '==', telefono)
+    ));
     const pedidos = [];
 
     snapshot.forEach(docSnap => {
       pedidos.push(docSnap.data());
     });
 
-    return consolidarTablasPorTelefono(pedidos, telefonoActual, tablasNuevas, config?.idBingo || 'BINGO001');
+    return consolidarTablasPorTelefono(pedidos, telefono, tablasNuevas, config?.idBingo || 'BINGO001');
   }
 
   async function consultarTablas(countryId='lookup-country', inputId='lookup-input'){
@@ -968,16 +975,14 @@
     let telefonoFinal = telefonoBusqueda;
 
     try {
-      // La consulta oficial sale únicamente de pedidos.
-      // No se usa la colección clientes porque puede conservar índices antiguos
-      // cuando un administrador corrige un WhatsApp.
-      /*
-        Corrección:
-        Un mismo WhatsApp puede tener varios documentos en pedidos.
-        Antes solo se tomaba el primer registro (limit(1)), por eso se perdían
-        tablas de compras anteriores.
-      */
-      const pedidosSnap = await getDocs(collection(db, 'pedidos'));
+      // OPTIMIZACIÓN FIREBASE:
+      // Se mantienen los pedidos como fuente oficial para que una tabla liberada
+      // desaparezca también del enlace/buscador del cliente. La diferencia es que
+      // ya NO se descargan todos los pedidos: Firestore trae solo los del WhatsApp.
+      const pedidosSnap = await getDocs(query(
+        collection(db, 'pedidos'),
+        where('telefono', '==', telefonoBusqueda)
+      ));
 
       pedidosSnap.forEach((docPedido)=>{
         const pedido = docPedido.data();
@@ -1262,38 +1267,127 @@
   }
 
   async function listenTables() {
-    // Primero limpiamos reservas vencidas y luego cargamos las tablas.
-    // Una reserva nunca puede sobrevivir después de reservedUntil.
+    // OPTIMIZACIÓN FIREBASE:
+    // Las tablas se cargan UNA sola vez al abrir la página. Antes se mantenía un
+    // onSnapshot permanente y cada reserva/venta de cualquier cliente generaba
+    // nuevas lecturas en todos los navegadores conectados.
     await limpiarReservasVencidas();
 
-    const tablasQuery = window.configEventoActual
-        ? query(
-            collection(db, 'tablas'),
-            where('code', '>=', formatTableCode(window.configEventoActual.rangoDesde)),
-            where('code', '<=', formatTableCode(window.configEventoActual.tablasHabilitadas))
-          )
-        : collection(db, 'tablas');
+    const snapshot = await getDocs(collection(db, 'tablas'));
+    allTablesData = [];
+    const now = Date.now();
 
-     onSnapshot(tablasQuery, (snapshot) => {
-       allTablesData = [];
-       const now = Date.now();
+    snapshot.forEach(docSnap => {
+      const data = docSnap.data();
 
-       snapshot.forEach(docSnap => {
-         const data = docSnap.data();
+      if (data.status === 'RESERVADA' && (!data.reservedUntil || data.reservedUntil <= now)) {
+        data.status = 'DISPONIBLE';
+      }
 
-         if (data.status === 'RESERVADA' && (!data.reservedUntil || data.reservedUntil <= now)) {
-           data.status = 'DISPONIBLE';
-         }
-
-         allTablesData.push(data);
-       });
-
-       renderTables();
-       recuperarTiempoReservaPropia();
-      const loader = document.getElementById('initial-loader');
-      if (loader) loader.style.display = 'none';
+      allTablesData.push(data);
     });
+
+    renderTables();
+
+    // Esta consulta se hace una sola vez al entrar, no cada vez que otro cliente
+    // reserva o compra una tabla.
+    await recuperarTiempoReservaPropia();
+
+    const loader = document.getElementById('initial-loader');
+    if (loader) loader.style.display = 'none';
   }
+
+  function actualizarTablaLocal(code, cambios) {
+    const tabla = allTablesData.find(t => String(t.code) === String(code));
+    if (tabla) Object.assign(tabla, cambios || {});
+  }
+
+  async function refrescarTablaLocal(code) {
+    try {
+      const snap = await getDoc(doc(db, 'tablas', code));
+      if (!snap.exists()) return;
+      const data = snap.data();
+      const index = allTablesData.findIndex(t => String(t.code) === String(code));
+      if (index >= 0) allTablesData[index] = data;
+      else allTablesData.push(data);
+      renderTables();
+    } catch (e) {
+      console.error('No fue posible refrescar la tabla:', code, e);
+    }
+  }
+
+  // REFRESCO INTELIGENTE DE DISPONIBILIDAD:
+  // No existe un temporizador cada 60 segundos. Solo se consulta cuando el usuario
+  // vuelve a esta pestaña/app y ha pasado al menos 60 segundos desde el último
+  // refresco. Así evitamos multiplicar lecturas mientras la página queda abierta.
+  let ultimoRefrescoDisponibilidad = Date.now();
+  let refrescoDisponibilidadEnCurso = false;
+
+  async function refrescarDisponibilidadAlVolver() {
+    const ahora = Date.now();
+    if (refrescoDisponibilidadEnCurso) return;
+    if (ahora - ultimoRefrescoDisponibilidad < 60000) return;
+    if (document.visibilityState && document.visibilityState !== 'visible') return;
+
+    refrescoDisponibilidadEnCurso = true;
+
+    try {
+      // Solo traemos tablas que actualmente NO están disponibles.
+      // Con esto una tabla reservada o vendida desaparece de la lista sin tener
+      // que volver a leer las 200 tablas completas.
+      const snapshot = await getDocs(query(
+        collection(db, 'tablas'),
+        where('status', 'in', ['RESERVADA', 'VENDIDA'])
+      ));
+
+      const noDisponibles = new Map();
+      const ahoraFirebase = Date.now();
+
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+
+        // Una reserva vencida se considera disponible visualmente. La transacción
+        // seguirá siendo quien decida definitivamente si puede reservarse.
+        if (data.status === 'RESERVADA' && (!data.reservedUntil || data.reservedUntil <= ahoraFirebase)) {
+          return;
+        }
+
+        noDisponibles.set(String(data.code || docSnap.id), data);
+      });
+
+      // Partimos de DISPONIBLE y aplicamos solamente las excepciones vigentes.
+      allTablesData.forEach(tabla => {
+        const code = String(tabla.code || '');
+        const actual = noDisponibles.get(code);
+
+        if (actual) {
+          Object.assign(tabla, actual);
+        } else {
+          tabla.status = 'DISPONIBLE';
+          tabla.reservedUntil = null;
+          tabla.reservedBy = null;
+          tabla.pedido = null;
+        }
+      });
+
+      ultimoRefrescoDisponibilidad = Date.now();
+      renderTables();
+    } catch (error) {
+      console.error('No fue posible actualizar la disponibilidad al volver a la página:', error);
+    } finally {
+      refrescoDisponibilidadEnCurso = false;
+    }
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      refrescarDisponibilidadAlVolver();
+    }
+  });
+
+  window.addEventListener('focus', () => {
+    refrescarDisponibilidadAlVolver();
+  });
 
   function renderTables() {
     const container = document.getElementById('tables-container');
@@ -1425,11 +1519,23 @@
       });
 
       if (!success) {
+        // La pantalla puede tener una copia inicial antigua. Consultamos solamente
+        // ESTA tabla para actualizarla, sin volver a descargar toda la colección.
+        selectedTables = selectedTables.filter(c => c !== code);
+        await refrescarTablaLocal(code);
         alert(`La tabla ${code} ya ha sido reservada o comprada por otra persona.`);
         return;
       }
 
-      // Firebase confirmó la reserva. Ahora sí inicia oficialmente el contador.
+      // Firebase confirmó la reserva. Reflejamos el cambio localmente sin depender
+      // de un listener permanente.
+      actualizarTablaLocal(code, {
+        status: 'RESERVADA',
+        reservedUntil: reservationDeadline,
+        reservedBy: myClientId
+      });
+
+      // Ahora sí inicia oficialmente el contador.
       reservationEndTime = reservationDeadline;
       saveLocalReservation();
       startReservationTimer();
@@ -1547,7 +1653,7 @@ function startReservationTimer() {
   async function releaseTableIfOwned(code) {
     const tRef = doc(db, 'tablas', code);
 
-    return runTransaction(db, async (transaction) => {
+    const liberada = await runTransaction(db, async (transaction) => {
       const tDoc = await transaction.get(tRef);
       if (!tDoc.exists()) return false;
 
@@ -1569,6 +1675,17 @@ function startReservationTimer() {
 
       return true;
     });
+
+    if (liberada) {
+      actualizarTablaLocal(code, {
+        status: 'DISPONIBLE',
+        reservedUntil: null,
+        reservedBy: null,
+        pedido: null
+      });
+    }
+
+    return liberada;
   }
 
   async function releaseCurrentReservations() {
@@ -1819,6 +1936,16 @@ function startReservationTimer() {
         setTimeout(() => reject(new Error('La operación tardó demasiado tiempo.')), tiempo);
       })
     ]);
+  }
+
+
+  function esErrorCuotaFirebase(error) {
+    const code = String(error?.code || '').toLowerCase();
+    const message = String(error?.message || '').toLowerCase();
+    return code.includes('resource-exhausted') ||
+           message.includes('resource_exhausted') ||
+           message.includes('quota') ||
+           message.includes('quota exceeded');
   }
 
   async function finishOrder() {
@@ -2194,6 +2321,8 @@ Hola ${buyerName}! 👋
         updateSummary();
 
         alert("❌ No fue posible cargar el comprobante de pago.\n\nLas tablas seleccionadas fueron liberadas automáticamente.\n\nPor favor realiza nuevamente el registro e intenta subir el comprobante.");
+      } else if (esErrorCuotaFirebase(err)) {
+        alert("⚠️ Firebase alcanzó temporalmente su cuota diaria.\n\nEl registro NO fue realizado. Tus tablas conservarán la reserva mientras el tiempo siga activo.\n\nIntenta nuevamente cuando el servicio vuelva a estar disponible.");
       } else {
         alert("No fue posible completar el registro. Por favor verifica tu conexión e intenta nuevamente. Tus tablas seguirán disponibles según la reserva.");
       }
