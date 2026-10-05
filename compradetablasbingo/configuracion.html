@@ -1006,19 +1006,11 @@
   }
 
   async function loadTablesOnce() {
-    // Las tablas se cargan una sola vez al entrar al panel.
-    // Los pedidos sí permanecen en tiempo real, porque son los que el
-    // administrador necesita ver aparecer inmediatamente.
-    try {
-      const snapshot = await getDocs(collection(db, 'tablas'));
-      allTables = [];
-      snapshot.forEach(docSnap => {
-        allTables.push({ ...docSnap.data(), id: docSnap.id });
-      });
-      loadMetrics();
-    } catch (err) {
-      console.error('Error cargando tablas:', err);
-    }
+    // MODELO ESCALABLE:
+    // El total de tablas sale del rango configurado. No necesitamos descargar
+    // 200, 1.000 o 5.000 documentos al abrir el administrador.
+    allTables = [];
+    loadMetrics();
   }
 
   function formatMoney(value) {
@@ -1026,7 +1018,9 @@
   }
 
   function loadMetrics() {
-    const total = allTables.length;
+    const desde = Math.max(1, Number(document.getElementById('cfg-desde')?.value) || 1);
+    const hasta = Math.max(0, Number(document.getElementById('cfg-hasta')?.value) || 0);
+    const total = hasta >= desde ? (hasta - desde + 1) : 0;
     const valor = Number(currentTableValue) || 0;
 
     // La fuente de verdad de ventas son los registros de pedidos.
@@ -1132,50 +1126,13 @@
       currentTableValue = valor;
       loadMetrics();
 
-      // Ya conocemos las tablas existentes desde la carga inicial.
-      // No volvemos a leer las 200 tablas cada vez que solo se cambia una hora.
-      const existingMap = new Map(
-        allTables.map(t => [t.id || t.code, t])
-      );
-      const nuevasTablasLocales = [];
+      // No se crean miles de documentos DISPONIBLE. Los botones se generan en
+      // Clientes a partir del rango y Firestore crea un documento solo cuando
+      // una tabla se reserva o se vende.
+      allTables = [];
+      loadMetrics();
 
-      let batch = writeBatch(db);
-      let count = 0;
-
-      for (let i = desde; i <= hasta; i++) {
-        const code = formatTableCode(i);
-        if (!existingMap.has(code)) {
-          const tableRef = doc(db, 'tablas', code);
-          const nuevaTabla = {
-            code: code,
-            status: 'DISPONIBLE',
-            reservedUntil: null,
-            reservedBy: null,
-            pedido: null
-          };
-          batch.set(tableRef, nuevaTabla);
-          nuevasTablasLocales.push({ ...nuevaTabla, id: code });
-          existingMap.set(code, nuevaTabla);
-          count++;
-
-          if (count === 500) {
-            await batch.commit();
-            batch = writeBatch(db);
-            count = 0;
-          }
-        }
-      }
-
-      if (count > 0) {
-        await batch.commit();
-      }
-
-      if (nuevasTablasLocales.length > 0) {
-        allTables.push(...nuevasTablasLocales);
-        loadMetrics();
-      }
-
-      alert('Configuración y tablas actualizadas correctamente.');
+      alert('Configuración y rango de tablas actualizados correctamente.');
     } catch (err) {
       console.error("Error guardando configuración:", err);
       alert("Error al guardar la configuración: " + err.message);
