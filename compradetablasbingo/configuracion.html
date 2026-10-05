@@ -1390,7 +1390,7 @@
         }
         actionButtonsHTML += `<button class="${paymentButtonClass} btn-payment-status" data-order="${o.firestoreId}" data-status="${currentStatus}">${paymentButtonText}</button>`;
         actionButtonsHTML += `<button class="table-release-btn btn-release-order" data-order="${o.firestoreId}">Liberar tablas</button>`;
-        actionButtonsHTML += `<button class="btn btn-sm btn-dark btn-edit-client" data-order="${o.firestoreId}">Editar datos</button>`;
+        actionButtonsHTML += `<button class="btn btn-sm btn-warning btn-edit-client" data-order="${o.firestoreId}">Editar datos</button>`;
       }
 
       el.innerHTML = `
