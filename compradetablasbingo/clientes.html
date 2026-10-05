@@ -828,7 +828,7 @@
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
   import { 
-    getFirestore, doc, getDoc, setDoc, updateDoc, collection, 
+    getFirestore, doc, getDoc, setDoc, updateDoc, collection, documentId, 
     onSnapshot, runTransaction, getDocs, query, where, limit, serverTimestamp 
   } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
@@ -911,6 +911,14 @@
     return `${base}?cliente=${encodeURIComponent(telefono)}&bingo=${encodeURIComponent(idBingo || 'BINGO001')}&vence=${encodeURIComponent(vence)}&nombre=${encodeURIComponent(String(nombre || '').toLowerCase().replace(/\s+/g,'-'))}&video=${encodeURIComponent(video)}`;
   }
 
+  // Código único y estable de tabla. Debe coincidir con Configuración.
+  function formatTableCode(num) {
+    const n = Number(num);
+    if (!Number.isFinite(n) || n < 1) return '';
+    if (n < 1000) return 'T' + String(Math.trunc(n)).padStart(3, '0');
+    return 'T' + String(Math.trunc(n));
+  }
+
   function cleanSearch(value){
     return String(value || '').toLowerCase().trim();
   }
@@ -969,21 +977,34 @@
     return [...new Set(todasLasTablas.map(t=>String(t)))];
 }
 
+  async function consultarPedidosPorTelefonoOptimizado(telefonoActual){
+    // Consulta solo las variantes exactas que este sistema ha usado históricamente
+    // para el mismo WhatsApp. Evita descargar toda la colección de pedidos.
+    const normalizado = normalizarWhatsAppColombia(telefonoActual);
+    const digitos = cleanPhone(normalizado);
+    const variantes = new Set();
+    if (normalizado) variantes.add(normalizado);
+    if (digitos) variantes.add(digitos);
+    if (digitos.startsWith('57') && digitos.length === 12) variantes.add(digitos.slice(2));
+
+    const resultados = new Map();
+    for (const valor of variantes) {
+      const snap = await getDocs(query(
+        collection(db, 'pedidos'),
+        where('telefono', '==', valor)
+      ));
+      snap.forEach(d => resultados.set(d.id, d));
+    }
+    return [...resultados.values()];
+  }
+
   async function obtenerTodasLasTablasClienteRegistro(telefonoActual, tablasNuevas){
     // OPTIMIZACIÓN FIREBASE:
     // Antes se descargaban TODOS los pedidos del bingo para consolidar un solo cliente.
     // Ahora Firestore devuelve únicamente los pedidos del WhatsApp solicitado.
     const telefono = normalizarWhatsAppColombia(telefonoActual);
-    const snapshot = await getDocs(query(
-      collection(db, 'pedidos'),
-      where('telefono', '==', telefono)
-    ));
-    const pedidos = [];
-
-    snapshot.forEach(docSnap => {
-      pedidos.push(docSnap.data());
-    });
-
+    const documentos = await consultarPedidosPorTelefonoOptimizado(telefono);
+    const pedidos = documentos.map(docSnap => docSnap.data());
     return consolidarTablasPorTelefono(pedidos, telefono, tablasNuevas, config?.idBingo || 'BINGO001');
   }
 
@@ -1020,10 +1041,7 @@
       // Se mantienen los pedidos como fuente oficial para que una tabla liberada
       // desaparezca también del enlace/buscador del cliente. La diferencia es que
       // ya NO se descargan todos los pedidos: Firestore trae solo los del WhatsApp.
-      const pedidosSnap = await getDocs(query(
-        collection(db, 'pedidos'),
-        where('telefono', '==', telefonoBusqueda)
-      ));
+      const pedidosSnap = await consultarPedidosPorTelefonoOptimizado(telefonoBusqueda);
 
       pedidosSnap.forEach((docPedido)=>{
         const pedido = docPedido.data();
@@ -1206,7 +1224,10 @@
           Number(configAnterior.tablasHabilitadas) !== Number(config.tablasHabilitadas)
       )) {
         construirTablasDesdeRango();
-        cargarEstadosOcupados().then(renderTables).catch(console.error);
+        cargarEstadosPagina(currentTablesPage).catch(error => {
+          console.error('Error actualizando el nuevo rango:', error);
+          renderTables();
+        });
       }
 
       const convertirFecha = (f,h) => f && h ? new Date(`${f.split('/').reverse().join('-')}T${h}`) : null;
@@ -1288,40 +1309,13 @@
     });
   }
 
-  async function limpiarReservasVencidas() {
-    try {
-      const now = Date.now();
 
-      // Solo buscamos reservas vencidas.
-      // No revisamos todas las tablas para evitar consumo innecesario.
-      const reservasVencidasQuery = query(
-        collection(db, 'tablas'),
-        where('status', '==', 'RESERVADA'),
-        where('reservedUntil', '<=', now)
-      );
-
-      const snapshot = await getDocs(reservasVencidasQuery);
-
-      const updates = [];
-
-      snapshot.forEach((docSnap) => {
-        updates.push(updateDoc(doc(db, 'tablas', docSnap.id), {
-          status: 'DISPONIBLE',
-          reservedUntil: null,
-          reservedBy: null
-        }));
-      });
-
-      await Promise.all(updates);
-    } catch (error) {
-      console.error('Error limpiando reservas vencidas:', error);
-    }
-  }
 
   const TABLES_PER_PAGE = 200;
   let currentTablesPage = 1;
+  let paginaEstadosCargando = false;
 
-  async function esperarConfiguracion(maxMs = 6000) {
+  async function esperarConfiguracion(maxMs = 8000) {
     const inicio = Date.now();
     while (!config && (Date.now() - inicio) < maxMs) {
       await new Promise(resolve => setTimeout(resolve, 50));
@@ -1348,66 +1342,94 @@
 
     const totalPaginas = Math.max(1, Math.ceil(allTablesData.length / TABLES_PER_PAGE));
     if (currentTablesPage > totalPaginas) currentTablesPage = totalPaginas;
+    if (currentTablesPage < 1) currentTablesPage = 1;
   }
 
-  async function obtenerDocumentosOcupados() {
-    // Se hacen dos consultas simples por estado. Esto evita depender de una consulta
-    // con operador IN y mantiene el consumo limitado a tablas realmente ocupadas.
-    const [reservadasSnap, vendidasSnap] = await Promise.all([
-      getDocs(query(collection(db, 'tablas'), where('status', '==', 'RESERVADA'))),
-      getDocs(query(collection(db, 'tablas'), where('status', '==', 'VENDIDA')))
-    ]);
-
-    return [...reservadasSnap.docs, ...vendidasSnap.docs];
+  function obtenerTablasPagina(pagina = currentTablesPage) {
+    const inicio = (pagina - 1) * TABLES_PER_PAGE;
+    return allTablesData.slice(inicio, inicio + TABLES_PER_PAGE);
   }
 
-  async function cargarEstadosOcupados() {
-    const docsOcupados = await obtenerDocumentosOcupados();
-    const porCodigo = new Map(allTablesData.map(t => [String(t.code), t]));
-    const now = Date.now();
+  async function obtenerDocumentosPagina(tablasPagina) {
+    // Firestore permite hasta 30 valores en una consulta IN. Se consulta solamente
+    // la página visible (máximo 200 códigos), nunca todo el rango del bingo.
+    const codigos = tablasPagina.map(t => String(t.code)).filter(Boolean);
+    const grupos = [];
+    for (let i = 0; i < codigos.length; i += 30) grupos.push(codigos.slice(i, i + 30));
 
-    docsOcupados.forEach(docSnap => {
-      const data = docSnap.data();
-      const code = String(data.code || docSnap.id);
-      const tabla = porCodigo.get(code);
-      if (!tabla) return;
+    const snaps = await Promise.all(
+      grupos.map(grupo => getDocs(query(
+        collection(db, 'tablas'),
+        where(documentId(), 'in', grupo)
+      )))
+    );
 
-      if (data.status === 'RESERVADA' && (!data.reservedUntil || data.reservedUntil <= now)) {
-        return;
-      }
-      Object.assign(tabla, data, { code });
-    });
+    const docs = [];
+    snaps.forEach(snap => snap.forEach(d => docs.push(d)));
+    return docs;
+  }
+
+  async function cargarEstadosPagina(pagina = currentTablesPage, { mostrar = true } = {}) {
+    if (paginaEstadosCargando) return;
+    paginaEstadosCargando = true;
+
+    try {
+      const tablasPagina = obtenerTablasPagina(pagina);
+      const now = Date.now();
+
+      // Siempre partimos de disponible. Si un documento fue eliminado al liberar
+      // una tabla, en el siguiente refresco vuelve a mostrarse automáticamente.
+      tablasPagina.forEach(tabla => {
+        tabla.status = 'DISPONIBLE';
+        tabla.reservedUntil = null;
+        tabla.reservedBy = null;
+        tabla.pedido = null;
+      });
+
+      const docsPagina = await obtenerDocumentosPagina(tablasPagina);
+      const porCodigo = new Map(tablasPagina.map(t => [String(t.code), t]));
+
+      docsPagina.forEach(docSnap => {
+        const data = docSnap.data() || {};
+        const code = String(data.code || docSnap.id);
+        const tabla = porCodigo.get(code);
+        if (!tabla) return;
+
+        // Las reservas vencidas se consideran disponibles visualmente. La
+        // transacción de selección sigue siendo la autoridad final.
+        if (data.status === 'RESERVADA' && (!data.reservedUntil || data.reservedUntil <= now)) return;
+
+        if (data.status === 'RESERVADA' || data.status === 'VENDIDA') {
+          Object.assign(tabla, data, { code });
+        }
+      });
+
+      ultimoRefrescoDisponibilidad = Date.now();
+      if (mostrar) renderTables();
+    } finally {
+      paginaEstadosCargando = false;
+    }
   }
 
   async function listenTables() {
-    // ARQUITECTURA ESCALABLE:
-    // Los botones se generan desde el rango configurado (1..200, 1..1000, etc.).
-    // Firestore solo se consulta para conocer las excepciones RESERVADA/VENDIDA.
-    // Así 5.000 tablas no significan 5.000 lecturas al abrir la página.
     const loader = document.getElementById('initial-loader');
 
     try {
-      const cfg = await esperarConfiguracion(15000);
-      if (!cfg) {
-        throw new Error('No fue posible cargar la configuración del bingo.');
-      }
+      const cfg = await esperarConfiguracion();
+      if (!cfg) throw new Error('No fue posible cargar la configuración del bingo.');
 
-      await limpiarReservasVencidas();
       construirTablasDesdeRango();
-      await cargarEstadosOcupados();
+      await cargarEstadosPagina(currentTablesPage, { mostrar: false });
       renderTables();
+      if (loader) loader.style.display = 'none';
 
-      // Esta recuperación es útil, pero un fallo aquí no debe bloquear toda la página.
-      try {
-        await recuperarTiempoReservaPropia();
-      } catch (e) {
+      // La recuperación de una reserva previa ya no bloquea la pantalla inicial.
+      recuperarTiempoReservaPropia().catch(e => {
         console.error('No fue posible recuperar la reserva previa:', e);
-      }
+      });
     } catch (error) {
       console.error('Error inicializando las tablas:', error);
 
-      // Si la configuración ya llegó, mostramos al menos el rango generado.
-      // La validación transaccional seguirá protegiendo cada selección.
       if (config) {
         construirTablasDesdeRango();
         renderTables();
@@ -1422,7 +1444,6 @@
         if (body) body.textContent = 'Verifica tu conexión e intenta ingresar nuevamente.';
       }
     } finally {
-      // El cargador nunca debe quedar bloqueando la página indefinidamente.
       if (loader) loader.style.display = 'none';
     }
   }
@@ -1442,20 +1463,24 @@
         renderTables();
         return;
       }
-      const data = snap.data();
-      const index = allTablesData.findIndex(t => String(t.code) === String(code));
-      if (index >= 0) allTablesData[index] = data;
-      else allTablesData.push(data);
+
+      const data = snap.data() || {};
+      const now = Date.now();
+      if (data.status === 'RESERVADA' && (!data.reservedUntil || data.reservedUntil <= now)) {
+        actualizarTablaLocal(code, {
+          status: 'DISPONIBLE', reservedUntil: null, reservedBy: null, pedido: null
+        });
+      } else {
+        actualizarTablaLocal(code, { ...data, code: String(data.code || code) });
+      }
       renderTables();
     } catch (e) {
       console.error('No fue posible refrescar la tabla:', code, e);
     }
   }
 
-  // REFRESCO INTELIGENTE DE DISPONIBILIDAD:
-  // No existe un temporizador cada 60 segundos. Solo se consulta cuando el usuario
-  // vuelve a esta pestaña/app y ha pasado al menos 60 segundos desde el último
-  // refresco. Así evitamos multiplicar lecturas mientras la página queda abierta.
+  // Refresco inteligente: únicamente la página visible y solo al regresar a la app
+  // después de 60 segundos. No existe polling permanente.
   let ultimoRefrescoDisponibilidad = Date.now();
   let refrescoDisponibilidadEnCurso = false;
 
@@ -1466,45 +1491,8 @@
     if (document.visibilityState && document.visibilityState !== 'visible') return;
 
     refrescoDisponibilidadEnCurso = true;
-
     try {
-      // Solo traemos tablas que actualmente NO están disponibles.
-      // Con esto una tabla reservada o vendida desaparece de la lista sin tener
-      // que volver a leer las 200 tablas completas.
-      const docsOcupados = await obtenerDocumentosOcupados();
-
-      const noDisponibles = new Map();
-      const ahoraFirebase = Date.now();
-
-      docsOcupados.forEach(docSnap => {
-        const data = docSnap.data();
-
-        // Una reserva vencida se considera disponible visualmente. La transacción
-        // seguirá siendo quien decida definitivamente si puede reservarse.
-        if (data.status === 'RESERVADA' && (!data.reservedUntil || data.reservedUntil <= ahoraFirebase)) {
-          return;
-        }
-
-        noDisponibles.set(String(data.code || docSnap.id), data);
-      });
-
-      // Partimos de DISPONIBLE y aplicamos solamente las excepciones vigentes.
-      allTablesData.forEach(tabla => {
-        const code = String(tabla.code || '');
-        const actual = noDisponibles.get(code);
-
-        if (actual) {
-          Object.assign(tabla, actual);
-        } else {
-          tabla.status = 'DISPONIBLE';
-          tabla.reservedUntil = null;
-          tabla.reservedBy = null;
-          tabla.pedido = null;
-        }
-      });
-
-      ultimoRefrescoDisponibilidad = Date.now();
-      renderTables();
+      await cargarEstadosPagina(currentTablesPage);
     } catch (error) {
       console.error('No fue posible actualizar la disponibilidad al volver a la página:', error);
     } finally {
@@ -1513,14 +1501,34 @@
   }
 
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-      refrescarDisponibilidadAlVolver();
-    }
+    if (document.visibilityState === 'visible') refrescarDisponibilidadAlVolver();
   });
 
   window.addEventListener('focus', () => {
     refrescarDisponibilidadAlVolver();
   });
+
+  async function cambiarPaginaTablas(pagina) {
+    const totalPages = Math.max(1, Math.ceil(allTablesData.length / TABLES_PER_PAGE));
+    const destino = Math.min(totalPages, Math.max(1, Number(pagina) || 1));
+    if (destino === currentTablesPage && !paginaEstadosCargando) return;
+
+    currentTablesPage = destino;
+    const container = document.getElementById('tables-container');
+    if (container) {
+      container.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:18px;font-weight:800;color:#64748b;">Actualizando disponibilidad…</div>';
+    }
+
+    try {
+      await cargarEstadosPagina(currentTablesPage);
+    } catch (error) {
+      console.error('Error cargando página de tablas:', error);
+      renderTables();
+    }
+
+    const section = document.getElementById('card-tables-section');
+    if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 
   function renderPagination(totalPages) {
     const pagination = document.getElementById('tables-pagination');
@@ -1546,23 +1554,15 @@
       btn.type = 'button';
       btn.className = 'tables-page-btn' + (active ? ' active' : '');
       btn.textContent = texto;
-      btn.disabled = disabled;
-      btn.onclick = () => {
-        currentTablesPage = pagina;
-        renderTables();
-        const section = document.getElementById('card-tables-section');
-        if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      };
+      btn.disabled = disabled || paginaEstadosCargando;
+      btn.onclick = () => cambiarPaginaTablas(pagina);
       pagination.appendChild(btn);
     };
 
     crearBoton('‹', Math.max(1, currentTablesPage - 1), currentTablesPage === 1);
 
-    // Ventana compacta de páginas para no llenar la pantalla cuando hay 5.000+ tablas.
     const visibles = new Set([1, totalPages]);
-    for (let p = Math.max(1, currentTablesPage - 2); p <= Math.min(totalPages, currentTablesPage + 2); p++) {
-      visibles.add(p);
-    }
+    for (let p = Math.max(1, currentTablesPage - 2); p <= Math.min(totalPages, currentTablesPage + 2); p++) visibles.add(p);
 
     let anterior = 0;
     [...visibles].sort((a,b)=>a-b).forEach(p => {
@@ -1890,12 +1890,10 @@ function startReservationTimer() {
         return false;
       }
 
-      transaction.update(tRef, {
-        status: 'DISPONIBLE',
-        reservedUntil: null,
-        reservedBy: null,
-        pedido: null
-      });
+      // En el modelo escalable, ausencia de documento = tabla disponible.
+      // Al liberar una reserva propia eliminamos el documento para no acumular
+      // miles de registros DISPONIBLE que luego tendrían que ser leídos.
+      transaction.delete(tRef);
 
       return true;
     });
