@@ -1200,12 +1200,9 @@
           // Una sola escritura agrupada para evitar esperas y bloqueos en celular.
           const batch = writeBatch(db);
 
-          batch.update(tableRef, {
-            status: 'DISPONIBLE',
-            reservedUntil: null,
-            reservedBy: null,
-            pedido: null
-          });
+          // En el modelo escalable, un documento inexistente significa DISPONIBLE.
+          // Al liberar se elimina el documento para mantener la colección liviana.
+          batch.delete(tableRef);
 
           if (updatedTablas.length === 0) {
             batch.update(orderRef, {
@@ -2024,12 +2021,7 @@ function seleccionarFormaPago(order){
         tabla.reservedUntil &&
         tabla.reservedUntil <= ahora
       ) {
-        batch.update(docSnap.ref, {
-          status: 'DISPONIBLE',
-          reservedUntil: null,
-          reservedBy: null,
-          pedido: null
-        });
+        batch.delete(docSnap.ref);
         cambios++;
       }
     });
@@ -2113,12 +2105,7 @@ function seleccionarFormaPago(order){
 
   window.liberarTablaPerdida = async function(codigo){
     const ref = doc(db,'tablas',codigo);
-    await updateDoc(ref,{
-      status:'DISPONIBLE',
-      reservedUntil:null,
-      reservedBy:null,
-      pedido:null
-    });
+    await deleteDoc(ref);
     await setDoc(doc(collection(db, 'integridad_tablas')), {
       tabla: codigo,
       accion: 'LIBERACION_INTEGRIDAD',
@@ -2133,12 +2120,7 @@ function seleccionarFormaPago(order){
     const batch = writeBatch(db);
     tablasPerdidasActuales.forEach(item=>{
       const codigo=item.codigo;
-      batch.update(doc(db,'tablas',codigo),{
-        status:'DISPONIBLE',
-        reservedUntil:null,
-        reservedBy:null,
-        pedido:null
-      });
+      batch.delete(doc(db,'tablas',codigo));
     });
     await batch.commit();
     for (const item of tablasPerdidasActuales) {
