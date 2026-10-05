@@ -567,6 +567,20 @@
 }
 </style>
 
+
+<style>
+/* Selector robusto de indicativo: mismo espacio visual, sin botones extra */
+.country-code-wrap{position:relative;flex:0 0 118px;width:118px;}
+.country-code-wrap .country-code{width:100% !important;min-width:0 !important;cursor:pointer;background:#f8fafc;padding-right:24px;}
+.country-code-wrap::after{content:'▾';position:absolute;right:9px;top:50%;transform:translateY(-50%);pointer-events:none;color:#64748b;font-size:.8rem;}
+.country-code-wrap.editing::after{display:none;}
+.country-code-wrap.editing .country-code{cursor:text;background:#fff;}
+.country-code-menu{position:absolute;left:0;top:calc(100% + 6px);width:230px;background:#fff;border:1px solid #cbd5e1;border-radius:10px;box-shadow:0 12px 28px rgba(15,23,42,.20);z-index:40000;display:none;overflow:hidden;}
+.country-code-wrap.open .country-code-menu{display:block;}
+.country-code-option{padding:12px 13px;font-size:.9rem;font-weight:700;color:#0f172a;cursor:pointer;background:#fff;line-height:1.25;}
+.country-code-option + .country-code-option{border-top:1px solid #e2e8f0;}
+.country-code-option:hover,.country-code-option:active{background:#fff7ed;}
+</style>
 </head>
 <body>
 <div id="initial-loader" class="initial-loader">
@@ -596,7 +610,7 @@
         <p style="color:var(--text-muted); margin-bottom:12px;">
           Consulta aquí usando tu número de WhatsApp registrado.
         </p>
-        <div class="phone-row"><input id="lookup-country" class="form-control country-code" list="country-options-lookup" value="+57"><datalist id="country-options-lookup"><option value="+57" label="Colombia (+57)"></option><option value="DIGITAR CÓDIGO INTERNACIONAL" label="Digitar código internacional"></option></datalist><input id="lookup-input" class="form-control" type="tel" inputmode="numeric" placeholder="Ej: 3001234567"></div>
+        <div class="phone-row"><div class="country-code-wrap"><input id="lookup-country" class="form-control country-code" value="+57" readonly autocomplete="off" aria-haspopup="listbox" aria-expanded="false"><div class="country-code-menu" role="listbox"><div class="country-code-option" data-value="+57" role="option">+57 Colombia</div><div class="country-code-option" data-value="INTERNACIONAL" role="option">Digitar código internacional</div></div></div><input id="lookup-input" class="form-control" type="tel" inputmode="numeric" placeholder="Ej: 3001234567"></div>
         <button class="btn btn-success" id="btn-lookup" style="margin-top:12px;">
           Consultar mis tablas
         </button>
@@ -626,7 +640,7 @@
         <p style="color:var(--text-muted); margin-bottom:12px;">
           Consulta aquí usando tu número de WhatsApp registrado.
         </p>
-        <div class="phone-row"><input id="lookup-country-active" class="form-control country-code" list="country-options-lookup-active" value="+57"><datalist id="country-options-lookup-active"><option value="+57" label="Colombia (+57)"></option><option value="DIGITAR CÓDIGO INTERNACIONAL" label="Digitar código internacional"></option></datalist><input id="lookup-input-active" class="form-control" type="tel" inputmode="numeric" placeholder="Ej: 3001234567"></div>
+        <div class="phone-row"><div class="country-code-wrap"><input id="lookup-country-active" class="form-control country-code" value="+57" readonly autocomplete="off" aria-haspopup="listbox" aria-expanded="false"><div class="country-code-menu" role="listbox"><div class="country-code-option" data-value="+57" role="option">+57 Colombia</div><div class="country-code-option" data-value="INTERNACIONAL" role="option">Digitar código internacional</div></div></div><input id="lookup-input-active" class="form-control" type="tel" inputmode="numeric" placeholder="Ej: 3001234567"></div>
         <button class="btn btn-success" id="btn-lookup-active" style="margin-top:12px;">
           Consultar mis tablas
         </button>
@@ -678,7 +692,7 @@
         </div>
         <div class="form-group">
           <label>Número de WhatsApp</label>
-          <div class="phone-row"><input id="buyer-country" class="form-control country-code" list="country-options-buyer" value="+57"><datalist id="country-options-buyer"><option value="+57" label="Colombia (+57)"></option><option value="DIGITAR CÓDIGO INTERNACIONAL" label="Digitar código internacional"></option></datalist><input type="tel" id="buyer-phone" class="form-control" placeholder="Ej: 3001234567">
+          <div class="phone-row"><div class="country-code-wrap"><input id="buyer-country" class="form-control country-code" value="+57" readonly autocomplete="off" aria-haspopup="listbox" aria-expanded="false"><div class="country-code-menu" role="listbox"><div class="country-code-option" data-value="+57" role="option">+57 Colombia</div><div class="country-code-option" data-value="INTERNACIONAL" role="option">Digitar código internacional</div></div></div><input type="tel" id="buyer-phone" class="form-control" placeholder="Ej: 3001234567">
 </div>
         </div>
       </div>
@@ -2328,109 +2342,128 @@ document.addEventListener('DOMContentLoaded', () => {
     { country: 'lookup-country-active', number: 'lookup-input-active' }
   ];
 
-  const OPCION_INTERNACIONAL = 'DIGITAR CÓDIGO INTERNACIONAL';
-
   function esColombia(campoIndicativo){
     return (campoIndicativo?.value || '').trim() === '+57';
   }
 
   function ajustarNumero(campoIndicativo, campoNumero){
     if(!campoNumero) return;
-
     let valor = String(campoNumero.value || '').replace(/\D/g, '');
-
     if(esColombia(campoIndicativo)){
       campoNumero.setAttribute('maxlength', '10');
       valor = valor.slice(0, 10);
     } else {
-      // Para otros países no se fuerza el largo colombiano.
-      // Se admite hasta 15 dígitos en la parte numérica y Firebase conserva el indicativo aparte al construir el WhatsApp.
       campoNumero.setAttribute('maxlength', '15');
       valor = valor.slice(0, 15);
     }
-
     campoNumero.value = valor;
   }
 
-  function mostrarOpciones(campo){
-    if(typeof campo.showPicker === 'function'){
-      try { campo.showPicker(); } catch(e) {}
-    }
+  function cerrarMenus(excepto){
+    document.querySelectorAll('.country-code-wrap.open').forEach(wrap => {
+      if(wrap !== excepto){
+        wrap.classList.remove('open');
+        const input = wrap.querySelector('.country-code');
+        if(input) input.setAttribute('aria-expanded','false');
+      }
+    });
   }
 
   function configurarIndicativo(countryId, numberId){
     const campo = document.getElementById(countryId);
     const numero = document.getElementById(numberId);
-    if(!campo || !numero) return;
+    const wrap = campo?.closest('.country-code-wrap');
+    const menu = wrap?.querySelector('.country-code-menu');
+    if(!campo || !numero || !wrap || !menu) return;
 
     campo.value = '+57';
-    campo.dataset.modoInternacional = '0';
+    campo.readOnly = true;
+    wrap.classList.remove('editing','open');
     ajustarNumero(campo, numero);
 
-    campo.addEventListener('click', () => {
-      mostrarOpciones(campo);
-    });
+    function abrirMenu(){
+      cerrarMenus(wrap);
+      wrap.classList.add('open');
+      campo.setAttribute('aria-expanded','true');
+    }
 
-    campo.addEventListener('focus', () => {
-      if(campo.dataset.modoInternacional !== '1'){
-        mostrarOpciones(campo);
-      }
+    function cerrarMenu(){
+      wrap.classList.remove('open');
+      campo.setAttribute('aria-expanded','false');
+    }
+
+    campo.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if(wrap.classList.contains('open')) cerrarMenu();
+      else abrirMenu();
     });
 
     campo.addEventListener('keydown', (e) => {
-      if(campo.dataset.modoInternacional === '1') return;
+      if(campo.readOnly){
+        if(e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown'){
+          e.preventDefault();
+          abrirMenu();
+        }
+        return;
+      }
 
-      const permitidas = ['ArrowDown','ArrowUp','Tab','Enter','Escape'];
-      if(!permitidas.includes(e.key)){
-        e.preventDefault();
+      // En modo internacional se admite únicamente + y dígitos.
+      const control = ['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Home','End'];
+      if(control.includes(e.key)) return;
+      if(e.key === '+' && campo.selectionStart === 0 && !campo.value.includes('+')) return;
+      if(/^\d$/.test(e.key)) return;
+      e.preventDefault();
+    });
+
+    campo.addEventListener('input', () => {
+      if(campo.readOnly) return;
+      const digitos = String(campo.value || '').replace(/\D/g,'').slice(0,4);
+      campo.value = digitos ? '+' + digitos : '';
+      ajustarNumero(campo, numero);
+    });
+
+    menu.querySelectorAll('.country-code-option').forEach(opcion => {
+      opcion.addEventListener('mousedown', e => e.preventDefault());
+      opcion.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const valor = opcion.dataset.value;
+
+        if(valor === '+57'){
+          campo.value = '+57';
+          campo.readOnly = true;
+          campo.placeholder = '';
+          wrap.classList.remove('editing');
+          cerrarMenu();
+          ajustarNumero(campo, numero);
+          numero.focus();
+          return;
+        }
+
+        // La misma casilla queda vacía y editable para escribir el indicativo.
+        campo.value = '';
+        campo.readOnly = false;
+        campo.placeholder = '+ código';
+        wrap.classList.add('editing');
+        cerrarMenu();
+        ajustarNumero(campo, numero);
+        setTimeout(() => campo.focus(), 0);
+      });
+    });
+
+    // Al tocar nuevamente el mismo cuadrito estando editable, vuelve a mostrar el menú.
+    campo.addEventListener('pointerdown', (e) => {
+      if(!campo.readOnly && document.activeElement === campo){
+        if(!wrap.classList.contains('open')){
+          e.preventDefault();
+          abrirMenu();
+        }
       }
     });
 
-    function procesarSeleccion(){
-      const valor = String(campo.value || '').trim();
-      const mayus = valor.toUpperCase();
-
-      if(mayus === OPCION_INTERNACIONAL || mayus === 'OTRO'){
-        campo.dataset.modoInternacional = '1';
-        campo.value = '';
-        campo.placeholder = '+ código';
-        campo.focus();
-        ajustarNumero(campo, numero);
-        return;
-      }
-
-      if(valor === '+57'){
-        campo.dataset.modoInternacional = '0';
-        campo.value = '+57';
-        campo.placeholder = '';
-        ajustarNumero(campo, numero);
-        return;
-      }
-
-      if(campo.dataset.modoInternacional === '1'){
-        let limpio = valor.replace(/[^\d+]/g, '');
-        if(limpio && !limpio.startsWith('+')) limpio = '+' + limpio;
-        if(limpio.startsWith('++')) limpio = '+' + limpio.replace(/\+/g, '');
-        // Indicativos E.164: máximo 4 dígitos después de +
-        const digitos = limpio.replace(/\D/g, '').slice(0, 4);
-        campo.value = digitos ? '+' + digitos : '';
-        ajustarNumero(campo, numero);
-      } else {
-        // Si no se eligió "Digitar código internacional", +57 permanece fijo.
-        campo.value = '+57';
-      }
-    }
-
-    campo.addEventListener('input', procesarSeleccion);
-    campo.addEventListener('change', procesarSeleccion);
-
     campo.addEventListener('blur', () => {
-      if(campo.dataset.modoInternacional === '1'){
-        const digitos = campo.value.replace(/\D/g, '').slice(0, 4);
-        // En modo internacional se permite dejarlo vacío para que el usuario lo vuelva a escribir.
+      if(!campo.readOnly){
+        const digitos = String(campo.value || '').replace(/\D/g,'').slice(0,4);
         campo.value = digitos ? '+' + digitos : '';
-      } else {
-        campo.value = '+57';
       }
       ajustarNumero(campo, numero);
     });
@@ -2439,6 +2472,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   paresTelefono.forEach(({country, number}) => configurarIndicativo(country, number));
+
+  document.addEventListener('click', (e) => {
+    if(!e.target.closest('.country-code-wrap')) cerrarMenus();
+  });
 });
 </script>
 
