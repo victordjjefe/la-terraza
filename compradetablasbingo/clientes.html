@@ -1424,9 +1424,19 @@
       if (loader) loader.style.display = 'none';
 
       // La recuperación de una reserva previa ya no bloquea la pantalla inicial.
-      recuperarTiempoReservaPropia().catch(e => {
-        console.error('No fue posible recuperar la reserva previa:', e);
-      });
+      // Evita consultar las reservas de cada visitante nuevo que nunca seleccionó tablas.
+      // Conserva la recuperación normal si hay una reserva guardada de este navegador.
+      let hayReservaLocal = false;
+      try {
+        const guardada = JSON.parse(localStorage.getItem('ltb_current_reservation') || 'null');
+        hayReservaLocal = Boolean(guardada && guardada.clientId === myClientId &&
+          Array.isArray(guardada.tables) && guardada.tables.length > 0);
+      } catch (e) { /* Un dato local inválido no impide comprar. */ }
+      if (hayReservaLocal) {
+        recuperarTiempoReservaPropia().catch(e => {
+          console.error('No fue posible recuperar la reserva previa:', e);
+        });
+      }
     } catch (error) {
       console.error('Error inicializando las tablas:', error);
 
