@@ -747,7 +747,7 @@
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
   import {  
-    getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc,  
+    initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, setDoc, updateDoc, deleteDoc,  
     collection, getDocs, onSnapshot, writeBatch  
   } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
@@ -762,7 +762,11 @@
   };
 
   const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+  // Conserva localmente los pedidos ya consultados en este navegador.
+  // La conexión en vivo sigue verificando registros y pagos nuevos.
+  const db = initializeFirestore(app, {
+    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+  });
 
   function formatoTelefono(v){
     let n=String(v||'').replace(/\D/g,'');
@@ -824,6 +828,10 @@
   }
 
   let allOrders = [];
+  // Solo permitir exportar cuando la lista de pedidos ya está sincronizada con el servidor.
+  let pedidosSincronizados = false;
+  let configEventoExportacion = null;
+  let configSincronizada = false;
   let allTables = [];
   let currentTableValue = 0;
 
@@ -973,6 +981,8 @@
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const cfg = docSnap.data();
+        configEventoExportacion = cfg;
+        configSincronizada = true;
         currentTableValue = Number(cfg.valor) || 0;
         document.getElementById('cfg-id-bingo').value = cfg.idBingo ?? ''; document.getElementById('cfg-id-bingo-display').textContent = cfg.idBingo ?? '';
         document.getElementById('cfg-fecha').value = firestoreDateToInput(cfg.fecha);
@@ -986,6 +996,8 @@
         document.getElementById('cfg-desde').value = cfg.rangoDesde ?? 1;
         document.getElementById('cfg-hasta').value = cfg.tablasHabilitadas ?? '';
       } else {
+        configEventoExportacion = {};
+        configSincronizada = true;
         currentTableValue = 0;
           document.getElementById('cfg-id-bingo').value = ''; document.getElementById('cfg-id-bingo-display').textContent = '';
           document.getElementById('cfg-fecha').value = '';
@@ -1107,7 +1119,7 @@
         document.getElementById('cfg-id-bingo-display').textContent = idBingoActual;
       }
 
-      await setDoc(doc(db, 'configuracion', 'evento'), {
+      const configGuardada = {
         nombre: "LA TERRAZA BINGO",
         idBingo: idBingoActual,
         enabled: true,
@@ -1121,7 +1133,10 @@
         ventaDesdeHora: ventaDesdeHora,
         ventaHastaFecha: ventaHastaFecha,
         ventaHastaHora: ventaHastaHora
-      }, { merge: true });
+      };
+      await setDoc(doc(db, 'configuracion', 'evento'), configGuardada, { merge: true });
+      configEventoExportacion = { ...(configEventoExportacion || {}), ...configGuardada };
+      configSincronizada = true;
 
       currentTableValue = valor;
       loadMetrics();
@@ -1151,8 +1166,9 @@
   function listenOrders() {
     // Mantiene una sola suscripción administrativa y evita reconstrucciones innecesarias
     // cuando Firestore entrega cambios de metadatos sin modificación real de datos.
-    onSnapshot(collection(db, 'pedidos'), (snapshot) => {
+    onSnapshot(collection(db, 'pedidos'), { includeMetadataChanges: true }, (snapshot) => {
       if (snapshot.metadata.hasPendingWrites) return;
+      pedidosSincronizados = !snapshot.metadata.fromCache;
       allOrders = [];
       snapshot.forEach(docSnap => {
         allOrders.push({ firestoreId: docSnap.id, ...docSnap.data() });
@@ -1959,12 +1975,17 @@ function seleccionarFormaPago(order){
 
   // Exportación administrativa para el sistema contable local
   document.getElementById('btn-exportar-contable')?.addEventListener('click', async()=>{
-    const snap = await getDocs(collection(db,'pedidos'));
+    // La suscripción de pedidos ya mantiene la información actualizada.
+    // Descargar de nuevo toda la colección duplicaba lecturas innecesariamente.
+    // Si no hay datos confirmados desde el servidor, bloquear una exportación incompleta.
+    if (!pedidosSincronizados || !configSincronizada) {
+      alert('Esperando a que Firebase termine de actualizar los pedidos y la configuración. Intenta de nuevo en unos segundos.');
+      return;
+    }
     const ventas=[];
-    snap.forEach(d=>{
-      const x=d.data();
+    allOrders.forEach(x=>{
       ventas.push({
-        id:d.id,
+        id:x.firestoreId,
         nombre:x.cliente||'',
         whatsapp:x.telefono||'',
         referencia:x.referencia||x.direccion||'',
@@ -1988,8 +2009,7 @@ function seleccionarFormaPago(order){
         });
       });
     });
-    const cfgSnap = await getDoc(doc(db,'configuracion','evento'));
-    const cfgEvento = cfgSnap.exists() ? cfgSnap.data() : {};
+    const cfgEvento = configEventoExportacion || {};
     const blob=new Blob([JSON.stringify({
       version:'tablas_bingo_v2',
       fechaBingo: cfgEvento.fecha || '',
@@ -2035,14 +2055,14 @@ function seleccionarFormaPago(order){
     try {
       await limpiarReservasVencidasAdministrador();
 
-      const [tablasSnap, pedidosSnap] = await Promise.all([
-        getDocs(collection(db, 'tablas')),
-        getDocs(collection(db, 'pedidos'))
-      ]);
+      if (!pedidosSincronizados) {
+        alert('Espera a que los pedidos terminen de actualizarse antes de verificar las tablas.');
+        return;
+      }
+      const tablasSnap = await getDocs(collection(db, 'tablas'));
 
       const tablasConPedido = new Set();
-      pedidosSnap.forEach(docSnap => {
-        const pedido = docSnap.data();
+      allOrders.forEach(pedido => {
         if (Array.isArray(pedido.tablas)) {
           pedido.tablas.forEach(t => tablasConPedido.add(String(t)));
         }
