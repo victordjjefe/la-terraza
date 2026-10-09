@@ -789,57 +789,6 @@
       flex-wrap: wrap;
     }
 
-    .footer-stats {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .stat-pill {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 7px;
-      min-height: 38px;
-      padding: 9px 14px;
-      border-radius: 999px;
-      border: 1px solid rgba(255, 230, 0, 0.26);
-      background: rgba(255, 255, 255, 0.06);
-      color: #ffffff;
-      box-shadow: 0 0 16px rgba(179, 0, 255, 0.20);
-      font-family: inherit;
-      font-size: 13px;
-      line-height: 1;
-    }
-
-    .stat-pill strong {
-      color: #ffe600;
-      font-size: 15px;
-      font-weight: 1000;
-    }
-
-    .stat-icon {
-      font-size: 15px;
-      filter: drop-shadow(0 0 6px rgba(255, 230, 0, 0.35));
-    }
-
-    .like-counter-btn {
-      cursor: pointer;
-      transition: 0.25s ease;
-    }
-
-    .like-counter-btn:hover {
-      transform: translateY(-2px);
-      background: rgba(255, 230, 0, 0.11);
-      border-color: rgba(255, 230, 0, 0.45);
-    }
-
-    .like-counter-btn.liked {
-      border-color: rgba(255, 0, 100, 0.55);
-      background: rgba(255, 0, 100, 0.12);
-    }
 
     .modal-overlay {
       position: fixed;
@@ -1022,10 +971,7 @@
         justify-content: center;
         text-align: center;
       }
-      .footer-stats {
-        width: 100%;
-        order: -1;
-      }
+
     }
   </style>
 </head>
@@ -1218,31 +1164,7 @@
 
       <div class="copy">
         <span>© 2026 La Terraza Podcast Show. Todos los derechos reservados.</span>
-        <div class="footer-stats" aria-label="Contadores de La Terraza">
-          <div class="stat-pill">
-            <span class="stat-icon">👁</span>
-            <strong id="visitCounter">630</strong>
-
-          </div>
-          
-            <strong id="likeCounter">630</strong>
-
-          </button>
-        </div>
-        <span>Diseñado para redes, comunidad y entretenimiento.</span>
-      </div>
-    </footer>
-
-    <!-- Modales originales (Misión, Visión, Social) -->
-    <div class="modal-overlay" id="missionModal" aria-hidden="true">
-      <div class="modal-box" role="dialog">
-        <button class="modal-close" type="button" id="closeMissionModal">×</button>
-        <div class="modal-content">
-          <span class="modal-kicker">Nuestra misión</span>
-          <h3>Comunicar, conectar y <span>servir a la comunidad</span></h3>
-          <p>La misión de La Terraza Podcast Show es crear un espacio abierto, humano y cercano...</p>
-        </div>
-      </div>
+        </span>
     </div>
 
     <div class="modal-overlay" id="visionModal" aria-hidden="true">
