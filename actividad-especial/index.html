@@ -280,6 +280,20 @@
         </div>
     </div>
 
+    <!-- Modal para consultar el comprobante sin abrir una URL data: en otra pestaña -->
+    <div id="receipt-modal" class="fixed inset-0 bg-slate-900/90 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-6 z-[60]" role="dialog" aria-modal="true" aria-labelledby="receipt-modal-title" onclick="if(event.target === this) closeReceiptModal()">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[95vh] overflow-hidden flex flex-col">
+            <div class="flex items-center justify-between gap-3 p-4 border-b border-slate-200">
+                <h3 id="receipt-modal-title" class="text-lg sm:text-xl font-black text-slate-900">Comprobante de pago</h3>
+                <button type="button" onclick="closeReceiptModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-4 py-2 rounded-xl" aria-label="Cerrar comprobante">Cerrar ✕</button>
+            </div>
+            <div class="p-3 sm:p-5 overflow-auto flex-1 text-center bg-slate-100">
+                <p id="receipt-error" class="hidden text-red-700 font-semibold p-6">No se pudo mostrar este comprobante. Puede que el registro no contenga una imagen válida.</p>
+                <img id="receipt-preview" alt="Comprobante de pago del participante" class="block max-w-full h-auto max-h-[75vh] object-contain mx-auto rounded-lg shadow" style="display:none">
+            </div>
+        </div>
+    </div>
+
     <!-- Modal de Confirmación con Clave para Eliminar Todo -->
     <div id="delete-all-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full space-y-6 border border-slate-100">
@@ -606,6 +620,41 @@ function closeSuccessModal() {
   hideModal('success-modal');
 }
 
+function viewReceipt(index) {
+  const record = localRecords[index];
+  const modal = document.getElementById('receipt-modal');
+  const image = document.getElementById('receipt-preview');
+  const errorMessage = document.getElementById('receipt-error');
+
+  if (!record || typeof record.receiptUrl !== 'string' || !record.receiptUrl.startsWith('data:image/')) {
+    alert('Este registro no contiene un comprobante de imagen válido.');
+    return;
+  }
+
+  image.style.display = 'none';
+  errorMessage.classList.add('hidden');
+  image.onload = () => {
+    image.style.display = 'block';
+    errorMessage.classList.add('hidden');
+  };
+  image.onerror = () => {
+    image.style.display = 'none';
+    errorMessage.classList.remove('hidden');
+  };
+  image.src = record.receiptUrl;
+  showModal('receipt-modal');
+}
+
+function closeReceiptModal() {
+  hideModal('receipt-modal');
+  const image = document.getElementById('receipt-preview');
+  if (image) {
+    image.onload = null;
+    image.onerror = null;
+    image.removeAttribute('src');
+  }
+}
+
 async function loadRecords() {
   const tbody = document.getElementById('admin-table-body');
   tbody.innerHTML = '<tr><td colspan="9" class="text-center py-8 text-slate-500">Cargando registros desde Firebase...</td></tr>';
@@ -688,7 +737,7 @@ function renderAdminTable() {
         <td class="p-4 text-center font-black text-indigo-700 text-lg">${Number(record.tablesCount) || 0}</td>
         <td class="p-4 text-center font-black text-emerald-800 text-lg">$${(Number(record.totalPrice) || 0).toLocaleString('es-CO')}</td>
         <td class="p-4 text-center">
-          ${receipt ? `<a href="${receipt}" target="_blank" rel="noopener noreferrer" class="inline-block bg-indigo-100 hover:bg-indigo-200 text-indigo-900 px-4 py-2 rounded-xl text-sm font-bold transition shadow-sm">Ver Comprobante</a>` : '<span class="text-slate-400">Sin comprobante</span>'}
+          ${receipt ? `<button type="button" onclick="viewReceipt(${index})" class="inline-block bg-indigo-100 hover:bg-indigo-200 text-indigo-900 px-4 py-2 rounded-xl text-sm font-bold transition shadow-sm">Ver Comprobante</button>` : '<span class="text-slate-400">Sin comprobante</span>'}
         </td>
         <td class="p-4 text-center">
           <button type="button" onclick="deleteSingleRecord(${index})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-xl text-sm font-bold transition shadow-sm cursor-pointer" title="Eliminar este registro">🗑️ Eliminar</button>
