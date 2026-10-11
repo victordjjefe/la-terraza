@@ -1,1 +1,573 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Terraza Bingo - Gran Bingo Virtual Especial</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-200 text-slate-800 min-h-screen flex flex-col justify-between">
 
+    <!-- Encabezado / Navegación -->
+    <header class="bg-indigo-950 text-white shadow-lg sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold tracking-wide flex items-center gap-2">
+                ✨ <span>La Terraza Bingo</span>
+            </h1>
+            <nav class="flex items-center space-x-3">
+                <button onclick="switchView('client')" id="btn-client" class="px-5 py-2.5 rounded-xl text-base font-bold bg-indigo-700 hover:bg-indigo-600 transition shadow">Comprar Tablas</button>
+                <!-- Botón de Tuerquita / Configuración -->
+                <button type="button" onclick="openLoginModal()" title="Panel de Configuración" class="p-2.5 rounded-xl bg-indigo-900 hover:bg-indigo-800 border border-indigo-700 transition flex items-center justify-center cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-slate-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="py-6 flex-grow w-full flex justify-center">
+
+        <!-- ================= VISTA CLIENTE (MARCO TIPO CELULAR) ================= -->
+        <section id="view-client" class="w-full max-w-md px-3 sm:px-0">
+            <div class="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border-4 border-slate-300 space-y-6 pb-8">
+                
+                <!-- Portada e Información del Evento -->
+                <div class="space-y-4">
+                    <div class="w-full bg-slate-900 flex justify-center items-center overflow-hidden max-h-80 border-b border-slate-200">
+                        <img id="bingo-cover" src="bingo.png" alt="La Terraza Bingo Cover" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='https://via.placeholder.com/600x400/1e1b4b/ffffff?text=La+Terraza+Bingo+(bingo.png)';">
+                    </div>
+
+                    <div class="px-6 space-y-5">
+                        <div class="text-center space-y-2">
+                            <span class="bg-indigo-100 text-indigo-900 text-sm font-extrabold px-4 py-1.5 rounded-full uppercase tracking-wider inline-block">Gran Evento Virtual</span>
+                            <h2 class="text-3xl font-black text-slate-900 leading-tight">Gran Bingo Virtual Especial</h2>
+                            <p class="text-indigo-700 font-extrabold text-xl">📅 26 de octubre &nbsp;|&nbsp; ⏰ 8:00 p.m.</p>
+                            <div class="inline-block bg-amber-100 text-amber-900 font-black text-lg px-4 py-1 rounded-xl mt-1">
+                                💰 Valor por tabla: $3.000
+                            </div>
+                        </div>
+
+                        <!-- Nota de Asignación Aleatoria -->
+                        <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-xl">
+                            <p class="text-amber-900 text-base font-semibold leading-relaxed">
+                                📌 <strong>Información importante:</strong> Los números de las tablas se entregarán de forma aleatoria según la cantidad de tablas que escoja cada participante.
+                            </p>
+                        </div>
+
+                        <!-- Premios y Dinámica -->
+                        <div class="bg-slate-50 rounded-2xl p-5 border border-slate-200 space-y-4 shadow-sm">
+                            <h3 class="font-extrabold text-slate-900 text-center uppercase text-base tracking-wide border-b border-slate-200 pb-2">🏆 Premios y Dinámica</h3>
+                            
+                            <div class="space-y-3 text-base">
+                                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-1">
+                                    <span class="font-black text-indigo-950 text-lg block border-b pb-1">Primer Bingo:</span>
+                                    <p>🥇 <strong>1.er ganador:</strong> $100.000</p>
+                                    <p>🥈 <strong>2.º ganador (próximo bingo):</strong> Premio sorpresa</p>
+                                </div>
+
+                                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-1">
+                                    <span class="font-black text-indigo-950 text-lg block border-b pb-1">Segundo Bingo:</span>
+                                    <p>🥇 <strong>1.er ganador:</strong> $100.000</p>
+                                    <p>🥈 <strong>2.º ganador (próximo bingo):</strong> Premio sorpresa</p>
+                                </div>
+
+                                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-1">
+                                    <span class="font-black text-indigo-950 text-lg block border-b pb-1">Tercer Bingo:</span>
+                                    <p>🥇 <strong>1.er ganador:</strong> $250.000</p>
+                                    <p>🥈 <strong>2.º ganador (próximo bingo):</strong> Premio sorpresa</p>
+                                </div>
+
+                                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-1">
+                                    <span class="font-black text-indigo-950 text-lg block border-b pb-1">Cuarto Bingo:</span>
+                                    <p>🎁 <strong>Un único ganador:</strong> Electrodoméstico sorpresa</p>
+                                </div>
+                            </div>
+
+                            <!-- Ruleta Feature -->
+                            <div class="bg-indigo-100 border-2 border-indigo-300 rounded-xl p-4 text-center">
+                                <span class="text-indigo-950 font-black text-lg block">🎡 ¡Sección Especial Ruleta!</span>
+                                <p class="text-indigo-800 text-base font-extrabold mt-1">Premio Ruleta: $50.000</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Formulario de Registro -->
+                <div class="px-6 space-y-6">
+                    <div class="border-t border-slate-200 pt-4">
+                        <h3 class="text-2xl font-black text-slate-900 mb-2">📝 Registro de Tablas</h3>
+                        
+                        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-950 space-y-1">
+                            <p class="font-extrabold text-base">⚠️ Importante para tu compra:</p>
+                            <p class="leading-relaxed">Cada registro asigna las tablas a un solo nombre. Si compras tablas para un amigo o familiar, <strong>debes realizar un registro por separado a nombre de cada persona</strong> con el valor exacto de sus tablas.</p>
+                        </div>
+                    </div>
+
+                    <form id="bingo-form" class="space-y-5" onsubmit="handleFormSubmit(event)">
+                        <div>
+                            <label class="block text-base font-extrabold text-slate-800 mb-1">Nombre Completo *</label>
+                            <input type="text" id="name" required class="w-full px-4 py-3 rounded-xl border-2 border-slate-300 text-base font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Escribe tu nombre">
+                        </div>
+
+                        <div>
+                            <label class="block text-base font-extrabold text-slate-800 mb-1">Barrio / Ciudad *</label>
+                            <input type="text" id="neighborhood" required class="w-full px-4 py-3 rounded-xl border-2 border-slate-300 text-base font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Ej: Las Américas, Cali">
+                        </div>
+
+                        <div>
+                            <label class="block text-base font-extrabold text-slate-800 mb-1">Número de WhatsApp (10 dígitos) *</label>
+                            <input type="tel" id="whatsapp" required maxlength="10" oninput="sanitizePhoneInput(this)" class="w-full px-4 py-3 rounded-xl border-2 border-slate-300 text-base font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Ej: 3001234567">
+                        </div>
+
+                        <div>
+                            <label class="block text-base font-extrabold text-slate-800 mb-1">Confirmar Número de WhatsApp *</label>
+                            <input type="tel" id="whatsapp-confirm" required maxlength="10" oninput="sanitizePhoneInput(this)" class="w-full px-4 py-3 rounded-xl border-2 border-slate-300 text-base font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Repite tu número de WhatsApp">
+                        </div>
+
+                        <div>
+                            <label class="block text-base font-extrabold text-slate-800 mb-1">¿Cuántas tablas desea? *</label>
+                            <input type="number" id="tables-count" min="1" value="1" required oninput="calculateTotal()" class="w-full px-4 py-3 rounded-xl border-2 border-slate-300 text-lg font-bold focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        </div>
+
+                        <!-- Caja de Cálculo del Total a Pagar -->
+                        <div class="bg-indigo-50 border-2 border-indigo-300 rounded-2xl p-4 flex items-center justify-between">
+                            <span class="text-indigo-950 font-extrabold text-base">Total a Pagar:</span>
+                            <span id="total-price-display" class="text-indigo-700 font-black text-2xl">$3.000</span>
+                        </div>
+
+                        <!-- Información de Pago Nequi -->
+                        <div class="bg-emerald-50 border-2 border-emerald-300 rounded-2xl p-5 space-y-4 shadow-sm">
+                            <div class="space-y-2">
+                                <p class="font-black text-lg text-emerald-950">💳 Información de Pago</p>
+                                <p class="text-base text-emerald-900 font-medium">Por favor realiza el pago al Nequi:</p>
+                                <div class="bg-white p-3 rounded-xl border border-emerald-300 flex items-center justify-between">
+                                    <span id="nequi-number" class="text-emerald-950 font-black text-2xl tracking-wide">3234370590</span>
+                                    <button type="button" onclick="copyNequiNumber()" id="copy-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm px-4 py-2.5 rounded-lg transition shadow flex items-center space-x-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                        </svg>
+                                        <span id="copy-btn-text">Copiar</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <p class="text-sm text-emerald-900 font-semibold border-t border-emerald-200/80 pt-3 leading-relaxed">
+                                ⚠️ Toma una captura de pantalla al pago realizado y súbela en el botón de abajo. <strong>Si no realiza el pago y adjunta el comprobante, no podrá completar el registro de sus tablas.</strong>
+                            </p>
+                        </div>
+
+                        <div>
+                            <label class="block text-base font-extrabold text-slate-800 mb-1">Comprobante de Pago (Obligatorio) *</label>
+                            <input type="file" id="receipt-file" accept="image/*" required class="w-full text-base text-slate-600 file:mr-4 file:py-3 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-indigo-100 file:text-indigo-800 hover:file:bg-indigo-200 cursor-pointer border-2 border-slate-300 rounded-xl">
+                        </div>
+
+                        <button type="submit" id="submit-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-lg py-4 px-6 rounded-xl transition shadow-lg cursor-pointer">
+                            Enviar Registro y Comprobante
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VISTA ADMIN (CONFIGURACIÓN A TODO LO ANCHO) ================= -->
+        <section id="view-admin" class="hidden w-full px-4 sm:px-8 space-y-6">
+            <div class="bg-white rounded-3xl shadow-xl p-6 sm:p-8 border border-slate-200 w-full">
+                <div class="flex flex-col sm:flex-row justify-between items-center mb-6 border-b pb-4 gap-4">
+                    <div>
+                        <h3 class="text-2xl font-black text-slate-900">⚙️ Panel de Configuración</h3>
+                        <p class="text-base text-slate-500">Gestión completa de participantes, comprobantes y marcas de control.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-3">
+                        <button type="button" onclick="promptDeleteAll()" class="bg-red-600 hover:bg-red-700 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition shadow cursor-pointer">🗑️ Eliminar Todos los Registros</button>
+                        <button type="button" onclick="switchView('client')" class="bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition shadow cursor-pointer">Cerrar Sesión</button>
+                    </div>
+                </div>
+
+                <!-- Tabla de Registros en Ancho Completo -->
+                <div class="overflow-x-auto w-full">
+                    <table class="w-full text-left border-collapse min-w-max">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-800 text-sm font-extrabold uppercase tracking-wider border-b-2 border-slate-300">
+                                <th class="p-4 text-center w-16">Listo</th>
+                                <th class="p-4">Fecha</th>
+                                <th class="p-4">Nombre</th>
+                                <th class="p-4">Barrio / Ciudad</th>
+                                <th class="p-4">WhatsApp</th>
+                                <th class="p-4 text-center">Tablas</th>
+                                <th class="p-4 text-center">Total a Pagar</th>
+                                <th class="p-4 text-center">Comprobante</th>
+                                <th class="p-4 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-table-body" class="divide-y divide-slate-200 text-base">
+                            <!-- Filas generadas dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal de Carga con Barra de Porcentaje -->
+    <div id="loading-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center space-y-6">
+            <div class="w-16 h-16 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center mx-auto text-2xl font-bold animate-pulse">📤</div>
+            <div>
+                <h3 class="text-2xl font-black text-slate-900">Enviando Registro</h3>
+                <p class="text-sm text-slate-500 mt-1">Guardando datos y comprobante de pago...</p>
+            </div>
+            
+            <!-- Barra de Progreso -->
+            <div class="space-y-2">
+                <div class="w-full bg-slate-200 rounded-full h-4 overflow-hidden border">
+                    <div id="progress-bar" class="bg-indigo-600 h-full w-0 transition-all duration-300 ease-out"></div>
+                </div>
+                <span id="progress-percent" class="text-lg font-black text-indigo-700">0%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Agradecimiento y Éxito -->
+    <div id="success-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center space-y-6 border-2 border-emerald-300">
+            <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-4xl font-bold">🎉</div>
+            <div class="space-y-3">
+                <h3 class="text-3xl font-black text-slate-900">¡Registro Exitoso!</h3>
+                <p class="text-base text-slate-700 font-medium leading-relaxed">
+                    ¡Gracias por participar en <strong>La Terraza Bingo</strong>! ❤️
+                </p>
+                <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 text-indigo-950 font-semibold text-sm">
+                    📱 Antes del bingo se te enviarán las tablas seleccionadas directamente a tu número de WhatsApp.
+                </div>
+            </div>
+            <button onclick="closeSuccessModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black text-lg py-3.5 px-6 rounded-xl transition shadow-lg cursor-pointer">
+                Aceptar
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal de Autenticación de Administración -->
+    <div id="login-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full space-y-6 border border-slate-100">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-indigo-100 text-indigo-800 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-bold">🔒</div>
+                <h3 class="text-2xl font-black text-slate-900">Acceso Administrativo</h3>
+                <p class="text-sm text-slate-500 mt-1">Ingresa tus credenciales autorizadas</p>
+            </div>
+            
+            <form onsubmit="handleLogin(event)" class="space-y-4" autocomplete="off">
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Usuario</label>
+                    <input type="text" id="admin-username" required autocomplete="off" value="" class="w-full px-4 py-3 rounded-xl border-2 border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base uppercase" placeholder="Usuario">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Contraseña</label>
+                    <input type="password" id="admin-password" required autocomplete="new-password" value="" class="w-full px-4 py-3 rounded-xl border-2 border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base" placeholder="••••">
+                </div>
+                <div class="flex space-x-3 pt-2">
+                    <button type="button" onclick="closeLoginModal()" class="w-1/2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-3 rounded-xl text-base transition cursor-pointer">Cancelar</button>
+                    <button type="submit" class="w-1/2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl text-base transition cursor-pointer">Ingresar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmación con Clave para Eliminar Todo -->
+    <div id="delete-all-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full space-y-6 border border-slate-100">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-bold">⚠️</div>
+                <h3 class="text-2xl font-black text-slate-900">Eliminar Todos los Registros</h3>
+                <p class="text-sm text-slate-500 mt-1">Esta acción borrará absolutamente toda la información. Digita la clave de seguridad (1893) para confirmar:</p>
+            </div>
+            
+            <form onsubmit="confirmDeleteAll(event)" class="space-y-4" autocomplete="off">
+                <div>
+                    <input type="password" id="delete-all-pass" required autocomplete="new-password" value="" class="w-full px-4 py-3 rounded-xl border-2 border-red-300 focus:ring-2 focus:ring-red-500 focus:outline-none text-base text-center tracking-widest font-bold" placeholder="••••">
+                </div>
+                <div class="flex space-x-3 pt-2">
+                    <button type="button" onclick="closeDeleteAllModal()" class="w-1/2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-3 rounded-xl text-base transition cursor-pointer">Cancelar</button>
+                    <button type="submit" class="w-1/2 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-base transition cursor-pointer">Eliminar Todo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer class="bg-white border-t border-slate-300 py-6 text-center text-sm font-medium text-slate-600 mt-12">
+        La Terraza Bingo &copy; 2026 - Todos los derechos reservados.
+    </footer>
+
+    <!-- Lógica JavaScript -->
+    <script>
+        let localRecords = [];
+        const PRICE_PER_TABLE = 3000;
+
+        function calculateTotal() {
+            const countInput = document.getElementById('tables-count').value;
+            const count = parseInt(countInput) || 0;
+            const total = count * PRICE_PER_TABLE;
+            document.getElementById('total-price-display').innerText = '$' + total.toLocaleString('es-CO');
+        }
+
+        function openLoginModal() {
+            const modal = document.getElementById('login-modal');
+            document.getElementById('admin-username').value = '';
+            document.getElementById('admin-password').value = '';
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeLoginModal() {
+            const modal = document.getElementById('login-modal');
+            document.getElementById('admin-username').value = '';
+            document.getElementById('admin-password').value = '';
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const user = document.getElementById('admin-username').value.trim().toUpperCase();
+            const pass = document.getElementById('admin-password').value.trim();
+
+            if (user === "LATERRAZA" && pass === "1893") {
+                closeLoginModal();
+                switchView('admin');
+            } else {
+                alert("Usuario o contraseña incorrectos. Verifica tus credenciales.");
+            }
+        }
+
+        function promptDeleteAll() {
+            document.getElementById('delete-all-pass').value = '';
+            document.getElementById('delete-all-modal').classList.remove('hidden');
+            document.getElementById('delete-all-modal').classList.add('flex');
+        }
+
+        function closeDeleteAllModal() {
+            document.getElementById('delete-all-pass').value = '';
+            document.getElementById('delete-all-modal').classList.add('hidden');
+            document.getElementById('delete-all-modal').classList.remove('flex');
+        }
+
+        function confirmDeleteAll(e) {
+            e.preventDefault();
+            const pass = document.getElementById('delete-all-pass').value.trim();
+            if (pass === "1893") {
+                localRecords = [];
+                renderAdminTable();
+                closeDeleteAllModal();
+                alert("Se han eliminado todos los registros correctamente.");
+            } else {
+                alert("Clave incorrecta. No se pudieron eliminar los registros.");
+            }
+        }
+
+        function deleteSingleRecord(index) {
+            const confirmDelete = confirm(`¿Estás seguro de eliminar el registro de ${localRecords[index].name}?`);
+            if (confirmDelete) {
+                localRecords.splice(index, 1);
+                renderAdminTable();
+            }
+        }
+
+        function copyNequiNumber() {
+            const nequiNum = document.getElementById('nequi-number').innerText;
+            navigator.clipboard.writeText(nequiNum).then(() => {
+                const btnText = document.getElementById('copy-btn-text');
+                const btn = document.getElementById('copy-btn');
+                btnText.innerText = '¡Copiado!';
+                btn.classList.replace('bg-emerald-600', 'bg-emerald-800');
+                setTimeout(() => {
+                    btnText.innerText = 'Copiar';
+                    btn.classList.replace('bg-emerald-800', 'bg-emerald-600');
+                }, 2000);
+            }).catch(err => {
+                console.error('Error al copiar: ', err);
+            });
+        }
+
+        function sanitizePhoneInput(input) {
+            input.value = input.value.replace(/\D/g, '').slice(0, 10);
+        }
+
+        function switchView(view) {
+            const clientView = document.getElementById('view-client');
+            const adminView = document.getElementById('view-admin');
+
+            if(view === 'client') {
+                clientView.classList.remove('hidden');
+                adminView.classList.add('hidden');
+            } else {
+                clientView.classList.add('hidden');
+                adminView.classList.remove('hidden');
+                renderAdminTable();
+            }
+        }
+
+        function handleFormSubmit(e) {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById('submit-btn');
+            const name = document.getElementById('name').value;
+            const neighborhood = document.getElementById('neighborhood').value;
+            const whatsapp = document.getElementById('whatsapp').value;
+            const whatsappConfirm = document.getElementById('whatsapp-confirm').value;
+            const tablesCount = parseInt(document.getElementById('tables-count').value) || 1;
+            const fileInput = document.getElementById('receipt-file');
+            const file = fileInput.files[0];
+
+            if (whatsapp.length !== 10) {
+                alert("El número de WhatsApp es incorrecto. Debe contener exactamente 10 dígitos (sin prefijo +57).");
+                return;
+            }
+
+            if (whatsapp !== whatsappConfirm) {
+                alert("Los números de WhatsApp ingresados no coinciden. Por favor, verifica y vuelve a intentarlo.");
+                return;
+            }
+
+            if (!file) {
+                alert("Debes adjuntar el comprobante de pago para poder registrar tus tablas.");
+                return;
+            }
+
+            // Deshabilitar botón para evitar clics múltiples
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Procesando...";
+            submitBtn.classList.replace('bg-indigo-600', 'bg-slate-400');
+
+            // Abrir modal de carga por porcentaje
+            const loadingModal = document.getElementById('loading-modal');
+            const progressBar = document.getElementById('progress-bar');
+            const progressPercent = document.getElementById('progress-percent');
+            
+            loadingModal.classList.remove('hidden');
+            loadingModal.classList.add('flex');
+
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.floor(Math.random() * 20) + 15;
+                if (progress > 100) progress = 100;
+
+                progressBar.style.width = progress + '%';
+                progressPercent.innerText = progress + '%';
+
+                if (progress === 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        // Procesar lectura y guardado
+                        const reader = new FileReader();
+                        reader.onload = function(event) {
+                            const record = {
+                                id: Date.now(),
+                                date: new Date().toLocaleString(),
+                                name: name,
+                                neighborhood: neighborhood,
+                                whatsapp: whatsapp,
+                                tablesCount: tablesCount,
+                                totalPrice: tablesCount * PRICE_PER_TABLE,
+                                receiptUrl: event.target.result,
+                                processed: false
+                            };
+
+                            localRecords.push(record);
+
+                            // Ocultar modal de carga y resetear formulario
+                            loadingModal.classList.add('hidden');
+                            loadingModal.classList.remove('flex');
+                            document.getElementById('bingo-form').reset();
+                            calculateTotal();
+
+                            // Habilitar de nuevo el botón
+                            submitBtn.disabled = false;
+                            submitBtn.innerText = "Enviar Registro y Comprobante";
+                            submitBtn.classList.replace('bg-slate-400', 'bg-indigo-600');
+
+                            // Mostrar modal de éxito
+                            const successModal = document.getElementById('success-modal');
+                            successModal.classList.remove('hidden');
+                            successModal.classList.add('flex');
+                        };
+                        reader.readAsDataURL(file);
+                    }, 400);
+                }
+            }, 250);
+        }
+
+        function closeSuccessModal() {
+            const successModal = document.getElementById('success-modal');
+            successModal.classList.add('hidden');
+            successModal.classList.remove('flex');
+        }
+
+        function toggleRecordProcessed(index, checkboxElement) {
+            const record = localRecords[index];
+
+            if (record.processed) {
+                const confirmUncheck = confirm("¿Por favor confirma si deseas deseleccionar este registro?");
+                if (confirmUncheck) {
+                    record.processed = false;
+                } else {
+                    checkboxElement.checked = true;
+                    return;
+                }
+            } else {
+                record.processed = true;
+            }
+
+            renderAdminTable();
+        }
+
+        function renderAdminTable() {
+            const tbody = document.getElementById('admin-table-body');
+            tbody.innerHTML = "";
+
+            if (localRecords.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center py-8 text-slate-400 font-medium text-lg">No hay registros cargados. Realiza un registro de prueba en el formulario.</td></tr>`;
+                return;
+            }
+
+            localRecords.forEach((record, index) => {
+                const waWebUrl = `https://web.whatsapp.com/send?phone=57${record.whatsapp}`;
+                const rowClass = record.processed 
+                    ? "bg-emerald-100/90 text-emerald-950 font-medium" 
+                    : "hover:bg-slate-50 text-slate-800";
+
+                const row = `
+                    <tr class="${rowClass} transition-colors border-b border-slate-200">
+                        <td class="p-4 text-center">
+                            <input type="checkbox" ${record.processed ? 'checked' : ''} onchange="toggleRecordProcessed(${index}, this)" class="w-6 h-6 text-emerald-600 rounded-lg cursor-pointer focus:ring-emerald-500">
+                        </td>
+                        <td class="p-4 text-sm font-semibold">${record.date}</td>
+                        <td class="p-4 font-bold">${record.name}</td>
+                        <td class="p-4">${record.neighborhood}</td>
+                        <td class="p-4">
+                            <a href="${waWebUrl}" target="_blank" title="Abrir en WhatsApp Web" class="inline-flex items-center space-x-1 text-emerald-700 hover:text-emerald-900 hover:underline font-bold">
+                                <span>📱 ${record.whatsapp}</span>
+                            </a>
+                        </td>
+                        <td class="p-4 text-center font-black text-indigo-700 text-lg">${record.tablesCount}</td>
+                        <td class="p-4 text-center font-black text-emerald-800 text-lg">$${record.totalPrice.toLocaleString('es-CO')}</td>
+                        <td class="p-4 text-center">
+                            <a href="${record.receiptUrl}" target="_blank" class="inline-block bg-indigo-100 hover:bg-indigo-200 text-indigo-900 px-4 py-2 rounded-xl text-sm font-bold transition shadow-sm">Ver Comprobante</a>
+                        </td>
+                        <td class="p-4 text-center">
+                            <button type="button" onclick="deleteSingleRecord(${index})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-xl text-sm font-bold transition shadow-sm cursor-pointer" title="Eliminar este registro">🗑️ Eliminar</button>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+    </script>
+</body>
+</html>
