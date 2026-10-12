@@ -2724,7 +2724,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       // Siempre conservar únicamente los 10 dígitos reales del celular.
-      valor = valor.slice(-10);
+      valor = valor.length > 10 ? valor.slice(-10) : valor;
     } else {
       campoNumero.setAttribute('maxlength', '15');
       valor = valor.slice(0, 15);
@@ -2850,7 +2850,7 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
 
       const textoPegado = e.clipboardData ? e.clipboardData.getData('text') : '';
-      let valor = String(textoPegado || '').replace(/\\D/g,'');
+      let valor = String(textoPegado || '').replace(/\D/g,'');
 
       if(esColombia(campo)){
         // Si viene desde WhatsApp como +57 333 4009925
@@ -2858,7 +2858,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(valor.startsWith('57') && valor.length > 10){
           valor = valor.substring(2);
         }
-        valor = valor.slice(-10);
+        valor = valor.length > 10 ? valor.slice(-10) : valor;
       } else {
         valor = valor.slice(0,15);
       }
