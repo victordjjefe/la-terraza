@@ -2709,14 +2709,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function ajustarNumero(campoIndicativo, campoNumero){
     if(!campoNumero) return;
-    let valor = String(campoNumero.value || '').replace(/\D/g, '');
+
+    // Limpieza inteligente al pegar números completos.
+    // Ejemplo: +57 3001234567 -> 3001234567
+    let original = String(campoNumero.value || '');
+    let valor = original.replace(/\D/g, '');
+
     if(esColombia(campoIndicativo)){
       campoNumero.setAttribute('maxlength', '10');
-      valor = valor.slice(0, 10);
+
+      // Si el usuario pegó el indicativo colombiano, se elimina.
+      if(valor.startsWith('57') && valor.length > 10){
+        valor = valor.substring(2);
+      }
+
+      // Siempre conservar únicamente los 10 dígitos reales del celular.
+      valor = valor.slice(-10);
     } else {
       campoNumero.setAttribute('maxlength', '15');
       valor = valor.slice(0, 15);
     }
+
     campoNumero.value = valor;
   }
 
@@ -2830,6 +2843,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     numero.addEventListener('input', () => ajustarNumero(campo, numero));
+
+    // Corrige pegados desde WhatsApp, contactos o agendas con +57 y espacios.
+    numero.addEventListener('paste', () => {
+      setTimeout(() => ajustarNumero(campo, numero), 0);
+    });
   }
 
   paresTelefono.forEach(({country, number}) => configurarIndicativo(country, number));
