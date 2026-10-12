@@ -2845,8 +2845,26 @@ document.addEventListener('DOMContentLoaded', () => {
     numero.addEventListener('input', () => ajustarNumero(campo, numero));
 
     // Corrige pegados desde WhatsApp, contactos o agendas con +57 y espacios.
-    numero.addEventListener('paste', () => {
-      setTimeout(() => ajustarNumero(campo, numero), 0);
+    // Se intercepta ANTES de que el navegador aplique límites o corte caracteres.
+    numero.addEventListener('paste', (e) => {
+      e.preventDefault();
+
+      const textoPegado = e.clipboardData ? e.clipboardData.getData('text') : '';
+      let valor = String(textoPegado || '').replace(/\\D/g,'');
+
+      if(esColombia(campo)){
+        // Si viene desde WhatsApp como +57 333 4009925
+        // eliminamos el indicativo y dejamos solo el celular.
+        if(valor.startsWith('57') && valor.length > 10){
+          valor = valor.substring(2);
+        }
+        valor = valor.slice(-10);
+      } else {
+        valor = valor.slice(0,15);
+      }
+
+      numero.value = valor;
+      numero.dispatchEvent(new Event('input', {bubbles:true}));
     });
   }
 
