@@ -122,7 +122,8 @@
                     <form id="bingo-form" class="space-y-5" onsubmit="handleFormSubmit(event)">
                         <div>
                             <label class="block text-base font-extrabold text-slate-800 mb-1">Nombre Completo *</label>
-                            <input type="text" id="name" required class="w-full px-4 py-3 rounded-xl border-2 border-slate-300 text-base font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Escribe tu nombre">
+                            <input type="text" id="name" required onblur="validateNameField()" class="w-full px-4 py-3 rounded-xl border-2 border-slate-300 text-base font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Escribe tu nombre completo">
+                            <p id="name-error" class="hidden text-red-600 text-sm font-bold mt-2">⚠️ Te falta colocar el apellido. Escribe tu nombre y apellido.</p>
                         </div>
 
                         <div>
@@ -332,6 +333,17 @@
         </div>
     </div>
 
+    <div id="edit-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full space-y-5">
+            <h3 class="text-2xl font-black text-slate-900">✏️ Editar Registro</h3>
+            <input type="hidden" id="edit-id">
+            <div><label class="font-bold">Nombre completo</label><input id="edit-name" class="w-full px-4 py-3 border-2 rounded-xl"></div>
+            <div><label class="font-bold">WhatsApp</label><input id="edit-whatsapp" maxlength="10" class="w-full px-4 py-3 border-2 rounded-xl"></div>
+            <div><label class="font-bold">Cantidad de tablas</label><input id="edit-tables" type="number" min="1" class="w-full px-4 py-3 border-2 rounded-xl"></div>
+            <div class="flex gap-3"><button onclick="closeEditModal()" class="w-1/2 bg-slate-200 py-3 rounded-xl font-bold">Cancelar</button><button onclick="saveEditRecord()" class="w-1/2 bg-indigo-600 text-white py-3 rounded-xl font-bold">Guardar</button></div>
+        </div>
+    </div>
+
     <footer class="bg-white border-t border-slate-300 py-6 text-center text-sm font-medium text-slate-600 mt-12">
         La Terraza Bingo &copy; 2026 - Todos los derechos reservados.
     </footer>
@@ -356,6 +368,45 @@ const auth = firebase.auth();
 const recordsCollection = db.collection("registros");
 let localRecords = [];
 const PRICE_PER_TABLE = 3000;
+
+function validateNameField() {
+  const input = document.getElementById('name');
+  const error = document.getElementById('name-error');
+  const valid = input.value.trim().split(/\s+/).filter(Boolean).length >= 2;
+  if (!valid && input.value.trim()) {
+    input.classList.add('border-red-500');
+    error.classList.remove('hidden');
+  } else {
+    input.classList.remove('border-red-500');
+    error.classList.add('hidden');
+  }
+  return valid;
+}
+
+function openEditModal(index) {
+  const r = localRecords[index];
+  if (!r) return;
+  document.getElementById('edit-id').value = index;
+  document.getElementById('edit-name').value = r.name || '';
+  document.getElementById('edit-whatsapp').value = r.whatsapp || '';
+  document.getElementById('edit-tables').value = r.tablesCount || 1;
+  showModal('edit-modal');
+}
+
+function closeEditModal(){ hideModal('edit-modal'); }
+
+async function saveEditRecord(){
+  const index = Number(document.getElementById('edit-id').value);
+  const record = localRecords[index];
+  const name = document.getElementById('edit-name').value.trim();
+  const whatsapp = document.getElementById('edit-whatsapp').value.trim();
+  const tables = parseInt(document.getElementById('edit-tables').value,10);
+  if (!record || name.split(/\s+/).filter(Boolean).length < 2) { alert('Debe colocar nombre y apellido.'); return; }
+  if (whatsapp.length !== 10 || !Number.isInteger(tables) || tables < 1) { alert('Verifica WhatsApp y cantidad de tablas.'); return; }
+  await recordsCollection.doc(record.id).update({name, whatsapp, tablesCount: tables, totalPrice: tables * PRICE_PER_TABLE});
+  record.name=name; record.whatsapp=whatsapp; record.tablesCount=tables; record.totalPrice=tables*PRICE_PER_TABLE;
+  closeEditModal(); renderAdminTable();
+}
 
 function calculateTotal() {
   const count = parseInt(document.getElementById('tables-count').value) || 0;
@@ -567,6 +618,11 @@ async function handleFormSubmit(e) {
   const tablesCount = parseInt(document.getElementById('tables-count').value, 10);
   const file = document.getElementById('receipt-file').files[0];
 
+  if (!validateNameField()) {
+    alert('Debes colocar el nombre completo con nombre y apellido.');
+    return;
+  }
+
   if (whatsapp.length !== 10) {
     alert("El número de WhatsApp debe contener exactamente 10 dígitos (sin prefijo +57).");
     return;
@@ -773,7 +829,8 @@ function renderAdminTable() {
           ${receipt ? `<button type="button" onclick="viewReceipt(${index})" class="inline-block bg-indigo-100 hover:bg-indigo-200 text-indigo-900 px-4 py-2 rounded-xl text-sm font-bold transition shadow-sm">Ver Comprobante</button>` : '<span class="text-slate-400">Sin comprobante</span>'}
         </td>
         <td class="p-4 text-center">
-          <button type="button" onclick="deleteSingleRecord(${index})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-xl text-sm font-bold transition shadow-sm cursor-pointer" title="Eliminar este registro">🗑️ Eliminar</button>
+          <button type="button" onclick="openEditModal(${index})" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-xl text-sm font-bold transition shadow-sm cursor-pointer">✏️ Editar</button>
+           <button type="button" onclick="deleteSingleRecord(${index})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-xl text-sm font-bold transition shadow-sm cursor-pointer" title="Eliminar este registro">🗑️ Eliminar</button>
         </td>
       </tr>`;
     tbody.insertAdjacentHTML('beforeend', row);
