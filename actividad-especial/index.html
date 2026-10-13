@@ -198,6 +198,15 @@
                     </div>
                 </div>
 
+                <!-- Contador de dinero recaudado -->
+                <div class="mb-6 bg-emerald-50 border-2 border-emerald-300 rounded-3xl p-6 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div>
+                        <h4 class="text-xl font-black text-emerald-950">💰 Total recaudado</h4>
+                        <p class="text-sm font-semibold text-emerald-800">Suma automática de todos los pagos registrados en Firebase</p>
+                    </div>
+                    <div id="total-money-counter" class="text-3xl font-black text-emerald-700">$0</div>
+                </div>
+
                 <!-- Tabla de Registros en Ancho Completo -->
                 <div class="overflow-x-auto w-full">
                     <table class="w-full text-left border-collapse min-w-max">
@@ -457,6 +466,7 @@ async function deleteSingleRecord(index) {
     await recordsCollection.doc(record.id).delete();
     localRecords.splice(index, 1);
     renderAdminTable();
+    updateMoneyCounter();
   } catch (error) {
     console.error(error);
     alert("No se pudo eliminar el registro. Revisa las reglas de Firestore.");
@@ -675,6 +685,7 @@ async function loadRecords() {
       return bt - at;
     });
     renderAdminTable();
+    updateMoneyCounter();
   } catch (error) {
     console.error("Error leyendo Firestore:", error);
     localRecords = [];
@@ -699,6 +710,7 @@ async function toggleRecordProcessed(index, checkboxElement) {
     await recordsCollection.doc(record.id).update({ processed: nextValue });
     record.processed = nextValue;
     renderAdminTable();
+    updateMoneyCounter();
   } catch (error) {
     console.error(error);
     checkboxElement.checked = !!record.processed;
@@ -714,9 +726,22 @@ function escapeHtml(value) {
   }[ch]));
 }
 
+function updateMoneyCounter() {
+  const total = localRecords.reduce((sum, record) => {
+    return sum + (Number(record.totalPrice) || 0);
+  }, 0);
+
+  const counter = document.getElementById('total-money-counter');
+  if (counter) {
+    counter.innerText = '$' + total.toLocaleString('es-CO');
+  }
+}
+
 function renderAdminTable() {
   const tbody = document.getElementById('admin-table-body');
   tbody.innerHTML = "";
+
+  updateMoneyCounter();
 
   if (localRecords.length === 0) {
     tbody.innerHTML = '<tr><td colspan="9" class="text-center py-8 text-slate-400 font-medium text-lg">No hay registros cargados.</td></tr>';
