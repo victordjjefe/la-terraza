@@ -621,8 +621,45 @@
 }
 </style>
 
+<style>
+/* Comprobante obligatorio: zona de carga accesible */
+#proof-group-container{background:#fff8e7;border:2px solid #d97706;border-radius:16px;padding:20px 16px;box-shadow:0 7px 20px rgba(217,119,6,.13);margin:20px 0}
+#proof-group-container .proof-title{display:block;font-size:1.15rem;font-weight:900;color:#78350f;margin-bottom:9px}
+#proof-group-container .proof-help{font-size:.94rem;color:#78350f;line-height:1.5;margin-bottom:14px}
+#proof-group-container .proof-upload-label{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:72px;padding:15px 12px;background:#0f172a;color:white;border-radius:12px;font-size:1.05rem;font-weight:900;text-align:center;cursor:pointer;box-shadow:0 5px 0 #334155}
+#proof-group-container .proof-upload-label:focus-within{outline:3px solid #d97706;outline-offset:3px}
+#proof-group-container #proof-file{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden}
+#proof-group-container .proof-upload-label:has(#proof-file:focus-visible){outline:3px solid #d97706;outline-offset:3px}
+#proof-file-status{margin-top:14px;padding:12px;background:white;border:1px solid #f59e0b;border-radius:10px;color:#92400e;font-size:.92rem;font-weight:700;overflow-wrap:anywhere}
+#proof-file-status.ready{background:#ecfdf5;border-color:#10b981;color:#065f46}
+#proof-file-status.error{background:#fef2f2;border-color:#ef4444;color:#991b1b}
+</style>
+<style>
+/* Cortesía: opción discreta y táctil bajo el comprobante */
+.cortesia-choice{display:flex;align-items:center;gap:11px;padding:14px 12px;margin-top:10px;border:1px solid #e9c46a;border-radius:12px;background:#fffbeb;color:#78350f;font-size:1rem;font-weight:800;cursor:pointer}
+.cortesia-choice input{width:22px;height:22px;flex:0 0 22px;accent-color:#d97706;cursor:pointer}
+/* Aviso centrado para comprobante faltante */
+#proof-required-modal{position:fixed;inset:0;z-index:45000;background:rgba(15,23,42,.68);display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
+#proof-required-modal.active{display:flex}
+.proof-required-card{width:100%;max-width:390px;background:#fff;border-radius:22px;padding:28px 22px 24px;text-align:center;box-shadow:0 22px 65px rgba(0,0,0,.28);position:relative}
+.proof-required-icon{font-size:48px;line-height:1.2;margin-bottom:12px}
+.proof-required-card h2{font-size:1.35rem;color:#0f172a;margin-bottom:12px}
+.proof-required-card p{font-size:1rem;color:#475569;line-height:1.55;margin-bottom:20px}
+.proof-required-upload{display:block;width:100%;padding:17px 12px;border:0;border-radius:12px;background:#d97706;color:#fff;font-size:1.06rem;font-weight:800;cursor:pointer;margin-bottom:12px}
+.proof-required-close{display:block;width:100%;padding:13px;border:1px solid #cbd5e1;border-radius:12px;background:#f8fafc;color:#334155;font-size:1rem;font-weight:700;cursor:pointer}
+</style>
 </head>
 <body>
+<div id="proof-required-modal" role="dialog" aria-modal="true" aria-labelledby="proof-required-title" aria-describedby="proof-required-description">
+  <div class="proof-required-card">
+    <div class="proof-required-icon" aria-hidden="true">📸</div>
+    <h2 id="proof-required-title">¡Falta tu comprobante de pago!</h2>
+    <p id="proof-required-description">Para registrar tus tablas, selecciona una captura de pantalla o foto de tu pago en formato JPG o PNG.</p>
+    <button type="button" class="proof-required-upload" id="proof-required-upload">📤 SUBIR COMPROBANTE</button>
+    <button type="button" class="proof-required-close" id="proof-required-close">Cerrar y volver al registro</button>
+  </div>
+</div>
+
 <div id="initial-loader" class="initial-loader">
   <div class="spinner"></div>
   <div>Cargando tablas disponibles...</div>
@@ -741,7 +778,7 @@
       <div class="card" id="payment-section-card">
         <div class="card-title">3. Pago y Comprobante</div>
         
-        <div style="background: #eff6ff; border: 1px solid #3b82f6; border-radius: var(--radius-sm); padding: 12px; margin-bottom: 14px; font-size: 0.9rem; color: #1e40af; line-height: 1.4;">
+        <div style="background: #eff6ff; border: 1px solid #3b82f6; border-radius: var(--radius-sm); padding: 18px 16px; margin-bottom: 16px; font-size: 1.08rem; color: #1e40af; line-height: 1.55; font-weight: 500;">
           📸 <b>¡Importante!</b> Realiza tu pago y sube una <b>captura de pantalla del comprobante</b>. Si tu comprobante está en PDF, ábrelo y toma una captura de pantalla. Luego selecciona esa imagen desde tu galería.
         </div>
 
@@ -759,10 +796,14 @@
         </div>
 
         <div class="form-group" id="proof-group-container">
-          <label>Subir Soporte de Pago</label>
-          <input type="file" id="proof-file" accept="image/jpeg,image/png,.jpg,.jpeg,.png" class="form-control">
+          <span class="proof-title">📸 COMPROBANTE DE PAGO — OBLIGATORIO</span>
+          <label class="proof-upload-label" for="proof-file">📤 SUBIR MI COMPROBANTE DE PAGO
+            <input type="file" id="proof-file" accept="image/jpeg,image/png,.jpg,.jpeg,.png" required aria-describedby="proof-file-status">
+          </label>
+          <div id="proof-file-status" role="status" aria-live="polite">⚠️ Todavía no has adjuntado tu comprobante. Solo se aceptan imágenes JPG o PNG.</div>
         </div>
 
+        <label class="cortesia-choice" for="declara-tabla-gratis"><input type="checkbox" id="declara-tabla-gratis"> <span>🎁 Me gané una tabla gratis</span></label>
         <div style="display: flex; gap: 10px; margin-top: 14px;" id="action-buttons-container">
           <button class="btn btn-danger" id="btn-cancel-purchase" style="flex: 1;">Cancelar</button>
           <button class="btn btn-success" id="btn-finish-order" style="flex: 2;" disabled>Registrar / Comprar</button>
@@ -930,27 +971,38 @@
 
   function normalizarWhatsAppColombia(numero, codigo){
     const raw = String(numero || '').trim();
-    const n = cleanPhone(raw);
-    if(!n) return '';
-
-    // Cuando llega un teléfono ya guardado con +, se conserva su indicativo.
-    // Esto mantiene compatibilidad con +57 y permite números internacionales.
-    if(codigo === undefined || codigo === null || codigo === ''){
-      if(raw.startsWith('+')) return '+' + n;
-      if(n.startsWith('57') && n.length === 12) return '+' + n;
-      if(n.length === 10) return '+57' + n; // compatibilidad con registros antiguos de Colombia
+    let n = cleanPhone(raw);
+    if (!n) return '';
+    if (codigo === undefined || codigo === null || codigo === '') {
+      if (n.length === 10 && n.startsWith('3')) return '+57' + n;
+      if (n.length === 12 && n.startsWith('57') && n[2] === '3') return '+' + n;
+      // Preserva compatibilidad con números internacionales almacenados.
       return '+' + n;
     }
-
-    let c = cleanPhone(codigo);
-    if(!c) c = '57';
-
-    // Si el número ya viene completo con el mismo indicativo, no lo duplica.
-    if(raw.startsWith('+') && n.startsWith(c)){
-      return '+' + n;
+    const c = cleanPhone(codigo);
+    if (!c || c.length > 4) return '';
+    if (c === '57') {
+      if (n.length === 12 && n.startsWith('57')) n = n.slice(2);
+      if (!/^3\d{9}$/.test(n)) return '';
+    } else {
+      if (raw.startsWith('+') && n.startsWith(c)) n = n.slice(c.length);
+      if (n.length < 4 || n.length > 15 - c.length) return '';
     }
-
     return '+' + c + n;
+  }
+
+  function validarCampoWhatsapp(campoNumero, campoIndicativo){
+    const numero = campoNumero?.value || '';
+    const codigo = campoIndicativo?.value || '+57';
+    const telefono = normalizarWhatsAppColombia(numero, codigo);
+    if (!telefono) {
+      alert(cleanPhone(codigo) === '57'
+        ? '⚠️ Escribe un celular colombiano válido de 10 dígitos que comience por 3. Puedes pegarlo con +57, pero no se aceptan números incompletos o con dígitos extra.'
+        : '⚠️ Revisa el indicativo y el número internacional de WhatsApp.');
+      campoNumero?.focus();
+      return '';
+    }
+    return telefono;
   }
 
   // Une las tablas de todas las compras asociadas al mismo WhatsApp.
@@ -1025,7 +1077,7 @@
       return;
     }
 
-    const telefonoBusqueda = normalizarWhatsAppColombia(valor, indicativo);
+    const telefonoBusqueda = validarCampoWhatsapp(campoNumero, campoIndicativo);
 
     if(!telefonoBusqueda){
       alert('Ingrese un número de WhatsApp válido.');
@@ -1952,12 +2004,15 @@ function startReservationTimer() {
     reservationEndTime = null;
     selectedTables = [];
     proofFile = null;
+    document.getElementById('declara-tabla-gratis').checked = false;
     orderCompleted = false;
 
     document.getElementById('buyer-name').value = '';
     document.getElementById('buyer-address').value = '';
     document.getElementById('buyer-phone').value = '';
     document.getElementById('proof-file').value = '';
+    document.getElementById('proof-file').required = true;
+    actualizarEstadoArchivoComprobante();
 
     document.getElementById('reservation-timer-box').classList.add('hidden');
     
@@ -2096,10 +2151,59 @@ function startReservationTimer() {
     return resultado;
   }
 
+  document.getElementById('declara-tabla-gratis').addEventListener('change', () => {
+    document.getElementById('proof-file').required = exigeComprobante();
+    actualizarEstadoArchivoComprobante();
+  });
+  function actualizarEstadoArchivoComprobante(mensajeError = '') {
+    const estado = document.getElementById('proof-file-status');
+    if (!estado) return;
+    estado.classList.remove('ready', 'error');
+    if (mensajeError) {
+      estado.classList.add('error');
+      estado.textContent = '❌ ' + mensajeError;
+    } else if (proofFile) {
+      estado.classList.add('ready');
+      estado.textContent = '✅ Comprobante seleccionado: ' + proofFile.name;
+    } else {
+      estado.textContent = !exigeComprobante() ? '🎁 Tabla gratis: no necesitas comprobante.' : '⚠️ Todavía no has adjuntado tu comprobante. Solo se aceptan imágenes JPG o PNG.';
+    }
+  }
+
+  const declaraCortesia = () => document.getElementById('declara-tabla-gratis').checked;
+  const exigeComprobante = () => !(declaraCortesia() && selectedTables.length === 1);
+  function avisoComprobanteSegunCortesia() {
+    const cortesiaConMasTablas = declaraCortesia() && selectedTables.length > 1;
+    document.getElementById('proof-required-title').textContent = cortesiaConMasTablas ? '¡Tienes una tabla gratis!' : '¡Falta tu comprobante de pago!';
+    document.getElementById('proof-required-description').textContent = cortesiaConMasTablas
+      ? 'Tu premio cubre solo una tabla. Para registrar las demás, debes subir el comprobante de pago.'
+      : 'Para registrar tus tablas, selecciona una captura de pantalla o foto de tu pago en formato JPG o PNG.';
+    actualizarEstadoArchivoComprobante(cortesiaConMasTablas ? 'Sube el comprobante de las tablas adicionales.' : 'Debes subir tu comprobante de pago para continuar.');
+    mostrarAvisoComprobante();
+  }
+  const proofRequiredModal = document.getElementById('proof-required-modal');
+  const proofRequiredClose = document.getElementById('proof-required-close');
+  function cerrarAvisoComprobante() {
+    proofRequiredModal.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+  function mostrarAvisoComprobante() {
+    proofRequiredModal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('proof-required-upload').focus();
+  }
+  proofRequiredClose.addEventListener('click', cerrarAvisoComprobante);
+  proofRequiredModal.addEventListener('click', (e) => { if (e.target === proofRequiredModal) cerrarAvisoComprobante(); });
+  document.getElementById('proof-required-upload').addEventListener('click', () => {
+    document.getElementById('proof-file').click();
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && proofRequiredModal.classList.contains('active')) cerrarAvisoComprobante(); });
+
   document.getElementById('proof-file').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (!file) {
       proofFile = null;
+      actualizarEstadoArchivoComprobante();
       return;
     }
 
@@ -2109,10 +2213,13 @@ function startReservationTimer() {
       alert('Selecciona únicamente una imagen JPG o PNG.');
       e.target.value = '';
       proofFile = null;
+      actualizarEstadoArchivoComprobante('Selecciona únicamente una imagen JPG o PNG.');
       return;
     }
 
     proofFile = file;
+    actualizarEstadoArchivoComprobante();
+    cerrarAvisoComprobante();
   });
 
 
@@ -2132,21 +2239,8 @@ function startReservationTimer() {
     });
   });
 
-  // WhatsApp siempre se conserva únicamente con números.
-  // Elimina espacios, guiones u otros separadores sin modificar ningún dígito.
-  const buyerPhoneField = document.getElementById('buyer-phone');
-  if (buyerPhoneField) {
-    buyerPhoneField.addEventListener('blur', () => {
-      const code = document.getElementById('buyer-country')?.value || '+57';
-      const full = normalizarWhatsAppColombia(buyerPhoneField.value, code);
-      buyerPhoneField.value = full.replace('+' + cleanPhone(code), '');
-    });
-  }
+  // La validación visual y limpieza de los tres campos se realizan en el controlador final.
 
-
-
-  // Genera la estructura de sincronización que utiliza el sistema contable v34.
-  // Se mantiene separada del proceso de compra para no afectar Firestore.
   function generarRegistroContableV34(nombre, telefono, referencia, tablas, fecha, linkTransmision) {
     return {
       cliente: nombre || '',
@@ -2246,7 +2340,8 @@ function startReservationTimer() {
 
     const buyerName = normalizeText(buyerNameInput.value);
     const buyerAddress = normalizeText(buyerAddressInput.value);
-    const buyerPhone = normalizarWhatsAppColombia(buyerPhoneInput.value, document.getElementById('buyer-country')?.value || '+57');
+    const buyerPhone = validarCampoWhatsapp(buyerPhoneInput, document.getElementById('buyer-country'));
+    if (!buyerPhone) return;
 
     buyerNameInput.value = buyerName;
     buyerAddressInput.value = buyerAddress;
@@ -2264,6 +2359,11 @@ function startReservationTimer() {
 
     if (selectedTables.length === 0) {
       alert('Selecciona al menos una tabla.');
+      return;
+    }
+
+    if (exigeComprobante() && (!proofFile || !['image/jpeg', 'image/png'].includes(proofFile.type))) {
+      avisoComprobanteSegunCortesia();
       return;
     }
 
@@ -2390,6 +2490,7 @@ function startReservationTimer() {
           // El panel administrador ya admite el campo "comprobante".
           comprobante: comprobanteImagen || null,
           comprobanteURL: null,
+          declaraTablaGratis: declaraCortesia(),
           fecha: new Date().toLocaleString(),
           estado: 'PENDIENTE PAGO',
           destino: 'DEBEN',
@@ -2546,6 +2647,7 @@ Hola ${buyerName}! 👋
 
         reservationEndTime = null;
         proofFile = null;
+        actualizarEstadoArchivoComprobante('No se pudo guardar el comprobante. Selecciona la imagen nuevamente.');
         const proofInput = document.getElementById('proof-file');
         if (proofInput) proofInput.value = '';
 
@@ -2650,10 +2752,15 @@ Gracias por tu compra.`;
   document.getElementById('btn-finish-order').addEventListener('click', async () => {
     const phoneInput = document.getElementById('buyer-phone');
     const countryInput = document.getElementById('buyer-country');
-    const phone = normalizarWhatsAppColombia(phoneInput?.value || '', countryInput?.value || '+57');
+    const phone = validarCampoWhatsapp(phoneInput, countryInput);
 
     if (!phone) {
       alert('Por favor ingrese un número de WhatsApp.');
+      return;
+    }
+
+    if (exigeComprobante() && (!proofFile || !['image/jpeg', 'image/png'].includes(proofFile.type))) {
+      avisoComprobanteSegunCortesia();
       return;
     }
 
@@ -2708,29 +2815,25 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function ajustarNumero(campoIndicativo, campoNumero){
-    if(!campoNumero) return;
-
-    // Limpieza inteligente al pegar números completos.
-    // Ejemplo: +57 3001234567 -> 3001234567
-    let original = String(campoNumero.value || '');
+    if (!campoNumero) return;
+    const original = String(campoNumero.value || '');
     let valor = original.replace(/\D/g, '');
-
-    if(esColombia(campoIndicativo)){
-      campoNumero.setAttribute('maxlength', '10');
-
-      // Si el usuario pegó el indicativo colombiano, se elimina.
-      if(valor.startsWith('57') && valor.length > 10){
-        valor = valor.substring(2);
-      }
-
-      // Siempre conservar únicamente los 10 dígitos reales del celular.
-      valor = valor.length > 10 ? valor.slice(-10) : valor;
+    if (esColombia(campoIndicativo)) {
+      // Quitar solamente un prefijo 57 reconocido de exactamente 12 dígitos.
+      if (valor.length === 12 && valor.startsWith('57')) valor = valor.slice(2);
+      campoNumero.removeAttribute('maxlength'); // No truncar ni ocultar errores.
     } else {
-      campoNumero.setAttribute('maxlength', '15');
-      valor = valor.slice(0, 15);
+      campoNumero.removeAttribute('maxlength');
     }
-
     campoNumero.value = valor;
+    const aviso = document.getElementById(campoNumero.id + '-validation');
+    const correcto = esColombia(campoIndicativo) ? /^3\d{9}$/.test(valor) : (valor.length >= 4 && valor.length + String(campoIndicativo?.value || '').replace(/\D/g,'').length <= 15);
+    campoNumero.setAttribute('aria-invalid', valor.length > 0 && !correcto ? 'true' : 'false');
+    campoNumero.style.borderColor = valor.length > 0 ? (correcto ? '#10b981' : '#ef4444') : '';
+    if (aviso) {
+      aviso.textContent = !valor ? 'Escribe tu WhatsApp para consultar o registrar tus tablas.' : correcto ? '✓ Número listo para continuar' : esColombia(campoIndicativo) ? '⚠ Debe tener 10 dígitos y comenzar por 3. Revisa el número.' : '⚠ Revisa el número y el indicativo internacional.';
+      aviso.style.color = correcto ? '#047857' : valor ? '#b91c1c' : '#64748b';
+    }
   }
 
   function cerrarMenus(excepto){
@@ -2848,24 +2951,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // Se intercepta ANTES de que el navegador aplique límites o corte caracteres.
     numero.addEventListener('paste', (e) => {
       e.preventDefault();
-
       const textoPegado = e.clipboardData ? e.clipboardData.getData('text') : '';
-      let valor = String(textoPegado || '').replace(/\D/g,'');
-
-      if(esColombia(campo)){
-        // Si viene desde WhatsApp como +57 333 4009925
-        // eliminamos el indicativo y dejamos solo el celular.
-        if(valor.startsWith('57') && valor.length > 10){
-          valor = valor.substring(2);
-        }
-        valor = valor.length > 10 ? valor.slice(-10) : valor;
-      } else {
-        valor = valor.slice(0,15);
-      }
-
-      numero.value = valor;
-      numero.dispatchEvent(new Event('input', {bubbles:true}));
+      numero.value = String(textoPegado || '').replace(/\D/g, '');
+      ajustarNumero(campo, numero);
     });
+
+    const aviso = document.createElement('div');
+    aviso.id = numberId + '-validation';
+    aviso.setAttribute('role','status');
+    aviso.style.cssText = 'font-size:.82rem;font-weight:700;margin-top:5px;line-height:1.4;color:#64748b';
+    numero.closest('.phone-row')?.insertAdjacentElement('afterend', aviso);
+    ajustarNumero(campo, numero);
+
   }
 
   paresTelefono.forEach(({country, number}) => configurarIndicativo(country, number));
