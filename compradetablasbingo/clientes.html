@@ -208,27 +208,36 @@
     }
 
 
-    .initial-loader {
-      position: fixed;
-      inset: 0;
-      background: #ffffff;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      flex-direction:column;
-      z-index:10000;
-      color:#0f172a;
-      font-weight:700;
-      gap:12px;
-    }
-    .initial-loader .spinner {
-      width:42px;
-      height:42px;
-      border:5px solid #e2e8f0;
-      border-top-color:#d97706;
-      border-radius:50%;
-      animation:spin 1s linear infinite;
-    }
+    .initial-loader{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:linear-gradient(155deg,#f8fafc 0%,#fff8ed 100%);padding:18px;overflow-y:auto;color:#172033;font-family:inherit}
+    /* Tras cargar, se revela la plataforma real detrás del consejo, sin permitir interacción. */
+    .initial-loader.ready{background:rgba(18,25,38,.42);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+    .initial-loader.ready .loader-panel{box-shadow:0 22px 75px rgba(0,0,0,.27)}
+    .loader-panel{width:min(100%,410px);background:#fff;border:1px solid #e9e2d8;border-radius:24px;padding:clamp(22px,5vw,34px) clamp(18px,5vw,30px);box-shadow:0 18px 55px rgba(35,32,28,.10);text-align:center}
+    .loader-mark{display:inline-flex;align-items:center;justify-content:center;width:54px;height:54px;border-radius:17px;background:#fff4df;color:#a96012;font-size:27px;margin-bottom:14px}
+    .loader-brand{font-size:.75rem;font-weight:800;letter-spacing:.16em;color:#9a661f;margin:0 0 8px}
+    .loader-title{font-size:clamp(1.35rem,5vw,1.65rem);font-weight:800;line-height:1.2;color:#172033;margin:0 0 12px}
+    .initial-loader .loader-advice{font-size:.98rem;line-height:1.55;font-weight:400;color:#475569;margin:0 auto 22px;max-width:330px}
+    .initial-loader .loader-advice strong{display:inline-block;color:#172033;font-weight:800;margin-bottom:8px;font-size:1.03rem}
+    .loader-payment-number{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:13px;padding:9px 10px;margin:0 auto 4px;max-width:330px}
+    .loader-payment-digits{font-size:1.22rem;letter-spacing:.025em;font-weight:800;color:#263449;white-space:nowrap;font-variant-numeric:tabular-nums}
+    .loader-copy{border:1px solid #cbd5e1;border-radius:9px;padding:10px 12px;background:#fff;color:#334155;font:inherit;font-size:.86rem;font-weight:750;cursor:pointer;white-space:nowrap}
+    .loader-copy:hover{background:#f1f5f9}
+    .loader-copy:focus-visible{outline:3px solid #d97706;outline-offset:2px}
+    .loader-copy-feedback{min-height:19px;margin:0 0 11px;font-size:.79rem;color:#475569;font-weight:650}
+    @media(max-width:350px){.loader-payment-digits{font-size:1.05rem}.loader-copy{padding:9px 8px;font-size:.8rem}}
+    .loader-rule{height:1px;background:#eee8df;margin:0 0 20px}
+    .loader-status{min-height:52px;display:flex;align-items:center;justify-content:center;gap:12px;padding:13px 12px;border:1px solid #e2e8f0;border-radius:13px;background:#f8fafc}
+    .initial-loader .loader-heading{font-size:.95rem;line-height:1.3;font-weight:750;color:#334155}
+    .initial-loader .spinner{flex:none;width:20px;height:20px;border:3px solid #e2e8f0;border-top-color:#b7791f;border-radius:50%;animation:spin 1s linear infinite}
+    .initial-loader .loader-action{display:none;width:100%;min-height:52px;padding:13px 15px;border:0;border-radius:13px;background:#263449;color:#fff;font:inherit;font-size:.96rem;font-weight:800;cursor:pointer;box-shadow:0 5px 12px rgba(38,52,73,.13);transition:background .15s ease,transform .15s ease}
+    .initial-loader .loader-action:hover{background:#33465f}
+    .initial-loader .loader-action:active{transform:scale(.99)}
+    .initial-loader .loader-action:focus-visible{outline:3px solid #d97706;outline-offset:3px}
+    .initial-loader.ready .loader-status,.initial-loader.error .loader-status{display:none}
+    .initial-loader.ready .loader-action,.initial-loader.error .loader-action{display:block}
+    .initial-loader.error .loader-action{background:#475569}
+    @media(max-width:380px){.initial-loader{padding:12px}.loader-panel{border-radius:19px;padding:23px 18px}.loader-title{font-size:1.35rem}.initial-loader .loader-advice{font-size:.91rem}}
+    @media(prefers-reduced-motion:reduce){.initial-loader .spinner{animation:none}.initial-loader .loader-action{transition:none}}
     @keyframes spin {
       to { transform:rotate(360deg); }
     }
@@ -626,9 +635,9 @@
 #proof-group-container{background:#fff8e7;border:2px solid #d97706;border-radius:16px;padding:20px 16px;box-shadow:0 7px 20px rgba(217,119,6,.13);margin:20px 0}
 #proof-group-container .proof-title{display:block;font-size:1.15rem;font-weight:900;color:#78350f;margin-bottom:9px}
 #proof-group-container .proof-help{font-size:.94rem;color:#78350f;line-height:1.5;margin-bottom:14px}
-#proof-group-container .proof-upload-label{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:72px;padding:15px 12px;background:linear-gradient(135deg,#16a34a,#047857);color:white;border:2px solid #bbf7d0;border-radius:14px;font-size:1.08rem;font-weight:900;text-align:center;cursor:pointer;box-shadow:0 5px 0 #065f46,0 8px 18px rgba(5,150,105,.22);transition:transform .15s,filter .15s}
-#proof-group-container .proof-upload-label:hover{filter:brightness(1.08);transform:translateY(-1px)}
-#proof-group-container .proof-upload-label:active{transform:translateY(2px);box-shadow:0 2px 0 #065f46}
+#proof-group-container .proof-upload-label{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:72px;padding:15px 12px;background:#e5e7eb;color:#1f2937;border:2px solid #9ca3af;border-radius:14px;font-size:1.08rem;font-weight:900;text-align:center;cursor:pointer;box-shadow:0 4px 0 #9ca3af,0 7px 14px rgba(31,41,55,.12);transition:transform .15s,filter .15s}
+#proof-group-container .proof-upload-label:hover{filter:brightness(.97);transform:translateY(-1px)}
+#proof-group-container .proof-upload-label:active{transform:translateY(2px);box-shadow:0 2px 0 #9ca3af}
 #proof-group-container .proof-upload-label:focus-within{outline:3px solid #d97706;outline-offset:3px}
 #proof-group-container #proof-file{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden}
 #proof-group-container .proof-upload-label:has(#proof-file:focus-visible){outline:3px solid #d97706;outline-offset:3px}
@@ -662,9 +671,24 @@
   </div>
 </div>
 
-<div id="initial-loader" class="initial-loader">
-  <div class="spinner"></div>
-  <div>Cargando tablas disponibles...</div>
+<div id="initial-loader" class="initial-loader" role="status" aria-live="polite">
+  <div class="loader-panel">
+    <div class="loader-mark" aria-hidden="true">🎟️</div>
+    <div class="loader-brand">LA TERRAZA BINGO</div>
+    <h2 class="loader-title">¡Bienvenido!</h2>
+    <p class="loader-advice"><strong>💡 ¡Un consejo para comprar más fácil!</strong><br>Si lo prefieres, paga primero por <b>Nequi, Daviplata o Llave</b>. Guarda la captura y luego selecciona tus tablas y sube el comprobante.</p>
+    <div class="loader-payment-number" aria-label="Número para realizar pagos">
+      <span class="loader-payment-digits" id="loader-payment-digits">3234370590</span>
+      <button type="button" class="loader-copy" id="loader-copy-number" aria-label="Copiar número de pago">📋 Copiar</button>
+    </div>
+    <div class="loader-copy-feedback" id="loader-copy-feedback" role="status" aria-live="polite"></div>
+    <div class="loader-rule" aria-hidden="true"></div>
+    <div class="loader-status">
+      <div class="spinner" aria-hidden="true"></div>
+      <div class="loader-heading">Cargando tablas disponibles...</div>
+    </div>
+    <button type="button" id="loader-action" class="loader-action" disabled>CERRAR Y CONTINUAR</button>
+  </div>
 </div>
 
 
@@ -868,6 +892,35 @@
   </div>
 </div>
 
+<script>
+(function () {
+  const copyButton = document.getElementById('loader-copy-number');
+  const feedback = document.getElementById('loader-copy-feedback');
+  const number = document.getElementById('loader-payment-digits').textContent.trim();
+  copyButton.addEventListener('click', async () => {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(number);
+      } else {
+        const temp = document.createElement('textarea');
+        temp.value = number;
+        temp.style.position = 'fixed';
+        temp.style.opacity = '0';
+        document.body.appendChild(temp);
+        temp.select();
+        const copied = document.execCommand('copy');
+        temp.remove();
+        if (!copied) throw new Error('No se pudo copiar');
+      }
+      feedback.textContent = '✓ Número copiado';
+      copyButton.textContent = '✓ Copiado';
+      setTimeout(() => { copyButton.textContent = '📋 Copiar'; feedback.textContent = ''; }, 2200);
+    } catch (_) {
+      feedback.textContent = 'Mantén presionado el número para copiarlo.';
+    }
+  });
+})();
+</script>
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
   import { 
@@ -1467,6 +1520,9 @@
 
   async function listenTables() {
     const loader = document.getElementById('initial-loader');
+    const action = document.getElementById('loader-action');
+    if (loader) { loader.style.display = 'flex'; loader.classList.remove('ready', 'error'); }
+    if (action) { action.disabled = true; action.textContent = 'CERRAR Y CONTINUAR'; }
 
     try {
       const cfg = await esperarConfiguracion();
@@ -1475,7 +1531,8 @@
       construirTablasDesdeRango();
       await cargarEstadosPagina(currentTablesPage, { mostrar: false });
       renderTables();
-      if (loader) loader.style.display = 'none';
+      if (loader) loader.classList.add('ready');
+      if (action) action.disabled = false;
 
       // La recuperación de una reserva previa ya no bloquea la pantalla inicial.
       // Evita consultar las reservas de cada visitante nuevo que nunca seleccionó tablas.
@@ -1507,10 +1564,24 @@
         if (title) title.textContent = 'NO FUE POSIBLE CARGAR EL BINGO';
         if (body) body.textContent = 'Verifica tu conexión e intenta ingresar nuevamente.';
       }
-    } finally {
-      if (loader) loader.style.display = 'none';
+      if (loader) loader.classList.add('error');
+      if (action) {
+        action.textContent = 'REINTENTAR CARGA';
+        action.disabled = false;
+      }
     }
   }
+
+  const loaderAction = document.getElementById('loader-action');
+  if (loaderAction) loaderAction.addEventListener('click', () => {
+    const loader = document.getElementById('initial-loader');
+    if (!loader) return;
+    if (loader.classList.contains('ready')) {
+      loader.style.display = 'none';
+    } else if (loader.classList.contains('error')) {
+      listenTables();
+    }
+  });
 
   function actualizarTablaLocal(code, cambios) {
     const tabla = allTablesData.find(t => String(t.code) === String(code));
