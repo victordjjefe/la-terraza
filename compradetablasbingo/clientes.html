@@ -626,7 +626,9 @@
 #proof-group-container{background:#fff8e7;border:2px solid #d97706;border-radius:16px;padding:20px 16px;box-shadow:0 7px 20px rgba(217,119,6,.13);margin:20px 0}
 #proof-group-container .proof-title{display:block;font-size:1.15rem;font-weight:900;color:#78350f;margin-bottom:9px}
 #proof-group-container .proof-help{font-size:.94rem;color:#78350f;line-height:1.5;margin-bottom:14px}
-#proof-group-container .proof-upload-label{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:72px;padding:15px 12px;background:#0f172a;color:white;border-radius:12px;font-size:1.05rem;font-weight:900;text-align:center;cursor:pointer;box-shadow:0 5px 0 #334155}
+#proof-group-container .proof-upload-label{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:72px;padding:15px 12px;background:linear-gradient(135deg,#16a34a,#047857);color:white;border:2px solid #bbf7d0;border-radius:14px;font-size:1.08rem;font-weight:900;text-align:center;cursor:pointer;box-shadow:0 5px 0 #065f46,0 8px 18px rgba(5,150,105,.22);transition:transform .15s,filter .15s}
+#proof-group-container .proof-upload-label:hover{filter:brightness(1.08);transform:translateY(-1px)}
+#proof-group-container .proof-upload-label:active{transform:translateY(2px);box-shadow:0 2px 0 #065f46}
 #proof-group-container .proof-upload-label:focus-within{outline:3px solid #d97706;outline-offset:3px}
 #proof-group-container #proof-file{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden}
 #proof-group-container .proof-upload-label:has(#proof-file:focus-visible){outline:3px solid #d97706;outline-offset:3px}
@@ -682,14 +684,14 @@
 
       <div class="lookup-card" id="lookup-card-disabled">
         <div class="card-title" style="justify-content:center;">
-          🔎 ¿Ya registraste tus tablas?
+          🔎 BUSCAR MIS TABLAS REGISTRADAS
         </div>
         <p style="color:var(--text-muted); margin-bottom:12px;">
-          Consulta aquí usando tu número de WhatsApp registrado.
+          Ingresa tu WhatsApp.
         </p>
         <div class="phone-row"><div class="country-code-wrap"><input id="lookup-country" class="form-control country-code" value="+57" readonly autocomplete="off" aria-haspopup="listbox" aria-expanded="false"><div class="country-code-menu" role="listbox"><div class="country-code-option" data-value="+57" role="option">+57 Colombia</div><div class="country-code-option" data-value="INTERNACIONAL" role="option">Digitar código internacional</div></div></div><input id="lookup-input" class="form-control" type="tel" inputmode="numeric" placeholder="Ej: 3001234567"></div>
         <button class="btn btn-success" id="btn-lookup" style="margin-top:12px;">
-          Consultar mis tablas
+          🔎 Buscar mis tablas
         </button>
       </div>
     </div>
@@ -712,14 +714,14 @@
 
       <div class="lookup-card">
         <div class="card-title" style="justify-content:center;">
-          🔎 ¿Ya registraste tus tablas?
+          🔎 BUSCAR MIS TABLAS REGISTRADAS
         </div>
         <p style="color:var(--text-muted); margin-bottom:12px;">
-          Consulta aquí usando tu número de WhatsApp registrado.
+          Ingresa tu WhatsApp.
         </p>
         <div class="phone-row"><div class="country-code-wrap"><input id="lookup-country-active" class="form-control country-code" value="+57" readonly autocomplete="off" aria-haspopup="listbox" aria-expanded="false"><div class="country-code-menu" role="listbox"><div class="country-code-option" data-value="+57" role="option">+57 Colombia</div><div class="country-code-option" data-value="INTERNACIONAL" role="option">Digitar código internacional</div></div></div><input id="lookup-input-active" class="form-control" type="tel" inputmode="numeric" placeholder="Ej: 3001234567"></div>
         <button class="btn btn-success" id="btn-lookup-active" style="margin-top:12px;">
-          Consultar mis tablas
+          🔎 Buscar mis tablas
         </button>
       </div>
     </div>
@@ -797,7 +799,7 @@
 
         <div class="form-group" id="proof-group-container">
           <span class="proof-title">📸 COMPROBANTE DE PAGO — OBLIGATORIO</span>
-          <label class="proof-upload-label" for="proof-file">📤 SUBIR MI COMPROBANTE DE PAGO
+          <label class="proof-upload-label" for="proof-file">📤 SELECCIONAR COMPROBANTE
             <input type="file" id="proof-file" accept="image/jpeg,image/png,.jpg,.jpeg,.png" required aria-describedby="proof-file-status">
           </label>
           <div id="proof-file-status" role="status" aria-live="polite">⚠️ Todavía no has adjuntado tu comprobante. Solo se aceptan imágenes JPG o PNG.</div>
