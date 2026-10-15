@@ -1559,6 +1559,7 @@
           <div><b>WhatsApp:</b> ${o.telefono || ''}</div>
           <div><b>Referencia, Ciudad, Barrio:</b> ${o.referencia || 'N/A'}</div>
           <div><b>Fecha/Hora:</b> ${o.fecha || ''}</div>
+          ${o.declaraTablaGratis === true ? '<div style="color:#92400e;font-weight:700;">🎁 Declara 1 tabla gratis</div>' : ''}
           <div><b>Tablas (${tableList.length}):</b> ${tableList.length > 0 ? `<span style="color:var(--accent-gold); font-weight:700;">${tableList.join(', ')}</span>` : '<span style="color:var(--danger); font-style:italic;">Ninguna (Liberadas)</span>'}</div>
           ${tableList.length > 0 ? relatedOrdersHTML : ''}
           
