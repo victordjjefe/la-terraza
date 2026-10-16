@@ -132,6 +132,75 @@
     .metric-money { margin-top: 6px; font-size: 0.78rem; font-weight: 700; color: var(--text-main); line-height: 1.25; }
     .range-help { margin-top: -4px; margin-bottom: 14px; font-size: 0.78rem; color: var(--text-muted); line-height: 1.35; }
 
+    .registered-money-summary {
+      margin: 0 0 16px;
+      padding: 16px;
+      border: 1px solid #f0c36a;
+      border-radius: 14px;
+      background: linear-gradient(180deg, #fffaf0 0%, #fff 100%);
+      box-shadow: 0 2px 8px rgba(0,0,0,.05);
+    }
+    .registered-money-title {
+      font-weight: 800;
+      font-size: 1rem;
+      color: #92400e;
+      margin-bottom: 12px;
+    }
+    .registered-money-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .registered-money-item {
+      padding: 10px 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      background: #fff;
+    }
+    .registered-money-item span {
+      display: block;
+      font-size: .78rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    .registered-money-item strong {
+      display: block;
+      font-size: 1.05rem;
+      color: #111827;
+    }
+    .registered-money-item.free strong {
+      color: #92400e;
+    }
+    .registered-money-total {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 12px;
+      padding: 13px 14px;
+      border-radius: 11px;
+      background: #111827;
+      color: #fff;
+    }
+    .registered-money-total span {
+      font-weight: 800;
+      font-size: .86rem;
+    }
+    .registered-money-total strong {
+      font-size: 1.35rem;
+      white-space: nowrap;
+    }
+    .registered-money-note {
+      margin-top: 9px;
+      font-size: .76rem;
+      line-height: 1.4;
+      color: var(--text-muted);
+    }
+    @media (max-width: 430px) {
+      .registered-money-grid { grid-template-columns: 1fr; }
+      .registered-money-total { align-items: flex-start; flex-direction: column; }
+    }
+
     .search-box { margin-bottom: 14px; }
     .order-item {
       border: 1px solid var(--border-color);
@@ -645,6 +714,35 @@
     <div id="tab-pedidos" style="display: none;">
       <div class="card">
         <div class="card-title">Gestión de Pedidos <button class="btn btn-sm btn-dark" onclick="verificarIntegridadTablas()">Verificar integridad</button></div>
+
+        <!-- CONTROL PREVIO DE DINERO REGISTRADO: no depende de los pagos aplicados -->
+        <div class="registered-money-summary" id="registered-money-summary" aria-live="polite">
+          <div class="registered-money-title">💰 Resumen de Registros</div>
+          <div class="registered-money-grid">
+            <div class="registered-money-item">
+              <span>Tablas registradas</span>
+              <strong id="rms-tablas">0</strong>
+            </div>
+            <div class="registered-money-item">
+              <span>Valor bruto</span>
+              <strong id="rms-bruto">$0</strong>
+            </div>
+            <div class="registered-money-item free">
+              <span>Tablas declaradas GRATIS</span>
+              <strong id="rms-gratis-tablas">0</strong>
+            </div>
+            <div class="registered-money-item free">
+              <span>Descuento por GRATIS</span>
+              <strong id="rms-gratis-valor">-$0</strong>
+            </div>
+          </div>
+          <div class="registered-money-total">
+            <span>TOTAL REAL REGISTRADO</span>
+            <strong id="rms-total">$0</strong>
+          </div>
+          <div class="registered-money-note">Este total se calcula con las tablas actualmente registradas y descuenta 1 tabla por cada registro que declaró la cortesía. No depende de los pagos que usted haya aplicado.</div>
+        </div>
+
         <div class="search-box">
           <input type="text" id="search-input" class="form-control" autocomplete="off" placeholder="Buscar por pedido, nombre o whatsapp..." autocomplete="off">
         </div>
@@ -1177,6 +1275,7 @@
       // Mantener registros asociados al consecutivo real de creación
       allOrders.sort((a,b) => Number(a.id || 0) - Number(b.id || 0));
 
+      loadRegisteredMoneySummary();
       renderOrders();
       renderListado();
       loadMetrics();
@@ -1282,6 +1381,9 @@
     const valInput = document.getElementById('cfg-valor');
     return valInput ? parseFloat(valInput.value) || 3000 : 3000;
   }
+
+  document.getElementById('cfg-valor')?.addEventListener('input', loadRegisteredMoneySummary);
+  document.getElementById('cfg-valor')?.addEventListener('change', loadRegisteredMoneySummary);
 
   // Calcula el valor real pendiente de cada registro.
   // Las tablas GRATIS no suman al total porque no generan cobro.
@@ -1453,6 +1555,48 @@
         return getOrderWhatsapp(related) === whatsapp;
       })
       .sort((a, b) => (parseInt(a.id) || 0) - (parseInt(b.id) || 0));
+  }
+
+  function loadRegisteredMoneySummary() {
+    const valorTabla = configValor() || 0;
+    const tablasMap = new Map();
+    let tablasDeclaradasGratis = 0;
+
+    // Este resumen es PREVIO al pago: solo toma las tablas actualmente
+    // registradas en pedidos activos. No consulta ni modifica el estado de pago.
+    allOrders.forEach(order => {
+      const tablas = Array.isArray(order?.tablas) ? order.tablas : [];
+      if (tablas.length === 0) return;
+
+      tablas.forEach(tabla => {
+        const clave = String(tabla || '').trim().toUpperCase();
+        if (clave) tablasMap.set(clave, tabla);
+      });
+
+      // La declaración del cliente equivale a una sola tabla gratis, tal como
+      // funciona actualmente el formulario de ventas.
+      if (order.declaraTablaGratis === true) {
+        tablasDeclaradasGratis += 1;
+      }
+    });
+
+    const tablasRegistradas = tablasMap.size;
+    const valorBruto = tablasRegistradas * valorTabla;
+    const gratisAplicables = Math.min(tablasDeclaradasGratis, tablasRegistradas);
+    const descuentoGratis = gratisAplicables * valorTabla;
+    const totalReal = Math.max(valorBruto - descuentoGratis, 0);
+
+    const elTablas = document.getElementById('rms-tablas');
+    const elBruto = document.getElementById('rms-bruto');
+    const elGratisTablas = document.getElementById('rms-gratis-tablas');
+    const elGratisValor = document.getElementById('rms-gratis-valor');
+    const elTotal = document.getElementById('rms-total');
+
+    if (elTablas) elTablas.textContent = tablasRegistradas.toLocaleString();
+    if (elBruto) elBruto.textContent = formatMoney(valorBruto);
+    if (elGratisTablas) elGratisTablas.textContent = gratisAplicables.toLocaleString();
+    if (elGratisValor) elGratisValor.textContent = '-' + formatMoney(descuentoGratis);
+    if (elTotal) elTotal.textContent = formatMoney(totalReal);
   }
 
   function filterOrders() {
