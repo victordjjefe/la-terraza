@@ -208,11 +208,21 @@
                     <div id="total-money-counter" class="text-3xl font-black text-emerald-700">$0</div>
                 </div>
 
+                <!-- Contador de tablas registradas -->
+                <div class="mb-6 bg-indigo-50 border-2 border-indigo-300 rounded-3xl p-6 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div>
+                        <h4 class="text-xl font-black text-indigo-950">🎟️ Total de tablas registradas</h4>
+                        <p class="text-sm font-semibold text-indigo-800">Suma automática de las tablas de todos los participantes</p>
+                    </div>
+                    <div id="total-tables-counter" class="text-3xl font-black text-indigo-700">0</div>
+                </div>
+
                 <!-- Tabla de Registros en Ancho Completo -->
                 <div class="overflow-x-auto w-full">
                     <table class="w-full text-left border-collapse min-w-max">
                         <thead>
                             <tr class="bg-slate-100 text-slate-800 text-sm font-extrabold uppercase tracking-wider border-b-2 border-slate-300">
+                                <th class="p-4 text-center">N.º de registro</th>
                                 <th class="p-4 text-center w-16">Listo</th>
                                 <th class="p-4">Fecha</th>
                                 <th class="p-4">Nombre</th>
@@ -240,7 +250,7 @@
             <div class="w-16 h-16 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center mx-auto text-2xl font-bold animate-pulse">📤</div>
             <div>
                 <h3 class="text-2xl font-black text-slate-900">Enviando Registro</h3>
-                <p class="text-sm text-slate-500 mt-1">Guardando datos y comprobante de pago...</p>
+                <p class="text-sm text-slate-500 mt-1">Procesando el comprobante y guardando el registro. No cierres esta ventana...</p>
             </div>
             
             <!-- Barra de Progreso -->
@@ -367,6 +377,7 @@ const db = firebase.firestore();
 const auth = firebase.auth();
 const recordsCollection = db.collection("registros");
 let localRecords = [];
+let isSubmitting = false;
 const PRICE_PER_TABLE = 3000;
 
 function validateNameField() {
@@ -611,6 +622,8 @@ function compressReceipt(file) {
 
 async function handleFormSubmit(e) {
   e.preventDefault();
+  // Bloqueo inmediato contra envíos repetidos mientras se procesa el mismo formulario.
+  if (isSubmitting) return;
   const name = document.getElementById('name').value.trim();
   const neighborhood = document.getElementById('neighborhood').value.trim();
   const whatsapp = document.getElementById('whatsapp').value.trim();
@@ -640,6 +653,7 @@ async function handleFormSubmit(e) {
     return;
   }
 
+  isSubmitting = true;
   setSubmitBusy(true);
   const loadingModal = document.getElementById('loading-modal');
   const progressBar = document.getElementById('progress-bar');
@@ -687,6 +701,7 @@ async function handleFormSubmit(e) {
     }
   } finally {
     setSubmitBusy(false);
+    isSubmitting = false;
   }
 }
 
@@ -731,7 +746,7 @@ function closeReceiptModal() {
 
 async function loadRecords() {
   const tbody = document.getElementById('admin-table-body');
-  tbody.innerHTML = '<tr><td colspan="9" class="text-center py-8 text-slate-500">Cargando registros desde Firebase...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="10" class="text-center py-8 text-slate-500">Cargando registros desde Firebase...</td></tr>';
   try {
     const snapshot = await recordsCollection.get();
     localRecords = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -745,7 +760,7 @@ async function loadRecords() {
   } catch (error) {
     console.error("Error leyendo Firestore:", error);
     localRecords = [];
-    tbody.innerHTML = '<tr><td colspan="9" class="text-center py-8 text-red-600 font-semibold">No se pudieron cargar los registros. Revisa las reglas de Firestore.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" class="text-center py-8 text-red-600 font-semibold">No se pudieron cargar los registros. Revisa las reglas de Firestore.</td></tr>';
   }
 }
 
@@ -786,10 +801,17 @@ function updateMoneyCounter() {
   const total = localRecords.reduce((sum, record) => {
     return sum + (Number(record.totalPrice) || 0);
   }, 0);
+  const totalTables = localRecords.reduce((sum, record) => {
+    return sum + (Number(record.tablesCount) || 0);
+  }, 0);
 
   const counter = document.getElementById('total-money-counter');
   if (counter) {
     counter.innerText = '$' + total.toLocaleString('es-CO');
+  }
+  const tablesCounter = document.getElementById('total-tables-counter');
+  if (tablesCounter) {
+    tablesCounter.innerText = totalTables.toLocaleString('es-CO');
   }
 }
 
@@ -800,7 +822,7 @@ function renderAdminTable() {
   updateMoneyCounter();
 
   if (localRecords.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" class="text-center py-8 text-slate-400 font-medium text-lg">No hay registros cargados.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" class="text-center py-8 text-slate-400 font-medium text-lg">No hay registros cargados.</td></tr>';
     return;
   }
 
@@ -812,6 +834,7 @@ function renderAdminTable() {
     const receipt = typeof record.receiptUrl === 'string' ? record.receiptUrl : '';
     const row = `
       <tr class="${rowClass} transition-colors border-b border-slate-200">
+        <td class="p-4 text-center font-black text-slate-700">${localRecords.length - index}</td>
         <td class="p-4 text-center">
           <input type="checkbox" ${record.processed ? 'checked' : ''} onchange="toggleRecordProcessed(${index}, this)" class="w-6 h-6 text-emerald-600 rounded-lg cursor-pointer focus:ring-emerald-500">
         </td>
