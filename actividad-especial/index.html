@@ -217,6 +217,19 @@
                     <div id="total-tables-counter" class="text-3xl font-black text-indigo-700">0</div>
                 </div>
 
+                <!-- Buscador de participantes -->
+                <div class="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-2">
+                    <label for="record-search" class="block text-base font-extrabold text-slate-800">🔎 Buscar participante</label>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <input type="search" id="record-search" oninput="renderAdminTable()" autocomplete="off"
+                            class="w-full px-4 py-3 rounded-xl border-2 border-slate-300 text-base font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white"
+                            placeholder="Escribe nombre, apellido o parte del nombre..." aria-describedby="record-search-help">
+                        <button type="button" onclick="clearRecordSearch()" class="shrink-0 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-5 py-3 rounded-xl transition">Limpiar búsqueda</button>
+                    </div>
+                    <p id="record-search-help" class="text-sm text-slate-500">La búsqueda no distingue mayúsculas, minúsculas ni tildes. Los totales generales no cambian al filtrar.</p>
+                    <p id="record-search-count" class="text-sm font-bold text-indigo-800" aria-live="polite"></p>
+                </div>
+
                 <!-- Tabla de Registros en Ancho Completo -->
                 <div class="overflow-x-auto w-full">
                     <table class="w-full text-left border-collapse min-w-max">
@@ -815,18 +828,58 @@ function updateMoneyCounter() {
   }
 }
 
+function normalizeSearchText(value) {
+  return String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('es');
+}
+
+function clearRecordSearch() {
+  const searchInput = document.getElementById('record-search');
+  if (searchInput) {
+    searchInput.value = '';
+    renderAdminTable();
+    searchInput.focus();
+  }
+}
+
 function renderAdminTable() {
   const tbody = document.getElementById('admin-table-body');
+  const searchInput = document.getElementById('record-search');
+  const searchCount = document.getElementById('record-search-count');
   tbody.innerHTML = "";
 
   updateMoneyCounter();
 
   if (localRecords.length === 0) {
     tbody.innerHTML = '<tr><td colspan="10" class="text-center py-8 text-slate-400 font-medium text-lg">No hay registros cargados.</td></tr>';
+    if (searchCount) searchCount.textContent = '0 registros encontrados';
     return;
   }
 
-  localRecords.forEach((record, index) => {
+  const query = normalizeSearchText(searchInput ? searchInput.value.trim() : '');
+  const matchingRecords = localRecords
+    .map((record, index) => ({ record, index }))
+    .filter(({ record }) => {
+      if (!query) return true;
+      const searchableText = normalizeSearchText(`${record.name || ''} ${record.whatsapp || ''} ${record.neighborhood || ''}`);
+      // Cada palabra escrita puede coincidir con cualquier parte del nombre completo.
+      return query.split(/\s+/).filter(Boolean).every(term => searchableText.includes(term));
+    });
+
+  if (searchCount) {
+    searchCount.textContent = query
+      ? `${matchingRecords.length} de ${localRecords.length} registros encontrados`
+      : `${localRecords.length} registros en total`;
+  }
+
+  if (matchingRecords.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="10" class="text-center py-8 text-slate-500 font-semibold text-lg">No se encontraron participantes con esa búsqueda.</td></tr>';
+    return;
+  }
+
+  matchingRecords.forEach(({ record, index }) => {
     const waWebUrl = `https://web.whatsapp.com/send?phone=57${encodeURIComponent(record.whatsapp || '')}`;
     const rowClass = record.processed
       ? "bg-emerald-100/90 text-emerald-950 font-medium"
