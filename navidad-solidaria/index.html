@@ -1,1 +1,1714 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navidad Solidaria - Inscripciones</title>
+    <!-- Google Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Mountains+of+Christmas:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-red: #c9184a;
+            --dark-red: #800f2f;
+            --christmas-green: #1b4332;
+            --light-green: #2d6a4f;
+            --gold: #ffb703;
+            --bg-color: #fceade;
+            --card-bg: #ffffff;
+            --text-color: #2b2d42;
+            --whatsapp-green: #25d366;
+            --success-color: #2b9348;
+        }
 
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 100%);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 15px 10px;
+        }
+
+        /* Contenedor estilo celular adaptable para PC */
+        .mobile-container {
+            width: 100%;
+            max-width: 450px;
+            background: var(--card-bg);
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            border: 5px solid var(--gold);
+            position: relative;
+            overflow: visible;
+            transition: max-width 0.4s ease-in-out;
+        }
+
+        body.is-admin-view .mobile-container {
+            max-width: 1200px;
+        }
+
+        /* Botón de Ruedita discreto en la esquina superior derecha */
+        .btn-config-icon {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.85);
+            color: var(--dark-red);
+            border: 2px solid var(--gold);
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        .btn-config-icon:hover {
+            transform: rotate(45deg) scale(1.1);
+            background: #ffffff;
+            color: var(--primary-red);
+        }
+
+        /* Portada libre e integrada */
+        .header-cover {
+            width: 100%;
+            background: #ffffff;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            border-bottom: 2px solid #eee;
+        }
+
+        .header-cover img {
+            width: 100%;
+            max-height: 240px;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .header-title-area {
+            padding: 12px 15px;
+            background: linear-gradient(to bottom, #fff, #faf6f0);
+            text-align: center;
+            border-bottom: 3px solid var(--gold);
+        }
+
+        .header-title-area h1 {
+            font-family: 'Mountains of Christmas', cursive;
+            font-size: 1.8rem;
+            color: var(--primary-red);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .header-title-area p {
+            font-size: 0.8rem;
+            color: var(--christmas-green);
+            font-weight: 600;
+        }
+
+        /* Contenido principal */
+        .content {
+            padding: 20px;
+            flex-grow: 1;
+            background: #fffcf9;
+            background-image: radial-gradient(#e9ecef 1px, transparent 1px);
+            background-size: 20px 20px;
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+        }
+
+        /* Secciones y Pantallas */
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Mensaje de bienvenida emotivo */
+        .welcome-box {
+            text-align: center;
+            background: #fff8f0;
+            border: 2px dashed var(--gold);
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .welcome-box h2 {
+            font-family: 'Mountains of Christmas', cursive;
+            font-size: 1.6rem;
+            color: var(--primary-red);
+            margin-bottom: 5px;
+        }
+
+        .welcome-box p {
+            font-size: 0.82rem;
+            color: #555;
+            line-height: 1.4;
+        }
+
+        /* Botones del menú principal */
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .btn-nav {
+            background: linear-gradient(135deg, var(--primary-red), var(--dark-red));
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 50px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            box-shadow: 0 5px 15px rgba(201, 24, 74, 0.3);
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        .btn-nav:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(201, 24, 74, 0.4);
+        }
+
+        .btn-nav.green {
+            background: linear-gradient(135deg, var(--christmas-green), var(--light-green));
+            box-shadow: 0 5px 15px rgba(27, 67, 50, 0.3);
+        }
+
+        .btn-nav.green:hover {
+            box-shadow: 0 7px 20px rgba(27, 67, 50, 0.4);
+        }
+
+        .btn-excel {
+            background: linear-gradient(135deg, #1d6f42, #107c41);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 3px 8px rgba(16, 124, 65, 0.3);
+            transition: background 0.2s;
+        }
+
+        .btn-excel:hover {
+            background: #0b5c30;
+        }
+
+        /* Barra de búsqueda para filtrar registros */
+        .search-filter-box {
+            margin-bottom: 10px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .search-filter-box input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-filter-box input:focus {
+            border-color: #3a0ca3;
+        }
+
+        /* Decoración */
+        .decor-banner {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .decor-banner img {
+            width: 100px;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        /* Formularios */
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text-color);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 11px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-red);
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: var(--christmas-green);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .btn-submit:hover {
+            background: #123524;
+        }
+
+        .btn-back {
+            background: transparent;
+            border: none;
+            color: #6c757d;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+        }
+
+        /* Listados y Tarjetas en Admin */
+        .admin-section {
+            margin-bottom: 25px;
+            background: #fff;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            border: 1px solid #eee;
+        }
+
+        .admin-section h3 {
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+            color: var(--dark-red);
+            border-bottom: 2px solid var(--gold);
+            padding-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .list-card {
+            background: #fdf0ed;
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            font-size: 0.82rem;
+            border-left: 5px solid var(--primary-red);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.04);
+            flex-wrap: wrap;
+        }
+
+        .list-card.padrino {
+            background: #e8f5e9;
+            border-left-color: var(--christmas-green);
+        }
+
+        .list-card.pairing {
+            background: #f4f6fa;
+            border-left-color: #4361ee;
+            border: 1px solid #d0d7de;
+            border-left-width: 5px;
+        }
+
+        .pairing-details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            width: 100%;
+            background: #ffffff;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px dashed #bbb;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .pairing-details-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card-main-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-grow: 1;
+            flex-wrap: wrap;
+        }
+
+        .wa-link {
+            color: #128c7e;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #e6f7f0;
+            padding: 3px 8px;
+            border-radius: 6px;
+            border: 1px solid #b2e2d0;
+            transition: background 0.2s;
+        }
+
+        .wa-link:hover {
+            background: var(--whatsapp-green);
+            color: white;
+        }
+
+        .manual-assign-box {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .manual-assign-box select {
+            padding: 7px 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 0.78rem;
+            outline: none;
+            max-width: 280px;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 6px;
+            justify-content: flex-end;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-action {
+            border: none;
+            padding: 7px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: white;
+            transition: transform 0.1s, background 0.2s;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-1px);
+        }
+
+        .whatsapp-action-group {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            flex-wrap: nowrap;
+        }
+        .btn-whatsapp {
+            background: #25a85a;
+            color: #fff;
+        }
+        .btn-whatsapp:hover { background: #218c4b; }
+        .btn-whatsapp.sent {
+            background: #526b5b;
+            color: #fff;
+        }
+        .btn-whatsapp.sent:hover { background: #405548; }
+        .whatsapp-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 5px 8px;
+            border-radius: 7px;
+            background: #fff0f0;
+            color: #a61b1b;
+            border: 1px solid #f2c5c5;
+            font-size: 0.7rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .whatsapp-status.sent {
+            background: #e0f4e5;
+            color: #176534;
+            border-color: #a8d9b5;
+        }
+        @media (max-width: 480px) {
+            .whatsapp-action-group { flex-wrap: wrap; }
+        }
+
+        .status-badge {
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            border: 1px dashed #999;
+            background: #f1f1f1;
+            color: #555;
+        }
+
+        .status-badge.sent {
+            background: #d8f3dc;
+            color: #1b4332;
+            border-color: var(--success-color);
+        }
+
+        .btn-assign {
+            background: #ffb703;
+            color: #000;
+        }
+        .btn-assign:hover {
+            background: #e0a100;
+        }
+
+        .btn-delete {
+            background: #d90429;
+        }
+        .btn-delete:hover {
+            background: #9b2226;
+        }
+
+        .counter-badge {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 0.78rem;
+            margin-bottom: 12px;
+            line-height: 1.3;
+        }
+
+        .counter-badge strong {
+            color: var(--primary-red);
+        }
+
+        .footer-decor {
+            text-align: center;
+            padding: 10px;
+            font-size: 0.7rem;
+            color: #666;
+            border-top: 1px solid #eee;
+            background: #f8f9fa;
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+        }
+
+        /* MODAL POPUP */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            animation: popIn 0.3s ease-out;
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-card {
+            background: white;
+            border-radius: 20px;
+            max-width: 380px;
+            width: 100%;
+            padding: 25px 20px;
+            text-align: center;
+            border: 3px solid var(--gold);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            position: relative;
+        }
+
+        .modal-icon {
+            font-size: 3rem;
+            color: var(--christmas-green);
+            margin-bottom: 10px;
+        }
+
+        .modal-card h3 {
+            font-family: 'Mountains of Christmas', cursive;
+            font-size: 1.8rem;
+            color: var(--primary-red);
+            margin-bottom: 10px;
+        }
+
+        .modal-card p {
+            font-size: 0.85rem;
+            color: #444;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .btn-modal-close {
+            background: linear-gradient(135deg, var(--christmas-green), var(--light-green));
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .admin-toolbar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+        /* Vista pública de la carta compartida por WhatsApp */
+        #letter-viewer { display:none; min-height:100vh; width:100%; padding:24px 12px; background:#fceade; }
+        #letter-viewer .letter-viewer-card { max-width:760px; margin:0 auto; background:#fff; padding:18px; border-radius:16px; box-shadow:0 8px 28px rgba(0,0,0,.12); text-align:center; }
+        #letter-viewer h1 { color:#800f2f; font-size:1.35rem; margin-bottom:12px; }
+        #letter-viewer img { display:block; max-width:100%; max-height:78vh; object-fit:contain; margin:0 auto; border-radius:8px; }
+        #letter-viewer .viewer-message { color:#555; margin:12px 0; font-size:.95rem; }
+        .firebase-status { padding:9px 12px; margin:0 0 14px; border-radius:8px; font-size:.78rem; background:#fff3cd; color:#664d03; border:1px solid #ffecb5; }
+        .firebase-status.connected { background:#d1e7dd; color:#0f5132; border-color:#badbcc; }
+    </style>
+</head>
+<body>
+    <div id="letter-viewer">
+        <div class="letter-viewer-card">
+            <h1>Carta de Navidad</h1>
+            <p id="letter-viewer-message" class="viewer-message">Cargando la carta...</p>
+            <img id="letter-viewer-image" alt="Frente de la carta de Navidad" style="display:none;">
+            <img id="letter-viewer-image-back" alt="Reverso de la carta de Navidad" style="display:none; margin-top:12px;">
+        </div>
+    </div>
+
+    <div class="mobile-container">
+        <!-- Botón Ruedita de Configuración en la Esquina Superior Derecha -->
+        <button class="btn-config-icon" onclick="checkConfigPassword()" title="Configuración / Panel de Control">
+            <i class="fa-solid fa-gear"></i>
+        </button>
+
+        <!-- Portada -->
+        <div class="header-cover">
+            <img src="portada.png" alt="Portada Navidad">
+        </div>
+        <div class="header-title-area">
+            <h1>Navidad Solidaria</h1>
+            <p>¡Sembrando sonrisas en cada corazón!</p>
+        </div>
+
+        <div class="content">
+            
+            <!-- PANTALLA PRINCIPAL (MENÚ) -->
+            <div id="main-screen" class="screen active">
+                <div class="decor-banner">
+                    <img src="https://cdn-icons-png.flaticon.com/512/743/743007.png" alt="Árbol de Navidad">
+                </div>
+
+                <div class="welcome-box">
+                    <h2>¡Haz una sonrisa realidad!</h2>
+                    <p>Esta Navidad nos unimos para llevar alegría, ilusión y esperanza a los niños. Inscribe a tu pequeño o conviértete en padrino mágico de un gran sueño.</p>
+                </div>
+
+                <div class="menu-buttons">
+                    <button class="btn-nav" onclick="showScreen('kids-screen')">
+                        <i class="fa-solid fa-child-reaching"></i> Inscribir Niños
+                    </button>
+                    <button class="btn-nav green" onclick="showScreen('godparents-screen')">
+                        <i class="fa-solid fa-gift"></i> Inscribir Padrinos
+                    </button>
+                </div>
+            </div>
+
+            <!-- PANTALLA INSCRIPCIÓN DE NIÑOS -->
+            <div id="kids-screen" class="screen">
+                <button class="btn-back" onclick="showScreen('main-screen')"><i class="fa-solid fa-arrow-left"></i> Volver al menú</button>
+                <h2 style="font-size: 1.05rem; color: var(--dark-red); margin-bottom: 5px;"><i class="fa-solid fa-child"></i> Registro de Niños</h2>
+                
+                <div id="kids-counter" class="counter-badge">
+                    Cupos habilitados: <strong>0 / 100</strong>.<br>
+                    ✨ <i>Nota:</i> Rango de edad permitido: <strong>3 a 10 años</strong>. De todos los inscritos, en el concurso final <strong>solo se seleccionarán 50 niños ganadores</strong>.
+                </div>
+                
+                <form id="kid-form" onsubmit="saveKid(event)">
+                    <div class="form-group">
+                        <label>Nombre del Niño(a):</label>
+                        <input type="text" class="form-control focus-next" id="kid-name" required placeholder="Ej. Juanito Pérez">
+                    </div>
+                    <div class="form-group">
+                        <label>Documento de Identidad (TI / Registro Civil):</label>
+                        <input type="text" class="form-control focus-next" id="kid-doc" required placeholder="Ej. 1098765432">
+                    </div>
+                    <div class="form-group">
+                        <label>Edad (De 3 a 10 años):</label>
+                        <input type="number" class="form-control focus-next" id="kid-age" min="3" max="10" required placeholder="Ej. 6">
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre del Acudiente:</label>
+                        <input type="text" class="form-control focus-next" id="kid-guardian" required placeholder="Ej. María Pérez">
+                    </div>
+                    <div class="form-group">
+                        <label>Dirección de la Casa:</label>
+                        <input type="text" class="form-control focus-next" id="kid-address" required placeholder="Ej. Calle 10 # 20-30">
+                    </div>
+                    <div class="form-group">
+                        <label>Teléfono de WhatsApp:</label>
+                        <input type="tel" class="form-control focus-next" id="kid-whatsapp" required placeholder="Ej. 3001234567">
+                    </div>
+                    <div class="form-group">
+                        <label>Carta del Niño Dios — lado 1 (obligatorio):</label>
+                        <small style="display:block;color:#666;margin-bottom:5px;">Sube una foto clara de la carta. Se comprimirá automáticamente para reducir su tamaño.</small>
+                        <input type="file" class="form-control" id="kid-letter" accept="image/*" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Segundo lado de la carta (opcional):</label>
+                        <small style="display:block;color:#666;margin-bottom:5px;">Si escribiste por ambos lados, sube aquí la foto del reverso. Si una foto pesa demasiado, intenta subir una captura de pantalla; asegúrate de que toda la escritura se lea claramente.</small>
+                        <input type="file" class="form-control" id="kid-letter-back" accept="image/*">
+                    </div>
+                    <button type="submit" class="btn-submit">Enviar Inscripción</button>
+                </form>
+            </div>
+
+            <!-- PANTALLA INSCRIPCIÓN DE PADRINOS -->
+            <div id="godparents-screen" class="screen">
+                <button class="btn-back" onclick="showScreen('main-screen')"><i class="fa-solid fa-arrow-left"></i> Volver al menú</button>
+                <h2 style="font-size: 1.05rem; color: var(--christmas-green); margin-bottom: 10px;"><i class="fa-solid fa-hand-holding-heart"></i> Registro de Padrinos</h2>
+                <p style="font-size: 0.8rem; color: #555; margin-bottom: 12px;">¡Gracias por unirte como padrino y llevar felicidad a la vida de un niño!</p>
+                
+                <form id="godparent-form" onsubmit="saveGodparent(event)">
+                    <div class="form-group">
+                        <label>Nombre del Padrino / Madrina:</label>
+                        <input type="text" class="form-control focus-gp" id="gp-name" required placeholder="Ej. Carlos Gómez">
+                    </div>
+                    <div class="form-group">
+                        <label>Número de WhatsApp:</label>
+                        <input type="tel" class="form-control focus-gp" id="gp-whatsapp" required placeholder="Ej. 3109876543">
+                    </div>
+                    <div class="form-group">
+                        <label>Dirección de la Casa (Para recoger detalle):</label>
+                        <input type="text" class="form-control focus-gp" id="gp-address" required placeholder="Ej. Carrera 5 # 12-45">
+                    </div>
+                    <button type="submit" class="btn-submit" style="background: var(--christmas-green);">Inscribirme como Padrino</button>
+                </form>
+            </div>
+
+            <!-- PANTALLA CONFIGURACIÓN / PANEL ADMIN CON FILTROS Y EXCEL -->
+            <div id="admin-screen" class="screen">
+                <button class="btn-back" onclick="showScreen('main-screen')"><i class="fa-solid fa-arrow-left"></i> Volver al menú</button>
+                <h2 style="font-size: 1.2rem; color: #3a0ca3; margin-bottom: 15px;"><i class="fa-solid fa-sliders"></i> Panel de Configuración y Control</h2>
+                <div id="firebase-status" class="firebase-status">Modo de prueba local: falta configurar Firebase para sincronizar registros y compartir cartas por enlace.</div>
+                
+                <div class="admin-toolbar">
+                    <button class="btn-excel" style="font-size: 0.85rem; padding: 12px 18px;" onclick="exportAllToExcel()"><i class="fa-solid fa-file-excel"></i> Exportar todo a Excel</button>
+                    <button class="btn-nav" style="font-size: 0.8rem; padding: 10px 18px; flex: 1; background: #4361ee;" onclick="confirmPairing()">
+                        <i class="fa-solid fa-shuffle"></i> Sorteo 50 Niños
+                    </button>
+                    <button class="btn-nav" style="font-size: 0.8rem; padding: 10px 18px; flex: 1; background: #e63946;" onclick="confirmUnpairing()">
+                        <i class="fa-solid fa-link-slash"></i> Desemparejar Todo
+                    </button>
+                    <button class="btn-nav" style="font-size: 0.8rem; padding: 10px 18px; background: var(--dark-red);" onclick="resetData()">
+                        <i class="fa-solid fa-trash"></i> Reiniciar Datos
+                    </button>
+                </div>
+
+                <!-- 1. EMPAREJAMIENTOS -->
+                <div class="admin-section">
+                    <h3>
+                        <span>Niños Emparejados (<span id="admin-paired-count">0</span>)</span>
+                    </h3>
+                    <div class="search-filter-box">
+                        <input type="text" id="search-paired" placeholder="🔍 Filtrar emparejamientos por nombre de niño o padrino..." oninput="renderAdminData()">
+                    </div>
+                    <div id="pairings-list"></div>
+                </div>
+
+                <!-- 2. NIÑOS SIN EMPAREJAR -->
+                <div class="admin-section">
+                    <h3>Niños Sin Emparejar (<span id="admin-unpaired-kids-count">0</span>)</h3>
+                    <div class="search-filter-box">
+                        <input type="text" id="search-unpaired-kids" placeholder="🔍 Filtrar niños sin emparejar..." oninput="renderAdminData()">
+                    </div>
+                    <div id="unpaired-kids-list"></div>
+                </div>
+
+                <!-- 3. PADRINOS SIN ASIGNAR -->
+                <div class="admin-section">
+                    <h3>Padrinos Sin Asignar (<span id="admin-unassigned-gp-count">0</span>)</h3>
+                    <div class="search-filter-box">
+                        <input type="text" id="search-unassigned-gp" placeholder="🔍 Filtrar padrinos sin asignar..." oninput="renderAdminData()">
+                    </div>
+                    <div id="unassigned-gp-list"></div>
+                </div>
+
+                <!-- 4. TODOS LOS NIÑOS INSCRITOS -->
+                <div class="admin-section">
+                    <h3>
+                        <span>Todos los Niños Inscritos (<span id="admin-kid-count">0</span>/100)</span>
+                    </h3>
+                    <div class="search-filter-box">
+                        <input type="text" id="search-all-kids" placeholder="🔍 Buscar por nombre, documento, acudiente o WhatsApp..." oninput="renderAdminData()">
+                    </div>
+                    <div id="admin-kids-list"></div>
+                </div>
+
+                <!-- 5. TODOS LOS PADRINOS INSCRITOS -->
+                <div class="admin-section">
+                    <h3>
+                        <span>Todos los Padrinos Inscritos (<span id="admin-gp-count">0</span>)</span>
+                    </h3>
+                    <div class="search-filter-box">
+                        <input type="text" id="search-all-gp" placeholder="🔍 Buscar por nombre o teléfono..." oninput="renderAdminData()">
+                    </div>
+                    <div id="admin-gp-list"></div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="footer-decor">
+            🎄 Navidad Solidaria &bull; Preparado para Firebase 🎄
+        </div>
+    </div>
+
+    <!-- MODAL POPUP -->
+    <div id="success-modal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-icon"><i class="fa-solid fa-gift"></i></div>
+            <h3 id="modal-title">¡Registro Exitoso!</h3>
+            <p id="modal-msg">El registro se realizó correctamente.</p>
+            <button class="btn-modal-close" onclick="closeModal()">Aceptar</button>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script>
+        const ADMIN_EMAIL = "laterrazacali@gmail.com";
+
+        // Pega aquí la configuración de tu aplicación web de Firebase.
+        // No agregues credenciales privadas de servidor. La configuración web se obtiene en Firebase Console > Project settings > Your apps.
+        const FIREBASE_CONFIG = {
+            apiKey: "PEGA_AQUI_API_KEY",
+            authDomain: "TU_PROYECTO.firebaseapp.com",
+            projectId: "TU_PROJECT_ID",
+            appId: "PEGA_AQUI_APP_ID"
+        };
+        let firestoreDb = null;
+        let firestoreSyncQueues = {};
+        const FIRESTORE_COLLECTIONS = { kids: 'kids', godparents: 'godparents', pairings: 'pairings' };
+        const isFirebaseConfigured = () => !!(FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey !== 'PEGA_AQUI_API_KEY' && FIREBASE_CONFIG.projectId && FIREBASE_CONFIG.projectId !== 'TU_PROJECT_ID' && window.firebase);
+
+        function initFirebase() {
+            if (!isFirebaseConfigured()) return false;
+            try {
+                if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+                firestoreDb = firebase.firestore();
+                updateFirebaseStatus('Firebase configurado. Conectando con Firestore...', false);
+                return true;
+            } catch (err) {
+                console.error('No se pudo inicializar Firebase:', err);
+                updateFirebaseStatus('No se pudo iniciar Firebase. Revisa la configuración.', false);
+                return false;
+            }
+        }
+
+        function updateFirebaseStatus(message, connected) {
+            const el = document.getElementById('firebase-status');
+            if (!el) return;
+            el.textContent = message;
+            el.classList.toggle('connected', !!connected);
+        }
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            const sharedLetterId = new URLSearchParams(window.location.search).get('carta');
+            if (sharedLetterId) {
+                document.querySelector('.mobile-container').style.display = 'none';
+                document.getElementById('letter-viewer').style.display = 'block';
+                await showSharedLetter(sharedLetterId);
+                return;
+            }
+            window.scrollTo(0, 0);
+            setupAutoScroll();
+            if (initFirebase()) await loadFirestoreData();
+            updateCounters();
+        });
+
+        async function showSharedLetter(kidId) {
+            const message = document.getElementById('letter-viewer-message');
+            const img = document.getElementById('letter-viewer-image');
+            const imgBack = document.getElementById('letter-viewer-image-back');
+            if (!initFirebase()) {
+                message.textContent = 'Esta carta estará disponible cuando el administrador conecte el proyecto de Firebase y publique el sistema.';
+                return;
+            }
+            try {
+                const doc = await firestoreDb.collection('kids').doc(kidId).get();
+                const kid = doc.exists ? doc.data() : null;
+                if (!kid || !kid.letterImage) {
+                    message.textContent = 'No se encontró la carta solicitada.';
+                    return;
+                }
+                img.src = kid.letterImage;
+                img.style.display = 'block';
+                if (kid.letterImageBack) {
+                    imgBack.src = kid.letterImageBack;
+                    imgBack.style.display = 'block';
+                }
+                message.textContent = kid.name ? `Carta de Navidad de ${kid.name}` : 'Carta de Navidad';
+            } catch (err) {
+                console.error(err);
+                message.textContent = 'No se pudo cargar la carta. Revisa las reglas de acceso de Firestore.';
+            }
+        }
+
+        async function loadFirestoreData() {
+            if (!firestoreDb) return;
+            try {
+                for (const key of Object.keys(FIRESTORE_COLLECTIONS)) {
+                    const snapshot = await firestoreDb.collection(FIRESTORE_COLLECTIONS[key]).get();
+                    const remote = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                    const local = getStorageData(key);
+                    if (remote.length) {
+                        // Las cartas se conservan en Firestore, pero NO se duplican en localStorage.
+                        const localCopy = key === 'kids' ? remote.map(({ letterImage, ...kid }) => ({ ...kid, letterImageStored: !!letterImage })) : remote;
+                        localStorage.setItem(key, JSON.stringify(localCopy));
+                    } else if (local.length) {
+                        await syncCollectionToFirestore(key, local);
+                    }
+                }
+                updateFirebaseStatus('Conectado a Firestore. Los registros se sincronizan con Firebase.', true);
+            } catch (err) {
+                console.error('Error cargando datos de Firestore:', err);
+                updateFirebaseStatus('No se pudo leer Firestore. Revisa las reglas de acceso y la configuración.', false);
+            }
+        }
+
+        function syncCollectionToFirestore(key, data) {
+            if (!firestoreDb || !FIRESTORE_COLLECTIONS[key]) return Promise.resolve(false);
+            const collectionName = FIRESTORE_COLLECTIONS[key];
+            const previous = firestoreSyncQueues[key] || Promise.resolve();
+            firestoreSyncQueues[key] = previous.then(async () => {
+                const snapshot = await firestoreDb.collection(collectionName).get();
+                const documentId = item => String(item.id || (key === 'pairings' ? item.kidId : ''));
+                const localIds = new Set(data.map(documentId).filter(Boolean));
+                const batch = firestoreDb.batch();
+                let operations = 0;
+                data.forEach(item => {
+                    const id = documentId(item);
+                    if (!id) return;
+                    const ref = firestoreDb.collection(collectionName).doc(id);
+                    const payload = { ...item };
+                    delete payload.id;
+                    batch.set(ref, payload, { merge: true });
+                    operations++;
+                });
+                snapshot.docs.forEach(doc => {
+                    if (!localIds.has(doc.id)) {
+                        batch.delete(doc.ref);
+                        operations++;
+                    }
+                });
+                if (operations) await batch.commit();
+                return true;
+            }).catch(err => {
+                console.error(`Error sincronizando ${key} con Firestore:`, err);
+                updateFirebaseStatus('Error al guardar en Firestore. Revisa las reglas, conexión y tamaño de las cartas.', false);
+                return false;
+            });
+            return firestoreSyncQueues[key];
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+
+            if (screenId === 'admin-screen') {
+                document.body.classList.add('is-admin-view');
+                renderAdminData();
+            } else {
+                document.body.classList.remove('is-admin-view');
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function showModal(title, message) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-msg').innerHTML = message;
+            document.getElementById('success-modal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('success-modal').classList.remove('active');
+        }
+
+        function getWaLink(phone) {
+            if (!phone) return "#";
+            let cleanPhone = phone.replace(/\D/g, '');
+            if (cleanPhone.length === 10) {
+                cleanPhone = "57" + cleanPhone;
+            }
+            return `https://wa.me/${cleanPhone}`;
+        }
+
+        function setupAutoScroll() {
+            const kidInputs = document.querySelectorAll('.focus-next');
+            kidInputs.forEach((input, index) => {
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (index < kidInputs.length - 1) {
+                            kidInputs[index + 1].focus();
+                            kidInputs[index + 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        } else {
+                            document.getElementById('kid-letter').focus();
+                            document.getElementById('kid-letter').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }
+                });
+            });
+
+            const gpInputs = document.querySelectorAll('.focus-gp');
+            gpInputs.forEach((input, index) => {
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (index < gpInputs.length - 1) {
+                            gpInputs[index + 1].focus();
+                            gpInputs[index + 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }
+                });
+            });
+        }
+
+        function checkConfigPassword() {
+            let pass = prompt("Ingrese la clave de configuración (1893):");
+            if (pass === "1893") {
+                showScreen('admin-screen');
+            } else if (pass !== null) {
+                alert("Clave incorrecta.");
+            }
+        }
+
+        function getStorageData(key) {
+            try {
+                let data = localStorage.getItem(key);
+                return data ? JSON.parse(data) : [];
+            } catch (e) {
+                console.error("Error leyendo localStorage", e);
+                return [];
+            }
+        }
+
+        function setStorageData(key, data) {
+            try {
+                localStorage.setItem(key, JSON.stringify(data));
+                if (firestoreDb && FIRESTORE_COLLECTIONS[key]) {
+                    syncCollectionToFirestore(key, data);
+                }
+                return true;
+            } catch (e) {
+                console.error("Error guardando datos localmente", e);
+                return false;
+            }
+        }
+
+        // Optimiza cada lado a un máximo aproximado de 300 KiB en formato Data URL.
+        // Dos imágenes juntas ocupan como máximo unos 600 KiB, dejando margen para los demás campos
+        // dentro del límite de 1 MiB por documento de Firestore.
+        async function compressLetterImage(file) {
+            const maxDataUrlChars = 300 * 1024;
+            const maxInputBytes = 15 * 1024 * 1024;
+            if (!file || !file.type || !file.type.startsWith('image/')) {
+                throw new Error('Selecciona una fotografía válida de la carta (JPG, PNG o imagen compatible).');
+            }
+            if (file.size > maxInputBytes) {
+                throw new Error('La foto original pesa más de 15 MB. Abre la foto en tu celular, toma una captura de pantalla y sube esa captura.');
+            }
+            const imageUrl = URL.createObjectURL(file);
+            try {
+                const image = new Image();
+                image.src = imageUrl;
+                await new Promise((resolve, reject) => { image.onload = resolve; image.onerror = () => reject(new Error('No se pudo leer la fotografía. Intenta subir una captura de pantalla de la carta.')); });
+                let maxSide = 1200;
+                let quality = 0.78;
+                let dataUrl = '';
+                // Reducir primero calidad y luego dimensiones hasta alcanzar el límite seguro.
+                for (let attempt = 0; attempt < 18; attempt++) {
+                    const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.max(1, Math.round(image.width * scale));
+                    canvas.height = Math.max(1, Math.round(image.height * scale));
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) throw new Error('El navegador no pudo procesar la foto. Intenta con una captura de pantalla.');
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+                    dataUrl = canvas.toDataURL('image/jpeg', quality);
+                    if (dataUrl.length <= maxDataUrlChars) return dataUrl;
+                    if (quality > 0.48) quality -= 0.08;
+                    else { maxSide = Math.round(maxSide * 0.82); quality = 0.68; }
+                }
+                throw new Error('La foto sigue siendo demasiado pesada. Abre la foto que tomaste, haz una captura de pantalla y sube esa captura. Procura que la carta se vea completa y que el texto sea legible.');
+            } finally {
+                URL.revokeObjectURL(imageUrl);
+            }
+        }
+
+        async function openKidLetter(kidId) {
+            let kid = getStorageData('kids').find(k => k.id === kidId);
+            if ((!kid || !kid.letterImage) && firestoreDb) {
+                try {
+                    const snap = await firestoreDb.collection('kids').doc(kidId).get();
+                    kid = snap.exists ? { ...snap.data(), id: snap.id } : kid;
+                } catch (err) {
+                    console.error('Error cargando carta:', err);
+                }
+            }
+            if (!kid || !kid.letterImage) {
+                alert('No se pudo cargar la carta. Comprueba la conexión con Firebase.');
+                return;
+            }
+            const w = window.open('', '_blank');
+            if (!w) {
+                alert('El navegador bloqueó la ventana emergente. Permite ventanas emergentes e inténtalo de nuevo.');
+                return;
+            }
+            const images = [kid.letterImage, kid.letterImageBack].filter(Boolean);
+            w.document.open();
+            w.document.write(`<title>Carta de Navidad</title><body style="font-family:Arial;text-align:center;padding:12px">${images.map((src,i)=>`<h3>${i===0?'Lado 1':'Lado 2'}</h3><img style="max-width:100%;height:auto;margin-bottom:16px" src="${src.replace(/"/g,'&quot;')}">`).join('')}</body>`);
+            w.document.close();
+        }
+
+        async function saveKid(e) {
+            e.preventDefault();
+            const form = document.getElementById('kid-form');
+            const submitButton = form.querySelector('button[type="submit"]');
+            if (submitButton.disabled) return;
+            submitButton.disabled = true;
+            submitButton.textContent = 'Procesando fotografías…';
+            try {
+                const kids = getStorageData('kids');
+                if (kids.length >= 100) throw new Error('Ya se alcanzó el límite de 100 niños inscritos.');
+                const age = parseInt(document.getElementById('kid-age').value, 10);
+                if (isNaN(age) || age < 3 || age > 10) throw new Error('La edad del niño debe estar entre 3 y 10 años.');
+                const firstInput = document.getElementById('kid-letter');
+                const secondInput = document.getElementById('kid-letter-back');
+                if (!firstInput.files || !firstInput.files[0]) throw new Error('Adjunta la fotografía del primer lado de la carta para continuar.');
+
+                const letterImage = await compressLetterImage(firstInput.files[0]);
+                const letterImageBack = secondInput.files && secondInput.files[0]
+                    ? await compressLetterImage(secondInput.files[0])
+                    : null;
+                // Mantener margen adicional por los demás campos y metadatos del documento Firestore.
+                const totalImageChars = letterImage.length + (letterImageBack ? letterImageBack.length : 0);
+                if (totalImageChars > 650 * 1024) {
+                    throw new Error('Las dos fotos juntas siguen siendo demasiado pesadas. Intenta tomar una captura de pantalla de cada lado y vuelve a subirlas. Asegúrate de que la carta completa y su escritura se lean claramente.');
+                }
+
+                const newKid = {
+                    id: 'kid_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+                    name: document.getElementById('kid-name').value.trim(),
+                    doc: document.getElementById('kid-doc').value.trim(),
+                    age,
+                    guardian: document.getElementById('kid-guardian').value.trim(),
+                    address: document.getElementById('kid-address').value.trim(),
+                    whatsapp: document.getElementById('kid-whatsapp').value.trim(),
+                    letterImage,
+                    letterImageBack,
+                    createdAt: new Date().toISOString()
+                };
+
+                if (firestoreDb) {
+                    // No se confirma el registro hasta que Firestore responda que guardó ambos lados.
+                    await firestoreDb.collection('kids').doc(newKid.id).set(newKid);
+                    const metadata = { ...newKid, letterImageStored: true, letterImageBackStored: !!letterImageBack };
+                    delete metadata.letterImage;
+                    delete metadata.letterImageBack;
+                    const latestKids = getStorageData('kids');
+                    latestKids.push(metadata);
+                    localStorage.setItem('kids', JSON.stringify(latestKids));
+                } else {
+                    // Modo local de prueba: las fotos se guardan en este navegador únicamente.
+                    const latestKids = getStorageData('kids');
+                    latestKids.push(newKid);
+                    localStorage.setItem('kids', JSON.stringify(latestKids));
+                }
+
+                form.reset();
+                updateCounters();
+                showScreen('main-screen');
+                showModal('Registro exitoso', 'La inscripción y las fotografías adjuntas se guardaron correctamente. Gracias por participar en Navidad Solidaria.');
+            } catch (err) {
+                console.error('Error al registrar niño:', err);
+                alert(err.message || 'No se pudo guardar la inscripción. Revisa la conexión e inténtalo de nuevo. No se ha confirmado el registro.');
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Enviar Inscripción';
+            }
+        }
+
+        function saveGodparent(e) {
+            e.preventDefault();
+            try {
+                let godparents = getStorageData('godparents');
+                if (godparents.length >= 100) {
+                    alert('Ya se alcanzó el límite de 100 padrinos inscritos.');
+                    return;
+                }
+
+                let newGodparent = {
+                    id: 'gp_' + Date.now(),
+                    name: document.getElementById('gp-name').value.trim(),
+                    whatsapp: document.getElementById('gp-whatsapp').value.trim(),
+                    address: document.getElementById('gp-address').value.trim(),
+                    createdAt: new Date().toISOString()
+                };
+
+                godparents.push(newGodparent);
+                let saved = setStorageData('godparents', godparents);
+
+                if (saved) {
+                    document.getElementById('godparent-form').reset();
+                    showScreen('main-screen');
+                    showModal(
+                        "Registro de padrino exitoso",
+                        "Tu inscripción como padrino se realizó correctamente. Gracias por apoyar esta iniciativa de Navidad Solidaria. En los próximos días te informaremos por WhatsApp el nombre y la edad del niño asignado, y coordinaremos la entrega del regalo."
+                    );
+                } else {
+                    alert("No se pudo realizar el registro del padrino.");
+                }
+            } catch (error) {
+                console.error(error);
+                alert("No se pudo realizar el registro.");
+            }
+        }
+
+        function openWhatsApp(phone, message) {
+            const cleanPhone = String(phone || '').replace(/\D/g, '');
+            if (!cleanPhone) {
+                alert('Este registro no tiene un número de WhatsApp válido.');
+                return false;
+            }
+            let internationalPhone = cleanPhone;
+            if (internationalPhone.length === 10) internationalPhone = '57' + internationalPhone;
+            const url = `https://wa.me/${internationalPhone}?text=${encodeURIComponent(message)}`;
+            window.open(url, '_blank', 'noopener,noreferrer');
+            return true;
+        }
+
+        function getWhatsAppStatuses() {
+            try { return JSON.parse(localStorage.getItem('whatsappStatuses') || '{}'); }
+            catch (e) { return {}; }
+        }
+
+        function isWhatsAppSent(statusKey) {
+            return getWhatsAppStatuses()[statusKey] === true;
+        }
+
+        function whatsappButton(statusKey, label, action) {
+            const sent = isWhatsAppSent(statusKey);
+            const buttonText = `<i class="fa-brands fa-whatsapp"></i> ${label}`;
+            const statusText = sent
+                ? `<i class="fa-solid fa-check"></i> Enviado`
+                : `<i class="fa-regular fa-clock"></i> No enviado`;
+            return `<span class="whatsapp-action-group">
+                <button class="btn-action btn-whatsapp ${sent ? 'sent' : ''}" onclick="${action}">${buttonText}</button>
+                <span class="whatsapp-status ${sent ? 'sent' : ''}" aria-live="polite">${statusText}</span>
+            </span>`;
+        }
+
+        function sendTrackedWhatsApp(statusKey, phone, message) {
+            const cleanPhone = String(phone || '').replace(/\D/g, '');
+            if (!cleanPhone) {
+                alert('Este registro no tiene un número de WhatsApp válido.');
+                return;
+            }
+
+            // Abrir WhatsApp directamente en el clic del usuario para evitar bloqueos de ventanas emergentes.
+            const opened = openWhatsApp(phone, message);
+            if (!opened) return;
+
+            // Cambiar inmediatamente el botón y su indicador, sin alertas ni un segundo clic.
+            const statuses = getWhatsAppStatuses();
+            statuses[statusKey] = true;
+            localStorage.setItem('whatsappStatuses', JSON.stringify(statuses));
+
+            // Volver a dibujar las tarjetas para aplicar el nuevo color y el texto "Enviado".
+            renderAdminData();
+        }
+
+        function sendWhatsAppToKid(id) {
+            const kid = getStorageData('kids').find(k => k.id === id);
+            if (!kid) return;
+            const message = `Hola, ${kid.guardian}.\n\nLe confirmamos que la inscripción de ${kid.name} fue registrada correctamente en Navidad Solidaria. En los próximos días le informaremos por WhatsApp si fue seleccionado entre los niños que recibirán un regalo.\n\nGracias por participar.\nEquipo de Navidad Solidaria, La Terraza.`;
+            sendTrackedWhatsApp(`kid-registration-${id}`, kid.whatsapp, message);
+        }
+
+        function sendWhatsAppToGodparent(id) {
+            const gp = getStorageData('godparents').find(g => g.id === id);
+            if (!gp) return;
+            const message = `Hola, ${gp.name}.\n\nLe confirmamos que su inscripción como padrino de Navidad Solidaria fue registrada correctamente. Gracias por apoyar esta iniciativa. En los próximos días le informaremos el nombre y la edad del niño asignado y coordinaremos la entrega del regalo.\n\nCordialmente,\nEquipo de Navidad Solidaria, La Terraza.`;
+            sendTrackedWhatsApp(`gp-registration-${id}`, gp.whatsapp, message);
+        }
+
+        function sendPairingWhatsAppToKid(kidId) {
+            const kid = getStorageData('kids').find(k => k.id === kidId);
+            if (!kid) return;
+            const message = `Hola, ${kid.guardian}.\n\nNos alegra informarle que ${kid.name} ha sido seleccionado para recibir un regalo de Navidad Solidaria. Su carta ha sido apadrinada.\n\nPróximamente nos comunicaremos por WhatsApp para coordinar la fecha y hora de entrega.\n\nGracias por permitirnos compartir esta alegría con su familia.\nEquipo de Navidad Solidaria, La Terraza.`;
+            sendTrackedWhatsApp(`pairing-kid-${kidId}`, kid.whatsapp, message);
+        }
+
+        function getPublicLetterUrl(kidId) {
+            const base = window.location.href.split('?')[0].split('#')[0];
+            return `${base}?carta=${encodeURIComponent(kidId)}`;
+        }
+
+        function sendPairingWhatsAppToGodparent(gpId, kidId) {
+            const gp = getStorageData('godparents').find(g => g.id === gpId);
+            const kid = getStorageData('kids').find(k => k.id === kidId);
+            if (!gp || !kid) return;
+            const letterUrl = getPublicLetterUrl(kid.id);
+            const message = `Hola, ${gp.name}.\n\nGracias por participar en Navidad Solidaria. El niño que le ha sido asignado es ${kid.name}, de ${kid.age} años.\n\nPuede ver la carta del niño aquí: ${letterUrl}\n\nLa entrega del regalo será coordinada directamente por el equipo de La Terraza.\n\nCordialmente,\nEquipo de Navidad Solidaria, La Terraza.`;
+            sendTrackedWhatsApp(`pairing-gp-${kidId}`, gp.whatsapp, message);
+        }
+
+        function assignManualPairing(kidId) {
+            let selectEl = document.getElementById(`select-gp-${kidId}`);
+            let gpId = selectEl.value;
+
+            if (!gpId) {
+                alert("Por favor seleccione un padrino disponible de la lista.");
+                return;
+            }
+
+            let pairings = getStorageData('pairings');
+            let kids = getStorageData('kids');
+            let godparents = getStorageData('godparents');
+
+            let kid = kids.find(k => k.id === kidId);
+            let gp = godparents.find(g => g.id === gpId);
+
+            if (!kid || !gp) return;
+
+            pairings.push({
+                kidId: kid.id,
+                kidName: kid.name,
+                gpId: gp.id,
+                gpName: gp.name,
+            });
+
+            setStorageData('pairings', pairings);
+            renderAdminData();
+            alert(`¡Se ha asignado a ${gp.name} como padrino de ${kid.name} correctamente!`);
+        }
+
+        function removeSinglePairing(kidId) {
+            if (confirm("¿Desea deshacer la asignación de este niño?")) {
+                let pairings = getStorageData('pairings');
+                pairings = pairings.filter(p => p.kidId !== kidId);
+                setStorageData('pairings', pairings);
+                renderAdminData();
+            }
+        }
+
+        function deleteKid(id) {
+            if (confirm("¿Está seguro de que desea eliminar este registro de niño?")) {
+                let kids = getStorageData('kids');
+                kids = kids.filter(k => k.id !== id);
+                setStorageData('kids', kids);
+                
+                let pairings = getStorageData('pairings');
+                pairings = pairings.filter(p => p.kidId !== id);
+                setStorageData('pairings', pairings);
+
+                updateCounters();
+                renderAdminData();
+                alert("Registro eliminado correctamente.");
+            }
+        }
+
+        function deleteGodparent(id) {
+            if (confirm("¿Está seguro de que desea eliminar este registro de padrino?")) {
+                let godparents = getStorageData('godparents');
+                godparents = godparents.filter(gp => gp.id !== id);
+                setStorageData('godparents', godparents);
+
+                let pairings = getStorageData('pairings');
+                pairings = pairings.filter(p => p.gpId !== id);
+                setStorageData('pairings', pairings);
+
+                renderAdminData();
+                alert("Registro eliminado correctamente.");
+            }
+        }
+
+        function updateCounters() {
+            let kids = getStorageData('kids');
+            let counterEl = document.getElementById('kids-counter');
+            if(counterEl) {
+                counterEl.innerHTML = `Cupos habilitados: <strong>${kids.length} / 100</strong>.<br>✨ <i>Nota:</i> Rango de edad permitido: <strong>3 a 10 años</strong>. De todos los inscritos, en el concurso final <strong>solo se seleccionarán 50 niños ganadores</strong>.`;
+            }
+        }
+
+        function renderAdminData() {
+            let kids = getStorageData('kids');
+            let godparents = getStorageData('godparents');
+            let pairings = getStorageData('pairings');
+
+            document.getElementById('admin-kid-count').innerText = kids.length;
+            document.getElementById('admin-gp-count').innerText = godparents.length;
+
+            let pairedKidIds = pairings.map(p => p.kidId);
+            let assignedGpIds = pairings.map(p => p.gpId);
+
+            let unpairedKids = kids.filter(k => !pairedKidIds.includes(k.id));
+            let unassignedGodparents = godparents.filter(g => !assignedGpIds.includes(g.id));
+
+            document.getElementById('admin-paired-count').innerText = pairings.length;
+            document.getElementById('admin-unpaired-kids-count').innerText = unpairedKids.length;
+            document.getElementById('admin-unassigned-gp-count').innerText = unassignedGodparents.length;
+
+            // --- TÉRMINOS DE BÚSQUEDA / FILTROS ---
+            let filterPaired = (document.getElementById('search-paired').value || '').toLowerCase();
+            let filterUnpairedKids = (document.getElementById('search-unpaired-kids').value || '').toLowerCase();
+            let filterUnassignedGp = (document.getElementById('search-unassigned-gp').value || '').toLowerCase();
+            let filterAllKids = (document.getElementById('search-all-kids').value || '').toLowerCase();
+            let filterAllGp = (document.getElementById('search-all-gp').value || '').toLowerCase();
+
+            // 1. Renderizar Lista de Emparejados con Filtro
+            let pairContainer = document.getElementById('pairings-list');
+            let filteredPairings = pairings.filter(p => 
+                p.kidName.toLowerCase().includes(filterPaired) || p.gpName.toLowerCase().includes(filterPaired)
+            );
+
+            if (!filteredPairings || filteredPairings.length === 0) {
+                pairContainer.innerHTML = '<p style="font-size: 0.78rem; color: #777;">No se encontraron emparejamientos.</p>';
+            } else {
+                pairContainer.innerHTML = '';
+                filteredPairings.forEach((p, i) => {
+                    let k = kids.find(item => item.id === p.kidId) || {};
+                    let g = godparents.find(item => item.id === p.gpId) || {};
+
+                    pairContainer.innerHTML += `
+                        <div class="list-card pairing">
+                            <div style="width:100%;">
+                                <div style="font-size:0.9rem; font-weight:700; color:#3a0ca3; margin-bottom:5px; display:flex; justify-content:space-between; align-items:center;">
+                                    <span>#${i+1} EMPAREJAMIENTO: ${p.kidName} ➔ ${p.gpName}</span>
+                                </div>
+                                <div class="pairing-details-grid">
+                                    <div>
+                                        <b style="color:var(--primary-red);">👶 DATOS DEL NIÑO:</b><br>
+                                        • <b>Nombre:</b> ${k.name || 'N/A'}<br>
+                                        • <b>Doc. Identidad:</b> ${k.doc || 'Sin registrar'}<br>
+                                        • <b>Edad:</b> ${k.age || '?'} años<br>
+                                        • <b>Acudiente:</b> ${k.guardian || 'N/A'}<br>
+                                        • <b>Dirección:</b> ${k.address || 'N/A'}<br>
+                                        • <b>WhatsApp:</b> <a href="${getWaLink(k.whatsapp)}" target="_blank" class="wa-link"><i class="fa-brands fa-whatsapp"></i> ${k.whatsapp || 'N/A'}</a><br>
+                                        • <b>Carta:</b> <a href="#" onclick="openKidLetter('${p.kidId}'); return false;">Ver carta${k.letterImageBackStored ? ' (2 lados)' : ''}</a>
+                                    </div>
+                                    <div>
+                                        <b style="color:var(--christmas-green);">🎁 DATOS DEL PADRINO:</b><br>
+                                        • <b>Nombre:</b> ${g.name || 'N/A'}<br>
+                                        • <b>WhatsApp:</b> <a href="${getWaLink(g.whatsapp)}" target="_blank" class="wa-link"><i class="fa-brands fa-whatsapp"></i> ${g.whatsapp || 'N/A'}</a><br>
+                                        • <b>Dirección Casa:</b> ${g.address || 'N/A'}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-actions" style="width:100%; justify-content:flex-end; margin-top:8px;">
+                                ${whatsappButton(`pairing-kid-${p.kidId}`, 'WhatsApp al acudiente', `sendPairingWhatsAppToKid('${p.kidId}')`)}
+                                ${whatsappButton(`pairing-gp-${p.kidId}`, 'WhatsApp al padrino', `sendPairingWhatsAppToGodparent('${p.gpId}', '${p.kidId}')`)}
+                                <button class="btn-action btn-delete" onclick="removeSinglePairing('${p.kidId}')"><i class="fa-solid fa-xmark"></i> Deshacer</button>
+                            </div>
+                        </div>`;
+                });
+            }
+
+            // 2. Niños Sin Emparejar con Filtro
+            let unpairedKidsContainer = document.getElementById('unpaired-kids-list');
+            let filteredUnpairedKids = unpairedKids.filter(k => 
+                k.name.toLowerCase().includes(filterUnpairedKids) || 
+                (k.doc && k.doc.toLowerCase().includes(filterUnpairedKids)) || 
+                k.guardian.toLowerCase().includes(filterUnpairedKids) ||
+                k.whatsapp.includes(filterUnpairedKids)
+            );
+
+            unpairedKidsContainer.innerHTML = filteredUnpairedKids.length === 0 ? '<p style="font-size:0.78rem; color:#777;">No se encontraron niños sin emparejar.</p>' : '';
+            filteredUnpairedKids.forEach((k, index) => {
+                let optionsHtml = '<option value="">-- Seleccionar Padrino Disponible --</option>';
+                unassignedGodparents.forEach(gp => {
+                    optionsHtml += `<option value="${gp.id}">${gp.name} (WA: ${gp.whatsapp})</option>`;
+                });
+
+                unpairedKidsContainer.innerHTML += `
+                    <div class="list-card">
+                        <div class="card-main-info">
+                            <b>${index + 1}. ${k.name}</b> (${k.age} años)
+                            <span>Doc: ${k.doc || 'N/A'}</span>
+                            <span>Acudiente: ${k.guardian}</span>
+                            <span>WA: <a href="${getWaLink(k.whatsapp)}" target="_blank" class="wa-link"><i class="fa-brands fa-whatsapp"></i> ${k.whatsapp}</a></span>
+                        </div>
+                        ${unassignedGodparents.length > 0 ? `
+                        <div class="manual-assign-box">
+                            <select id="select-gp-${k.id}">
+                                ${optionsHtml}
+                            </select>
+                            <button class="btn-action btn-assign" onclick="assignManualPairing('${k.id}')"><i class="fa-solid fa-link"></i> Asignar</button>
+                        </div>` : '<small style="color:#d90429; font-weight:600;">Sin padrinos disponibles</small>'}
+                    </div>`;
+            });
+
+            // 3. Padrinos Sin Asignar con Filtro
+            let unassignedGpContainer = document.getElementById('unassigned-gp-list');
+            let filteredUnassignedGp = unassignedGodparents.filter(gp => 
+                gp.name.toLowerCase().includes(filterUnassignedGp) || 
+                gp.whatsapp.includes(filterUnassignedGp)
+            );
+
+            unassignedGpContainer.innerHTML = filteredUnassignedGp.length === 0 ? '<p style="font-size:0.78rem; color:#777;">No se encontraron padrinos sin asignar.</p>' : '';
+            filteredUnassignedGp.forEach((gp, index) => {
+                unassignedGpContainer.innerHTML += `
+                    <div class="list-card padrino">
+                        <div class="card-main-info">
+                            <b>${index + 1}. ${gp.name}</b>
+                            <span>WA: <a href="${getWaLink(gp.whatsapp)}" target="_blank" class="wa-link"><i class="fa-brands fa-whatsapp"></i> ${gp.whatsapp}</a></span>
+                            <span>Dir: ${gp.address}</span>
+                        </div>
+                    </div>`;
+            });
+
+            // 4. Lista Completa de Niños con Filtro
+            let kidsContainer = document.getElementById('admin-kids-list');
+            let filteredAllKids = kids.filter(k => 
+                k.name.toLowerCase().includes(filterAllKids) || 
+                (k.doc && k.doc.toLowerCase().includes(filterAllKids)) || 
+                k.guardian.toLowerCase().includes(filterAllKids) ||
+                k.whatsapp.includes(filterAllKids)
+            );
+
+            kidsContainer.innerHTML = filteredAllKids.length === 0 ? '<p style="font-size:0.78rem; color:#777;">No se encontraron niños inscritos.</p>' : '';
+            filteredAllKids.forEach((k, index) => {
+                kidsContainer.innerHTML += `
+                    <div class="list-card">
+                        <div class="card-main-info">
+                            <b>${index + 1}. ${k.name}</b> (${k.age} años)
+                            <span>Doc: ${k.doc || 'N/A'}</span>
+                            <span>Acudiente: ${k.guardian}</span>
+                            <span>WA: <a href="${getWaLink(k.whatsapp)}" target="_blank" class="wa-link"><i class="fa-brands fa-whatsapp"></i> ${k.whatsapp}</a></span>
+                            <span><a href="#" onclick="openKidLetter('${k.id}'); return false;">Ver Carta</a></span>
+                        </div>
+                        <div class="card-actions">
+                            ${whatsappButton(`kid-registration-${k.id}`, 'WhatsApp al acudiente', `sendWhatsAppToKid('${k.id}')`)}
+                            <button class="btn-action btn-delete" onclick="deleteKid('${k.id}')"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>`;
+            });
+
+            // 5. Lista Completa de Padrinos con Filtro
+            let gpContainer = document.getElementById('admin-gp-list');
+            let filteredAllGp = godparents.filter(gp => 
+                gp.name.toLowerCase().includes(filterAllGp) || 
+                gp.whatsapp.includes(filterAllGp)
+            );
+
+            gpContainer.innerHTML = filteredAllGp.length === 0 ? '<p style="font-size:0.78rem; color:#777;">No se encontraron padrinos inscritos.</p>' : '';
+            filteredAllGp.forEach((gp, index) => {
+                gpContainer.innerHTML += `
+                    <div class="list-card padrino">
+                        <div class="card-main-info">
+                            <b>${index + 1}. ${gp.name}</b>
+                            <span>WA: <a href="${getWaLink(gp.whatsapp)}" target="_blank" class="wa-link"><i class="fa-brands fa-whatsapp"></i> ${gp.whatsapp}</a></span>
+                            <span>Dir: ${gp.address}</span>
+                        </div>
+                        <div class="card-actions">
+                            ${whatsappButton(`gp-registration-${gp.id}`, 'WhatsApp', `sendWhatsAppToGodparent('${gp.id}')`)}
+                            <button class="btn-action btn-delete" onclick="deleteGodparent('${gp.id}')"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        // --- EXPORTACIÓN ÚNICA DE TODOS LOS DATOS ---
+        function csvCell(value) {
+            const text = String(value ?? '').replace(/"/g, '""').replace(/\r?\n/g, ' ');
+            return `"${text}"`;
+        }
+
+        function exportAllToExcel() {
+            const kids = getStorageData('kids');
+            const godparents = getStorageData('godparents');
+            const pairings = getStorageData('pairings');
+            if (!kids.length && !godparents.length && !pairings.length) {
+                alert('No hay registros para exportar.');
+                return;
+            }
+
+            const rows = [];
+            rows.push(['NAVIDAD SOLIDARIA - EXPORTACIÓN GENERAL']);
+            rows.push(['Fecha de exportación', new Date().toLocaleString('es-CO')]);
+            rows.push([]);
+            rows.push(['NIÑOS INSCRITOS']);
+            rows.push(['ID','Nombre del niño','Documento','Edad','Acudiente','Dirección','WhatsApp','Fecha de registro','Carta adjunta registrada']);
+            kids.forEach(k => rows.push([k.id,k.name,k.doc,k.age,k.guardian,k.address,k.whatsapp,k.createdAt,(k.letterImage || k.letterImageStored) ? (k.letterImageBack || k.letterImageBackStored ? 'Sí, 2 lados' : 'Sí, 1 lado') : 'No']));
+            rows.push([]);
+            rows.push(['PADRINOS INSCRITOS']);
+            rows.push(['ID','Nombre del padrino','WhatsApp','Dirección','Fecha de registro']);
+            godparents.forEach(g => rows.push([g.id,g.name,g.whatsapp,g.address,g.createdAt]));
+            rows.push([]);
+            rows.push(['EMPAREJAMIENTOS']);
+            rows.push(['ID niño','Nombre del niño','Documento niño','Edad','Acudiente','WhatsApp acudiente','ID padrino','Nombre del padrino','WhatsApp padrino']);
+            pairings.forEach(p => {
+                const k = kids.find(item => item.id === p.kidId) || {};
+                const g = godparents.find(item => item.id === p.gpId) || {};
+                rows.push([k.id || p.kidId,k.name || p.kidName,k.doc,k.age,k.guardian,k.whatsapp,g.id || p.gpId,g.name || p.gpName,g.whatsapp]);
+            });
+            rows.push([]);
+            rows.push(['NIÑOS SIN EMPAREJAR']);
+            rows.push(['ID','Nombre del niño','Documento','Edad','Acudiente','WhatsApp']);
+            const pairedIds = new Set(pairings.map(p => p.kidId));
+            kids.filter(k => !pairedIds.has(k.id)).forEach(k => rows.push([k.id,k.name,k.doc,k.age,k.guardian,k.whatsapp]));
+            rows.push([]);
+            rows.push(['PADRINOS SIN ASIGNAR']);
+            rows.push(['ID','Nombre del padrino','WhatsApp','Dirección']);
+            const assignedIds = new Set(pairings.map(p => p.gpId));
+            godparents.filter(g => !assignedIds.has(g.id)).forEach(g => rows.push([g.id,g.name,g.whatsapp,g.address]));
+
+            const csv = '\ufeff' + rows.map(row => row.map(csvCell).join(';')).join('\r\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `Navidad_Solidaria_Todos_los_registros_${new Date().toISOString().slice(0,10)}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        function confirmPairing() {
+            if (confirm("¿Está seguro de que desea realizar el sorteo y emparejamiento automático de los primeros 50 niños con los primeros 50 padrinos?")) {
+                runRandomPairing();
+            }
+        }
+
+        function confirmUnpairing() {
+            if (confirm("¿Está seguro de que desea eliminar todos los emparejamientos actuales?")) {
+                setStorageData('pairings', []);
+                renderAdminData();
+                alert("Se han desemparejado todos los niños y padrinos correctamente.");
+            }
+        }
+
+        function runRandomPairing() {
+            const kids = getStorageData('kids');
+            const godparents = getStorageData('godparents');
+            if (kids.length < 50) { alert('Se necesitan al menos 50 niños inscritos para seleccionar 50 ganadores.'); return; }
+            if (godparents.length < 50) { alert('Se necesitan al menos 50 padrinos inscritos para asignar un padrino distinto a cada niño ganador.'); return; }
+            const shuffle = arr => {
+                const out = [...arr];
+                for (let i = out.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [out[i], out[j]] = [out[j], out[i]];
+                }
+                return out;
+            };
+            const selectedKids = shuffle(kids).slice(0, 50);
+            const selectedGps = shuffle(godparents).slice(0, 50);
+            const pairings = selectedKids.map((kid, i) => ({ kidId: kid.id, kidName: kid.name, gpId: selectedGps[i].id, gpName: selectedGps[i].name }));
+            setStorageData('pairings', pairings);
+            alert('Sorteo completado: 50 niños seleccionados y asignados a 50 padrinos diferentes.');
+            renderAdminData();
+        }
+
+        function resetData() {
+            if(confirm("¿Está seguro de borrar todos los registros locales?")) {
+                localStorage.clear();
+                updateCounters();
+                renderAdminData();
+                alert("Todos los datos han sido reiniciados correctamente.");
+            }
+        }
+    </script>
+</body>
+</html>
