@@ -657,8 +657,7 @@
         <div class="letter-viewer-card">
             <h1>Carta de Navidad</h1>
             <p id="letter-viewer-message" class="viewer-message">Cargando la carta...</p>
-            <img id="letter-viewer-image" alt="Frente de la carta de Navidad" style="display:none;">
-            <img id="letter-viewer-image-back" alt="Reverso de la carta de Navidad" style="display:none; margin-top:12px;">
+            <img id="letter-viewer-image" alt="Carta de Navidad del niño, primera cara" style="display:none;"><img id="letter-viewer-image-2" alt="Carta de Navidad del niño, segunda cara" style="display:none; margin-top:14px;">
         </div>
     </div>
 
@@ -736,14 +735,14 @@
                         <input type="tel" class="form-control focus-next" id="kid-whatsapp" required placeholder="Ej. 3001234567">
                     </div>
                     <div class="form-group">
-                        <label>Carta del Niño Dios — lado 1 (obligatorio):</label>
-                        <small style="display:block;color:#666;margin-bottom:5px;">Sube una foto clara de la carta. Se comprimirá automáticamente para reducir su tamaño.</small>
+                        <label>Foto de la carta del Niño Dios (obligatoria):</label>
+                        <small style="display:block;color:#666;margin-bottom:5px;">Sube una foto clara y completa. La imagen se comprime automáticamente.</small>
                         <input type="file" class="form-control" id="kid-letter" accept="image/*" required>
                     </div>
                     <div class="form-group">
-                        <label>Segundo lado de la carta (opcional):</label>
-                        <small style="display:block;color:#666;margin-bottom:5px;">Si escribiste por ambos lados, sube aquí la foto del reverso. Si una foto pesa demasiado, intenta subir una captura de pantalla; asegúrate de que toda la escritura se lea claramente.</small>
-                        <input type="file" class="form-control" id="kid-letter-back" accept="image/*">
+                        <label>Segunda foto de la carta (opcional):</label>
+                        <small style="display:block;color:#666;margin-bottom:5px;">Úsala si escribiste por ambos lados. Si la foto no se puede comprimir, intenta subir una captura de pantalla de la foto.</small>
+                        <input type="file" class="form-control" id="kid-letter-2" accept="image/*">
                     </div>
                     <button type="submit" class="btn-submit">Enviar Inscripción</button>
                 </form>
@@ -776,7 +775,6 @@
             <div id="admin-screen" class="screen">
                 <button class="btn-back" onclick="showScreen('main-screen')"><i class="fa-solid fa-arrow-left"></i> Volver al menú</button>
                 <h2 style="font-size: 1.2rem; color: #3a0ca3; margin-bottom: 15px;"><i class="fa-solid fa-sliders"></i> Panel de Configuración y Control</h2>
-                <div id="firebase-status" class="firebase-status">Modo de prueba local: falta configurar Firebase para sincronizar registros y compartir cartas por enlace.</div>
                 
                 <div class="admin-toolbar">
                     <button class="btn-excel" style="font-size: 0.85rem; padding: 12px 18px;" onclick="exportAllToExcel()"><i class="fa-solid fa-file-excel"></i> Exportar todo a Excel</button>
@@ -846,7 +844,7 @@
         </div>
 
         <div class="footer-decor">
-            🎄 Navidad Solidaria &bull; Preparado para Firebase 🎄
+            🎄 Navidad Solidaria 🎄
         </div>
     </div>
 
@@ -862,21 +860,24 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
     <script>
         const ADMIN_EMAIL = "laterrazacali@gmail.com";
 
-        // Pega aquí la configuración de tu aplicación web de Firebase.
-        // No agregues credenciales privadas de servidor. La configuración web se obtiene en Firebase Console > Project settings > Your apps.
+        // Configuración web de Firebase para Navidad Solidaria.
+        // La seguridad se aplica mediante las reglas de Firestore; no pongas claves privadas aquí.
         const FIREBASE_CONFIG = {
-            apiKey: "PEGA_AQUI_API_KEY",
-            authDomain: "TU_PROYECTO.firebaseapp.com",
-            projectId: "TU_PROJECT_ID",
-            appId: "PEGA_AQUI_APP_ID"
+            apiKey: "AIzaSyABIJ_Zdc_7ZXQ_ZwLge2dnvaa_UfS5Mtc",
+            authDomain: "navidad-solidaria.firebaseapp.com",
+            projectId: "navidad-solidaria",
+            storageBucket: "navidad-solidaria.firebasestorage.app",
+            messagingSenderId: "657396327026",
+            appId: "1:657396327026:web:9c74c9b218f9ad287098eb"
         };
         let firestoreDb = null;
         let firestoreSyncQueues = {};
         const FIRESTORE_COLLECTIONS = { kids: 'kids', godparents: 'godparents', pairings: 'pairings' };
-        const isFirebaseConfigured = () => !!(FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey !== 'PEGA_AQUI_API_KEY' && FIREBASE_CONFIG.projectId && FIREBASE_CONFIG.projectId !== 'TU_PROJECT_ID' && window.firebase);
+        const isFirebaseConfigured = () => !!(FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.projectId === 'navidad-solidaria' && window.firebase && firebase.auth && firebase.firestore);
 
         function initFirebase() {
             if (!isFirebaseConfigured()) return false;
@@ -909,20 +910,21 @@
             }
             window.scrollTo(0, 0);
             setupAutoScroll();
-            if (initFirebase()) await loadFirestoreData();
-            updateCounters();
+            initFirebase();
+            updateCounters(0);
+            refreshPublicKidCount();
         });
 
         async function showSharedLetter(kidId) {
             const message = document.getElementById('letter-viewer-message');
             const img = document.getElementById('letter-viewer-image');
-            const imgBack = document.getElementById('letter-viewer-image-back');
+            const img2 = document.getElementById('letter-viewer-image-2');
             if (!initFirebase()) {
-                message.textContent = 'Esta carta estará disponible cuando el administrador conecte el proyecto de Firebase y publique el sistema.';
+                message.textContent = 'No se pudo conectar con el servicio de cartas. Intenta nuevamente más tarde.';
                 return;
             }
             try {
-                const doc = await firestoreDb.collection('kids').doc(kidId).get();
+                const doc = await firestoreDb.collection('publicLetters').doc(kidId).get();
                 const kid = doc.exists ? doc.data() : null;
                 if (!kid || !kid.letterImage) {
                     message.textContent = 'No se encontró la carta solicitada.';
@@ -930,41 +932,48 @@
                 }
                 img.src = kid.letterImage;
                 img.style.display = 'block';
-                if (kid.letterImageBack) {
-                    imgBack.src = kid.letterImageBack;
-                    imgBack.style.display = 'block';
+                if (kid.letterImage2) {
+                    img2.src = kid.letterImage2;
+                    img2.style.display = 'block';
                 }
                 message.textContent = kid.name ? `Carta de Navidad de ${kid.name}` : 'Carta de Navidad';
             } catch (err) {
                 console.error(err);
-                message.textContent = 'No se pudo cargar la carta. Revisa las reglas de acceso de Firestore.';
+                message.textContent = 'No se pudo cargar la carta. Intenta nuevamente más tarde.';
             }
         }
 
         async function loadFirestoreData() {
-            if (!firestoreDb) return;
+            if (!firestoreDb || !isAdminAuthenticated()) throw new Error('Debes iniciar sesión como administrador.');
             try {
                 for (const key of Object.keys(FIRESTORE_COLLECTIONS)) {
                     const snapshot = await firestoreDb.collection(FIRESTORE_COLLECTIONS[key]).get();
                     const remote = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                    const local = getStorageData(key);
-                    if (remote.length) {
-                        // Las cartas se conservan en Firestore, pero NO se duplican en localStorage.
-                        const localCopy = key === 'kids' ? remote.map(({ letterImage, ...kid }) => ({ ...kid, letterImageStored: !!letterImage })) : remote;
-                        localStorage.setItem(key, JSON.stringify(localCopy));
-                    } else if (local.length) {
-                        await syncCollectionToFirestore(key, local);
-                    }
+                    // Firestore es la fuente oficial; no migrar datos viejos del navegador a la nube.
+                    localStorage.setItem(key, JSON.stringify(remote));
                 }
-                updateFirebaseStatus('Conectado a Firestore. Los registros se sincronizan con Firebase.', true);
+                const counter = await firestoreDb.collection('publicCounters').doc('kids').get();
+                updateCounters(counter.exists ? Number(counter.data().count || 0) : 0);
+                return true;
             } catch (err) {
                 console.error('Error cargando datos de Firestore:', err);
-                updateFirebaseStatus('No se pudo leer Firestore. Revisa las reglas de acceso y la configuración.', false);
+                throw err;
+            }
+        }
+
+        async function refreshPublicKidCount() {
+            if (!initFirebase()) return;
+            try {
+                const counter = await firestoreDb.collection('publicCounters').doc('kids').get();
+                updateCounters(counter.exists ? Number(counter.data().count || 0) : 0);
+            } catch (err) {
+                // El formulario seguirá verificando los cupos de forma atómica al enviarse.
+                console.warn('No se pudo consultar el contador público:', err);
             }
         }
 
         function syncCollectionToFirestore(key, data) {
-            if (!firestoreDb || !FIRESTORE_COLLECTIONS[key]) return Promise.resolve(false);
+            if (!firestoreDb || !FIRESTORE_COLLECTIONS[key] || !isAdminAuthenticated()) return Promise.resolve(false);
             const collectionName = FIRESTORE_COLLECTIONS[key];
             const previous = firestoreSyncQueues[key] || Promise.resolve();
             firestoreSyncQueues[key] = previous.then(async () => {
@@ -1062,13 +1071,35 @@
             });
         }
 
-        function checkConfigPassword() {
-            let pass = prompt("Ingrese la clave de configuración (1893):");
-            if (pass === "1893") {
-                showScreen('admin-screen');
-            } else if (pass !== null) {
-                alert("Clave incorrecta.");
+        async function checkConfigPassword() {
+            if (!initFirebase()) {
+                alert('Firebase no está configurado.');
+                return;
             }
+            try {
+                let user = firebase.auth().currentUser;
+                if (!user || user.email !== ADMIN_EMAIL) {
+                    const pass = prompt('Ingresa la contraseña del administrador (' + ADMIN_EMAIL + '):');
+                    if (pass === null) return;
+                    const credential = await firebase.auth().signInWithEmailAndPassword(ADMIN_EMAIL, pass);
+                    user = credential.user;
+                }
+                if (!user || user.email !== ADMIN_EMAIL) {
+                    await firebase.auth().signOut();
+                    alert('Esta cuenta no tiene permiso de administrador.');
+                    return;
+                }
+                await loadFirestoreData();
+                showScreen('admin-screen');
+            } catch (err) {
+                console.error('Error de acceso administrativo:', err);
+                alert('No se pudo ingresar. Verifica la contraseña del administrador y que Correo electrónico/contraseña esté habilitado en Firebase Authentication.');
+            }
+        }
+
+        function isAdminAuthenticated() {
+            const user = window.firebase && firebase.auth ? firebase.auth().currentUser : null;
+            return !!(user && user.email === ADMIN_EMAIL);
         }
 
         function getStorageData(key) {
@@ -1084,7 +1115,7 @@
         function setStorageData(key, data) {
             try {
                 localStorage.setItem(key, JSON.stringify(data));
-                if (firestoreDb && FIRESTORE_COLLECTIONS[key]) {
+                if (firestoreDb && FIRESTORE_COLLECTIONS[key] && isAdminAuthenticated()) {
                     syncCollectionToFirestore(key, data);
                 }
                 return true;
@@ -1094,101 +1125,75 @@
             }
         }
 
-        // Optimiza cada lado a un máximo aproximado de 300 KiB en formato Data URL.
-        // Dos imágenes juntas ocupan como máximo unos 600 KiB, dejando margen para los demás campos
-        // dentro del límite de 1 MiB por documento de Firestore.
+        // Comprime cada cara de la carta a un máximo seguro para el límite de 1 MiB por documento de Firestore.
         async function compressLetterImage(file) {
+            if (!file || !file.type.startsWith('image/')) throw new Error('Selecciona un archivo de imagen válido.');
             const maxDataUrlChars = 300 * 1024;
-            const maxInputBytes = 15 * 1024 * 1024;
-            if (!file || !file.type || !file.type.startsWith('image/')) {
-                throw new Error('Selecciona una fotografía válida de la carta (JPG, PNG o imagen compatible).');
-            }
-            if (file.size > maxInputBytes) {
-                throw new Error('La foto original pesa más de 15 MB. Abre la foto en tu celular, toma una captura de pantalla y sube esa captura.');
-            }
-            const imageUrl = URL.createObjectURL(file);
+            const objectUrl = URL.createObjectURL(file);
             try {
                 const image = new Image();
-                image.src = imageUrl;
-                await new Promise((resolve, reject) => { image.onload = resolve; image.onerror = () => reject(new Error('No se pudo leer la fotografía. Intenta subir una captura de pantalla de la carta.')); });
-                let maxSide = 1200;
-                let quality = 0.78;
-                let dataUrl = '';
-                // Reducir primero calidad y luego dimensiones hasta alcanzar el límite seguro.
-                for (let attempt = 0; attempt < 18; attempt++) {
+                image.src = objectUrl;
+                await new Promise((resolve, reject) => { image.onload = resolve; image.onerror = reject; });
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const sizes = [1500, 1300, 1100, 950];
+                const qualities = [0.82, 0.74, 0.66, 0.58, 0.50, 0.42, 0.36];
+                for (const maxSide of sizes) {
                     const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
-                    const canvas = document.createElement('canvas');
                     canvas.width = Math.max(1, Math.round(image.width * scale));
                     canvas.height = Math.max(1, Math.round(image.height * scale));
-                    const ctx = canvas.getContext('2d');
-                    if (!ctx) throw new Error('El navegador no pudo procesar la foto. Intenta con una captura de pantalla.');
                     ctx.fillStyle = '#ffffff';
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
                     ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-                    dataUrl = canvas.toDataURL('image/jpeg', quality);
-                    if (dataUrl.length <= maxDataUrlChars) return dataUrl;
-                    if (quality > 0.48) quality -= 0.08;
-                    else { maxSide = Math.round(maxSide * 0.82); quality = 0.68; }
+                    for (const quality of qualities) {
+                        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                        if (dataUrl.length <= maxDataUrlChars) return dataUrl;
+                    }
                 }
-                throw new Error('La foto sigue siendo demasiado pesada. Abre la foto que tomaste, haz una captura de pantalla y sube esa captura. Procura que la carta se vea completa y que el texto sea legible.');
+                throw new Error('La foto sigue siendo demasiado pesada. Abre la foto en tu celular, toma una captura de pantalla y sube esa captura. Asegúrate de que la letra se lea con claridad.');
             } finally {
-                URL.revokeObjectURL(imageUrl);
+                URL.revokeObjectURL(objectUrl);
             }
         }
 
-        async function openKidLetter(kidId) {
-            let kid = getStorageData('kids').find(k => k.id === kidId);
-            if ((!kid || !kid.letterImage) && firestoreDb) {
-                try {
-                    const snap = await firestoreDb.collection('kids').doc(kidId).get();
-                    kid = snap.exists ? { ...snap.data(), id: snap.id } : kid;
-                } catch (err) {
-                    console.error('Error cargando carta:', err);
-                }
-            }
-            if (!kid || !kid.letterImage) {
-                alert('No se pudo cargar la carta. Comprueba la conexión con Firebase.');
-                return;
-            }
-            const w = window.open('', '_blank');
-            if (!w) {
-                alert('El navegador bloqueó la ventana emergente. Permite ventanas emergentes e inténtalo de nuevo.');
-                return;
-            }
-            const images = [kid.letterImage, kid.letterImageBack].filter(Boolean);
-            w.document.open();
-            w.document.write(`<title>Carta de Navidad</title><body style="font-family:Arial;text-align:center;padding:12px">${images.map((src,i)=>`<h3>${i===0?'Lado 1':'Lado 2'}</h3><img style="max-width:100%;height:auto;margin-bottom:16px" src="${src.replace(/"/g,'&quot;')}">`).join('')}</body>`);
-            w.document.close();
+        function createRegistrationId(prefix) {
+            const randomPart = (window.crypto && crypto.randomUUID)
+                ? crypto.randomUUID().replace(/-/g, '')
+                : Array.from({length: 32}, () => Math.floor(Math.random() * 16).toString(16)).join('');
+            return prefix + '_' + randomPart;
         }
 
         async function saveKid(e) {
             e.preventDefault();
             const form = document.getElementById('kid-form');
             const submitButton = form.querySelector('button[type="submit"]');
-            if (submitButton.disabled) return;
+            if (!initFirebase()) {
+                alert('No se pudo conectar con el sistema de inscripciones. Verifica tu conexión e intenta de nuevo.');
+                return;
+            }
+            const age = parseInt(document.getElementById('kid-age').value, 10);
+            if (isNaN(age) || age < 3 || age > 10) {
+                alert('La edad del niño debe estar comprendida entre 3 y 10 años.');
+                return;
+            }
+            const file1 = document.getElementById('kid-letter').files?.[0];
+            const file2 = document.getElementById('kid-letter-2').files?.[0];
+            if (!file1) {
+                alert('Adjunta la foto de la carta. La segunda foto es opcional.');
+                return;
+            }
             submitButton.disabled = true;
-            submitButton.textContent = 'Procesando fotografías…';
+            submitButton.textContent = 'Enviando inscripción…';
             try {
-                const kids = getStorageData('kids');
-                if (kids.length >= 100) throw new Error('Ya se alcanzó el límite de 100 niños inscritos.');
-                const age = parseInt(document.getElementById('kid-age').value, 10);
-                if (isNaN(age) || age < 3 || age > 10) throw new Error('La edad del niño debe estar entre 3 y 10 años.');
-                const firstInput = document.getElementById('kid-letter');
-                const secondInput = document.getElementById('kid-letter-back');
-                if (!firstInput.files || !firstInput.files[0]) throw new Error('Adjunta la fotografía del primer lado de la carta para continuar.');
-
-                const letterImage = await compressLetterImage(firstInput.files[0]);
-                const letterImageBack = secondInput.files && secondInput.files[0]
-                    ? await compressLetterImage(secondInput.files[0])
-                    : null;
-                // Mantener margen adicional por los demás campos y metadatos del documento Firestore.
-                const totalImageChars = letterImage.length + (letterImageBack ? letterImageBack.length : 0);
-                if (totalImageChars > 650 * 1024) {
-                    throw new Error('Las dos fotos juntas siguen siendo demasiado pesadas. Intenta tomar una captura de pantalla de cada lado y vuelve a subirlas. Asegúrate de que la carta completa y su escritura se lean claramente.');
+                const [letterImage, letterImage2] = await Promise.all([
+                    compressLetterImage(file1),
+                    file2 ? compressLetterImage(file2) : Promise.resolve('')
+                ]);
+                if (letterImage.length + letterImage2.length > 614400) {
+                    throw new Error('Las dos fotos pesan demasiado juntas. Sube una captura de pantalla más ligera o deja la segunda foto sin adjuntar.');
                 }
-
                 const newKid = {
-                    id: 'kid_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+                    id: createRegistrationId('kid'),
                     name: document.getElementById('kid-name').value.trim(),
                     doc: document.getElementById('kid-doc').value.trim(),
                     age,
@@ -1196,72 +1201,78 @@
                     address: document.getElementById('kid-address').value.trim(),
                     whatsapp: document.getElementById('kid-whatsapp').value.trim(),
                     letterImage,
-                    letterImageBack,
+                    letterImage2,
                     createdAt: new Date().toISOString()
                 };
-
-                if (firestoreDb) {
-                    // No se confirma el registro hasta que Firestore responda que guardó ambos lados.
-                    await firestoreDb.collection('kids').doc(newKid.id).set(newKid);
-                    const metadata = { ...newKid, letterImageStored: true, letterImageBackStored: !!letterImageBack };
-                    delete metadata.letterImage;
-                    delete metadata.letterImageBack;
-                    const latestKids = getStorageData('kids');
-                    latestKids.push(metadata);
-                    localStorage.setItem('kids', JSON.stringify(latestKids));
-                } else {
-                    // Modo local de prueba: las fotos se guardan en este navegador únicamente.
-                    const latestKids = getStorageData('kids');
-                    latestKids.push(newKid);
-                    localStorage.setItem('kids', JSON.stringify(latestKids));
-                }
-
+                const counterRef = firestoreDb.collection('publicCounters').doc('kids');
+                const kidRef = firestoreDb.collection('kids').doc(newKid.id);
+                const letterRef = firestoreDb.collection('publicLetters').doc(newKid.id);
+                const kidPayload = { ...newKid };
+                delete kidPayload.id;
+                let newCount = 0;
+                await firestoreDb.runTransaction(async transaction => {
+                    const counterSnapshot = await transaction.get(counterRef);
+                    const currentCount = counterSnapshot.exists ? Number(counterSnapshot.data().count || 0) : 0;
+                    if (currentCount >= 100) throw new Error('CUPOS_COMPLETOS');
+                    newCount = currentCount + 1;
+                    transaction.set(kidRef, kidPayload);
+                    transaction.set(letterRef, { name: newKid.name, letterImage, letterImage2, createdAt: newKid.createdAt });
+                    transaction.set(counterRef, { count: newCount, lastId: newKid.id });
+                });
+                updateCounters(newCount);
                 form.reset();
-                updateCounters();
                 showScreen('main-screen');
-                showModal('Registro exitoso', 'La inscripción y las fotografías adjuntas se guardaron correctamente. Gracias por participar en Navidad Solidaria.');
+                showModal('Registro exitoso', 'La inscripción y la foto de la carta se guardaron correctamente. Gracias por participar en Navidad Solidaria.');
             } catch (err) {
-                console.error('Error al registrar niño:', err);
-                alert(err.message || 'No se pudo guardar la inscripción. Revisa la conexión e inténtalo de nuevo. No se ha confirmado el registro.');
+                console.error('Error registrando niño:', err);
+                if (err.message === 'CUPOS_COMPLETOS') {
+                    updateCounters(100);
+                    alert('Ya se completaron los 100 cupos para niños. Gracias por tu interés.');
+                } else if (err.code === 'permission-denied') {
+                    alert('Firebase rechazó el registro por sus reglas de seguridad. Aún falta publicar las reglas correctas de Firestore.');
+                } else {
+                    alert(err.message || 'No se pudo guardar la inscripción. Revisa la conexión e intenta nuevamente.');
+                }
             } finally {
                 submitButton.disabled = false;
                 submitButton.textContent = 'Enviar Inscripción';
             }
         }
 
-        function saveGodparent(e) {
+        async function saveGodparent(e) {
             e.preventDefault();
+            const form = document.getElementById('godparent-form');
+            const submitButton = form.querySelector('button[type="submit"]');
+            if (!initFirebase()) {
+                alert('No se pudo conectar con el sistema de inscripciones. Verifica tu conexión e intenta de nuevo.');
+                return;
+            }
+            submitButton.disabled = true;
+            submitButton.textContent = 'Enviando inscripción…';
             try {
-                let godparents = getStorageData('godparents');
-                if (godparents.length >= 100) {
-                    alert('Ya se alcanzó el límite de 100 padrinos inscritos.');
-                    return;
-                }
-
-                let newGodparent = {
-                    id: 'gp_' + Date.now(),
+                const newGodparent = {
+                    id: createRegistrationId('gp'),
                     name: document.getElementById('gp-name').value.trim(),
                     whatsapp: document.getElementById('gp-whatsapp').value.trim(),
                     address: document.getElementById('gp-address').value.trim(),
                     createdAt: new Date().toISOString()
                 };
-
-                godparents.push(newGodparent);
-                let saved = setStorageData('godparents', godparents);
-
-                if (saved) {
-                    document.getElementById('godparent-form').reset();
-                    showScreen('main-screen');
-                    showModal(
-                        "Registro de padrino exitoso",
-                        "Tu inscripción como padrino se realizó correctamente. Gracias por apoyar esta iniciativa de Navidad Solidaria. En los próximos días te informaremos por WhatsApp el nombre y la edad del niño asignado, y coordinaremos la entrega del regalo."
-                    );
-                } else {
-                    alert("No se pudo realizar el registro del padrino.");
-                }
+                const payload = { ...newGodparent };
+                delete payload.id;
+                await firestoreDb.collection('godparents').doc(newGodparent.id).set(payload);
+                form.reset();
+                showScreen('main-screen');
+                showModal('Registro de padrino exitoso', 'Tu inscripción como padrino se guardó correctamente. Gracias por apoyar esta iniciativa de Navidad Solidaria.');
             } catch (error) {
-                console.error(error);
-                alert("No se pudo realizar el registro.");
+                console.error('Error registrando padrino:', error);
+                if (error.code === 'permission-denied') {
+                    alert('Firebase rechazó el registro por sus reglas de seguridad. Aún falta publicar las reglas correctas de Firestore.');
+                } else {
+                    alert('No se pudo guardar la inscripción. Verifica tu conexión e intenta nuevamente.');
+                }
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Inscribirme como Padrino';
             }
         }
 
@@ -1393,19 +1404,33 @@
             }
         }
 
-        function deleteKid(id) {
-            if (confirm("¿Está seguro de que desea eliminar este registro de niño?")) {
-                let kids = getStorageData('kids');
-                kids = kids.filter(k => k.id !== id);
+        async function deleteKid(id) {
+            if (!confirm("¿Está seguro de que desea eliminar este registro de niño?")) return;
+            try {
+                if (firestoreDb && isAdminAuthenticated()) {
+                    const kidRef = firestoreDb.collection('kids').doc(id);
+                    const letterRef = firestoreDb.collection('publicLetters').doc(id);
+                    const counterRef = firestoreDb.collection('publicCounters').doc('kids');
+                    await firestoreDb.runTransaction(async transaction => {
+                        const counterSnapshot = await transaction.get(counterRef);
+                        transaction.delete(kidRef);
+                        transaction.delete(letterRef);
+                        if (counterSnapshot.exists) {
+                            const currentCount = Number(counterSnapshot.data().count || 0);
+                            transaction.set(counterRef, { count: Math.max(0, currentCount - 1), lastId: '' });
+                        }
+                    });
+                }
+                let kids = getStorageData('kids').filter(k => k.id !== id);
                 setStorageData('kids', kids);
-                
-                let pairings = getStorageData('pairings');
-                pairings = pairings.filter(p => p.kidId !== id);
+                let pairings = getStorageData('pairings').filter(p => p.kidId !== id);
                 setStorageData('pairings', pairings);
-
-                updateCounters();
+                updateCounters(firestoreDb && isAdminAuthenticated() ? Math.max(0, kids.length) : null);
                 renderAdminData();
                 alert("Registro eliminado correctamente.");
+            } catch (error) {
+                console.error('Error eliminando niño:', error);
+                alert('No se pudo eliminar el registro en la nube. Intenta nuevamente.');
             }
         }
 
@@ -1424,11 +1449,11 @@
             }
         }
 
-        function updateCounters() {
-            let kids = getStorageData('kids');
-            let counterEl = document.getElementById('kids-counter');
-            if(counterEl) {
-                counterEl.innerHTML = `Cupos habilitados: <strong>${kids.length} / 100</strong>.<br>✨ <i>Nota:</i> Rango de edad permitido: <strong>3 a 10 años</strong>. De todos los inscritos, en el concurso final <strong>solo se seleccionarán 50 niños ganadores</strong>.`;
+        function updateCounters(authoritativeCount = null) {
+            const count = Number.isInteger(authoritativeCount) ? authoritativeCount : getStorageData('kids').length;
+            const counterEl = document.getElementById('kids-counter');
+            if (counterEl) {
+                counterEl.innerHTML = `Cupos habilitados: <strong>${Math.min(100, count)} / 100</strong>.<br>✨ <i>Nota:</i> Rango de edad permitido: <strong>3 a 10 años</strong>. De todos los inscritos, en el concurso final <strong>solo se seleccionarán 50 niños ganadores</strong>.`;
             }
         }
 
@@ -1486,7 +1511,7 @@
                                         • <b>Acudiente:</b> ${k.guardian || 'N/A'}<br>
                                         • <b>Dirección:</b> ${k.address || 'N/A'}<br>
                                         • <b>WhatsApp:</b> <a href="${getWaLink(k.whatsapp)}" target="_blank" class="wa-link"><i class="fa-brands fa-whatsapp"></i> ${k.whatsapp || 'N/A'}</a><br>
-                                        • <b>Carta:</b> <a href="#" onclick="openKidLetter('${p.kidId}'); return false;">Ver carta${k.letterImageBackStored ? ' (2 lados)' : ''}</a>
+                                        • <b>Carta:</b> <a href="${k.letterImage}" target="_blank" rel="noopener">Ver cara 1</a>${k.letterImage2 ? ` · <a href="${k.letterImage2}" target="_blank" rel="noopener">Ver cara 2</a>` : ''}
                                     </div>
                                     <div>
                                         <b style="color:var(--christmas-green);">🎁 DATOS DEL PADRINO:</b><br>
@@ -1576,7 +1601,7 @@
                             <span>Doc: ${k.doc || 'N/A'}</span>
                             <span>Acudiente: ${k.guardian}</span>
                             <span>WA: <a href="${getWaLink(k.whatsapp)}" target="_blank" class="wa-link"><i class="fa-brands fa-whatsapp"></i> ${k.whatsapp}</a></span>
-                            <span><a href="#" onclick="openKidLetter('${k.id}'); return false;">Ver Carta</a></span>
+                            <span><a href="${k.letterImage}" target="_blank" rel="noopener">Ver cara 1</a>${k.letterImage2 ? ` · <a href="${k.letterImage2}" target="_blank" rel="noopener">Ver cara 2</a>` : ''}</span>
                         </div>
                         <div class="card-actions">
                             ${whatsappButton(`kid-registration-${k.id}`, 'WhatsApp al acudiente', `sendWhatsAppToKid('${k.id}')`)}
@@ -1630,7 +1655,7 @@
             rows.push([]);
             rows.push(['NIÑOS INSCRITOS']);
             rows.push(['ID','Nombre del niño','Documento','Edad','Acudiente','Dirección','WhatsApp','Fecha de registro','Carta adjunta registrada']);
-            kids.forEach(k => rows.push([k.id,k.name,k.doc,k.age,k.guardian,k.address,k.whatsapp,k.createdAt,(k.letterImage || k.letterImageStored) ? (k.letterImageBack || k.letterImageBackStored ? 'Sí, 2 lados' : 'Sí, 1 lado') : 'No']));
+            kids.forEach(k => rows.push([k.id,k.name,k.doc,k.age,k.guardian,k.address,k.whatsapp,k.createdAt,k.letterImage ? 'Sí' : 'No']));
             rows.push([]);
             rows.push(['PADRINOS INSCRITOS']);
             rows.push(['ID','Nombre del padrino','WhatsApp','Dirección','Fecha de registro']);
@@ -1681,32 +1706,71 @@
         }
 
         function runRandomPairing() {
-            const kids = getStorageData('kids');
-            const godparents = getStorageData('godparents');
-            if (kids.length < 50) { alert('Se necesitan al menos 50 niños inscritos para seleccionar 50 ganadores.'); return; }
-            if (godparents.length < 50) { alert('Se necesitan al menos 50 padrinos inscritos para asignar un padrino distinto a cada niño ganador.'); return; }
-            const shuffle = arr => {
-                const out = [...arr];
-                for (let i = out.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [out[i], out[j]] = [out[j], out[i]];
-                }
-                return out;
-            };
-            const selectedKids = shuffle(kids).slice(0, 50);
-            const selectedGps = shuffle(godparents).slice(0, 50);
-            const pairings = selectedKids.map((kid, i) => ({ kidId: kid.id, kidName: kid.name, gpId: selectedGps[i].id, gpName: selectedGps[i].name }));
+            let kids = getStorageData('kids');
+            let godparents = getStorageData('godparents');
+
+            if (godparents.length === 0) {
+                alert("No hay padrinos inscritos para realizar el emparejamiento.");
+                return;
+            }
+            if (kids.length === 0) {
+                alert("No hay niños inscritos para realizar el emparejamiento.");
+                return;
+            }
+
+            let selectedKids = kids.slice(0, 50);
+            let selectedGps = godparents.slice(0, 50);
+
+            let shuffledKids = [...selectedKids].sort(() => 0.5 - Math.random());
+
+            let pairings = [];
+            let gpIndex = 0;
+
+            shuffledKids.forEach(kid => {
+                let gp = selectedGps[gpIndex];
+                pairings.push({
+                    kidId: kid.id,
+                    kidName: kid.name,
+                    gpId: gp.id,
+                    gpName: gp.name,
+                });
+                gpIndex = (gpIndex + 1) % selectedGps.length;
+            });
+
             setStorageData('pairings', pairings);
-            alert('Sorteo completado: 50 niños seleccionados y asignados a 50 padrinos diferentes.');
+            alert(`¡Emparejamiento aleatorio completado con éxito para ${pairings.length} niños ganadores!`);
             renderAdminData();
         }
 
-        function resetData() {
-            if(confirm("¿Está seguro de borrar todos los registros locales?")) {
-                localStorage.clear();
-                updateCounters();
+        async function resetData() {
+            if (!isAdminAuthenticated()) {
+                alert('Debes iniciar sesión como administrador.');
+                return;
+            }
+            if (!confirm('¿Está seguro de borrar TODOS los registros de niños, padrinos, cartas y emparejamientos de Firebase? Esta acción no se puede deshacer.')) return;
+            try {
+                const refs = [];
+                for (const collectionName of ['kids', 'godparents', 'pairings', 'publicLetters']) {
+                    const snapshot = await firestoreDb.collection(collectionName).get();
+                    snapshot.docs.forEach(doc => refs.push(doc.ref));
+                }
+                const counterRef = firestoreDb.collection('publicCounters').doc('kids');
+                refs.push(counterRef);
+                for (let i = 0; i < refs.length; i += 450) {
+                    const batch = firestoreDb.batch();
+                    refs.slice(i, i + 450).forEach(ref => batch.delete(ref));
+                    await batch.commit();
+                }
+                localStorage.removeItem('kids');
+                localStorage.removeItem('godparents');
+                localStorage.removeItem('pairings');
+                localStorage.removeItem('whatsappStatuses');
+                updateCounters(0);
                 renderAdminData();
-                alert("Todos los datos han sido reiniciados correctamente.");
+                alert('Los registros de Firebase se eliminaron correctamente.');
+            } catch (error) {
+                console.error('Error reiniciando datos:', error);
+                alert('No se pudieron borrar todos los registros. Revisa las reglas de Firestore e intenta nuevamente.');
             }
         }
     </script>
