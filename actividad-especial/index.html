@@ -946,13 +946,23 @@
         async function loadFirestoreData() {
             if (!firestoreDb || !isAdminAuthenticated()) throw new Error('Debes iniciar sesión como administrador.');
             try {
-                for (const key of Object.keys(FIRESTORE_COLLECTIONS)) {
-                    const snapshot = await firestoreDb.collection(FIRESTORE_COLLECTIONS[key]).get();
+                // Consultar las tres colecciones y el contador en paralelo para reducir la espera.
+                const keys = Object.keys(FIRESTORE_COLLECTIONS);
+                const requests = keys.map(key =>
+                    firestoreDb.collection(FIRESTORE_COLLECTIONS[key]).get()
+                );
+                requests.push(firestoreDb.collection('publicCounters').doc('kids').get());
+
+                const results = await Promise.all(requests);
+
+                keys.forEach((key, index) => {
+                    const snapshot = results[index];
                     const remote = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
                     // Firestore es la fuente oficial; no migrar datos viejos del navegador a la nube.
                     localStorage.setItem(key, JSON.stringify(remote));
-                }
-                const counter = await firestoreDb.collection('publicCounters').doc('kids').get();
+                });
+
+                const counter = results[results.length - 1];
                 updateCounters(counter.exists ? Number(counter.data().count || 0) : 0);
                 return true;
             } catch (err) {
