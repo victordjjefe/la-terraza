@@ -1542,7 +1542,7 @@
                                         • <b>Acudiente:</b> ${k.guardian || 'N/A'}<br>
                                         • <b>Dirección:</b> ${k.address || 'N/A'}<br>
                                         • <b>WhatsApp:</b> <a href="${getWaLink(k.whatsapp)}" target="_blank" class="wa-link"><i class="fa-brands fa-whatsapp"></i> ${k.whatsapp || 'N/A'}</a><br>
-                                        • <b>Carta:</b> <a href="${k.letterImage}" target="_blank" rel="noopener">Ver cara 1</a>${k.letterImage2 ? ` · <a href="${k.letterImage2}" target="_blank" rel="noopener">Ver cara 2</a>` : ''}
+                                        • <b>Carta:</b> <a href="${getPublicLetterUrl(k.id)}" target="_blank" rel="noopener">Ver carta</a>
                                     </div>
                                     <div>
                                         <b style="color:var(--christmas-green);">🎁 DATOS DEL PADRINO:</b><br>
@@ -1632,7 +1632,7 @@
                             <span>Doc: ${k.doc || 'N/A'}</span>
                             <span>Acudiente: ${k.guardian}</span>
                             <span>WA: <a href="${getWaLink(k.whatsapp)}" target="_blank" class="wa-link"><i class="fa-brands fa-whatsapp"></i> ${k.whatsapp}</a></span>
-                            <span><a href="${k.letterImage}" target="_blank" rel="noopener">Ver cara 1</a>${k.letterImage2 ? ` · <a href="${k.letterImage2}" target="_blank" rel="noopener">Ver cara 2</a>` : ''}</span>
+                            <span><a href="${getPublicLetterUrl(k.id)}" target="_blank" rel="noopener">Ver carta</a></span>
                         </div>
                         <div class="card-actions">
                             ${whatsappButton(`kid-registration-${k.id}`, 'WhatsApp al acudiente', `sendWhatsAppToKid('${k.id}')`)}
