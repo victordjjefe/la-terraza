@@ -3,970 +3,1819 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>La Terraza Bingo - Gran Bingo Virtual Especial</title>
-    <meta property="og:title" content="La Terraza Bingo - Gran Bingo Virtual Especial">
-    <meta property="og:description" content="Compra tus tablas para el Gran Bingo Virtual Especial. Registro y comprobante de pago en línea.">
-    <meta property="og:image" content="bingo.png">
-    <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="La Terraza Bingo - Gran Bingo Virtual Especial">
-    <meta name="twitter:image" content="bingo.png">
-
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <title>Navidad Solidaria - Inscripciones</title>
+    <!-- Google Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Mountains+of+Christmas:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: 'Poppins', sans-serif; }
+        :root {
+            --primary-red: #c9184a;
+            --dark-red: #800f2f;
+            --christmas-green: #1b4332;
+            --light-green: #2d6a4f;
+            --gold: #ffb703;
+            --bg-color: #fceade;
+            --card-bg: #ffffff;
+            --text-color: #2b2d42;
+            --whatsapp-green: #25d366;
+            --success-color: #2b9348;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 100%);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 15px 10px;
+        }
+
+        /* Contenedor estilo celular adaptable para PC */
+        .mobile-container {
+            width: 100%;
+            max-width: 450px;
+            background: var(--card-bg);
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            border: 5px solid var(--gold);
+            position: relative;
+            overflow: visible;
+            transition: max-width 0.4s ease-in-out;
+        }
+
+        body.is-admin-view .mobile-container {
+            max-width: 1200px;
+        }
+
+        /* Botón de Ruedita discreto en la esquina superior derecha */
+        .btn-config-icon {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.85);
+            color: var(--dark-red);
+            border: 2px solid var(--gold);
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        .btn-config-icon:hover {
+            transform: rotate(45deg) scale(1.1);
+            background: #ffffff;
+            color: var(--primary-red);
+        }
+
+        /* Portada libre e integrada */
+        .header-cover {
+            width: 100%;
+            background: #ffffff;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            border-bottom: 2px solid #eee;
+        }
+
+        .header-cover img {
+            width: 100%;
+            max-height: 240px;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .header-title-area {
+            padding: 12px 15px;
+            background: linear-gradient(to bottom, #fff, #faf6f0);
+            text-align: center;
+            border-bottom: 3px solid var(--gold);
+        }
+
+        .header-title-area h1 {
+            font-family: 'Mountains of Christmas', cursive;
+            font-size: 1.8rem;
+            color: var(--primary-red);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .header-title-area p {
+            font-size: 0.8rem;
+            color: var(--christmas-green);
+            font-weight: 600;
+        }
+
+        /* Contenido principal */
+        .content {
+            padding: 20px;
+            flex-grow: 1;
+            background: #fffcf9;
+            background-image: radial-gradient(#e9ecef 1px, transparent 1px);
+            background-size: 20px 20px;
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+        }
+
+        /* Secciones y Pantallas */
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Mensaje de bienvenida emotivo */
+        .welcome-box {
+            text-align: center;
+            background: #fff8f0;
+            border: 2px dashed var(--gold);
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .welcome-box h2 {
+            font-family: 'Mountains of Christmas', cursive;
+            font-size: 1.6rem;
+            color: var(--primary-red);
+            margin-bottom: 5px;
+        }
+
+        .welcome-box p {
+            font-size: 0.82rem;
+            color: #555;
+            line-height: 1.4;
+        }
+
+        /* Botones del menú principal */
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .btn-nav {
+            background: linear-gradient(135deg, var(--primary-red), var(--dark-red));
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 50px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            box-shadow: 0 5px 15px rgba(201, 24, 74, 0.3);
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        .btn-nav:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(201, 24, 74, 0.4);
+        }
+
+        .btn-nav.green {
+            background: linear-gradient(135deg, var(--christmas-green), var(--light-green));
+            box-shadow: 0 5px 15px rgba(27, 67, 50, 0.3);
+        }
+
+        .btn-nav.green:hover {
+            box-shadow: 0 7px 20px rgba(27, 67, 50, 0.4);
+        }
+
+        .btn-excel {
+            background: linear-gradient(135deg, #1d6f42, #107c41);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 3px 8px rgba(16, 124, 65, 0.3);
+            transition: background 0.2s;
+        }
+
+        .btn-excel:hover {
+            background: #0b5c30;
+        }
+
+        /* Barra de búsqueda para filtrar registros */
+        .search-filter-box {
+            margin-bottom: 10px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .search-filter-box input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-filter-box input:focus {
+            border-color: #3a0ca3;
+        }
+
+        /* Decoración */
+        .decor-banner {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .decor-banner img {
+            width: 100px;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        /* Formularios */
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text-color);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 11px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-red);
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: var(--christmas-green);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .btn-submit:hover {
+            background: #123524;
+        }
+
+        .btn-back {
+            background: transparent;
+            border: none;
+            color: #6c757d;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+        }
+
+        /* Listados y Tarjetas en Admin */
+        .admin-section {
+            margin-bottom: 25px;
+            background: #fff;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            border: 1px solid #eee;
+        }
+
+        .admin-section h3 {
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+            color: var(--dark-red);
+            border-bottom: 2px solid var(--gold);
+            padding-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .list-card {
+            background: #fdf0ed;
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            font-size: 0.82rem;
+            border-left: 5px solid var(--primary-red);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.04);
+            flex-wrap: wrap;
+        }
+
+        .list-card.padrino {
+            background: #e8f5e9;
+            border-left-color: var(--christmas-green);
+        }
+
+        .list-card.pairing {
+            background: #f4f6fa;
+            border-left-color: #4361ee;
+            border: 1px solid #d0d7de;
+            border-left-width: 5px;
+        }
+
+        .pairing-details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            width: 100%;
+            background: #ffffff;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px dashed #bbb;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .pairing-details-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card-main-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-grow: 1;
+            flex-wrap: wrap;
+        }
+
+        .wa-link {
+            color: #128c7e;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #e6f7f0;
+            padding: 3px 8px;
+            border-radius: 6px;
+            border: 1px solid #b2e2d0;
+            transition: background 0.2s;
+        }
+
+        .wa-link:hover {
+            background: var(--whatsapp-green);
+            color: white;
+        }
+
+        .manual-assign-box {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .manual-assign-box select {
+            padding: 7px 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 0.78rem;
+            outline: none;
+            max-width: 280px;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 6px;
+            justify-content: flex-end;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-action {
+            border: none;
+            padding: 7px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: white;
+            transition: transform 0.1s, background 0.2s;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-1px);
+        }
+
+        .whatsapp-action-group {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            flex-wrap: nowrap;
+        }
+        .btn-whatsapp {
+            background: #25a85a;
+            color: #fff;
+        }
+        .btn-whatsapp:hover { background: #218c4b; }
+        .btn-whatsapp.sent {
+            background: #526b5b;
+            color: #fff;
+        }
+        .btn-whatsapp.sent:hover { background: #405548; }
+        .whatsapp-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 5px 8px;
+            border-radius: 7px;
+            background: #fff0f0;
+            color: #a61b1b;
+            border: 1px solid #f2c5c5;
+            font-size: 0.7rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .whatsapp-status.sent {
+            background: #e0f4e5;
+            color: #176534;
+            border-color: #a8d9b5;
+        }
+        @media (max-width: 480px) {
+            .whatsapp-action-group { flex-wrap: wrap; }
+        }
+
+        .status-badge {
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            border: 1px dashed #999;
+            background: #f1f1f1;
+            color: #555;
+        }
+
+        .status-badge.sent {
+            background: #d8f3dc;
+            color: #1b4332;
+            border-color: var(--success-color);
+        }
+
+        .btn-assign {
+            background: #ffb703;
+            color: #000;
+        }
+        .btn-assign:hover {
+            background: #e0a100;
+        }
+
+        .btn-delete {
+            background: #d90429;
+        }
+        .btn-delete:hover {
+            background: #9b2226;
+        }
+
+        .counter-badge {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 0.78rem;
+            margin-bottom: 12px;
+            line-height: 1.3;
+        }
+
+        .counter-badge strong {
+            color: var(--primary-red);
+        }
+
+        .footer-decor {
+            text-align: center;
+            padding: 10px;
+            font-size: 0.7rem;
+            color: #666;
+            border-top: 1px solid #eee;
+            background: #f8f9fa;
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+        }
+
+        /* MODAL POPUP */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            animation: popIn 0.3s ease-out;
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-card {
+            background: white;
+            border-radius: 20px;
+            max-width: 380px;
+            width: 100%;
+            padding: 25px 20px;
+            text-align: center;
+            border: 3px solid var(--gold);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            position: relative;
+        }
+
+        .modal-icon {
+            font-size: 3rem;
+            color: var(--christmas-green);
+            margin-bottom: 10px;
+        }
+
+        .modal-card h3 {
+            font-family: 'Mountains of Christmas', cursive;
+            font-size: 1.8rem;
+            color: var(--primary-red);
+            margin-bottom: 10px;
+        }
+
+        .modal-card p {
+            font-size: 0.85rem;
+            color: #444;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .btn-modal-close {
+            background: linear-gradient(135deg, var(--christmas-green), var(--light-green));
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .admin-toolbar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+        /* Vista pública de la carta compartida por WhatsApp */
+        #letter-viewer { display:none; min-height:100vh; width:100%; padding:24px 12px; background:#fceade; }
+        #letter-viewer .letter-viewer-card { max-width:760px; margin:0 auto; background:#fff; padding:18px; border-radius:16px; box-shadow:0 8px 28px rgba(0,0,0,.12); text-align:center; }
+        #letter-viewer h1 { color:#800f2f; font-size:1.35rem; margin-bottom:12px; }
+        #letter-viewer img { display:block; max-width:100%; max-height:78vh; object-fit:contain; margin:0 auto; border-radius:8px; }
+        #letter-viewer .viewer-message { color:#555; margin:12px 0; font-size:.95rem; }
+        .firebase-status { padding:9px 12px; margin:0 0 14px; border-radius:8px; font-size:.78rem; background:#fff3cd; color:#664d03; border:1px solid #ffecb5; }
+        .firebase-status.connected { background:#d1e7dd; color:#0f5132; border-color:#badbcc; }
     </style>
 </head>
-<body class="bg-slate-200 text-slate-800 min-h-screen flex flex-col justify-between">
-
-    <!-- Encabezado / Navegación -->
-    <header class="bg-indigo-950 text-white shadow-lg sticky top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 class="text-2xl font-bold tracking-wide flex items-center gap-2">
-                ✨ <span>La Terraza Bingo</span>
-            </h1>
-            <nav class="flex items-center space-x-3">
-                <button onclick="switchView('client')" id="btn-client" class="px-5 py-2.5 rounded-xl text-base font-bold bg-indigo-700 hover:bg-indigo-600 transition shadow">Comprar Tablas</button>
-                <!-- Botón de Tuerquita / Configuración -->
-                <button type="button" id="admin-settings-button" onclick="openLoginModal()" title="Panel de Configuración" class="p-2.5 rounded-xl bg-indigo-900 hover:bg-indigo-800 border border-indigo-700 transition flex items-center justify-center cursor-pointer">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-slate-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                </button>
-            </nav>
+<body>
+    <div id="letter-viewer">
+        <div class="letter-viewer-card">
+            <h1>Carta de Navidad</h1>
+            <p id="letter-viewer-message" class="viewer-message">Cargando la carta...</p>
+            <img id="letter-viewer-image" alt="Carta de Navidad del niño, primera cara" style="display:none;"><img id="letter-viewer-image-2" alt="Carta de Navidad del niño, segunda cara" style="display:none; margin-top:14px;">
         </div>
-    </header>
+    </div>
 
-    <!-- Contenido Principal -->
-    <main class="py-6 flex-grow w-full flex justify-center">
+    <div class="mobile-container">
+        <!-- Botón Ruedita de Configuración en la Esquina Superior Derecha -->
+        <button class="btn-config-icon" onclick="checkConfigPassword()" title="Configuración / Panel de Control">
+            <i class="fa-solid fa-gear"></i>
+        </button>
 
-        <!-- ================= VISTA CLIENTE (MARCO TIPO CELULAR) ================= -->
-        <section id="view-client" class="w-full max-w-md px-3 sm:px-0">
-            <div class="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border-4 border-slate-300 space-y-6 pb-8">
+        <!-- Portada -->
+        <div class="header-cover">
+            <img src="portada.png" alt="Portada Navidad">
+        </div>
+        <div class="header-title-area">
+            <h1>Navidad Solidaria</h1>
+            <p>¡Sembrando sonrisas en cada corazón!</p>
+        </div>
+
+        <div class="content">
+            
+            <!-- PANTALLA PRINCIPAL (MENÚ) -->
+            <div id="main-screen" class="screen active">
+                <div class="decor-banner">
+                    <img src="https://cdn-icons-png.flaticon.com/512/743/743007.png" alt="Árbol de Navidad">
+                </div>
+
+                <div class="welcome-box">
+                    <h2>¡Haz una sonrisa realidad!</h2>
+                    <p>Esta Navidad nos unimos para llevar alegría, ilusión y esperanza a los niños. Inscribe a tu pequeño o conviértete en padrino mágico de un gran sueño.</p>
+                </div>
+
+                <div class="menu-buttons">
+                    <button class="btn-nav" onclick="showScreen('kids-screen')">
+                        <i class="fa-solid fa-child-reaching"></i> Inscribir Niños
+                    </button>
+                    <button class="btn-nav green" onclick="showScreen('godparents-screen')">
+                        <i class="fa-solid fa-gift"></i> Inscribir Padrinos
+                    </button>
+                </div>
+            </div>
+
+            <!-- PANTALLA INSCRIPCIÓN DE NIÑOS -->
+            <div id="kids-screen" class="screen">
+                <button class="btn-back" onclick="showScreen('main-screen')"><i class="fa-solid fa-arrow-left"></i> Volver al menú</button>
+                <h2 style="font-size: 1.05rem; color: var(--dark-red); margin-bottom: 5px;"><i class="fa-solid fa-child"></i> Registro de Niños</h2>
                 
-                <!-- Portada e Información del Evento -->
-                <div class="space-y-4">
-                    <div class="w-full bg-slate-900 flex justify-center items-center overflow-hidden max-h-80 border-b border-slate-200">
-                        <img id="bingo-cover" src="bingo.png" alt="La Terraza Bingo Cover" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='https://via.placeholder.com/600x400/1e1b4b/ffffff?text=La+Terraza+Bingo+(bingo.png)';">
+                <div id="kids-counter" class="counter-badge">
+                    Cupos habilitados: <strong>0 / 100</strong>.<br>
+                    ✨ <i>Nota:</i> Rango de edad permitido: <strong>3 a 10 años</strong>. De todos los inscritos, en el concurso final <strong>solo se seleccionarán 50 niños ganadores</strong>.
+                </div>
+                
+                <form id="kid-form" onsubmit="saveKid(event)">
+                    <div class="form-group">
+                        <label>Nombre del Niño(a):</label>
+                        <input type="text" class="form-control focus-next" id="kid-name" required placeholder="Ej. Juanito Pérez">
                     </div>
-
-                    <div class="px-6 space-y-5">
-                        <div class="text-center space-y-2">
-                            <span class="bg-indigo-100 text-indigo-900 text-sm font-extrabold px-4 py-1.5 rounded-full uppercase tracking-wider inline-block">Gran Evento Virtual</span>
-                            <h2 class="text-3xl font-black text-slate-900 leading-tight">Gran Bingo Virtual Especial</h2>
-                            <p class="text-indigo-700 font-extrabold text-xl">📅 25 de octubre &nbsp;|&nbsp; ⏰ 8:00 p.m.</p>
-                            <div class="inline-block bg-amber-100 text-amber-900 font-black text-lg px-4 py-1 rounded-xl mt-1">
-                                💰 Valor por tabla: $3.000
-                            </div>
-                        </div>
-
-                        <!-- Nota de Asignación Aleatoria -->
-                        <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-xl">
-                            <p class="text-amber-900 text-base font-semibold leading-relaxed">
-                                📌 <strong>Información importante:</strong> Los números de las tablas se entregarán de forma aleatoria según la cantidad de tablas que escoja cada participante.
-                            </p>
-                        </div>
-
-                        <!-- Premios y Dinámica -->
-                        <div class="bg-slate-50 rounded-2xl p-5 border border-slate-200 space-y-4 shadow-sm">
-                            <h3 class="font-extrabold text-slate-900 text-center uppercase text-base tracking-wide border-b border-slate-200 pb-2">🏆 Premios y Dinámica</h3>
-                            
-                            <div class="space-y-3 text-base">
-                                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-1">
-                                    <span class="font-black text-indigo-950 text-lg block border-b pb-1">Primer Bingo:</span>
-                                    <p>🥇 <strong>1.er ganador:</strong> $100.000</p>
-                                    <p>🥈 <strong>2.º ganador (próximo bingo):</strong> Premio sorpresa</p>
-                                </div>
-
-                                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-1">
-                                    <span class="font-black text-indigo-950 text-lg block border-b pb-1">Segundo Bingo:</span>
-                                    <p>🥇 <strong>1.er ganador:</strong> $100.000</p>
-                                    <p>🥈 <strong>2.º ganador (próximo bingo):</strong> Premio sorpresa</p>
-                                </div>
-
-                                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-1">
-                                    <span class="font-black text-indigo-950 text-lg block border-b pb-1">Tercer Bingo:</span>
-                                    <p>🥇 <strong>1.er ganador:</strong> $250.000</p>
-                                    <p>🥈 <strong>2.º ganador (próximo bingo):</strong> Premio sorpresa</p>
-                                </div>
-
-                                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-1">
-                                    <span class="font-black text-indigo-950 text-lg block border-b pb-1">Cuarto Bingo:</span>
-                                    <p>🎁 <strong>Un único ganador:</strong> Electrodoméstico sorpresa</p>
-                                </div>
-                            </div>
-
-                            <!-- Ruleta Feature -->
-                            <div class="bg-indigo-100 border-2 border-indigo-300 rounded-xl p-4 text-center">
-                                <span class="text-indigo-950 font-black text-lg block">🎡 ¡Sección Especial Ruleta!</span>
-                                <p class="text-indigo-800 text-base font-extrabold mt-1">Premio Ruleta: $50.000</p>
-                            </div>
-                        </div>
+                    <div class="form-group">
+                        <label>Documento de Identidad (TI / Registro Civil):</label>
+                        <input type="text" class="form-control focus-next" id="kid-doc" required placeholder="Ej. 1098765432">
                     </div>
+                    <div class="form-group">
+                        <label>Edad (De 3 a 10 años):</label>
+                        <input type="number" class="form-control focus-next" id="kid-age" min="3" max="10" required placeholder="Ej. 6">
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre del Acudiente:</label>
+                        <input type="text" class="form-control focus-next" id="kid-guardian" required placeholder="Ej. María Pérez">
+                    </div>
+                    <div class="form-group">
+                        <label>Dirección de la Casa:</label>
+                        <input type="text" class="form-control focus-next" id="kid-address" required placeholder="Ej. Calle 10 # 20-30">
+                    </div>
+                    <div class="form-group">
+                        <label>Teléfono de WhatsApp:</label>
+                        <input type="tel" class="form-control focus-next" id="kid-whatsapp" required placeholder="Ej. 3001234567">
+                    </div>
+                    <div class="form-group">
+                        <label>Foto de la carta del Niño Dios (obligatoria):</label>
+                        <small style="display:block;color:#666;margin-bottom:5px;">Sube una foto clara y completa. La imagen se comprime automáticamente.</small>
+                        <input type="file" class="form-control" id="kid-letter" accept="image/*" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Segunda foto de la carta (opcional):</label>
+                        <small style="display:block;color:#666;margin-bottom:5px;">Úsala si escribiste por ambos lados. Si la foto no se puede comprimir, intenta subir una captura de pantalla de la foto.</small>
+                        <input type="file" class="form-control" id="kid-letter-2" accept="image/*">
+                    </div>
+                    <button type="submit" class="btn-submit">Enviar Inscripción</button>
+                </form>
+            </div>
+
+            <!-- PANTALLA INSCRIPCIÓN DE PADRINOS -->
+            <div id="godparents-screen" class="screen">
+                <button class="btn-back" onclick="showScreen('main-screen')"><i class="fa-solid fa-arrow-left"></i> Volver al menú</button>
+                <h2 style="font-size: 1.05rem; color: var(--christmas-green); margin-bottom: 10px;"><i class="fa-solid fa-hand-holding-heart"></i> Registro de Padrinos</h2>
+                <p style="font-size: 0.8rem; color: #555; margin-bottom: 12px;">¡Gracias por unirte como padrino y llevar felicidad a la vida de un niño!</p>
+                
+                <form id="godparent-form" onsubmit="saveGodparent(event)">
+                    <div class="form-group">
+                        <label>Nombre del Padrino / Madrina:</label>
+                        <input type="text" class="form-control focus-gp" id="gp-name" required placeholder="Ej. Carlos Gómez">
+                    </div>
+                    <div class="form-group">
+                        <label>Número de WhatsApp:</label>
+                        <input type="tel" class="form-control focus-gp" id="gp-whatsapp" required placeholder="Ej. 3109876543">
+                    </div>
+                    <div class="form-group">
+                        <label>Dirección de la Casa (Para recoger detalle):</label>
+                        <input type="text" class="form-control focus-gp" id="gp-address" required placeholder="Ej. Carrera 5 # 12-45">
+                    </div>
+                    <button type="submit" class="btn-submit" style="background: var(--christmas-green);">Inscribirme como Padrino</button>
+                </form>
+            </div>
+
+            <!-- PANTALLA CONFIGURACIÓN / PANEL ADMIN CON FILTROS Y EXCEL -->
+            <div id="admin-screen" class="screen">
+                <button class="btn-back" onclick="showScreen('main-screen')"><i class="fa-solid fa-arrow-left"></i> Volver al menú</button>
+                <h2 style="font-size: 1.2rem; color: #3a0ca3; margin-bottom: 15px;"><i class="fa-solid fa-sliders"></i> Panel de Configuración y Control</h2>
+                
+                <div class="admin-toolbar">
+                    <button class="btn-excel" style="font-size: 0.85rem; padding: 12px 18px;" onclick="exportAllToExcel()"><i class="fa-solid fa-file-excel"></i> Exportar todo a Excel</button>
+                    <button class="btn-nav" style="font-size: 0.8rem; padding: 10px 18px; flex: 1; background: #4361ee;" onclick="confirmPairing()">
+                        <i class="fa-solid fa-shuffle"></i> Sorteo 50 Niños
+                    </button>
+                    <button class="btn-nav" style="font-size: 0.8rem; padding: 10px 18px; flex: 1; background: #e63946;" onclick="confirmUnpairing()">
+                        <i class="fa-solid fa-link-slash"></i> Desemparejar Todo
+                    </button>
+                    <button class="btn-nav" style="font-size: 0.8rem; padding: 10px 18px; background: var(--dark-red);" onclick="resetData()">
+                        <i class="fa-solid fa-trash"></i> Reiniciar Datos
+                    </button>
                 </div>
 
-                <!-- Formulario de Registro -->
-                <div class="px-6 space-y-6">
-                    <div class="border-t border-slate-200 pt-4">
-                        <h3 class="text-2xl font-black text-slate-900 mb-2">📝 Registro de Tablas</h3>
-                        
-                        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-950 space-y-1">
-                            <p class="font-extrabold text-base">⚠️ Importante para tu compra:</p>
-                            <p class="leading-relaxed">Cada registro asigna las tablas a un solo nombre. Si compras tablas para un amigo o familiar, <strong>debes realizar un registro por separado a nombre de cada persona</strong> con el valor exacto de sus tablas.</p>
-                        </div>
+                <!-- 1. EMPAREJAMIENTOS -->
+                <div class="admin-section">
+                    <h3>
+                        <span>Niños Emparejados (<span id="admin-paired-count">0</span>)</span>
+                    </h3>
+                    <div class="search-filter-box">
+                        <input type="text" id="search-paired" placeholder="🔍 Filtrar emparejamientos por nombre de niño o padrino..." oninput="renderAdminData()">
                     </div>
+                    <div id="pairings-list"></div>
+                </div>
 
-                    <form id="bingo-form" class="space-y-5" onsubmit="handleFormSubmit(event)">
-                        <div>
-                            <label class="block text-base font-extrabold text-slate-800 mb-1">Nombre Completo *</label>
-                            <input type="text" id="name" required onblur="validateNameField()" class="w-full px-4 py-3 rounded-xl border-2 border-slate-300 text-base font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Escribe tu nombre completo">
-                            <p id="name-error" class="hidden text-red-600 text-sm font-bold mt-2">⚠️ Te falta colocar el apellido. Escribe tu nombre y apellido.</p>
-                        </div>
+                <!-- 2. NIÑOS SIN EMPAREJAR -->
+                <div class="admin-section">
+                    <h3>Niños Sin Emparejar (<span id="admin-unpaired-kids-count">0</span>)</h3>
+                    <div class="search-filter-box">
+                        <input type="text" id="search-unpaired-kids" placeholder="🔍 Filtrar niños sin emparejar..." oninput="renderAdminData()">
+                    </div>
+                    <div id="unpaired-kids-list"></div>
+                </div>
 
-                        <div>
-                            <label class="block text-base font-extrabold text-slate-800 mb-1">Barrio / Ciudad *</label>
-                            <input type="text" id="neighborhood" required class="w-full px-4 py-3 rounded-xl border-2 border-slate-300 text-base font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Ej: Las Américas, Cali">
-                        </div>
+                <!-- 3. PADRINOS SIN ASIGNAR -->
+                <div class="admin-section">
+                    <h3>Padrinos Sin Asignar (<span id="admin-unassigned-gp-count">0</span>)</h3>
+                    <div class="search-filter-box">
+                        <input type="text" id="search-unassigned-gp" placeholder="🔍 Filtrar padrinos sin asignar..." oninput="renderAdminData()">
+                    </div>
+                    <div id="unassigned-gp-list"></div>
+                </div>
 
-                        <div>
-                            <label class="block text-base font-extrabold text-slate-800 mb-1">Número de WhatsApp (10 dígitos) *</label>
-                            <input type="tel" id="whatsapp" required maxlength="10" oninput="sanitizePhoneInput(this)" class="w-full px-4 py-3 rounded-xl border-2 border-slate-300 text-base font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Ej: 3001234567">
-                        </div>
+                <!-- 4. TODOS LOS NIÑOS INSCRITOS -->
+                <div class="admin-section">
+                    <h3>
+                        <span>Todos los Niños Inscritos (<span id="admin-kid-count">0</span>/100)</span>
+                    </h3>
+                    <div class="search-filter-box">
+                        <input type="text" id="search-all-kids" placeholder="🔍 Buscar por nombre, documento, acudiente o WhatsApp..." oninput="renderAdminData()">
+                    </div>
+                    <div id="admin-kids-list"></div>
+                </div>
 
-                        <div>
-                            <label class="block text-base font-extrabold text-slate-800 mb-1">Confirmar Número de WhatsApp *</label>
-                            <input type="tel" id="whatsapp-confirm" required maxlength="10" oninput="sanitizePhoneInput(this)" class="w-full px-4 py-3 rounded-xl border-2 border-slate-300 text-base font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Repite tu número de WhatsApp">
-                        </div>
-
-                        <div>
-                            <label class="block text-base font-extrabold text-slate-800 mb-1">¿Cuántas tablas desea? *</label>
-                            <input type="number" id="tables-count" min="1" value="1" required oninput="calculateTotal()" class="w-full px-4 py-3 rounded-xl border-2 border-slate-300 text-lg font-bold focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                        </div>
-
-                        <!-- Caja de Cálculo del Total a Pagar -->
-                        <div class="bg-indigo-50 border-2 border-indigo-300 rounded-2xl p-4 flex items-center justify-between">
-                            <span class="text-indigo-950 font-extrabold text-base">Total a Pagar:</span>
-                            <span id="total-price-display" class="text-indigo-700 font-black text-2xl">$3.000</span>
-                        </div>
-
-                        <!-- Información de Pago Nequi -->
-                        <div class="bg-emerald-50 border-2 border-emerald-300 rounded-2xl p-5 space-y-4 shadow-sm">
-                            <div class="space-y-2">
-                                <p class="font-black text-lg text-emerald-950">💳 Información de Pago</p>
-                                <p class="text-base text-emerald-900 font-medium">Por favor realiza el pago al Nequi:</p>
-                                <div class="bg-white p-3 rounded-xl border border-emerald-300 flex items-center justify-between">
-                                    <span id="nequi-number" class="text-emerald-950 font-black text-2xl tracking-wide">3234370590</span>
-                                    <button type="button" onclick="copyNequiNumber()" id="copy-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm px-4 py-2.5 rounded-lg transition shadow flex items-center space-x-1">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                        </svg>
-                                        <span id="copy-btn-text">Copiar</span>
-                                    </button>
-                                </div>
-                            </div>
-                            <p class="text-sm text-emerald-900 font-semibold border-t border-emerald-200/80 pt-3 leading-relaxed">
-                                ⚠️ Toma una captura de pantalla al pago realizado y súbela en el botón de abajo. <strong>Si no realiza el pago y adjunta el comprobante, no podrá completar el registro de sus tablas.</strong>
-                            </p>
-                        </div>
-
-                        <div>
-                            <label class="block text-base font-extrabold text-slate-800 mb-1">Comprobante de Pago (Obligatorio) *</label>
-                            <input type="file" id="receipt-file" accept="image/*" required class="w-full text-base text-slate-600 file:mr-4 file:py-3 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-indigo-100 file:text-indigo-800 hover:file:bg-indigo-200 cursor-pointer border-2 border-slate-300 rounded-xl">
-                        </div>
-
-                        <button type="submit" id="submit-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-lg py-4 px-6 rounded-xl transition shadow-lg cursor-pointer">
-                            Enviar Registro y Comprobante
-                        </button>
-                    </form>
+                <!-- 5. TODOS LOS PADRINOS INSCRITOS -->
+                <div class="admin-section">
+                    <h3>
+                        <span>Todos los Padrinos Inscritos (<span id="admin-gp-count">0</span>)</span>
+                    </h3>
+                    <div class="search-filter-box">
+                        <input type="text" id="search-all-gp" placeholder="🔍 Buscar por nombre o teléfono..." oninput="renderAdminData()">
+                    </div>
+                    <div id="admin-gp-list"></div>
                 </div>
             </div>
-        </section>
 
-        <!-- ================= VISTA ADMIN (CONFIGURACIÓN A TODO LO ANCHO) ================= -->
-        <section id="view-admin" class="hidden w-full px-4 sm:px-8 space-y-6">
-            <div class="bg-white rounded-3xl shadow-xl p-6 sm:p-8 border border-slate-200 w-full">
-                <div class="flex flex-col sm:flex-row justify-between items-center mb-6 border-b pb-4 gap-4">
-                    <div>
-                        <h3 class="text-2xl font-black text-slate-900">⚙️ Panel de Configuración</h3>
-                        <p class="text-base text-slate-500">Gestión completa de participantes, comprobantes y marcas de control.</p>
-                    </div>
-                    <div class="flex flex-wrap gap-3">
-                        <button type="button" onclick="promptDeleteAll()" class="bg-red-600 hover:bg-red-700 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition shadow cursor-pointer">🗑️ Eliminar Todos los Registros</button>
-                        <button type="button" onclick="handleLogout()" class="bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition shadow cursor-pointer">Cerrar Sesión</button>
-                    </div>
-                </div>
+        </div>
 
-                <!-- Contador de dinero recaudado -->
-                <div class="mb-6 bg-emerald-50 border-2 border-emerald-300 rounded-3xl p-6 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4">
-                    <div>
-                        <h4 class="text-xl font-black text-emerald-950">💰 Total recaudado</h4>
-                        <p class="text-sm font-semibold text-emerald-800">Suma automática de todos los pagos registrados en Firebase</p>
-                    </div>
-                    <div id="total-money-counter" class="text-3xl font-black text-emerald-700">$0</div>
-                </div>
-
-                <!-- Contador de tablas registradas -->
-                <div class="mb-6 bg-indigo-50 border-2 border-indigo-300 rounded-3xl p-6 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4">
-                    <div>
-                        <h4 class="text-xl font-black text-indigo-950">🎟️ Total de tablas registradas</h4>
-                        <p class="text-sm font-semibold text-indigo-800">Suma automática de las tablas de todos los participantes</p>
-                    </div>
-                    <div id="total-tables-counter" class="text-3xl font-black text-indigo-700">0</div>
-                </div>
-
-                <!-- Buscador de participantes -->
-                <div class="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-2">
-                    <label for="record-search" class="block text-base font-extrabold text-slate-800">🔎 Buscar participante</label>
-                    <div class="flex flex-col sm:flex-row gap-3">
-                        <input type="search" id="record-search" oninput="renderAdminTable()" autocomplete="off"
-                            class="w-full px-4 py-3 rounded-xl border-2 border-slate-300 text-base font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white"
-                            placeholder="Escribe nombre, apellido o parte del nombre..." aria-describedby="record-search-help">
-                        <button type="button" onclick="clearRecordSearch()" class="shrink-0 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-5 py-3 rounded-xl transition">Limpiar búsqueda</button>
-                    </div>
-                    <p id="record-search-help" class="text-sm text-slate-500">La búsqueda no distingue mayúsculas, minúsculas ni tildes. Los totales generales no cambian al filtrar.</p>
-                    <p id="record-search-count" class="text-sm font-bold text-indigo-800" aria-live="polite"></p>
-                </div>
-
-                <!-- Tabla de Registros en Ancho Completo -->
-                <div class="overflow-x-auto w-full">
-                    <table class="w-full text-left border-collapse min-w-max">
-                        <thead>
-                            <tr class="bg-slate-100 text-slate-800 text-sm font-extrabold uppercase tracking-wider border-b-2 border-slate-300">
-                                <th class="p-4 text-center">N.º de registro</th>
-                                <th class="p-4 text-center w-16">Listo</th>
-                                <th class="p-4">Fecha</th>
-                                <th class="p-4">Nombre</th>
-                                <th class="p-4">Barrio / Ciudad</th>
-                                <th class="p-4">WhatsApp</th>
-                                <th class="p-4 text-center">Tablas</th>
-                                <th class="p-4 text-center">Total a Pagar</th>
-                                <th class="p-4 text-center">Comprobante</th>
-                                <th class="p-4 text-center">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="admin-table-body" class="divide-y divide-slate-200 text-base">
-                            <!-- Filas generadas dinámicamente -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- Modal de Carga con Barra de Porcentaje -->
-    <div id="loading-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md hidden items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center space-y-6">
-            <div class="w-16 h-16 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center mx-auto text-2xl font-bold animate-pulse">📤</div>
-            <div>
-                <h3 class="text-2xl font-black text-slate-900">Enviando Registro</h3>
-                <p class="text-sm text-slate-500 mt-1">Procesando el comprobante y guardando el registro. No cierres esta ventana...</p>
-            </div>
-            
-            <!-- Barra de Progreso -->
-            <div class="space-y-2">
-                <div class="w-full bg-slate-200 rounded-full h-4 overflow-hidden border">
-                    <div id="progress-bar" class="bg-indigo-600 h-full w-0 transition-all duration-300 ease-out"></div>
-                </div>
-                <span id="progress-percent" class="text-lg font-black text-indigo-700">0%</span>
-            </div>
+        <div class="footer-decor">
+            🎄 Navidad Solidaria 🎄
         </div>
     </div>
 
-    <!-- Modal de Agradecimiento y Éxito -->
-    <div id="success-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md hidden items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center space-y-6 border-2 border-emerald-300">
-            <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-4xl font-bold">🎉</div>
-            <div class="space-y-3">
-                <h3 class="text-3xl font-black text-slate-900">¡Registro Exitoso!</h3>
-                <p class="text-base text-slate-700 font-medium leading-relaxed">
-                    ¡Gracias por participar en <strong>La Terraza Bingo</strong>! ❤️
-                </p>
-                <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 text-indigo-950 font-semibold text-sm">
-                    📱 Antes del bingo se te enviarán las tablas seleccionadas directamente a tu número de WhatsApp.
-                </div>
-            </div>
-            <button onclick="closeSuccessModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black text-lg py-3.5 px-6 rounded-xl transition shadow-lg cursor-pointer">
-                Aceptar
-            </button>
+    <!-- MODAL POPUP -->
+    <div id="success-modal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-icon"><i class="fa-solid fa-gift"></i></div>
+            <h3 id="modal-title">¡Registro Exitoso!</h3>
+            <p id="modal-msg">El registro se realizó correctamente.</p>
+            <button class="btn-modal-close" onclick="closeModal()">Aceptar</button>
         </div>
     </div>
 
-    <!-- Modal de Autenticación de Administración -->
-    <div id="login-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full space-y-6 border border-slate-100">
-            <div class="text-center">
-                <div class="w-16 h-16 bg-indigo-100 text-indigo-800 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-bold">🔒</div>
-                <h3 class="text-2xl font-black text-slate-900">Acceso Administrativo</h3>
-                <p class="text-sm text-slate-500 mt-1">Ingresa tus credenciales autorizadas</p>
-            </div>
-            
-            <form onsubmit="handleLogin(event)" class="space-y-4" autocomplete="off">
-                <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-1">Correo electrónico</label>
-                    <input type="email" id="admin-username" required autocomplete="username" value="" class="w-full px-4 py-3 rounded-xl border-2 border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base" placeholder="tu correo electrónico">
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-1">Contraseña</label>
-                    <input type="password" id="admin-password" required autocomplete="new-password" value="" class="w-full px-4 py-3 rounded-xl border-2 border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base" placeholder="••••">
-                </div>
-                <div class="flex space-x-3 pt-2">
-                    <button type="button" onclick="closeLoginModal()" class="w-1/2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-3 rounded-xl text-base transition cursor-pointer">Cancelar</button>
-                    <button type="submit" class="w-1/2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl text-base transition cursor-pointer">Ingresar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal para consultar el comprobante sin abrir una URL data: en otra pestaña -->
-    <div id="receipt-modal" class="fixed inset-0 bg-slate-900/90 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-6 z-[60]" role="dialog" aria-modal="true" aria-labelledby="receipt-modal-title" onclick="if(event.target === this) closeReceiptModal()">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[95vh] overflow-hidden flex flex-col">
-            <div class="flex items-center justify-between gap-3 p-4 border-b border-slate-200">
-                <h3 id="receipt-modal-title" class="text-lg sm:text-xl font-black text-slate-900">Comprobante de pago</h3>
-                <button type="button" onclick="closeReceiptModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-4 py-2 rounded-xl" aria-label="Cerrar comprobante">Cerrar ✕</button>
-            </div>
-            <div class="p-3 sm:p-5 overflow-auto flex-1 text-center bg-slate-100">
-                <p id="receipt-error" class="hidden text-red-700 font-semibold p-6">No se pudo mostrar este comprobante. Puede que el registro no contenga una imagen válida.</p>
-                <img id="receipt-preview" alt="Comprobante de pago del participante" class="block max-w-full h-auto max-h-[75vh] object-contain mx-auto rounded-lg shadow" style="display:none">
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de Confirmación con Clave para Eliminar Todo -->
-    <div id="delete-all-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full space-y-6 border border-slate-100">
-            <div class="text-center">
-                <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-bold">⚠️</div>
-                <h3 class="text-2xl font-black text-slate-900">Eliminar Todos los Registros</h3>
-                <p class="text-sm text-slate-500 mt-1">Esta acción borrará absolutamente toda la información. Digita la clave de seguridad (1893) para confirmar:</p>
-            </div>
-            
-            <form onsubmit="confirmDeleteAll(event)" class="space-y-4" autocomplete="off">
-                <div>
-                    <input type="password" id="delete-all-pass" required autocomplete="new-password" value="" class="w-full px-4 py-3 rounded-xl border-2 border-red-300 focus:ring-2 focus:ring-red-500 focus:outline-none text-base text-center tracking-widest font-bold" placeholder="••••">
-                </div>
-                <div class="flex space-x-3 pt-2">
-                    <button type="button" onclick="closeDeleteAllModal()" class="w-1/2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-3 rounded-xl text-base transition cursor-pointer">Cancelar</button>
-                    <button type="submit" class="w-1/2 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-base transition cursor-pointer">Eliminar Todo</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div id="edit-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full space-y-5">
-            <h3 class="text-2xl font-black text-slate-900">✏️ Editar Registro</h3>
-            <input type="hidden" id="edit-id">
-            <div><label class="font-bold">Nombre completo</label><input id="edit-name" class="w-full px-4 py-3 border-2 rounded-xl"></div>
-            <div><label class="font-bold">WhatsApp</label><input id="edit-whatsapp" maxlength="10" class="w-full px-4 py-3 border-2 rounded-xl"></div>
-            <div><label class="font-bold">Cantidad de tablas</label><input id="edit-tables" type="number" min="1" class="w-full px-4 py-3 border-2 rounded-xl"></div>
-            <div class="flex gap-3"><button onclick="closeEditModal()" class="w-1/2 bg-slate-200 py-3 rounded-xl font-bold">Cancelar</button><button onclick="saveEditRecord()" class="w-1/2 bg-indigo-600 text-white py-3 rounded-xl font-bold">Guardar</button></div>
-        </div>
-    </div>
-
-    <footer class="bg-white border-t border-slate-300 py-6 text-center text-sm font-medium text-slate-600 mt-12">
-        La Terraza Bingo &copy; 2026 - Todos los derechos reservados.
-    </footer>
-
-    <!-- Lógica JavaScript -->
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
     <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyDqmEkXqUqBwivmawyRzj_Jskp7JSoVzx8",
-  authDomain: "gran-bingo-virtual-especial.firebaseapp.com",
-  projectId: "gran-bingo-virtual-especial",
-  storageBucket: "gran-bingo-virtual-especial.firebasestorage.app",
-  messagingSenderId: "310036305892",
-  appId: "1:310036305892:web:62fd51874ac157587719f1"
-};
+        const ADMIN_EMAIL = "laterrazacali@gmail.com";
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const auth = firebase.auth();
-const recordsCollection = db.collection("registros");
-let localRecords = [];
-let isSubmitting = false;
-const PRICE_PER_TABLE = 3000;
+        // Configuración web de Firebase para Navidad Solidaria.
+        // La seguridad se aplica mediante las reglas de Firestore; no pongas claves privadas aquí.
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyABIJ_Zdc_7ZXQ_ZwLge2dnvaa_UfS5Mtc",
+            authDomain: "navidad-solidaria.firebaseapp.com",
+            projectId: "navidad-solidaria",
+            storageBucket: "navidad-solidaria.firebasestorage.app",
+            messagingSenderId: "657396327026",
+            appId: "1:657396327026:web:9c74c9b218f9ad287098eb"
+        };
+        let firestoreDb = null;
+        let firestoreSyncQueues = {};
+        const FIRESTORE_COLLECTIONS = { kids: 'kids', godparents: 'godparents', pairings: 'pairings' };
+        const isFirebaseConfigured = () => !!(FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.projectId === 'navidad-solidaria' && window.firebase && firebase.auth && firebase.firestore);
 
-function validateNameField() {
-  const input = document.getElementById('name');
-  const error = document.getElementById('name-error');
-  const valid = input.value.trim().split(/\s+/).filter(Boolean).length >= 2;
-  if (!valid && input.value.trim()) {
-    input.classList.add('border-red-500');
-    error.classList.remove('hidden');
-  } else {
-    input.classList.remove('border-red-500');
-    error.classList.add('hidden');
-  }
-  return valid;
-}
-
-function openEditModal(index) {
-  const r = localRecords[index];
-  if (!r) return;
-  document.getElementById('edit-id').value = index;
-  document.getElementById('edit-name').value = r.name || '';
-  document.getElementById('edit-whatsapp').value = r.whatsapp || '';
-  document.getElementById('edit-tables').value = r.tablesCount || 1;
-  showModal('edit-modal');
-}
-
-function closeEditModal(){ hideModal('edit-modal'); }
-
-async function saveEditRecord(){
-  const index = Number(document.getElementById('edit-id').value);
-  const record = localRecords[index];
-  const name = document.getElementById('edit-name').value.trim();
-  const whatsapp = document.getElementById('edit-whatsapp').value.trim();
-  const tables = parseInt(document.getElementById('edit-tables').value,10);
-  if (!record || name.split(/\s+/).filter(Boolean).length < 2) { alert('Debe colocar nombre y apellido.'); return; }
-  if (whatsapp.length !== 10 || !Number.isInteger(tables) || tables < 1) { alert('Verifica WhatsApp y cantidad de tablas.'); return; }
-  await recordsCollection.doc(record.id).update({name, whatsapp, tablesCount: tables, totalPrice: tables * PRICE_PER_TABLE});
-  record.name=name; record.whatsapp=whatsapp; record.tablesCount=tables; record.totalPrice=tables*PRICE_PER_TABLE;
-  closeEditModal(); renderAdminTable();
-}
-
-function calculateTotal() {
-  const count = parseInt(document.getElementById('tables-count').value) || 0;
-  document.getElementById('total-price-display').innerText =
-    '$' + (count * PRICE_PER_TABLE).toLocaleString('es-CO');
-}
-
-function showModal(id) {
-  const modal = document.getElementById(id);
-  if (!modal) return;
-  modal.classList.remove('hidden');
-  modal.classList.add('flex');
-  modal.style.display = 'flex';
-}
-function hideModal(id) {
-  const modal = document.getElementById(id);
-  if (!modal) return;
-  modal.classList.add('hidden');
-  modal.classList.remove('flex');
-  modal.style.display = 'none';
-}
-
-function openLoginModal() {
-  document.getElementById('admin-username').value = '';
-  document.getElementById('admin-password').value = '';
-  showModal('login-modal');
-}
-function closeLoginModal() {
-  document.getElementById('admin-username').value = '';
-  document.getElementById('admin-password').value = '';
-  hideModal('login-modal');
-}
-
-async function handleLogin(e) {
-  e.preventDefault();
-  const email = document.getElementById('admin-username').value.trim();
-  const pass = document.getElementById('admin-password').value;
-  const submitButton = e.submitter || document.querySelector('#login-modal button[type="submit"]');
-  if (submitButton) submitButton.disabled = true;
-  try {
-    await auth.signInWithEmailAndPassword(email, pass);
-    closeLoginModal();
-    switchView('admin');
-  } catch (error) {
-    console.error("Error iniciando sesión en Firebase Authentication:", error);
-    let message = "No se pudo iniciar sesión. Revisa el correo y la contraseña del usuario que creaste en Firebase Authentication.";
-    if (error && error.code === 'auth/too-many-requests') {
-      message = "Firebase bloqueó temporalmente los intentos. Espera un momento antes de probar otra vez.";
-    }
-    alert(message);
-  } finally {
-    if (submitButton) submitButton.disabled = false;
-  }
-}
-
-async function handleLogout() {
-  try {
-    await auth.signOut();
-  } catch (error) {
-    console.error("Error cerrando sesión:", error);
-  }
-  localRecords = [];
-  switchView('client');
-}
-
-function promptDeleteAll() {
-  document.getElementById('delete-all-pass').value = '';
-  showModal('delete-all-modal');
-}
-function closeDeleteAllModal() {
-  document.getElementById('delete-all-pass').value = '';
-  hideModal('delete-all-modal');
-}
-
-async function confirmDeleteAll(e) {
-  e.preventDefault();
-  const pass = document.getElementById('delete-all-pass').value.trim();
-  if (pass !== "1893") {
-    alert("Clave incorrecta. No se pudieron eliminar los registros.");
-    return;
-  }
-  if (!confirm("¿Confirmas que deseas eliminar TODOS los registros de Firestore? Esta acción no se puede deshacer.")) return;
-
-  try {
-    const snapshot = await recordsCollection.get();
-    // Firestore permite hasta 500 operaciones por lote.
-    for (let i = 0; i < snapshot.docs.length; i += 450) {
-      const batch = db.batch();
-      snapshot.docs.slice(i, i + 450).forEach(doc => batch.delete(doc.ref));
-      await batch.commit();
-    }
-    localRecords = [];
-    renderAdminTable();
-    closeDeleteAllModal();
-    alert("Se eliminaron los registros de Firestore.");
-  } catch (error) {
-    console.error(error);
-    alert("No se pudieron eliminar los registros. Revisa las reglas de Firestore.");
-  }
-}
-
-async function deleteSingleRecord(index) {
-  const record = localRecords[index];
-  if (!record) return;
-  if (!confirm(`¿Estás seguro de eliminar el registro de ${record.name}?`)) return;
-
-  try {
-    await recordsCollection.doc(record.id).delete();
-    localRecords.splice(index, 1);
-    renderAdminTable();
-    updateMoneyCounter();
-  } catch (error) {
-    console.error(error);
-    alert("No se pudo eliminar el registro. Revisa las reglas de Firestore.");
-  }
-}
-
-function copyNequiNumber() {
-  const nequiNum = document.getElementById('nequi-number').innerText;
-  navigator.clipboard.writeText(nequiNum).then(() => {
-    const btnText = document.getElementById('copy-btn-text');
-    const btn = document.getElementById('copy-btn');
-    btnText.innerText = '¡Copiado!';
-    btn.classList.replace('bg-emerald-600', 'bg-emerald-800');
-    setTimeout(() => {
-      btnText.innerText = 'Copiar';
-      btn.classList.replace('bg-emerald-800', 'bg-emerald-600');
-    }, 2000);
-  }).catch(() => alert("No se pudo copiar automáticamente. Mantén presionado el número para copiarlo."));
-}
-
-function sanitizePhoneInput(input) {
-  input.value = input.value.replace(/\D/g, '').slice(0, 10);
-}
-
-function switchView(view) {
-  const clientView = document.getElementById('view-client');
-  const adminView = document.getElementById('view-admin');
-  if (view === 'client') {
-    clientView.classList.remove('hidden');
-    adminView.classList.add('hidden');
-  } else {
-    clientView.classList.add('hidden');
-    adminView.classList.remove('hidden');
-    loadRecords();
-  }
-}
-
-function setSubmitBusy(busy) {
-  const btn = document.getElementById('submit-btn');
-  btn.disabled = busy;
-  btn.innerText = busy ? "Guardando en Firebase..." : "Enviar Registro y Comprobante";
-  if (busy) {
-    btn.classList.remove('bg-indigo-600');
-    btn.classList.add('bg-slate-400');
-  } else {
-    btn.classList.remove('bg-slate-400');
-    btn.classList.add('bg-indigo-600');
-  }
-}
-
-// Reduce la imagen para que los datos + comprobante quepan dentro del límite de Firestore (1 MiB/documento).
-function compressReceipt(file) {
-  return new Promise((resolve, reject) => {
-    if (!file || !file.type.startsWith('image/')) {
-      reject(new Error("El comprobante debe ser una imagen."));
-      return;
-    }
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error("No se pudo leer la imagen."));
-    reader.onload = () => {
-      const image = new Image();
-      image.onerror = () => reject(new Error("El archivo de imagen no es válido."));
-      image.onload = () => {
-        const maxSide = 1000;
-        const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.max(1, Math.round(image.width * scale));
-        canvas.height = Math.max(1, Math.round(image.height * scale));
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-
-        let quality = 0.72;
-        let dataUrl = canvas.toDataURL('image/jpeg', quality);
-        while (dataUrl.length > 700000 && quality > 0.35) {
-          quality -= 0.08;
-          dataUrl = canvas.toDataURL('image/jpeg', quality);
+        function initFirebase() {
+            if (!isFirebaseConfigured()) return false;
+            try {
+                if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+                firestoreDb = firebase.firestore();
+                updateFirebaseStatus('Firebase configurado. Conectando con Firestore...', false);
+                return true;
+            } catch (err) {
+                console.error('No se pudo inicializar Firebase:', err);
+                updateFirebaseStatus('No se pudo iniciar Firebase. Revisa la configuración.', false);
+                return false;
+            }
         }
-        if (dataUrl.length > 700000) {
-          reject(new Error("El comprobante sigue siendo demasiado pesado. Intenta con una captura más pequeña."));
-          return;
+
+        function updateFirebaseStatus(message, connected) {
+            const el = document.getElementById('firebase-status');
+            if (!el) return;
+            el.textContent = message;
+            el.classList.toggle('connected', !!connected);
         }
-        resolve(dataUrl);
-      };
-      image.src = reader.result;
-    };
-    reader.readAsDataURL(file);
-  });
-}
 
-async function handleFormSubmit(e) {
-  e.preventDefault();
-  // Bloqueo inmediato contra envíos repetidos mientras se procesa el mismo formulario.
-  if (isSubmitting) return;
-  const name = document.getElementById('name').value.trim();
-  const neighborhood = document.getElementById('neighborhood').value.trim();
-  const whatsapp = document.getElementById('whatsapp').value.trim();
-  const whatsappConfirm = document.getElementById('whatsapp-confirm').value.trim();
-  const tablesCount = parseInt(document.getElementById('tables-count').value, 10);
-  const file = document.getElementById('receipt-file').files[0];
-
-  if (!validateNameField()) {
-    alert('Debes colocar el nombre completo con nombre y apellido.');
-    return;
-  }
-
-  if (whatsapp.length !== 10) {
-    alert("El número de WhatsApp debe contener exactamente 10 dígitos (sin prefijo +57).");
-    return;
-  }
-  if (whatsapp !== whatsappConfirm) {
-    alert("Los números de WhatsApp no coinciden.");
-    return;
-  }
-  if (!Number.isInteger(tablesCount) || tablesCount < 1) {
-    alert("La cantidad de tablas debe ser al menos 1.");
-    return;
-  }
-  if (!file) {
-    alert("Debes adjuntar el comprobante de pago.");
-    return;
-  }
-
-  isSubmitting = true;
-  setSubmitBusy(true);
-  const loadingModal = document.getElementById('loading-modal');
-  const progressBar = document.getElementById('progress-bar');
-  const progressPercent = document.getElementById('progress-percent');
-  showModal('loading-modal');
-  progressBar.style.width = '10%';
-  progressPercent.innerText = '10%';
-
-  try {
-    progressBar.style.width = '25%';
-    progressPercent.innerText = '25%';
-    const receiptUrl = await compressReceipt(file);
-
-    progressBar.style.width = '65%';
-    progressPercent.innerText = '65%';
-    const now = new Date();
-    const record = {
-      date: now.toLocaleString('es-CO'),
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      name,
-      neighborhood,
-      whatsapp,
-      tablesCount,
-      totalPrice: tablesCount * PRICE_PER_TABLE,
-      receiptUrl,
-      receiptType: 'image/jpeg',
-      processed: false
-    };
-
-    await recordsCollection.add(record);
-
-    progressBar.style.width = '100%';
-    progressPercent.innerText = '100%';
-    hideModal('loading-modal');
-    document.getElementById('bingo-form').reset();
-    calculateTotal();
-    showModal('success-modal');
-  } catch (error) {
-    console.error("Error guardando en Firestore:", error);
-    hideModal('loading-modal');
-    if (error.message && error.message.includes("demasiado pesado")) {
-      alert(error.message);
-    } else {
-      alert("No se pudo guardar el registro en Firebase. Es probable que las reglas de Firestore estén bloqueando el acceso. No se ha confirmado el registro; inténtalo después de configurar los permisos.");
-    }
-  } finally {
-    setSubmitBusy(false);
-    isSubmitting = false;
-  }
-}
-
-function closeSuccessModal() {
-  hideModal('success-modal');
-}
-
-function viewReceipt(index) {
-  const record = localRecords[index];
-  const modal = document.getElementById('receipt-modal');
-  const image = document.getElementById('receipt-preview');
-  const errorMessage = document.getElementById('receipt-error');
-
-  if (!record || typeof record.receiptUrl !== 'string' || !record.receiptUrl.startsWith('data:image/')) {
-    alert('Este registro no contiene un comprobante de imagen válido.');
-    return;
-  }
-
-  image.style.display = 'none';
-  errorMessage.classList.add('hidden');
-  image.onload = () => {
-    image.style.display = 'block';
-    errorMessage.classList.add('hidden');
-  };
-  image.onerror = () => {
-    image.style.display = 'none';
-    errorMessage.classList.remove('hidden');
-  };
-  image.src = record.receiptUrl;
-  showModal('receipt-modal');
-}
-
-function closeReceiptModal() {
-  hideModal('receipt-modal');
-  const image = document.getElementById('receipt-preview');
-  if (image) {
-    image.onload = null;
-    image.onerror = null;
-    image.removeAttribute('src');
-  }
-}
-
-async function loadRecords() {
-  const tbody = document.getElementById('admin-table-body');
-  tbody.innerHTML = '<tr><td colspan="10" class="text-center py-8 text-slate-500">Cargando registros desde Firebase...</td></tr>';
-  try {
-    const snapshot = await recordsCollection.get();
-    localRecords = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    localRecords.sort((a, b) => {
-      const at = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
-      const bt = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
-      return bt - at;
-    });
-    renderAdminTable();
-    updateMoneyCounter();
-  } catch (error) {
-    console.error("Error leyendo Firestore:", error);
-    localRecords = [];
-    tbody.innerHTML = '<tr><td colspan="10" class="text-center py-8 text-red-600 font-semibold">No se pudieron cargar los registros. Revisa las reglas de Firestore.</td></tr>';
-  }
-}
-
-async function toggleRecordProcessed(index, checkboxElement) {
-  const record = localRecords[index];
-  if (!record) return;
-  let nextValue = !record.processed;
-  if (record.processed) {
-    const confirmUncheck = confirm("¿Confirmas que deseas desmarcar este registro?");
-    if (!confirmUncheck) {
-      checkboxElement.checked = true;
-      return;
-    }
-  }
-
-  checkboxElement.disabled = true;
-  try {
-    await recordsCollection.doc(record.id).update({ processed: nextValue });
-    record.processed = nextValue;
-    renderAdminTable();
-    updateMoneyCounter();
-  } catch (error) {
-    console.error(error);
-    checkboxElement.checked = !!record.processed;
-    alert("No se pudo actualizar la marca en Firebase. Revisa las reglas de Firestore.");
-  } finally {
-    checkboxElement.disabled = false;
-  }
-}
-
-function escapeHtml(value) {
-  return String(value ?? '').replace(/[&<>"']/g, ch => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-  }[ch]));
-}
-
-function updateMoneyCounter() {
-  const total = localRecords.reduce((sum, record) => {
-    return sum + (Number(record.totalPrice) || 0);
-  }, 0);
-  const totalTables = localRecords.reduce((sum, record) => {
-    return sum + (Number(record.tablesCount) || 0);
-  }, 0);
-
-  const counter = document.getElementById('total-money-counter');
-  if (counter) {
-    counter.innerText = '$' + total.toLocaleString('es-CO');
-  }
-  const tablesCounter = document.getElementById('total-tables-counter');
-  if (tablesCounter) {
-    tablesCounter.innerText = totalTables.toLocaleString('es-CO');
-  }
-}
-
-function normalizeSearchText(value) {
-  return String(value ?? '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLocaleLowerCase('es');
-}
-
-function clearRecordSearch() {
-  const searchInput = document.getElementById('record-search');
-  if (searchInput) {
-    searchInput.value = '';
-    renderAdminTable();
-    searchInput.focus();
-  }
-}
-
-function renderAdminTable() {
-  const tbody = document.getElementById('admin-table-body');
-  const searchInput = document.getElementById('record-search');
-  const searchCount = document.getElementById('record-search-count');
-  tbody.innerHTML = "";
-
-  updateMoneyCounter();
-
-  if (localRecords.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="10" class="text-center py-8 text-slate-400 font-medium text-lg">No hay registros cargados.</td></tr>';
-    if (searchCount) searchCount.textContent = '0 registros encontrados';
-    return;
-  }
-
-  const query = normalizeSearchText(searchInput ? searchInput.value.trim() : '');
-  const matchingRecords = localRecords
-    .map((record, index) => ({ record, index }))
-    .filter(({ record }) => {
-      if (!query) return true;
-      const searchableText = normalizeSearchText(`${record.name || ''} ${record.whatsapp || ''} ${record.neighborhood || ''}`);
-      // Cada palabra escrita puede coincidir con cualquier parte del nombre completo.
-      return query.split(/\s+/).filter(Boolean).every(term => searchableText.includes(term));
-    });
-
-  if (searchCount) {
-    searchCount.textContent = query
-      ? `${matchingRecords.length} de ${localRecords.length} registros encontrados`
-      : `${localRecords.length} registros en total`;
-  }
-
-  if (matchingRecords.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="10" class="text-center py-8 text-slate-500 font-semibold text-lg">No se encontraron participantes con esa búsqueda.</td></tr>';
-    return;
-  }
-
-  matchingRecords.forEach(({ record, index }) => {
-    const waWebUrl = `https://web.whatsapp.com/send?phone=57${encodeURIComponent(record.whatsapp || '')}`;
-    const rowClass = record.processed
-      ? "bg-emerald-100/90 text-emerald-950 font-medium"
-      : "hover:bg-slate-50 text-slate-800";
-    const receipt = typeof record.receiptUrl === 'string' ? record.receiptUrl : '';
-    const row = `
-      <tr class="${rowClass} transition-colors border-b border-slate-200">
-        <td class="p-4 text-center font-black text-slate-700">${localRecords.length - index}</td>
-        <td class="p-4 text-center">
-          <input type="checkbox" ${record.processed ? 'checked' : ''} onchange="toggleRecordProcessed(${index}, this)" class="w-6 h-6 text-emerald-600 rounded-lg cursor-pointer focus:ring-emerald-500">
-        </td>
-        <td class="p-4 text-sm font-semibold">${escapeHtml(record.date || '')}</td>
-        <td class="p-4 font-bold">${escapeHtml(record.name || '')}</td>
-        <td class="p-4">${escapeHtml(record.neighborhood || '')}</td>
-        <td class="p-4">
-          <a href="${waWebUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-1 text-emerald-700 hover:text-emerald-900 hover:underline font-bold">
-            <span>📱 ${escapeHtml(record.whatsapp || '')}</span>
-          </a>
-        </td>
-        <td class="p-4 text-center font-black text-indigo-700 text-lg">${Number(record.tablesCount) || 0}</td>
-        <td class="p-4 text-center font-black text-emerald-800 text-lg">$${(Number(record.totalPrice) || 0).toLocaleString('es-CO')}</td>
-        <td class="p-4 text-center">
-          ${receipt ? `<button type="button" onclick="viewReceipt(${index})" class="inline-block bg-indigo-100 hover:bg-indigo-200 text-indigo-900 px-4 py-2 rounded-xl text-sm font-bold transition shadow-sm">Ver Comprobante</button>` : '<span class="text-slate-400">Sin comprobante</span>'}
-        </td>
-        <td class="p-4 text-center">
-          <button type="button" onclick="openEditModal(${index})" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-xl text-sm font-bold transition shadow-sm cursor-pointer">✏️ Editar</button>
-           <button type="button" onclick="deleteSingleRecord(${index})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-xl text-sm font-bold transition shadow-sm cursor-pointer" title="Eliminar este registro">🗑️ Eliminar</button>
-        </td>
-      </tr>`;
-    tbody.insertAdjacentHTML('beforeend', row);
-  });
-}
-
-calculateTotal();
-    </script>
-    <script>
-    // Respaldo independiente para el botón de configuración.
-    // Abre el modal aunque falle la inicialización de Firebase en el script principal.
-    (function () {
-      function showAdminLogin() {
-        var modal = document.getElementById('login-modal');
-        var email = document.getElementById('admin-username');
-        var password = document.getElementById('admin-password');
-        if (!modal) {
-          alert('No se encontró la ventana de Acceso Administrativo en esta página.');
-          return;
-        }
-        if (email) email.value = '';
-        if (password) password.value = '';
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        modal.style.display = 'flex';
-      }
-
-      function closeAdminLogin() {
-        var modal = document.getElementById('login-modal');
-        var email = document.getElementById('admin-username');
-        var password = document.getElementById('admin-password');
-        if (email) email.value = '';
-        if (password) password.value = '';
-        if (modal) {
-          modal.classList.add('hidden');
-          modal.classList.remove('flex');
-          modal.style.display = 'none';
-        }
-      }
-
-      window.openLoginModal = showAdminLogin;
-      window.closeLoginModal = closeAdminLogin;
-
-      function connectGear() {
-        var button = document.getElementById('admin-settings-button');
-        if (!button || button.dataset.adminLoginBound === 'yes') return;
-        button.dataset.adminLoginBound = 'yes';
-        button.removeAttribute('onclick');
-        button.addEventListener('click', function (event) {
-          event.preventDefault();
-          showAdminLogin();
+        document.addEventListener("DOMContentLoaded", async () => {
+            const sharedLetterId = new URLSearchParams(window.location.search).get('carta');
+            if (sharedLetterId) {
+                document.querySelector('.mobile-container').style.display = 'none';
+                document.getElementById('letter-viewer').style.display = 'block';
+                await showSharedLetter(sharedLetterId);
+                return;
+            }
+            window.scrollTo(0, 0);
+            setupAutoScroll();
+            initFirebase();
+            updateCounters(0);
+            refreshPublicKidCount();
         });
-      }
 
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', connectGear, { once: true });
-      } else {
-        connectGear();
-      }
-    })();
+        async function showSharedLetter(kidId) {
+            const message = document.getElementById('letter-viewer-message');
+            const img = document.getElementById('letter-viewer-image');
+            const img2 = document.getElementById('letter-viewer-image-2');
+            if (!initFirebase()) {
+                message.textContent = 'No se pudo conectar con el servicio de cartas. Intenta nuevamente más tarde.';
+                return;
+            }
+            try {
+                const doc = await firestoreDb.collection('publicLetters').doc(kidId).get();
+                const kid = doc.exists ? doc.data() : null;
+                if (!kid || !kid.letterImage) {
+                    message.textContent = 'No se encontró la carta solicitada.';
+                    return;
+                }
+                img.src = kid.letterImage;
+                img.style.display = 'block';
+                if (kid.letterImage2) {
+                    img2.src = kid.letterImage2;
+                    img2.style.display = 'block';
+                }
+                message.textContent = kid.name ? `Carta de Navidad de ${kid.name}` : 'Carta de Navidad';
+            } catch (err) {
+                console.error(err);
+                message.textContent = 'No se pudo cargar la carta. Intenta nuevamente más tarde.';
+            }
+        }
+
+        async function loadFirestoreData() {
+            if (!firestoreDb || !isAdminAuthenticated()) throw new Error('Debes iniciar sesión como administrador.');
+            try {
+                for (const key of Object.keys(FIRESTORE_COLLECTIONS)) {
+                    const snapshot = await firestoreDb.collection(FIRESTORE_COLLECTIONS[key]).get();
+                    const remote = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                    // Firestore es la fuente oficial; no migrar datos viejos del navegador a la nube.
+                    localStorage.setItem(key, JSON.stringify(remote));
+                }
+                const counter = await firestoreDb.collection('publicCounters').doc('kids').get();
+                updateCounters(counter.exists ? Number(counter.data().count || 0) : 0);
+                return true;
+            } catch (err) {
+                console.error('Error cargando datos de Firestore:', err);
+                throw err;
+            }
+        }
+
+        async function refreshPublicKidCount() {
+            if (!initFirebase()) return;
+            try {
+                const counter = await firestoreDb.collection('publicCounters').doc('kids').get();
+                updateCounters(counter.exists ? Number(counter.data().count || 0) : 0);
+            } catch (err) {
+                // El formulario seguirá verificando los cupos de forma atómica al enviarse.
+                console.warn('No se pudo consultar el contador público:', err);
+            }
+        }
+
+        function syncCollectionToFirestore(key, data) {
+            if (!firestoreDb || !FIRESTORE_COLLECTIONS[key] || !isAdminAuthenticated()) return Promise.resolve(false);
+            const collectionName = FIRESTORE_COLLECTIONS[key];
+            const previous = firestoreSyncQueues[key] || Promise.resolve();
+            firestoreSyncQueues[key] = previous.then(async () => {
+                const snapshot = await firestoreDb.collection(collectionName).get();
+                const documentId = item => String(item.id || (key === 'pairings' ? item.kidId : ''));
+                const localIds = new Set(data.map(documentId).filter(Boolean));
+                const batch = firestoreDb.batch();
+                let operations = 0;
+                data.forEach(item => {
+                    const id = documentId(item);
+                    if (!id) return;
+                    const ref = firestoreDb.collection(collectionName).doc(id);
+                    const payload = { ...item };
+                    delete payload.id;
+                    batch.set(ref, payload, { merge: true });
+                    operations++;
+                });
+                snapshot.docs.forEach(doc => {
+                    if (!localIds.has(doc.id)) {
+                        batch.delete(doc.ref);
+                        operations++;
+                    }
+                });
+                if (operations) await batch.commit();
+                return true;
+            }).catch(err => {
+                console.error(`Error sincronizando ${key} con Firestore:`, err);
+                updateFirebaseStatus('Error al guardar en Firestore. Revisa las reglas, conexión y tamaño de las cartas.', false);
+                return false;
+            });
+            return firestoreSyncQueues[key];
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+
+            if (screenId === 'admin-screen') {
+                document.body.classList.add('is-admin-view');
+                renderAdminData();
+            } else {
+                document.body.classList.remove('is-admin-view');
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function showModal(title, message) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-msg').innerHTML = message;
+            document.getElementById('success-modal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('success-modal').classList.remove('active');
+        }
+
+        function getWaLink(phone) {
+            if (!phone) return "#";
+            let cleanPhone = phone.replace(/\D/g, '');
+            if (cleanPhone.length === 10) {
+                cleanPhone = "57" + cleanPhone;
+            }
+            return `https://wa.me/${cleanPhone}`;
+        }
+
+        function setupAutoScroll() {
+            const kidInputs = document.querySelectorAll('.focus-next');
+            kidInputs.forEach((input, index) => {
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (index < kidInputs.length - 1) {
+                            kidInputs[index + 1].focus();
+                            kidInputs[index + 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        } else {
+                            document.getElementById('kid-letter').focus();
+                            document.getElementById('kid-letter').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }
+                });
+            });
+
+            const gpInputs = document.querySelectorAll('.focus-gp');
+            gpInputs.forEach((input, index) => {
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (index < gpInputs.length - 1) {
+                            gpInputs[index + 1].focus();
+                            gpInputs[index + 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }
+                });
+            });
+        }
+
+        async function checkConfigPassword() {
+            if (!initFirebase()) {
+                alert('Firebase no está configurado.');
+                return;
+            }
+
+            try {
+                let user = firebase.auth().currentUser;
+
+                // Si ya existe una sesión de administrador, reutilizarla.
+                if (user && user.email === ADMIN_EMAIL) {
+                    await loadFirestoreData();
+                    showScreen('admin-screen');
+                    return;
+                }
+
+                // No permitir que una sesión de otra cuenta se convierta en sesión administrativa.
+                if (user) {
+                    await firebase.auth().signOut();
+                }
+
+                const email = prompt('Correo electrónico del administrador:');
+                if (email === null) return;
+                const normalizedEmail = email.trim().toLowerCase();
+
+                if (!normalizedEmail) {
+                    alert('Escribe el correo electrónico del administrador.');
+                    return;
+                }
+
+                // Solo se admite la cuenta administrativa autorizada en este proyecto.
+                if (normalizedEmail !== ADMIN_EMAIL.toLowerCase()) {
+                    alert('Esta cuenta no tiene permiso de administrador.');
+                    return;
+                }
+
+                const pass = prompt('Contraseña de la cuenta administradora:');
+                if (pass === null) return;
+                if (!pass) {
+                    alert('Escribe la contraseña para continuar.');
+                    return;
+                }
+
+                const credential = await firebase.auth().signInWithEmailAndPassword(normalizedEmail, pass);
+                user = credential.user;
+
+                if (!user || !user.email || user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+                    await firebase.auth().signOut();
+                    alert('Esta cuenta no tiene permiso de administrador.');
+                    return;
+                }
+
+                await loadFirestoreData();
+                showScreen('admin-screen');
+            } catch (err) {
+                console.error('Error de acceso administrativo:', err);
+                if (err.code === 'auth/invalid-credential' ||
+                    err.code === 'auth/wrong-password' ||
+                    err.code === 'auth/user-not-found' ||
+                    err.code === 'auth/invalid-email') {
+                    alert('Correo o contraseña incorrectos. Verifica las credenciales de Firebase Authentication.');
+                } else if (err.code === 'permission-denied') {
+                    alert('La sesión se inició, pero Firestore denegó el acceso. Revisa las reglas de seguridad.');
+                } else {
+                    alert('No se pudo ingresar. Verifica las credenciales, que Correo electrónico/contraseña esté habilitado en Firebase Authentication y las reglas de Firestore.');
+                }
+            }
+        }
+
+        function isAdminAuthenticated() {
+            const user = window.firebase && firebase.auth ? firebase.auth().currentUser : null;
+            return !!(user && user.email === ADMIN_EMAIL);
+        }
+
+        function getStorageData(key) {
+            try {
+                let data = localStorage.getItem(key);
+                return data ? JSON.parse(data) : [];
+            } catch (e) {
+                console.error("Error leyendo localStorage", e);
+                return [];
+            }
+        }
+
+        function setStorageData(key, data) {
+            try {
+                localStorage.setItem(key, JSON.stringify(data));
+                if (firestoreDb && FIRESTORE_COLLECTIONS[key] && isAdminAuthenticated()) {
+                    syncCollectionToFirestore(key, data);
+                }
+                return true;
+            } catch (e) {
+                console.error("Error guardando datos localmente", e);
+                return false;
+            }
+        }
+
+        // Comprime cada cara de la carta a un máximo seguro para el límite de 1 MiB por documento de Firestore.
+        async function compressLetterImage(file) {
+            if (!file || !file.type.startsWith('image/')) throw new Error('Selecciona un archivo de imagen válido.');
+            const maxDataUrlChars = 300 * 1024;
+            const objectUrl = URL.createObjectURL(file);
+            try {
+                const image = new Image();
+                image.src = objectUrl;
+                await new Promise((resolve, reject) => { image.onload = resolve; image.onerror = reject; });
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const sizes = [1500, 1300, 1100, 950];
+                const qualities = [0.82, 0.74, 0.66, 0.58, 0.50, 0.42, 0.36];
+                for (const maxSide of sizes) {
+                    const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
+                    canvas.width = Math.max(1, Math.round(image.width * scale));
+                    canvas.height = Math.max(1, Math.round(image.height * scale));
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+                    for (const quality of qualities) {
+                        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                        if (dataUrl.length <= maxDataUrlChars) return dataUrl;
+                    }
+                }
+                throw new Error('La foto sigue siendo demasiado pesada. Abre la foto en tu celular, toma una captura de pantalla y sube esa captura. Asegúrate de que la letra se lea con claridad.');
+            } finally {
+                URL.revokeObjectURL(objectUrl);
+            }
+        }
+
+        function createRegistrationId(prefix) {
+            const randomPart = (window.crypto && crypto.randomUUID)
+                ? crypto.randomUUID().replace(/-/g, '')
+                : Array.from({length: 32}, () => Math.floor(Math.random() * 16).toString(16)).join('');
+            return prefix + '_' + randomPart;
+        }
+
+        async function saveKid(e) {
+            e.preventDefault();
+            const form = document.getElementById('kid-form');
+            const submitButton = form.querySelector('button[type="submit"]');
+            if (!initFirebase()) {
+                alert('No se pudo conectar con el sistema de inscripciones. Verifica tu conexión e intenta de nuevo.');
+                return;
+            }
+            const age = parseInt(document.getElementById('kid-age').value, 10);
+            if (isNaN(age) || age < 3 || age > 10) {
+                alert('La edad del niño debe estar comprendida entre 3 y 10 años.');
+                return;
+            }
+            const file1 = document.getElementById('kid-letter').files?.[0];
+            const file2 = document.getElementById('kid-letter-2').files?.[0];
+            if (!file1) {
+                alert('Adjunta la foto de la carta. La segunda foto es opcional.');
+                return;
+            }
+            submitButton.disabled = true;
+            submitButton.textContent = 'Enviando inscripción…';
+            try {
+                const [letterImage, letterImage2] = await Promise.all([
+                    compressLetterImage(file1),
+                    file2 ? compressLetterImage(file2) : Promise.resolve('')
+                ]);
+                if (letterImage.length + letterImage2.length > 614400) {
+                    throw new Error('Las dos fotos pesan demasiado juntas. Sube una captura de pantalla más ligera o deja la segunda foto sin adjuntar.');
+                }
+                const newKid = {
+                    id: createRegistrationId('kid'),
+                    name: document.getElementById('kid-name').value.trim(),
+                    doc: document.getElementById('kid-doc').value.trim(),
+                    age,
+                    guardian: document.getElementById('kid-guardian').value.trim(),
+                    address: document.getElementById('kid-address').value.trim(),
+                    whatsapp: document.getElementById('kid-whatsapp').value.trim(),
+                    letterImage,
+                    letterImage2,
+                    createdAt: new Date().toISOString()
+                };
+                const counterRef = firestoreDb.collection('publicCounters').doc('kids');
+                const kidRef = firestoreDb.collection('kids').doc(newKid.id);
+                const letterRef = firestoreDb.collection('publicLetters').doc(newKid.id);
+                const kidPayload = { ...newKid };
+                delete kidPayload.id;
+                let newCount = 0;
+                await firestoreDb.runTransaction(async transaction => {
+                    const counterSnapshot = await transaction.get(counterRef);
+                    const currentCount = counterSnapshot.exists ? Number(counterSnapshot.data().count || 0) : 0;
+                    if (currentCount >= 100) throw new Error('CUPOS_COMPLETOS');
+                    newCount = currentCount + 1;
+                    transaction.set(kidRef, kidPayload);
+                    transaction.set(letterRef, { name: newKid.name, letterImage, letterImage2, createdAt: newKid.createdAt });
+                    transaction.set(counterRef, { count: newCount, lastId: newKid.id });
+                });
+                updateCounters(newCount);
+                form.reset();
+                showScreen('main-screen');
+                showModal('Registro exitoso', 'La inscripción y la foto de la carta se guardaron correctamente. Gracias por participar en Navidad Solidaria.');
+            } catch (err) {
+                console.error('Error registrando niño:', err);
+                if (err.message === 'CUPOS_COMPLETOS') {
+                    updateCounters(100);
+                    alert('Ya se completaron los 100 cupos para niños. Gracias por tu interés.');
+                } else if (err.code === 'permission-denied') {
+                    alert('Firebase rechazó el registro por sus reglas de seguridad. Aún falta publicar las reglas correctas de Firestore.');
+                } else {
+                    alert(err.message || 'No se pudo guardar la inscripción. Revisa la conexión e intenta nuevamente.');
+                }
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Enviar Inscripción';
+            }
+        }
+
+        async function saveGodparent(e) {
+            e.preventDefault();
+            const form = document.getElementById('godparent-form');
+            const submitButton = form.querySelector('button[type="submit"]');
+            if (!initFirebase()) {
+                alert('No se pudo conectar con el sistema de inscripciones. Verifica tu conexión e intenta de nuevo.');
+                return;
+            }
+            submitButton.disabled = true;
+            submitButton.textContent = 'Enviando inscripción…';
+            try {
+                const newGodparent = {
+                    id: createRegistrationId('gp'),
+                    name: document.getElementById('gp-name').value.trim(),
+                    whatsapp: document.getElementById('gp-whatsapp').value.trim(),
+                    address: document.getElementById('gp-address').value.trim(),
+                    createdAt: new Date().toISOString()
+                };
+                const payload = { ...newGodparent };
+                delete payload.id;
+                await firestoreDb.collection('godparents').doc(newGodparent.id).set(payload);
+                form.reset();
+                showScreen('main-screen');
+                showModal('Registro de padrino exitoso', 'Tu inscripción como padrino se guardó correctamente. Gracias por apoyar esta iniciativa de Navidad Solidaria.');
+            } catch (error) {
+                console.error('Error registrando padrino:', error);
+                if (error.code === 'permission-denied') {
+                    alert('Firebase rechazó el registro por sus reglas de seguridad. Aún falta publicar las reglas correctas de Firestore.');
+                } else {
+                    alert('No se pudo guardar la inscripción. Verifica tu conexión e intenta nuevamente.');
+                }
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Inscribirme como Padrino';
+            }
+        }
+
+        function openWhatsApp(phone, message) {
+            const cleanPhone = String(phone || '').replace(/\D/g, '');
+            if (!cleanPhone) {
+                alert('Este registro no tiene un número de WhatsApp válido.');
+                return false;
+            }
+            let internationalPhone = cleanPhone;
+            if (internationalPhone.length === 10) internationalPhone = '57' + internationalPhone;
+            const url = `https://wa.me/${internationalPhone}?text=${encodeURIComponent(message)}`;
+            window.open(url, '_blank', 'noopener,noreferrer');
+            return true;
+        }
+
+        function getWhatsAppStatuses() {
+            try { return JSON.parse(localStorage.getItem('whatsappStatuses') || '{}'); }
+            catch (e) { return {}; }
+        }
+
+        function isWhatsAppSent(statusKey) {
+            return getWhatsAppStatuses()[statusKey] === true;
+        }
+
+        function whatsappButton(statusKey, label, action) {
+            const sent = isWhatsAppSent(statusKey);
+            const buttonText = `<i class="fa-brands fa-whatsapp"></i> ${label}`;
+            const statusText = sent
+                ? `<i class="fa-solid fa-check"></i> Enviado`
+                : `<i class="fa-regular fa-clock"></i> No enviado`;
+            return `<span class="whatsapp-action-group">
+                <button class="btn-action btn-whatsapp ${sent ? 'sent' : ''}" onclick="${action}">${buttonText}</button>
+                <span class="whatsapp-status ${sent ? 'sent' : ''}" aria-live="polite">${statusText}</span>
+            </span>`;
+        }
+
+        function sendTrackedWhatsApp(statusKey, phone, message) {
+            const cleanPhone = String(phone || '').replace(/\D/g, '');
+            if (!cleanPhone) {
+                alert('Este registro no tiene un número de WhatsApp válido.');
+                return;
+            }
+
+            // Abrir WhatsApp directamente en el clic del usuario para evitar bloqueos de ventanas emergentes.
+            const opened = openWhatsApp(phone, message);
+            if (!opened) return;
+
+            // Cambiar inmediatamente el botón y su indicador, sin alertas ni un segundo clic.
+            const statuses = getWhatsAppStatuses();
+            statuses[statusKey] = true;
+            localStorage.setItem('whatsappStatuses', JSON.stringify(statuses));
+
+            // Volver a dibujar las tarjetas para aplicar el nuevo color y el texto "Enviado".
+            renderAdminData();
+        }
+
+        function sendWhatsAppToKid(id) {
+            const kid = getStorageData('kids').find(k => k.id === id);
+            if (!kid) return;
+            const message = `Hola, ${kid.guardian}.\n\nLe confirmamos que la inscripción de ${kid.name} fue registrada correctamente en Navidad Solidaria. En los próximos días le informaremos por WhatsApp si fue seleccionado entre los niños que recibirán un regalo.\n\nGracias por participar.\nEquipo de Navidad Solidaria, La Terraza.`;
+            sendTrackedWhatsApp(`kid-registration-${id}`, kid.whatsapp, message);
+        }
+
+        function sendWhatsAppToGodparent(id) {
+            const gp = getStorageData('godparents').find(g => g.id === id);
+            if (!gp) return;
+            const message = `Hola, ${gp.name}.\n\nLe confirmamos que su inscripción como padrino de Navidad Solidaria fue registrada correctamente. Gracias por apoyar esta iniciativa. En los próximos días le informaremos el nombre y la edad del niño asignado y coordinaremos la entrega del regalo.\n\nCordialmente,\nEquipo de Navidad Solidaria, La Terraza.`;
+            sendTrackedWhatsApp(`gp-registration-${id}`, gp.whatsapp, message);
+        }
+
+        function sendPairingWhatsAppToKid(kidId) {
+            const kid = getStorageData('kids').find(k => k.id === kidId);
+            if (!kid) return;
+            const message = `Hola, ${kid.guardian}.\n\nNos alegra informarle que ${kid.name} ha sido seleccionado para recibir un regalo de Navidad Solidaria. Su carta ha sido apadrinada.\n\nPróximamente nos comunicaremos por WhatsApp para coordinar la fecha y hora de entrega.\n\nGracias por permitirnos compartir esta alegría con su familia.\nEquipo de Navidad Solidaria, La Terraza.`;
+            sendTrackedWhatsApp(`pairing-kid-${kidId}`, kid.whatsapp, message);
+        }
+
+        function getPublicLetterUrl(kidId) {
+            const base = window.location.href.split('?')[0].split('#')[0];
+            return `${base}?carta=${encodeURIComponent(kidId)}`;
+        }
+
+        function sendPairingWhatsAppToGodparent(gpId, kidId) {
+            const gp = getStorageData('godparents').find(g => g.id === gpId);
+            const kid = getStorageData('kids').find(k => k.id === kidId);
+            if (!gp || !kid) return;
+            const letterUrl = getPublicLetterUrl(kid.id);
+            const message = `Hola, ${gp.name}.\n\nGracias por participar en Navidad Solidaria. El niño que le ha sido asignado es ${kid.name}, de ${kid.age} años.\n\nPuede ver la carta del niño aquí: ${letterUrl}\n\nLa entrega del regalo será coordinada directamente por el equipo de La Terraza.\n\nCordialmente,\nEquipo de Navidad Solidaria, La Terraza.`;
+            sendTrackedWhatsApp(`pairing-gp-${kidId}`, gp.whatsapp, message);
+        }
+
+        function assignManualPairing(kidId) {
+            let selectEl = document.getElementById(`select-gp-${kidId}`);
+            let gpId = selectEl.value;
+
+            if (!gpId) {
+                alert("Por favor seleccione un padrino disponible de la lista.");
+                return;
+            }
+
+            let pairings = getStorageData('pairings');
+            let kids = getStorageData('kids');
+            let godparents = getStorageData('godparents');
+
+            let kid = kids.find(k => k.id === kidId);
+            let gp = godparents.find(g => g.id === gpId);
+
+            if (!kid || !gp) return;
+
+            pairings.push({
+                kidId: kid.id,
+                kidName: kid.name,
+                gpId: gp.id,
+                gpName: gp.name,
+            });
+
+            setStorageData('pairings', pairings);
+            renderAdminData();
+            alert(`¡Se ha asignado a ${gp.name} como padrino de ${kid.name} correctamente!`);
+        }
+
+        function removeSinglePairing(kidId) {
+            if (confirm("¿Desea deshacer la asignación de este niño?")) {
+                let pairings = getStorageData('pairings');
+                pairings = pairings.filter(p => p.kidId !== kidId);
+                setStorageData('pairings', pairings);
+                renderAdminData();
+            }
+        }
+
+        async function deleteKid(id) {
+            if (!confirm("¿Está seguro de que desea eliminar este registro de niño?")) return;
+            try {
+                if (firestoreDb && isAdminAuthenticated()) {
+                    const kidRef = firestoreDb.collection('kids').doc(id);
+                    const letterRef = firestoreDb.collection('publicLetters').doc(id);
+                    const counterRef = firestoreDb.collection('publicCounters').doc('kids');
+                    await firestoreDb.runTransaction(async transaction => {
+                        const counterSnapshot = await transaction.get(counterRef);
+                        transaction.delete(kidRef);
+                        transaction.delete(letterRef);
+                        if (counterSnapshot.exists) {
+                            const currentCount = Number(counterSnapshot.data().count || 0);
+                            transaction.set(counterRef, { count: Math.max(0, currentCount - 1), lastId: '' });
+                        }
+                    });
+                }
+                let kids = getStorageData('kids').filter(k => k.id !== id);
+                setStorageData('kids', kids);
+                let pairings = getStorageData('pairings').filter(p => p.kidId !== id);
+                setStorageData('pairings', pairings);
+                updateCounters(firestoreDb && isAdminAuthenticated() ? Math.max(0, kids.length) : null);
+                renderAdminData();
+                alert("Registro eliminado correctamente.");
+            } catch (error) {
+                console.error('Error eliminando niño:', error);
+                alert('No se pudo eliminar el registro en la nube. Intenta nuevamente.');
+            }
+        }
+
+        function deleteGodparent(id) {
+            if (confirm("¿Está seguro de que desea eliminar este registro de padrino?")) {
+                let godparents = getStorageData('godparents');
+                godparents = godparents.filter(gp => gp.id !== id);
+                setStorageData('godparents', godparents);
+
+                let pairings = getStorageData('pairings');
+                pairings = pairings.filter(p => p.gpId !== id);
+                setStorageData('pairings', pairings);
+
+                renderAdminData();
+                alert("Registro eliminado correctamente.");
+            }
+        }
+
+        function updateCounters(authoritativeCount = null) {
+            const count = Number.isInteger(authoritativeCount) ? authoritativeCount : getStorageData('kids').length;
+            const counterEl = document.getElementById('kids-counter');
+            if (counterEl) {
+                counterEl.innerHTML = `Cupos habilitados: <strong>${Math.min(100, count)} / 100</strong>.<br>✨ <i>Nota:</i> Rango de edad permitido: <strong>3 a 10 años</strong>. De todos los inscritos, en el concurso final <strong>solo se seleccionarán 50 niños ganadores</strong>.`;
+            }
+        }
+
+        function renderAdminData() {
+            let kids = getStorageData('kids');
+            let godparents = getStorageData('godparents');
+            let pairings = getStorageData('pairings');
+
+            document.getElementById('admin-kid-count').innerText = kids.length;
+            document.getElementById('admin-gp-count').innerText = godparents.length;
+
+            let pairedKidIds = pairings.map(p => p.kidId);
+            let assignedGpIds = pairings.map(p => p.gpId);
+
+            let unpairedKids = kids.filter(k => !pairedKidIds.includes(k.id));
+            let unassignedGodparents = godparents.filter(g => !assignedGpIds.includes(g.id));
+
+            document.getElementById('admin-paired-count').innerText = pairings.length;
+            document.getElementById('admin-unpaired-kids-count').innerText = unpairedKids.length;
+            document.getElementById('admin-unassigned-gp-count').innerText = unassignedGodparents.length;
+
+            // --- TÉRMINOS DE BÚSQUEDA / FILTROS ---
+            let filterPaired = (document.getElementById('search-paired').value || '').toLowerCase();
+            let filterUnpairedKids = (document.getElementById('search-unpaired-kids').value || '').toLowerCase();
+            let filterUnassignedGp = (document.getElementById('search-unassigned-gp').value || '').toLowerCase();
+            let filterAllKids = (document.getElementById('search-all-kids').value || '').toLowerCase();
+            let filterAllGp = (document.getElementById('search-all-gp').value || '').toLowerCase();
+
+            // 1. Renderizar Lista de Emparejados con Filtro
+            let pairContainer = document.getElementById('pairings-list');
+            let filteredPairings = pairings.filter(p => 
+                p.kidName.toLowerCase().includes(filterPaired) || p.gpName.toLowerCase().includes(filterPaired)
+            );
+
+            if (!filteredPairings || filteredPairings.length === 0) {
+                pairContainer.innerHTML = '<p style="font-size: 0.78rem; color: #777;">No se encontraron emparejamientos.</p>';
+            } else {
+                pairContainer.innerHTML = '';
+                filteredPairings.forEach((p, i) => {
+                    let k = kids.find(item => item.id === p.kidId) || {};
+                    let g = godparents.find(item => item.id === p.gpId) || {};
+
+                    pairContainer.innerHTML += `
+                        <div class="list-card pairing">
+                            <div style="width:100%;">
+                                <div style="font-size:0.9rem; font-weight:700; color:#3a0ca3; margin-bottom:5px; display:flex; justify-content:space-between; align-items:center;">
+                                    <span>#${i+1} EMPAREJAMIENTO: ${p.kidName} ➔ ${p.gpName}</span>
+                                </div>
+                                <div class="pairing-details-grid">
+                                    <div>
+                                        <b style="color:var(--primary-red);">👶 DATOS DEL NIÑO:</b><br>
+                                        • <b>Nombre:</b> ${k.name || 'N/A'}<br>
+                                        • <b>Doc. Identidad:</b> ${k.doc || 'Sin registrar'}<br>
+                                        • <b>Edad:</b> ${k.age || '?'} años<br>
+                                        • <b>Acudiente:</b> ${k.guardian || 'N/A'}<br>
+                                        • <b>Dirección:</b> ${k.address || 'N/A'}<br>
+                                        • <b>WhatsApp:</b> <a href="${getWaLink(k.whatsapp)}" target="_blank" class="wa-link"><i class="fa-brands fa-whatsapp"></i> ${k.whatsapp || 'N/A'}</a><br>
+                                        • <b>Carta:</b> <a href="${k.letterImage}" target="_blank" rel="noopener">Ver cara 1</a>${k.letterImage2 ? ` · <a href="${k.letterImage2}" target="_blank" rel="noopener">Ver cara 2</a>` : ''}
+                                    </div>
+                                    <div>
+                                        <b style="color:var(--christmas-green);">🎁 DATOS DEL PADRINO:</b><br>
+                                        • <b>Nombre:</b> ${g.name || 'N/A'}<br>
+                                        • <b>WhatsApp:</b> <a href="${getWaLink(g.whatsapp)}" target="_blank" class="wa-link"><i class="fa-brands fa-whatsapp"></i> ${g.whatsapp || 'N/A'}</a><br>
+                                        • <b>Dirección Casa:</b> ${g.address || 'N/A'}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-actions" style="width:100%; justify-content:flex-end; margin-top:8px;">
+                                ${whatsappButton(`pairing-kid-${p.kidId}`, 'WhatsApp al acudiente', `sendPairingWhatsAppToKid('${p.kidId}')`)}
+                                ${whatsappButton(`pairing-gp-${p.kidId}`, 'WhatsApp al padrino', `sendPairingWhatsAppToGodparent('${p.gpId}', '${p.kidId}')`)}
+                                <button class="btn-action btn-delete" onclick="removeSinglePairing('${p.kidId}')"><i class="fa-solid fa-xmark"></i> Deshacer</button>
+                            </div>
+                        </div>`;
+                });
+            }
+
+            // 2. Niños Sin Emparejar con Filtro
+            let unpairedKidsContainer = document.getElementById('unpaired-kids-list');
+            let filteredUnpairedKids = unpairedKids.filter(k => 
+                k.name.toLowerCase().includes(filterUnpairedKids) || 
+                (k.doc && k.doc.toLowerCase().includes(filterUnpairedKids)) || 
+                k.guardian.toLowerCase().includes(filterUnpairedKids) ||
+                k.whatsapp.includes(filterUnpairedKids)
+            );
+
+            unpairedKidsContainer.innerHTML = filteredUnpairedKids.length === 0 ? '<p style="font-size:0.78rem; color:#777;">No se encontraron niños sin emparejar.</p>' : '';
+            filteredUnpairedKids.forEach((k, index) => {
+                let optionsHtml = '<option value="">-- Seleccionar Padrino Disponible --</option>';
+                unassignedGodparents.forEach(gp => {
+                    optionsHtml += `<option value="${gp.id}">${gp.name} (WA: ${gp.whatsapp})</option>`;
+                });
+
+                unpairedKidsContainer.innerHTML += `
+                    <div class="list-card">
+                        <div class="card-main-info">
+                            <b>${index + 1}. ${k.name}</b> (${k.age} años)
+                            <span>Doc: ${k.doc || 'N/A'}</span>
+                            <span>Acudiente: ${k.guardian}</span>
+                            <span>WA: <a href="${getWaLink(k.whatsapp)}" target="_blank" class="wa-link"><i class="fa-brands fa-whatsapp"></i> ${k.whatsapp}</a></span>
+                        </div>
+                        ${unassignedGodparents.length > 0 ? `
+                        <div class="manual-assign-box">
+                            <select id="select-gp-${k.id}">
+                                ${optionsHtml}
+                            </select>
+                            <button class="btn-action btn-assign" onclick="assignManualPairing('${k.id}')"><i class="fa-solid fa-link"></i> Asignar</button>
+                        </div>` : '<small style="color:#d90429; font-weight:600;">Sin padrinos disponibles</small>'}
+                    </div>`;
+            });
+
+            // 3. Padrinos Sin Asignar con Filtro
+            let unassignedGpContainer = document.getElementById('unassigned-gp-list');
+            let filteredUnassignedGp = unassignedGodparents.filter(gp => 
+                gp.name.toLowerCase().includes(filterUnassignedGp) || 
+                gp.whatsapp.includes(filterUnassignedGp)
+            );
+
+            unassignedGpContainer.innerHTML = filteredUnassignedGp.length === 0 ? '<p style="font-size:0.78rem; color:#777;">No se encontraron padrinos sin asignar.</p>' : '';
+            filteredUnassignedGp.forEach((gp, index) => {
+                unassignedGpContainer.innerHTML += `
+                    <div class="list-card padrino">
+                        <div class="card-main-info">
+                            <b>${index + 1}. ${gp.name}</b>
+                            <span>WA: <a href="${getWaLink(gp.whatsapp)}" target="_blank" class="wa-link"><i class="fa-brands fa-whatsapp"></i> ${gp.whatsapp}</a></span>
+                            <span>Dir: ${gp.address}</span>
+                        </div>
+                    </div>`;
+            });
+
+            // 4. Lista Completa de Niños con Filtro
+            let kidsContainer = document.getElementById('admin-kids-list');
+            let filteredAllKids = kids.filter(k => 
+                k.name.toLowerCase().includes(filterAllKids) || 
+                (k.doc && k.doc.toLowerCase().includes(filterAllKids)) || 
+                k.guardian.toLowerCase().includes(filterAllKids) ||
+                k.whatsapp.includes(filterAllKids)
+            );
+
+            kidsContainer.innerHTML = filteredAllKids.length === 0 ? '<p style="font-size:0.78rem; color:#777;">No se encontraron niños inscritos.</p>' : '';
+            filteredAllKids.forEach((k, index) => {
+                kidsContainer.innerHTML += `
+                    <div class="list-card">
+                        <div class="card-main-info">
+                            <b>${index + 1}. ${k.name}</b> (${k.age} años)
+                            <span>Doc: ${k.doc || 'N/A'}</span>
+                            <span>Acudiente: ${k.guardian}</span>
+                            <span>WA: <a href="${getWaLink(k.whatsapp)}" target="_blank" class="wa-link"><i class="fa-brands fa-whatsapp"></i> ${k.whatsapp}</a></span>
+                            <span><a href="${k.letterImage}" target="_blank" rel="noopener">Ver cara 1</a>${k.letterImage2 ? ` · <a href="${k.letterImage2}" target="_blank" rel="noopener">Ver cara 2</a>` : ''}</span>
+                        </div>
+                        <div class="card-actions">
+                            ${whatsappButton(`kid-registration-${k.id}`, 'WhatsApp al acudiente', `sendWhatsAppToKid('${k.id}')`)}
+                            <button class="btn-action btn-delete" onclick="deleteKid('${k.id}')"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>`;
+            });
+
+            // 5. Lista Completa de Padrinos con Filtro
+            let gpContainer = document.getElementById('admin-gp-list');
+            let filteredAllGp = godparents.filter(gp => 
+                gp.name.toLowerCase().includes(filterAllGp) || 
+                gp.whatsapp.includes(filterAllGp)
+            );
+
+            gpContainer.innerHTML = filteredAllGp.length === 0 ? '<p style="font-size:0.78rem; color:#777;">No se encontraron padrinos inscritos.</p>' : '';
+            filteredAllGp.forEach((gp, index) => {
+                gpContainer.innerHTML += `
+                    <div class="list-card padrino">
+                        <div class="card-main-info">
+                            <b>${index + 1}. ${gp.name}</b>
+                            <span>WA: <a href="${getWaLink(gp.whatsapp)}" target="_blank" class="wa-link"><i class="fa-brands fa-whatsapp"></i> ${gp.whatsapp}</a></span>
+                            <span>Dir: ${gp.address}</span>
+                        </div>
+                        <div class="card-actions">
+                            ${whatsappButton(`gp-registration-${gp.id}`, 'WhatsApp', `sendWhatsAppToGodparent('${gp.id}')`)}
+                            <button class="btn-action btn-delete" onclick="deleteGodparent('${gp.id}')"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        // --- EXPORTACIÓN ÚNICA DE TODOS LOS DATOS ---
+        function csvCell(value) {
+            const text = String(value ?? '').replace(/"/g, '""').replace(/\r?\n/g, ' ');
+            return `"${text}"`;
+        }
+
+        function exportAllToExcel() {
+            const kids = getStorageData('kids');
+            const godparents = getStorageData('godparents');
+            const pairings = getStorageData('pairings');
+            if (!kids.length && !godparents.length && !pairings.length) {
+                alert('No hay registros para exportar.');
+                return;
+            }
+
+            const rows = [];
+            rows.push(['NAVIDAD SOLIDARIA - EXPORTACIÓN GENERAL']);
+            rows.push(['Fecha de exportación', new Date().toLocaleString('es-CO')]);
+            rows.push([]);
+            rows.push(['NIÑOS INSCRITOS']);
+            rows.push(['ID','Nombre del niño','Documento','Edad','Acudiente','Dirección','WhatsApp','Fecha de registro','Carta adjunta registrada']);
+            kids.forEach(k => rows.push([k.id,k.name,k.doc,k.age,k.guardian,k.address,k.whatsapp,k.createdAt,k.letterImage ? 'Sí' : 'No']));
+            rows.push([]);
+            rows.push(['PADRINOS INSCRITOS']);
+            rows.push(['ID','Nombre del padrino','WhatsApp','Dirección','Fecha de registro']);
+            godparents.forEach(g => rows.push([g.id,g.name,g.whatsapp,g.address,g.createdAt]));
+            rows.push([]);
+            rows.push(['EMPAREJAMIENTOS']);
+            rows.push(['ID niño','Nombre del niño','Documento niño','Edad','Acudiente','WhatsApp acudiente','ID padrino','Nombre del padrino','WhatsApp padrino']);
+            pairings.forEach(p => {
+                const k = kids.find(item => item.id === p.kidId) || {};
+                const g = godparents.find(item => item.id === p.gpId) || {};
+                rows.push([k.id || p.kidId,k.name || p.kidName,k.doc,k.age,k.guardian,k.whatsapp,g.id || p.gpId,g.name || p.gpName,g.whatsapp]);
+            });
+            rows.push([]);
+            rows.push(['NIÑOS SIN EMPAREJAR']);
+            rows.push(['ID','Nombre del niño','Documento','Edad','Acudiente','WhatsApp']);
+            const pairedIds = new Set(pairings.map(p => p.kidId));
+            kids.filter(k => !pairedIds.has(k.id)).forEach(k => rows.push([k.id,k.name,k.doc,k.age,k.guardian,k.whatsapp]));
+            rows.push([]);
+            rows.push(['PADRINOS SIN ASIGNAR']);
+            rows.push(['ID','Nombre del padrino','WhatsApp','Dirección']);
+            const assignedIds = new Set(pairings.map(p => p.gpId));
+            godparents.filter(g => !assignedIds.has(g.id)).forEach(g => rows.push([g.id,g.name,g.whatsapp,g.address]));
+
+            const csv = '\ufeff' + rows.map(row => row.map(csvCell).join(';')).join('\r\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `Navidad_Solidaria_Todos_los_registros_${new Date().toISOString().slice(0,10)}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        function confirmPairing() {
+            if (confirm("¿Está seguro de que desea realizar el sorteo y emparejamiento automático de los primeros 50 niños con los primeros 50 padrinos?")) {
+                runRandomPairing();
+            }
+        }
+
+        function confirmUnpairing() {
+            if (confirm("¿Está seguro de que desea eliminar todos los emparejamientos actuales?")) {
+                setStorageData('pairings', []);
+                renderAdminData();
+                alert("Se han desemparejado todos los niños y padrinos correctamente.");
+            }
+        }
+
+        function runRandomPairing() {
+            let kids = getStorageData('kids');
+            let godparents = getStorageData('godparents');
+
+            if (godparents.length === 0) {
+                alert("No hay padrinos inscritos para realizar el emparejamiento.");
+                return;
+            }
+            if (kids.length === 0) {
+                alert("No hay niños inscritos para realizar el emparejamiento.");
+                return;
+            }
+
+            let selectedKids = kids.slice(0, 50);
+            let selectedGps = godparents.slice(0, 50);
+
+            let shuffledKids = [...selectedKids].sort(() => 0.5 - Math.random());
+
+            let pairings = [];
+            let gpIndex = 0;
+
+            shuffledKids.forEach(kid => {
+                let gp = selectedGps[gpIndex];
+                pairings.push({
+                    kidId: kid.id,
+                    kidName: kid.name,
+                    gpId: gp.id,
+                    gpName: gp.name,
+                });
+                gpIndex = (gpIndex + 1) % selectedGps.length;
+            });
+
+            setStorageData('pairings', pairings);
+            alert(`¡Emparejamiento aleatorio completado con éxito para ${pairings.length} niños ganadores!`);
+            renderAdminData();
+        }
+
+        async function resetData() {
+            if (!isAdminAuthenticated()) {
+                alert('Debes iniciar sesión como administrador.');
+                return;
+            }
+            if (!confirm('¿Está seguro de borrar TODOS los registros de niños, padrinos, cartas y emparejamientos de Firebase? Esta acción no se puede deshacer.')) return;
+            try {
+                const refs = [];
+                for (const collectionName of ['kids', 'godparents', 'pairings', 'publicLetters']) {
+                    const snapshot = await firestoreDb.collection(collectionName).get();
+                    snapshot.docs.forEach(doc => refs.push(doc.ref));
+                }
+                const counterRef = firestoreDb.collection('publicCounters').doc('kids');
+                refs.push(counterRef);
+                for (let i = 0; i < refs.length; i += 450) {
+                    const batch = firestoreDb.batch();
+                    refs.slice(i, i + 450).forEach(ref => batch.delete(ref));
+                    await batch.commit();
+                }
+                localStorage.removeItem('kids');
+                localStorage.removeItem('godparents');
+                localStorage.removeItem('pairings');
+                localStorage.removeItem('whatsappStatuses');
+                updateCounters(0);
+                renderAdminData();
+                alert('Los registros de Firebase se eliminaron correctamente.');
+            } catch (error) {
+                console.error('Error reiniciando datos:', error);
+                alert('No se pudieron borrar todos los registros. Revisa las reglas de Firestore e intenta nuevamente.');
+            }
+        }
     </script>
 </body>
 </html>
