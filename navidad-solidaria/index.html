@@ -4,6 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Navidad Solidaria - Inscripciones</title>
+    <meta name="description" content="Navidad Solidaria: inscribe niños y padrinos para compartir alegría, ilusión y esperanza esta Navidad.">
+    <link rel="canonical" href="https://laterrazacalipodcast.top/navidad-solidaria/">
+    <!-- Vista previa al compartir el enlace (WhatsApp, Facebook y otras plataformas) -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://laterrazacalipodcast.top/navidad-solidaria/">
+    <meta property="og:title" content="Navidad Solidaria - Inscripciones">
+    <meta property="og:description" content="¡Sembrando sonrisas en cada corazón! Inscribe a un niño o conviértete en padrino de Navidad Solidaria.">
+    <meta property="og:image" content="https://laterrazacalipodcast.top/navidad-solidaria/portada.png">
+    <meta property="og:image:secure_url" content="https://laterrazacalipodcast.top/navidad-solidaria/portada.png">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="1024">
+    <meta property="og:image:height" content="1024">
+    <meta property="og:image:alt" content="Portada de la campaña Navidad Solidaria de La Terraza Cali">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Navidad Solidaria - Inscripciones">
+    <meta name="twitter:description" content="¡Sembrando sonrisas en cada corazón! Inscribe a un niño o conviértete en padrino de Navidad Solidaria.">
+    <meta name="twitter:image" content="https://laterrazacalipodcast.top/navidad-solidaria/portada.png">
     <!-- Google Fonts & FontAwesome -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Mountains+of+Christmas:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -636,6 +653,90 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
 
+
+        /* Modal de acceso administrativo: formulario real para que Chrome reconozca credenciales */
+        #admin-login-modal {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.68);
+            z-index: 10000;
+        }
+        #admin-login-modal.active {
+            display: flex;
+            animation: popIn 0.25s ease-out;
+        }
+        .admin-login-card {
+            width: 100%;
+            max-width: 390px;
+            padding: 26px 22px;
+            background: #fff;
+            border: 3px solid var(--gold);
+            border-radius: 20px;
+            box-shadow: 0 12px 35px rgba(0,0,0,.28);
+            text-align: left;
+        }
+        .admin-login-card .login-heading {
+            text-align: center;
+            margin-bottom: 18px;
+        }
+        .admin-login-card .login-heading i {
+            display: block;
+            font-size: 2.3rem;
+            color: var(--christmas-green);
+            margin-bottom: 8px;
+        }
+        .admin-login-card h2 {
+            font-family: 'Mountains of Christmas', cursive;
+            font-size: 1.8rem;
+            color: var(--primary-red);
+            margin-bottom: 4px;
+        }
+        .admin-login-card .login-subtitle {
+            font-size: .82rem;
+            color: #555;
+        }
+        .admin-login-card .form-control {
+            display: block;
+            background: #fff;
+        }
+        .admin-login-error {
+            display: none;
+            padding: 9px 11px;
+            margin: 0 0 12px;
+            border: 1px solid #f2b8b5;
+            border-radius: 8px;
+            background: #fff0ef;
+            color: #9b2226;
+            font-size: .8rem;
+            line-height: 1.4;
+        }
+        .admin-login-error.visible { display: block; }
+        .admin-login-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+        .admin-login-actions button {
+            flex: 1;
+            min-width: 0;
+        }
+        .btn-login-cancel {
+            padding: 12px;
+            border: 1px solid #d0d0d0;
+            border-radius: 12px;
+            background: #f5f5f5;
+            color: #444;
+            font-size: .9rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-login-cancel:hover { background: #eaeaea; }
+        .btn-submit:disabled { opacity: .65; cursor: wait; }
+
         .admin-toolbar {
             display: flex;
             gap: 12px;
@@ -845,6 +946,50 @@
 
         <div class="footer-decor">
             🎄 Navidad Solidaria 🎄
+        </div>
+    </div>
+
+    <!-- FORMULARIO DE ACCESO ADMINISTRATIVO -->
+    <div id="admin-login-modal" role="dialog" aria-modal="true" aria-labelledby="admin-login-title">
+        <div class="admin-login-card">
+            <div class="login-heading">
+                <i class="fa-solid fa-lock"></i>
+                <h2 id="admin-login-title">Acceso administrativo</h2>
+                <p class="login-subtitle">Ingresa con la cuenta autorizada de Navidad Solidaria.</p>
+            </div>
+            <div id="admin-login-error" class="admin-login-error" role="alert" aria-live="polite"></div>
+            <form id="admin-login-form" onsubmit="submitAdminLogin(event)" autocomplete="on">
+                <div class="form-group">
+                    <label for="admin-login-email">Correo electrónico</label>
+                    <input
+                        type="email"
+                        class="form-control"
+                        id="admin-login-email"
+                        name="username"
+                        autocomplete="username"
+                        autocapitalize="none"
+                        spellcheck="false"
+                        inputmode="email"
+                        required
+                        value="laterrazacali@gmail.com"
+                        placeholder="correo@ejemplo.com">
+                </div>
+                <div class="form-group">
+                    <label for="admin-login-password">Contraseña</label>
+                    <input
+                        type="password"
+                        class="form-control"
+                        id="admin-login-password"
+                        name="password"
+                        autocomplete="current-password"
+                        required
+                        placeholder="Ingresa tu contraseña">
+                </div>
+                <div class="admin-login-actions">
+                    <button type="button" class="btn-login-cancel" onclick="closeAdminLogin()">Cancelar</button>
+                    <button type="submit" class="btn-submit" id="admin-login-submit">Ingresar</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -1087,44 +1232,108 @@
                 return;
             }
 
-            try {
-                let user = firebase.auth().currentUser;
-
-                if (!user || user.email !== ADMIN_EMAIL) {
-                    const email = prompt('Usuario (correo electrónico):', ADMIN_EMAIL);
-                    if (email === null) return;
-                    const username = email.trim().toLowerCase();
-                    if (!username) {
-                        alert('Escribe el usuario (correo electrónico).');
-                        return;
-                    }
-
-                    const password = prompt('Contraseña:');
-                    if (password === null) return;
-                    if (!password) {
-                        alert('Escribe la contraseña.');
-                        return;
-                    }
-
-                    const credential = await firebase.auth().signInWithEmailAndPassword(username, password);
-                    user = credential.user;
+            const user = firebase.auth().currentUser;
+            if (user && user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+                try {
+                    await loadFirestoreData();
+                    showScreen('admin-screen');
+                } catch (err) {
+                    console.error('Error cargando el panel administrativo:', err);
+                    showAdminLoginError('No se pudo abrir el panel. Revisa las reglas de Firestore y tu conexión.');
                 }
+                return;
+            }
+
+            // Si existe otra sesión, cerrarla para que el acceso use la cuenta administrativa correcta.
+            if (user) {
+                try { await firebase.auth().signOut(); }
+                catch (err) { console.warn('No se pudo cerrar la sesión anterior:', err); }
+            }
+
+            openAdminLogin();
+        }
+
+        function openAdminLogin() {
+            const modal = document.getElementById('admin-login-modal');
+            const emailInput = document.getElementById('admin-login-email');
+            const passwordInput = document.getElementById('admin-login-password');
+            const errorBox = document.getElementById('admin-login-error');
+            const submitButton = document.getElementById('admin-login-submit');
+
+            document.getElementById('admin-login-form').reset();
+            emailInput.value = ADMIN_EMAIL;
+            passwordInput.value = '';
+            errorBox.textContent = '';
+            errorBox.classList.remove('visible');
+            submitButton.disabled = false;
+            submitButton.textContent = 'Ingresar';
+            modal.classList.add('active');
+
+            // Focus en el correo; Chrome puede mostrar las credenciales guardadas del sitio.
+            window.setTimeout(() => emailInput.focus(), 50);
+        }
+
+        function closeAdminLogin() {
+            document.getElementById('admin-login-modal').classList.remove('active');
+            document.getElementById('admin-login-error').classList.remove('visible');
+            document.getElementById('admin-login-form').reset();
+        }
+
+        function showAdminLoginError(message) {
+            const errorBox = document.getElementById('admin-login-error');
+            errorBox.textContent = message;
+            errorBox.classList.add('visible');
+        }
+
+        async function submitAdminLogin(event) {
+            event.preventDefault();
+            if (!initFirebase()) {
+                showAdminLoginError('Firebase no está configurado. Recarga la página e inténtalo de nuevo.');
+                return;
+            }
+
+            const emailInput = document.getElementById('admin-login-email');
+            const passwordInput = document.getElementById('admin-login-password');
+            const submitButton = document.getElementById('admin-login-submit');
+            const username = emailInput.value.trim().toLowerCase();
+            const password = passwordInput.value;
+
+            if (!username || !password) {
+                showAdminLoginError('Escribe el correo y la contraseña.');
+                return;
+            }
+
+            submitButton.disabled = true;
+            submitButton.textContent = 'Verificando…';
+            document.getElementById('admin-login-error').classList.remove('visible');
+
+            try {
+                const credential = await firebase.auth().signInWithEmailAndPassword(username, password);
+                const user = credential.user;
 
                 if (!user || !user.email || user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
                     await firebase.auth().signOut();
-                    alert('Esta cuenta no tiene permiso de administrador.');
+                    showAdminLoginError('Esta cuenta no tiene permiso de administrador.');
+                    passwordInput.value = '';
+                    passwordInput.focus();
                     return;
                 }
 
                 await loadFirestoreData();
+                closeAdminLogin();
                 showScreen('admin-screen');
             } catch (err) {
                 console.error('Error de acceso administrativo:', err);
                 if (err.code && err.code.startsWith('auth/')) {
-                    alert('Usuario o contraseña incorrectos. Verifica las credenciales en Firebase Authentication.');
+                    showAdminLoginError('Correo o contraseña incorrectos. Verifica las credenciales en Firebase Authentication.');
                 } else {
-                    alert('No se pudo abrir la configuración. Revisa las reglas de Firestore y la conexión.');
+                    showAdminLoginError('No se pudo abrir el panel. Revisa las reglas de Firestore y tu conexión.');
                 }
+                passwordInput.value = '';
+                passwordInput.focus();
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Ingresar';
             }
         }
 
