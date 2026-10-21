@@ -946,13 +946,23 @@
         async function loadFirestoreData() {
             if (!firestoreDb || !isAdminAuthenticated()) throw new Error('Debes iniciar sesión como administrador.');
             try {
-                for (const key of Object.keys(FIRESTORE_COLLECTIONS)) {
-                    const snapshot = await firestoreDb.collection(FIRESTORE_COLLECTIONS[key]).get();
+                // Consultar las tres colecciones y el contador en paralelo para reducir la espera.
+                const keys = Object.keys(FIRESTORE_COLLECTIONS);
+                const requests = keys.map(key =>
+                    firestoreDb.collection(FIRESTORE_COLLECTIONS[key]).get()
+                );
+                requests.push(firestoreDb.collection('publicCounters').doc('kids').get());
+
+                const results = await Promise.all(requests);
+
+                keys.forEach((key, index) => {
+                    const snapshot = results[index];
                     const remote = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
                     // Firestore es la fuente oficial; no migrar datos viejos del navegador a la nube.
                     localStorage.setItem(key, JSON.stringify(remote));
-                }
-                const counter = await firestoreDb.collection('publicCounters').doc('kids').get();
+                });
+
+                const counter = results[results.length - 1];
                 updateCounters(counter.exists ? Number(counter.data().count || 0) : 0);
                 return true;
             } catch (err) {
@@ -1076,24 +1086,45 @@
                 alert('Firebase no está configurado.');
                 return;
             }
+
             try {
                 let user = firebase.auth().currentUser;
+
                 if (!user || user.email !== ADMIN_EMAIL) {
-                    const pass = prompt('Ingresa la contraseña del administrador (' + ADMIN_EMAIL + '):');
-                    if (pass === null) return;
-                    const credential = await firebase.auth().signInWithEmailAndPassword(ADMIN_EMAIL, pass);
+                    const email = prompt('Usuario (correo electrónico):', ADMIN_EMAIL);
+                    if (email === null) return;
+                    const username = email.trim().toLowerCase();
+                    if (!username) {
+                        alert('Escribe el usuario (correo electrónico).');
+                        return;
+                    }
+
+                    const password = prompt('Contraseña:');
+                    if (password === null) return;
+                    if (!password) {
+                        alert('Escribe la contraseña.');
+                        return;
+                    }
+
+                    const credential = await firebase.auth().signInWithEmailAndPassword(username, password);
                     user = credential.user;
                 }
-                if (!user || user.email !== ADMIN_EMAIL) {
+
+                if (!user || !user.email || user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
                     await firebase.auth().signOut();
                     alert('Esta cuenta no tiene permiso de administrador.');
                     return;
                 }
+
                 await loadFirestoreData();
                 showScreen('admin-screen');
             } catch (err) {
                 console.error('Error de acceso administrativo:', err);
-                alert('No se pudo ingresar. Verifica la contraseña del administrador y que Correo electrónico/contraseña esté habilitado en Firebase Authentication.');
+                if (err.code && err.code.startsWith('auth/')) {
+                    alert('Usuario o contraseña incorrectos. Verifica las credenciales en Firebase Authentication.');
+                } else {
+                    alert('No se pudo abrir la configuración. Revisa las reglas de Firestore y la conexión.');
+                }
             }
         }
 
