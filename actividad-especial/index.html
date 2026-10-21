@@ -1080,42 +1080,25 @@
             try {
                 let user = firebase.auth().currentUser;
 
-                // Si ya existe una sesión de administrador, reutilizarla.
-                if (user && user.email === ADMIN_EMAIL) {
-                    await loadFirestoreData();
-                    showScreen('admin-screen');
-                    return;
+                if (!user || user.email !== ADMIN_EMAIL) {
+                    const email = prompt('Usuario (correo electrónico):', ADMIN_EMAIL);
+                    if (email === null) return;
+                    const username = email.trim().toLowerCase();
+                    if (!username) {
+                        alert('Escribe el usuario (correo electrónico).');
+                        return;
+                    }
+
+                    const password = prompt('Contraseña:');
+                    if (password === null) return;
+                    if (!password) {
+                        alert('Escribe la contraseña.');
+                        return;
+                    }
+
+                    const credential = await firebase.auth().signInWithEmailAndPassword(username, password);
+                    user = credential.user;
                 }
-
-                // No permitir que una sesión de otra cuenta se convierta en sesión administrativa.
-                if (user) {
-                    await firebase.auth().signOut();
-                }
-
-                const email = prompt('Correo electrónico del administrador:');
-                if (email === null) return;
-                const normalizedEmail = email.trim().toLowerCase();
-
-                if (!normalizedEmail) {
-                    alert('Escribe el correo electrónico del administrador.');
-                    return;
-                }
-
-                // Solo se admite la cuenta administrativa autorizada en este proyecto.
-                if (normalizedEmail !== ADMIN_EMAIL.toLowerCase()) {
-                    alert('Esta cuenta no tiene permiso de administrador.');
-                    return;
-                }
-
-                const pass = prompt('Contraseña de la cuenta administradora:');
-                if (pass === null) return;
-                if (!pass) {
-                    alert('Escribe la contraseña para continuar.');
-                    return;
-                }
-
-                const credential = await firebase.auth().signInWithEmailAndPassword(normalizedEmail, pass);
-                user = credential.user;
 
                 if (!user || !user.email || user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
                     await firebase.auth().signOut();
@@ -1127,15 +1110,10 @@
                 showScreen('admin-screen');
             } catch (err) {
                 console.error('Error de acceso administrativo:', err);
-                if (err.code === 'auth/invalid-credential' ||
-                    err.code === 'auth/wrong-password' ||
-                    err.code === 'auth/user-not-found' ||
-                    err.code === 'auth/invalid-email') {
-                    alert('Correo o contraseña incorrectos. Verifica las credenciales de Firebase Authentication.');
-                } else if (err.code === 'permission-denied') {
-                    alert('La sesión se inició, pero Firestore denegó el acceso. Revisa las reglas de seguridad.');
+                if (err.code && err.code.startsWith('auth/')) {
+                    alert('Usuario o contraseña incorrectos. Verifica las credenciales en Firebase Authentication.');
                 } else {
-                    alert('No se pudo ingresar. Verifica las credenciales, que Correo electrónico/contraseña esté habilitado en Firebase Authentication y las reglas de Firestore.');
+                    alert('No se pudo abrir la configuración. Revisa las reglas de Firestore y la conexión.');
                 }
             }
         }
