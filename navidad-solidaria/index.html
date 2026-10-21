@@ -1007,6 +1007,8 @@
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
     <script>
         const ADMIN_EMAIL = "laterrazacali@gmail.com";
+        // La sesión persistente de Firebase por sí sola no habilita el panel en esta carga de página.
+        let adminAccessGranted = false;
 
         // Configuración web de Firebase para Navidad Solidaria.
         // La seguridad se aplica mediante las reglas de Firestore; no pongas claves privadas aquí.
@@ -1162,6 +1164,12 @@
         }
 
         function showScreen(screenId) {
+            // Nunca mostrar el panel solo porque Firebase conserve una sesión anterior.
+            if (screenId === 'admin-screen' && (!adminAccessGranted || !isAdminAuthenticated())) {
+                adminAccessGranted = false;
+                screenId = 'main-screen';
+            }
+
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(screenId).classList.add('active');
 
@@ -1231,24 +1239,20 @@
                 return;
             }
 
-            const user = firebase.auth().currentUser;
-            if (user && user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-                try {
-                    await loadFirestoreData();
-                    showScreen('admin-screen');
-                } catch (err) {
-                    console.error('Error cargando el panel administrativo:', err);
-                    showAdminLoginError('No se pudo abrir el panel. Revisa las reglas de Firestore y tu conexión.');
+            // Exigir credenciales cada vez que se solicita el panel, incluso si Firebase
+            // restauró una sesión anterior al abrir la página.
+            adminAccessGranted = false;
+            try {
+                if (firebase.auth().currentUser) {
+                    await firebase.auth().signOut();
                 }
+            } catch (err) {
+                console.error('No se pudo cerrar la sesión anterior:', err);
+                alert('No se pudo restablecer el acceso seguro. Recarga la página e inténtalo nuevamente.');
                 return;
             }
 
-            // Si existe otra sesión, cerrarla para que el acceso use la cuenta administrativa correcta.
-            if (user) {
-                try { await firebase.auth().signOut(); }
-                catch (err) { console.warn('No se pudo cerrar la sesión anterior:', err); }
-            }
-
+            showScreen('main-screen');
             openAdminLogin();
         }
 
@@ -1273,9 +1277,11 @@
         }
 
         function closeAdminLogin() {
+            adminAccessGranted = false;
             document.getElementById('admin-login-modal').classList.remove('active');
             document.getElementById('admin-login-error').classList.remove('visible');
             document.getElementById('admin-login-form').reset();
+            showScreen('main-screen');
         }
 
         function showAdminLoginError(message) {
@@ -1320,8 +1326,16 @@
 
                 await loadFirestoreData();
                 closeAdminLogin();
+                adminAccessGranted = true;
                 showScreen('admin-screen');
             } catch (err) {
+                adminAccessGranted = false;
+                // Si autenticó pero no pudo cargar el panel, no conservar la sesión abierta.
+                if (firebase.auth().currentUser) {
+                    try { await firebase.auth().signOut(); } catch (signOutErr) {
+                        console.warn('No se pudo cerrar la sesión tras un acceso incompleto:', signOutErr);
+                    }
+                }
                 console.error('Error de acceso administrativo:', err);
                 if (err.code && err.code.startsWith('auth/')) {
                     showAdminLoginError('Correo o contraseña incorrectos. Verifica las credenciales en Firebase Authentication.');
