@@ -17,6 +17,21 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;900&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Poppins', sans-serif; }
+        /* Panel administrativo compacto para portátiles y monitores pequeños */
+        #view-admin > .bg-white { padding: 1rem !important; }
+        #admin-table-wrap { width:100%; overflow-x:auto; }
+        #admin-table { width:100%; min-width:0 !important; table-layout:fixed; }
+        #admin-table thead th { padding:.45rem .35rem !important; font-size:10px !important; line-height:1.25; white-space:normal; letter-spacing:0; }
+        #admin-table tbody td { padding:.4rem .35rem !important; font-size:11px !important; line-height:1.3; overflow-wrap:anywhere; vertical-align:middle; }
+        #admin-table tbody td:nth-child(4) { font-weight:700; }
+        #admin-table tbody td:nth-child(8) { min-width:0 !important; }
+        #admin-table tbody td:nth-child(8) button { white-space:normal; }
+        #admin-table tbody td:last-child button { padding:.3rem .4rem !important; margin:.1rem; font-size:10px !important; }
+        #admin-table .assignment-chip { display:inline-block; margin:2px; padding:3px 6px; border-radius:6px; background:#d1fae5; color:#065f46; border:1px solid #6ee7b7; font-size:10px; font-weight:800; }
+        @media (max-width: 1100px) {
+          #admin-table thead th, #admin-table tbody td { padding:.3rem .25rem !important; font-size:10px !important; }
+          #admin-table tbody td:last-child button { display:block; width:100%; }
+        }
     </style>
 </head>
 <body class="bg-slate-200 text-slate-800 min-h-screen flex flex-col justify-between">
@@ -249,9 +264,10 @@
                         <div><label for="event-youtube" class="block text-sm font-bold text-slate-700 mb-1">Enlace de transmisión YouTube</label><input id="event-youtube" type="url" placeholder="https://youtube.com/live/..." class="w-full px-3 py-2 rounded-lg border-2 border-slate-300"></div>
                     </div>
                     <div class="flex flex-col sm:flex-row gap-3">
-                        <button type="button" onclick="saveAllSettings()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-5 py-3 rounded-lg">💾 Guardar configuración</button>
-                        <button type="button" onclick="assignRandomToPending()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-5 py-3 rounded-lg">🎲 Asignar aleatoriamente</button>
-                        <button type="button" onclick="exportForAccounting()" class="bg-amber-600 hover:bg-amber-700 text-white font-black px-5 py-3 rounded-lg">⬇️ Exportar archivo</button>
+                        <button type="button" onclick="saveAllSettings()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2.5 rounded-lg">💾 Guardar configuración</button>
+                        <button type="button" onclick="assignRandomToPending()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-4 py-2.5 rounded-lg">🎲 Asignar aleatoriamente</button>
+                        <button type="button" onclick="exportForAccounting()" class="bg-amber-600 hover:bg-amber-700 text-white font-black px-4 py-2.5 rounded-lg">⬇️ Exportar archivo</button>
+                        <button type="button" onclick="unassignAllParticipantsTables()" class="bg-red-700 hover:bg-red-800 text-white font-black px-4 py-2.5 rounded-lg">🧹 Desasignar todas las tablas de todos</button>
                         <button id="btn-confirm-accounting-import" type="button" onclick="confirmAccountingImport()" class="hidden bg-teal-700 hover:bg-teal-800 text-white font-black px-5 py-3 rounded-lg">✅ Confirmar importación</button>
                     </div>
                     <div id="assignment-summary" class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center"></div>
@@ -259,12 +275,15 @@
                 </div>
 
                 <!-- Tabla de Registros en Ancho Completo -->
-                <div class="overflow-x-auto w-full">
-                    <table class="w-full text-left border-collapse min-w-max">
+                <div id="admin-table-wrap" class="w-full">
+                    <table id="admin-table" class="w-full text-left border-collapse">
+                        <colgroup>
+                          <col style="width:5%"><col style="width:4%"><col style="width:7%"><col style="width:13%"><col style="width:9%"><col style="width:9%"><col style="width:5%"><col style="width:16%"><col style="width:8%"><col style="width:9%"><col style="width:15%">
+                        </colgroup>
                         <thead>
                             <tr class="bg-slate-100 text-slate-800 text-sm font-extrabold uppercase tracking-wider border-b-2 border-slate-300">
                                 <th class="p-4 text-center">N.º de registro</th>
-                                <th class="p-4 text-center w-16">Listo</th>
+                                <th class="p-2 text-center">Estado contable</th>
                                 <th class="p-4">Fecha</th>
                                 <th class="p-4">Nombre</th>
                                 <th class="p-4">Barrio / Ciudad</th>
@@ -578,14 +597,18 @@ async function confirmDeleteAll(e) {
 async function deleteSingleRecord(index) {
   const record = localRecords[index];
   if (!record) return;
-  if (hasAccountingHistory(record)) { alert("No se puede eliminar este participante porque tiene tablas exportadas o importadas al sistema contable. El registro debe conservarse para proteger la correspondencia contable."); return; }
-  if (!confirm(`¿Estás seguro de eliminar el registro de ${record.name}?`)) return;
+  const assigned = getAssigned(record);
+  const hasHistory = hasAccountingHistory(record);
+  const historyWarning = hasHistory ? "\n\nATENCIÓN: algunas tablas figuran como exportadas o importadas. Al eliminar este participante quedarán libres en ESTE sistema, pero esta acción no borra ni revierte registros que ya existan en el sistema contable." : "";
+  if (!confirm(`¿Eliminar el registro de ${record.name}?${assigned.length ? `\n\nSe liberarán ${assigned.length} tabla(s): ${assigned.join(', ')}.` : ''}${historyWarning}\n\nEsta acción no se puede deshacer.`)) return;
 
   try {
     await recordsCollection.doc(record.id).delete();
     localRecords.splice(index, 1);
     renderAdminTable();
     updateMoneyCounter();
+    updateAssignmentSummary();
+    alert(assigned.length ? `Registro eliminado. ${assigned.length} tabla(s) quedaron libres para nuevas asignaciones.` : 'Registro eliminado.');
   } catch (error) {
     console.error(error);
     alert("No se pudo eliminar el registro. Revisa las reglas de Firestore.");
@@ -925,16 +948,21 @@ function renderAdminTable() {
 
   matchingRecords.forEach(({ record, index }) => {
     const waWebUrl = `https://web.whatsapp.com/send?phone=57${encodeURIComponent(record.whatsapp || '')}`;
-    const rowClass = record.processed
-      ? "bg-emerald-100/90 text-emerald-950 font-medium"
-      : "hover:bg-slate-50 text-slate-800";
+    const rowClass = "hover:bg-slate-50 text-slate-800";
+    const assignedForStatus = getAssigned(record);
+    const importedForStatus = getImportedTables(record);
+    const pendingForStatus = getPendingExportTables(record);
+    const importedCount = assignedForStatus.filter(code => importedForStatus.includes(code)).length;
+    const pendingCount = assignedForStatus.filter(code => pendingForStatus.includes(code) && !importedForStatus.includes(code)).length;
+    const newCount = assignedForStatus.filter(code => !importedForStatus.includes(code) && !pendingForStatus.includes(code)).length;
+    const accountingStatus = !assignedForStatus.length
+      ? '<span class="inline-block rounded-full bg-slate-100 text-slate-600 px-2 py-1 text-xs font-bold">Sin asignar</span>'
+      : `<div class="flex flex-col items-center gap-1">${importedCount ? `<span class="inline-block rounded-full bg-emerald-100 text-emerald-800 px-2 py-1 text-xs font-bold">Importadas: ${importedCount}</span>` : ''}${pendingCount ? `<span class="inline-block rounded-full bg-amber-100 text-amber-800 px-2 py-1 text-xs font-bold">Pendientes de confirmar: ${pendingCount}</span>` : ''}${newCount ? `<span class="inline-block rounded-full bg-blue-100 text-blue-800 px-2 py-1 text-xs font-bold">Nuevas: ${newCount}</span>` : ''}<span class="text-xs text-slate-500">${importedCount + pendingCount} de ${assignedForStatus.length} exportadas</span></div>`;
     const receipt = typeof record.receiptUrl === 'string' ? record.receiptUrl : '';
     const row = `
       <tr class="${rowClass} transition-colors border-b border-slate-200">
         <td class="p-4 text-center font-black text-slate-700">${localRecords.length - index}</td>
-        <td class="p-4 text-center">
-          <input type="checkbox" ${record.processed ? 'checked' : ''} onchange="toggleRecordProcessed(${index}, this)" class="w-6 h-6 text-emerald-600 rounded-lg cursor-pointer focus:ring-emerald-500">
-        </td>
+        <td class="p-2 text-center">${accountingStatus}</td>
         <td class="p-4 text-sm font-semibold">${escapeHtml(record.date || '')}</td>
         <td class="p-4 font-bold">${escapeHtml(record.name || '')}</td>
         <td class="p-4">${escapeHtml(record.neighborhood || '')}</td>
@@ -1058,9 +1086,20 @@ function updateAssignmentSummary() {
   const unique = allAssignedMap();
   const total = tableRangeEnd - tableRangeStart + 1;
   const pending = localRecords.filter(r=>getAssigned(r).length < (Number(r.tablesCount)||0)).length;
+  const allAssignedCodes = new Set(localRecords.flatMap(r => getAssigned(r)));
+  const importedCodes = new Set(localRecords.flatMap(r => getImportedTables(r)));
+  const pendingCodes = new Set(localRecords.flatMap(r => getPendingExportTables(r)));
+  const assignedNewCount = [...allAssignedCodes].filter(code => !importedCodes.has(code) && !pendingCodes.has(code)).length;
+  const pendingImportCount = [...pendingCodes].filter(code => !importedCodes.has(code)).length;
+  const importedCount = [...allAssignedCodes].filter(code => importedCodes.has(code)).length;
   const summary = document.getElementById('assignment-summary');
   if (summary) summary.innerHTML = [
-    ['Tablas en rango', total], ['Tablas asignadas únicas', unique.size], ['Tablas libres', Math.max(0,total-[...unique.keys()].filter(c=>tableNumber(c)>=tableRangeStart&&tableNumber(c)<=tableRangeEnd).length)], ['Participantes pendientes', pending]
+    ['Tablas en rango', total],
+    ['Tablas libres', Math.max(0,total-[...unique.keys()].filter(c=>tableNumber(c)>=tableRangeStart&&tableNumber(c)<=tableRangeEnd).length)],
+    ['Tablas importadas', importedCount],
+    ['Pendientes de confirmar', pendingImportCount],
+    ['Asignadas nuevas', assignedNewCount],
+    ['Participantes pendientes', pending]
   ].map(([label,value])=>`<div class="bg-white border border-indigo-200 rounded-xl p-3"><div class="text-2xl font-black text-indigo-800">${value}</div><div class="text-xs font-bold text-slate-600">${label}</div></div>`).join('');
 }
 function openAssignmentModal(index) {
@@ -1153,6 +1192,43 @@ async function unassignSingleTable(index, code) {
     record.tablesAssigned = next; renderAdminTable(); updateAssignmentSummary();
   } catch (error) { console.error(error); alert(`No se pudo desasignar ${code}.`); }
 }
+async function unassignAllParticipantsTables() {
+  if (!localRecords.length) { alert('No hay participantes cargados.'); return; }
+  const total = localRecords.reduce((sum, record) => sum + getAssigned(record).length, 0);
+  if (!total) { alert('No hay tablas asignadas para liberar.'); return; }
+  const hasHistory = localRecords.some(hasAccountingHistory);
+  const historyWarning = hasHistory ? "\n\nIMPORTANTE: esta acción reinicia las asignaciones y el seguimiento de exportación SOLO en este sistema. No elimina ni revierte las tablas que ya hayas importado en el sistema contable. Si vuelves a asignar esos mismos números a otras personas, tendrás que gestionar esa diferencia por separado." : '';
+  if (!confirm(`¿Desasignar las ${total} tablas de TODOS los participantes?\n\nTodos los participantes seguirán registrados, pero sus tablas quedarán libres para volver a asignarse.${historyWarning}\n\n¿Continuar?`)) return;
+  try {
+    for (let offset = 0; offset < localRecords.length; offset += 400) {
+      const batch = db.batch();
+      localRecords.slice(offset, offset + 400).forEach(record => {
+        batch.update(recordsCollection.doc(record.id), {
+          tablesAssigned: [],
+          accountingPendingTables: [],
+          accountingImportedTables: [],
+          assignmentUpdatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          accountingResetAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      });
+      await batch.commit();
+    }
+    localRecords.forEach(record => {
+      record.tablesAssigned = [];
+      record.accountingPendingTables = [];
+      record.accountingImportedTables = [];
+    });
+    if (currentAssignmentIndex !== null) closeAssignmentModal();
+    renderAdminTable();
+    updateAssignmentSummary();
+    alert(`Listo: se liberaron ${total} tablas en el sistema del bingo especial. Los participantes se conservaron. Recuerda que los datos ya importados en el sistema contable no se borran con esta acción.`);
+  } catch (error) {
+    console.error(error);
+    alert('No se pudieron desasignar todas las tablas. Recarga los registros y verifica el estado antes de volver a intentarlo.');
+    await loadRecords();
+  }
+}
+
 async function assignRandomToPending() {
   if (!localRecords.length) { alert('No hay participantes cargados.'); return; }
   const assignedMap = allAssignedMap();
@@ -1244,15 +1320,15 @@ renderAdminTable = function() {
   tbody.querySelectorAll('tr').forEach((tr)=>{
     const cells=tr.querySelectorAll('td');
     if (!cells.length || cells.length < 10) return;
-    const rowIndexInput=tr.querySelector('input[type="checkbox"][onchange*="toggleRecordProcessed"]');
-    const match=rowIndexInput?.getAttribute('onchange')?.match(/toggleRecordProcessed\((\d+)/);
+    const editButton=tr.querySelector('button[onclick*="openEditModal("]');
+    const match=editButton?.getAttribute('onclick')?.match(/openEditModal\((\d+)/);
     if (!match) return;
     const index=Number(match[1]); const record=localRecords[index]; if (!record) return;
     const assigned=getAssigned(record);
-    const cell=document.createElement('td'); cell.className='p-3 text-center min-w-[220px]';
-    const tokens=assigned.length ? assigned.map(code=>`<span class="inline-flex items-center gap-1 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-md px-2 py-1 m-0.5 text-xs font-black">${escapeHtml(code)} <button type="button" title="Quitar ${escapeHtml(code)} de esta persona" aria-label="Desasignar ${escapeHtml(code)}" onclick="unassignSingleTable(${index},'${code}')" class="bg-red-100 hover:bg-red-200 text-red-800 rounded px-1 font-black">Quitar ×</button></span>`).join('') : '<span class="text-amber-700 font-bold text-sm">Sin asignar</span>';
-    const unassignAllButton = assigned.length ? `<button type="button" onclick="unassignAllForParticipant(${index})" class="mt-2 bg-red-700 hover:bg-red-800 text-white px-3 py-2 rounded-lg text-xs font-black">🗑️ Desasignar todas (${assigned.length})</button>` : '';
-    cell.innerHTML=`<div class="mb-2">${tokens}</div><div class="text-xs font-bold text-slate-500 mb-2">${assigned.length} / ${Number(record.tablesCount)||0} asignadas</div><div class="flex flex-wrap justify-center gap-2"><button type="button" onclick="openAssignmentModal(${index})" class="bg-indigo-700 hover:bg-indigo-800 text-white px-3 py-2 rounded-lg text-sm font-bold">${assigned.length?'Editar asignación':'Asignar tablas'}</button>${unassignAllButton}</div>`;
+    const cell=document.createElement('td'); cell.className='text-center';
+    const tokens=assigned.length ? assigned.map(code=>`<span class="assignment-chip">${escapeHtml(code)}</span>`).join('') : '<span class="text-amber-700 font-bold">Sin asignar</span>';
+    const unassignAllButton = assigned.length ? `<button type="button" onclick="unassignAllForParticipant(${index})" class="mt-1 bg-red-700 hover:bg-red-800 text-white px-2 py-1 rounded-md text-xs font-black">Desasignar todas (${assigned.length})</button>` : '';
+    cell.innerHTML=`<div class="mb-1">${tokens}</div><div class="font-bold text-slate-500 mb-1">${assigned.length} / ${Number(record.tablesCount)||0}</div><div class="flex flex-col items-center gap-1"><button type="button" onclick="openAssignmentModal(${index})" class="bg-indigo-700 hover:bg-indigo-800 text-white px-2 py-1 rounded-md text-xs font-bold">${assigned.length?'Editar asignación':'Asignar tablas'}</button>${unassignAllButton}</div>`;
     // Existing cell order: requested count is index 6; insert assignment details after it.
     cells[6].after(cell);
   });
