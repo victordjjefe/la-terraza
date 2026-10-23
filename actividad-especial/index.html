@@ -1123,15 +1123,22 @@ async function saveManualAssignment() {
   } catch (error) { console.error(error); alert('No se pudo guardar la asignación en Firebase. No se cambió el registro local.'); }
 }
 async function unassignAllForCurrent() {
-  const record = localRecords[currentAssignmentIndex]; if (!record) return;
+  if (currentAssignmentIndex === null || currentAssignmentIndex === undefined) return;
+  await unassignAllForParticipant(currentAssignmentIndex, true);
+}
+async function unassignAllForParticipant(index, closeModalAfter = false) {
+  const record = localRecords[index]; if (!record) return;
   const current = getAssigned(record);
   if (!current.length) { alert('Esta persona no tiene tablas asignadas.'); return; }
   const locked = current.filter(code=>isAccountingLocked(record, code));
-  if (locked.length) { alert(`No se pueden desasignar ${locked.join(", ")} porque ya están en una exportación pendiente o confirmada del sistema contable. Esto evita que el código se reutilice y cambie de titular en el contable.`); return; }
-  if (!confirm(`¿Desasignar las ${current.length} tablas de ${record.name}? Las tablas quedarán disponibles para asignarlas de nuevo.`)) return;
+  if (locked.length) { alert(`No se pueden desasignar ${locked.join(", ")} porque ya están en una exportación pendiente o confirmada. Para evitar inconsistencias, esas tablas deben conservarse asignadas.`); return; }
+  if (!confirm(`¿Desasignar TODAS las ${current.length} tablas de ${record.name}? Las tablas quedarán libres para futuras asignaciones.`)) return;
   try {
     await recordsCollection.doc(record.id).update({ tablesAssigned: [], assignmentUpdatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-    record.tablesAssigned = []; closeAssignmentModal(); renderAdminTable(); updateAssignmentSummary();
+    record.tablesAssigned = [];
+    if (closeModalAfter) closeAssignmentModal();
+    renderAdminTable(); updateAssignmentSummary();
+    alert(`Se desasignaron todas las tablas de ${record.name}.`);
   } catch (error) { console.error(error); alert('No se pudieron desasignar las tablas en Firebase.'); }
 }
 async function unassignSingleTable(index, code) {
@@ -1243,8 +1250,9 @@ renderAdminTable = function() {
     const index=Number(match[1]); const record=localRecords[index]; if (!record) return;
     const assigned=getAssigned(record);
     const cell=document.createElement('td'); cell.className='p-3 text-center min-w-[220px]';
-    const tokens=assigned.length ? assigned.map(code=>`<span class="inline-flex items-center gap-1 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-md px-2 py-1 m-0.5 text-xs font-black">${escapeHtml(code)} <button type="button" title="Desasignar ${escapeHtml(code)}" onclick="unassignSingleTable(${index},'${code}')" class="text-red-700 font-black">×</button></span>`).join('') : '<span class="text-amber-700 font-bold text-sm">Sin asignar</span>';
-    cell.innerHTML=`<div class="mb-2">${tokens}</div><div class="text-xs font-bold text-slate-500 mb-2">${assigned.length} / ${Number(record.tablesCount)||0} asignadas</div><button type="button" onclick="openAssignmentModal(${index})" class="bg-indigo-700 hover:bg-indigo-800 text-white px-3 py-2 rounded-lg text-sm font-bold">${assigned.length?'Editar asignación':'Asignar tablas'}</button>`;
+    const tokens=assigned.length ? assigned.map(code=>`<span class="inline-flex items-center gap-1 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-md px-2 py-1 m-0.5 text-xs font-black">${escapeHtml(code)} <button type="button" title="Quitar ${escapeHtml(code)} de esta persona" aria-label="Desasignar ${escapeHtml(code)}" onclick="unassignSingleTable(${index},'${code}')" class="bg-red-100 hover:bg-red-200 text-red-800 rounded px-1 font-black">Quitar ×</button></span>`).join('') : '<span class="text-amber-700 font-bold text-sm">Sin asignar</span>';
+    const unassignAllButton = assigned.length ? `<button type="button" onclick="unassignAllForParticipant(${index})" class="mt-2 bg-red-700 hover:bg-red-800 text-white px-3 py-2 rounded-lg text-xs font-black">🗑️ Desasignar todas (${assigned.length})</button>` : '';
+    cell.innerHTML=`<div class="mb-2">${tokens}</div><div class="text-xs font-bold text-slate-500 mb-2">${assigned.length} / ${Number(record.tablesCount)||0} asignadas</div><div class="flex flex-wrap justify-center gap-2"><button type="button" onclick="openAssignmentModal(${index})" class="bg-indigo-700 hover:bg-indigo-800 text-white px-3 py-2 rounded-lg text-sm font-bold">${assigned.length?'Editar asignación':'Asignar tablas'}</button>${unassignAllButton}</div>`;
     // Existing cell order: requested count is index 6; insert assignment details after it.
     cells[6].after(cell);
   });
