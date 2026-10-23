@@ -1339,6 +1339,17 @@ async function unassignAllParticipantsTables() {
 
 async function assignRandomToPending() {
   if (!localRecords.length) { alert('No hay participantes cargados.'); return; }
+  // Bloqueo preventivo: si ya existen códigos duplicados entre participantes,
+  // no asignar más tablas hasta corregirlos. Evita agravar una inconsistencia previa.
+  const occurrences = new Map();
+  localRecords.forEach(record => getAssigned(record).forEach(code => {
+    occurrences.set(code, (occurrences.get(code) || 0) + 1);
+  }));
+  const existingDuplicates = [...occurrences.entries()].filter(([, count]) => count > 1).map(([code]) => code);
+  if (existingDuplicates.length) {
+    alert('No se realizó ninguna asignación porque ya hay tablas duplicadas: ' + existingDuplicates.join(', ') + '. Corrige esas asignaciones antes de continuar.');
+    return;
+  }
   const assignedMap = allAssignedMap();
   const available = [];
   for (let n=tableRangeStart; n<=tableRangeEnd; n++) { const code=normalizeTableCode(n); if (!assignedMap.has(code)) available.push(code); }
