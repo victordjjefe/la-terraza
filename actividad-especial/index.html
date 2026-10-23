@@ -230,6 +230,34 @@
                     <p id="record-search-count" class="text-sm font-bold text-indigo-800" aria-live="polite"></p>
                 </div>
 
+                <!-- Gestión de tablas del bingo especial: independiente de los otros sistemas -->
+                <div class="mb-6 rounded-2xl border-2 border-indigo-200 bg-indigo-50 p-5 space-y-5">
+                    <div>
+                        <h4 class="text-xl font-black text-indigo-950">🎟️ Asignación de tablas</h4>
+                        <p class="text-sm text-indigo-900 mt-1">Las asignaciones se guardan en Firebase. La asignación aleatoria solo trabaja con participantes pendientes y nunca cambia tablas ya asignadas.</p>
+                    </div>
+                    <p class="text-sm text-indigo-900">Elige el rango para las próximas asignaciones. Puedes cambiarlo cuando necesites ampliar o reducir el rango; las tablas ya asignadas se conservarán y no se volverán a sortear.</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div><label for="range-start" class="block text-sm font-bold text-slate-700 mb-1">Asignar desde la tabla n.º</label><input id="range-start" type="number" min="1" max="5000" value="1" class="w-full px-3 py-2 rounded-lg border-2 border-slate-300"></div>
+                        <div><label for="range-end" class="block text-sm font-bold text-slate-700 mb-1">Asignar hasta la tabla n.º</label><input id="range-end" type="number" min="1" max="5000" value="200" class="w-full px-3 py-2 rounded-lg border-2 border-slate-300"></div>
+                        <div class="sm:col-span-2 flex items-end"><button type="button" onclick="saveTableRange()" class="w-full bg-indigo-700 hover:bg-indigo-800 text-white font-bold px-4 py-3 rounded-lg">Guardar rango de tablas</button></div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div><label for="event-date" class="block text-sm font-bold text-slate-700 mb-1">Fecha del bingo</label><input id="event-date" type="date" value="2026-10-25" class="w-full px-3 py-2 rounded-lg border-2 border-slate-300"></div>
+                        <div><label for="event-time" class="block text-sm font-bold text-slate-700 mb-1">Hora</label><input id="event-time" type="time" value="20:00" class="w-full px-3 py-2 rounded-lg border-2 border-slate-300"></div>
+                        <div><label for="event-value" class="block text-sm font-bold text-slate-700 mb-1">Valor por tabla ($)</label><input id="event-value" type="number" min="0" value="3000" class="w-full px-3 py-2 rounded-lg border-2 border-slate-300"></div>
+                        <div><label for="event-youtube" class="block text-sm font-bold text-slate-700 mb-1">Enlace de transmisión YouTube</label><input id="event-youtube" type="url" placeholder="https://youtube.com/live/..." class="w-full px-3 py-2 rounded-lg border-2 border-slate-300"></div>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <button type="button" onclick="saveEventSettings()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-5 py-3 rounded-lg">Guardar datos del evento</button>
+                        <button type="button" onclick="assignRandomToPending()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-5 py-3 rounded-lg">🎲 Asignar aleatoriamente pendientes</button>
+                        <button type="button" onclick="exportForAccounting()" class="bg-amber-600 hover:bg-amber-700 text-white font-black px-5 py-3 rounded-lg">⬇️ Exportar tablas nuevas / pendientes</button>
+                        <button type="button" onclick="confirmAccountingImport()" class="bg-teal-700 hover:bg-teal-800 text-white font-black px-5 py-3 rounded-lg">✅ Confirmar importación contable</button>
+                    </div>
+                    <div id="assignment-summary" class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center"></div>
+                    <p class="text-xs text-slate-600">Solo se exportan tablas nuevas o pendientes de confirmar. Después de importar correctamente el archivo en el sistema contable, pulsa <strong>Confirmar importación contable</strong>. Las tablas confirmadas quedan protegidas para no volver a exportarse ni reasignarse. Todas se registran como pagadas por <strong>CONSIGNACIÓN</strong>.</p>
+                </div>
+
                 <!-- Tabla de Registros en Ancho Completo -->
                 <div class="overflow-x-auto w-full">
                     <table class="w-full text-left border-collapse min-w-max">
@@ -241,7 +269,8 @@
                                 <th class="p-4">Nombre</th>
                                 <th class="p-4">Barrio / Ciudad</th>
                                 <th class="p-4">WhatsApp</th>
-                                <th class="p-4 text-center">Tablas</th>
+                                <th class="p-4 text-center">Solicitadas</th>
+                                <th class="p-4 text-center">Tablas asignadas</th>
                                 <th class="p-4 text-center">Total a Pagar</th>
                                 <th class="p-4 text-center">Comprobante</th>
                                 <th class="p-4 text-center">Acciones</th>
@@ -365,6 +394,19 @@
             <div><label class="font-bold">Cantidad de tablas</label><input id="edit-tables" type="number" min="1" class="w-full px-4 py-3 border-2 rounded-xl"></div>
             <div class="flex gap-3"><button onclick="closeEditModal()" class="w-1/2 bg-slate-200 py-3 rounded-xl font-bold">Cancelar</button><button onclick="saveEditRecord()" class="w-1/2 bg-indigo-600 text-white py-3 rounded-xl font-bold">Guardar</button></div>
         </div>
+    </div>
+
+    <!-- Modal de asignación manual y desasignación individual -->
+    <div id="assignment-modal" class="fixed inset-0 bg-slate-950/80 hidden items-center justify-center p-3 sm:p-6 z-[80]">
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[94vh] overflow-hidden flex flex-col">
+        <div class="p-4 sm:p-6 border-b flex items-start justify-between gap-3"><div><h3 id="assignment-modal-title" class="text-xl sm:text-2xl font-black text-slate-900">Asignar tablas</h3><p id="assignment-modal-subtitle" class="text-sm text-slate-600 mt-1"></p></div><button type="button" onclick="closeAssignmentModal()" class="bg-slate-200 px-4 py-2 rounded-lg font-bold">Cerrar ✕</button></div>
+        <div class="p-4 sm:p-6 overflow-y-auto space-y-4">
+          <div class="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between"><p id="assignment-selection-count" class="font-bold text-indigo-900">Seleccionadas: 0</p><div class="flex gap-2"><button type="button" onclick="clearAssignmentSelection()" class="px-3 py-2 rounded-lg bg-slate-200 font-bold">Limpiar selección</button><button type="button" onclick="unassignAllForCurrent()" class="px-3 py-2 rounded-lg bg-red-100 text-red-800 font-bold">Desasignar todas</button></div></div>
+          <p class="text-sm text-slate-600">Pulsa las tablas para seleccionarlas o quitarlas. Las ocupadas por otras personas aparecen bloqueadas. Para guardar, selecciona exactamente la cantidad solicitada; si estás editando una asignación parcial, puedes guardar una cantidad menor.</p>
+          <div id="assignment-table-grid" class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-2"></div>
+        </div>
+        <div class="p-4 sm:p-6 border-t bg-slate-50 flex flex-col sm:flex-row gap-3 sm:justify-end"><button type="button" onclick="closeAssignmentModal()" class="px-5 py-3 rounded-lg bg-slate-200 font-bold">Cancelar</button><button type="button" onclick="saveManualAssignment()" class="px-5 py-3 rounded-lg bg-indigo-700 hover:bg-indigo-800 text-white font-black">Guardar asignación</button></div>
+      </div>
     </div>
 
     <footer class="bg-white border-t border-slate-300 py-6 text-center text-sm font-medium text-slate-600 mt-12">
@@ -512,6 +554,7 @@ async function confirmDeleteAll(e) {
     alert("Clave incorrecta. No se pudieron eliminar los registros.");
     return;
   }
+  if (localRecords.some(hasAccountingHistory)) { alert("No se pueden eliminar todos los registros: hay tablas exportadas o importadas al sistema contable. Para proteger el historial contable, conserva esos registros."); return; }
   if (!confirm("¿Confirmas que deseas eliminar TODOS los registros de Firestore? Esta acción no se puede deshacer.")) return;
 
   try {
@@ -535,6 +578,7 @@ async function confirmDeleteAll(e) {
 async function deleteSingleRecord(index) {
   const record = localRecords[index];
   if (!record) return;
+  if (hasAccountingHistory(record)) { alert("No se puede eliminar este participante porque tiene tablas exportadas o importadas al sistema contable. El registro debe conservarse para proteger la correspondencia contable."); return; }
   if (!confirm(`¿Estás seguro de eliminar el registro de ${record.name}?`)) return;
 
   try {
@@ -759,7 +803,7 @@ function closeReceiptModal() {
 
 async function loadRecords() {
   const tbody = document.getElementById('admin-table-body');
-  tbody.innerHTML = '<tr><td colspan="10" class="text-center py-8 text-slate-500">Cargando registros desde Firebase...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="11" class="text-center py-8 text-slate-500">Cargando registros desde Firebase...</td></tr>';
   try {
     const snapshot = await recordsCollection.get();
     localRecords = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -773,7 +817,7 @@ async function loadRecords() {
   } catch (error) {
     console.error("Error leyendo Firestore:", error);
     localRecords = [];
-    tbody.innerHTML = '<tr><td colspan="10" class="text-center py-8 text-red-600 font-semibold">No se pudieron cargar los registros. Revisa las reglas de Firestore.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11" class="text-center py-8 text-red-600 font-semibold">No se pudieron cargar los registros. Revisa las reglas de Firestore.</td></tr>';
   }
 }
 
@@ -853,7 +897,7 @@ function renderAdminTable() {
   updateMoneyCounter();
 
   if (localRecords.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="10" class="text-center py-8 text-slate-400 font-medium text-lg">No hay registros cargados.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11" class="text-center py-8 text-slate-400 font-medium text-lg">No hay registros cargados.</td></tr>';
     if (searchCount) searchCount.textContent = '0 registros encontrados';
     return;
   }
@@ -875,7 +919,7 @@ function renderAdminTable() {
   }
 
   if (matchingRecords.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="10" class="text-center py-8 text-slate-500 font-semibold text-lg">No se encontraron participantes con esa búsqueda.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11" class="text-center py-8 text-slate-500 font-semibold text-lg">No se encontraron participantes con esa búsqueda.</td></tr>';
     return;
   }
 
@@ -912,6 +956,271 @@ function renderAdminTable() {
     tbody.insertAdjacentHTML('beforeend', row);
   });
 }
+
+// ---------------- Asignación persistente de tablas del bingo especial ----------------
+let currentAssignmentIndex = null;
+let selectedAssignmentTables = new Set();
+let tableRangeStart = 1;
+let tableRangeEnd = 200;
+let eventSettings = { date: '2026-10-25', time: '20:00', value: 3000, youtube: '' };
+
+function normalizeTableCode(value) {
+  const raw = String(value ?? '').trim().toUpperCase();
+  if (!raw) return '';
+  const digits = raw.replace(/^T/, '');
+  if (!/^\d+$/.test(digits)) return '';
+  return 'T' + String(parseInt(digits, 10)).padStart(3, '0');
+}
+function tableNumber(code) { const m = normalizeTableCode(code).match(/^T(\d+)$/); return m ? Number(m[1]) : 0; }
+function getAssigned(record) { return Array.isArray(record?.tablesAssigned) ? [...new Set(record.tablesAssigned.map(normalizeTableCode).filter(Boolean))].sort((a,b)=>tableNumber(a)-tableNumber(b)) : []; }
+function getImportedTables(record) { return Array.isArray(record?.accountingImportedTables) ? [...new Set(record.accountingImportedTables.map(normalizeTableCode).filter(Boolean))] : []; }
+function getPendingExportTables(record) { return Array.isArray(record?.accountingPendingTables) ? [...new Set(record.accountingPendingTables.map(normalizeTableCode).filter(Boolean))] : []; }
+function isAccountingLocked(record, code) { return getImportedTables(record).includes(normalizeTableCode(code)) || getPendingExportTables(record).includes(normalizeTableCode(code)); }
+function hasAccountingHistory(record) { return getImportedTables(record).length > 0 || getPendingExportTables(record).length > 0; }
+function allAssignedMap(exceptIndex = null) {
+  const map = new Map();
+  localRecords.forEach((r, idx) => {
+    if (idx === exceptIndex) return;
+    getAssigned(r).forEach(code => { if (!map.has(code)) map.set(code, idx); });
+  });
+  return map;
+}
+function loadLocalSettings() {
+  try {
+    const range = JSON.parse(localStorage.getItem('terrazaEspecialTableRange') || 'null');
+    if (range && Number.isInteger(range.start) && Number.isInteger(range.end) && range.start >= 1 && range.end >= range.start) { tableRangeStart = range.start; tableRangeEnd = range.end; }
+    const ev = JSON.parse(localStorage.getItem('terrazaEspecialEventSettings') || 'null');
+    if (ev) eventSettings = { ...eventSettings, ...ev };
+  } catch (e) { console.warn('No se pudieron leer los ajustes locales del bingo especial.', e); }
+  const start = document.getElementById('range-start'); if (start) start.value = tableRangeStart;
+  const end = document.getElementById('range-end'); if (end) end.value = tableRangeEnd;
+  const date = document.getElementById('event-date'); if (date) date.value = eventSettings.date || '';
+  const time = document.getElementById('event-time'); if (time) time.value = eventSettings.time || '';
+  const value = document.getElementById('event-value'); if (value) value.value = eventSettings.value ?? 3000;
+  const youtube = document.getElementById('event-youtube'); if (youtube) youtube.value = eventSettings.youtube || '';
+}
+function saveTableRange() {
+  const start = Number(document.getElementById('range-start').value);
+  const end = Number(document.getElementById('range-end').value);
+  if (!Number.isInteger(start) || !Number.isInteger(end) || start < 1 || end < start || end > 5000 || end-start > 4999) {
+    alert('Ingresa un rango válido. La última tabla debe ser mayor o igual a la primera y el rango puede contener hasta 5.000 tablas.'); return;
+  }
+  const assigned = allAssignedMap();
+  const outside = [...assigned.keys()].filter(code => tableNumber(code) < start || tableNumber(code) > end);
+  if (outside.length && !confirm(`Hay ${outside.length} tabla(s) ya asignadas fuera del nuevo rango. Se conservarán sin cambios, pero no se usarán para nuevas asignaciones. ¿Deseas continuar?`)) return;
+  tableRangeStart = start; tableRangeEnd = end;
+  localStorage.setItem('terrazaEspecialTableRange', JSON.stringify({start, end}));
+  updateAssignmentSummary();
+  alert(`Rango guardado: ${normalizeTableCode(start)} a ${normalizeTableCode(end)}. Las asignaciones existentes se conservaron.`);
+}
+function saveEventSettings() {
+  const date = document.getElementById('event-date').value;
+  const time = document.getElementById('event-time').value;
+  const value = Number(document.getElementById('event-value').value);
+  const youtube = document.getElementById('event-youtube').value.trim();
+  if (!date || !time || !Number.isFinite(value) || value < 0) { alert('Completa fecha, hora y un valor válido por tabla.'); return; }
+  if (youtube && !/^https:\/\/(www\.)?(youtube\.com|youtu\.be)\//i.test(youtube)) { alert('El enlace debe ser una URL válida de YouTube.'); return; }
+  eventSettings = { date, time, value, youtube };
+  localStorage.setItem('terrazaEspecialEventSettings', JSON.stringify(eventSettings));
+  alert('Datos del evento guardados en este navegador.');
+}
+function updateAssignmentSummary() {
+  const assignedCount = localRecords.reduce((sum,r)=>sum+getAssigned(r).length,0);
+  const unique = allAssignedMap();
+  const total = tableRangeEnd - tableRangeStart + 1;
+  const pending = localRecords.filter(r=>getAssigned(r).length < (Number(r.tablesCount)||0)).length;
+  const summary = document.getElementById('assignment-summary');
+  if (summary) summary.innerHTML = [
+    ['Tablas en rango', total], ['Tablas asignadas únicas', unique.size], ['Tablas libres', Math.max(0,total-[...unique.keys()].filter(c=>tableNumber(c)>=tableRangeStart&&tableNumber(c)<=tableRangeEnd).length)], ['Participantes pendientes', pending]
+  ].map(([label,value])=>`<div class="bg-white border border-indigo-200 rounded-xl p-3"><div class="text-2xl font-black text-indigo-800">${value}</div><div class="text-xs font-bold text-slate-600">${label}</div></div>`).join('');
+}
+function openAssignmentModal(index) {
+  const record = localRecords[index]; if (!record) return;
+  currentAssignmentIndex = index;
+  selectedAssignmentTables = new Set(getAssigned(record));
+  document.getElementById('assignment-modal-title').textContent = 'Asignar tablas: ' + (record.name || 'Participante');
+  document.getElementById('assignment-modal-subtitle').textContent = `Solicitó ${Number(record.tablesCount)||0} tabla(s) · Tiene ${getAssigned(record).length} asignada(s) · WhatsApp ${record.whatsapp||'sin número'}`;
+  renderAssignmentGrid();
+  showModal('assignment-modal');
+}
+function closeAssignmentModal() { hideModal('assignment-modal'); currentAssignmentIndex = null; selectedAssignmentTables = new Set(); }
+function renderAssignmentGrid() {
+  const grid = document.getElementById('assignment-table-grid'); if (!grid) return;
+  const occupied = allAssignedMap(currentAssignmentIndex);
+  const codes = [];
+  for (let n=tableRangeStart; n<=tableRangeEnd; n++) codes.push(normalizeTableCode(n));
+  // Mantener visibles las asignaciones existentes aunque queden fuera del rango recién elegido.
+  const existing = getAssigned(localRecords[currentAssignmentIndex]);
+  existing.forEach(code => { if (!codes.includes(code)) codes.push(code); });
+  codes.sort((a,b)=>tableNumber(a)-tableNumber(b));
+  grid.innerHTML = codes.map(code => {
+    const selected = selectedAssignmentTables.has(code);
+    const owner = occupied.has(code);
+    const cls = selected ? 'bg-indigo-700 text-white border-indigo-900' : owner ? 'bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed' : 'bg-white text-slate-800 border-slate-300 hover:bg-emerald-50 hover:border-emerald-500';
+    return `<button type="button" ${owner&&!selected?'disabled':''} onclick="toggleAssignmentTable('${code}')" title="${owner&&!selected?'Ya asignada a otro participante':selected?'Seleccionada':'Disponible'}" class="border-2 rounded-lg p-2 text-sm font-black ${cls}">${code}${owner&&!selected?' 🔒':selected?' ✓':''}</button>`;
+  }).join('');
+  document.getElementById('assignment-selection-count').textContent = `Seleccionadas: ${selectedAssignmentTables.size} / ${Number(localRecords[currentAssignmentIndex]?.tablesCount)||0} solicitadas`;
+}
+function toggleAssignmentTable(code) {
+  const occupied = allAssignedMap(currentAssignmentIndex);
+  if (!selectedAssignmentTables.has(code) && occupied.has(code)) return;
+  if (selectedAssignmentTables.has(code)) selectedAssignmentTables.delete(code); else selectedAssignmentTables.add(code);
+  renderAssignmentGrid();
+}
+function clearAssignmentSelection() {
+  // Evita borrar por accidente las tablas ya asignadas: solo limpia la selección nueva.
+  selectedAssignmentTables = new Set(getAssigned(localRecords[currentAssignmentIndex]));
+  renderAssignmentGrid();
+}
+async function saveManualAssignment() {
+  const record = localRecords[currentAssignmentIndex]; if (!record) return;
+  const requested = Number(record.tablesCount)||0;
+  const lockedForRecord = [...new Set([...getImportedTables(record), ...getPendingExportTables(record)])].filter(code=>getAssigned(record).includes(code));
+  const removedLocked = lockedForRecord.filter(code=>!selectedAssignmentTables.has(code));
+  if (removedLocked.length) { alert(`No puedes quitar ${removedLocked.join(", ")} porque ya fue exportada o importada al sistema contable. Para evitar inconsistencias, conserva esa asignación.`); return; }
+  if (selectedAssignmentTables.size > requested) { alert(`Esta persona solicitó ${requested} tabla(s). No puedes asignarle ${selectedAssignmentTables.size}.`); return; }
+  const currentAssigned = getAssigned(record);
+  const removedExisting = currentAssigned.filter(code => !selectedAssignmentTables.has(code));
+  if (removedExisting.length && !confirm(`Vas a desasignar manualmente ${removedExisting.join(', ')} de ${record.name}. Esas tablas quedarán libres para futuras asignaciones. ¿Deseas continuar?`)) return;
+  const occupied = allAssignedMap(currentAssignmentIndex);
+  const conflict = [...selectedAssignmentTables].find(code=>occupied.has(code));
+  if (conflict) { alert(`${conflict} acaba de quedar asignada a otra persona. Actualiza la selección.`); renderAssignmentGrid(); return; }
+  const next = [...selectedAssignmentTables].sort((a,b)=>tableNumber(a)-tableNumber(b));
+  try {
+    await recordsCollection.doc(record.id).update({ tablesAssigned: next, assignmentUpdatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    record.tablesAssigned = next;
+    closeAssignmentModal(); renderAdminTable(); updateAssignmentSummary();
+    alert(`Asignación guardada para ${record.name}.`);
+  } catch (error) { console.error(error); alert('No se pudo guardar la asignación en Firebase. No se cambió el registro local.'); }
+}
+async function unassignAllForCurrent() {
+  const record = localRecords[currentAssignmentIndex]; if (!record) return;
+  const current = getAssigned(record);
+  if (!current.length) { alert('Esta persona no tiene tablas asignadas.'); return; }
+  const locked = current.filter(code=>isAccountingLocked(record, code));
+  if (locked.length) { alert(`No se pueden desasignar ${locked.join(", ")} porque ya están en una exportación pendiente o confirmada del sistema contable. Esto evita que el código se reutilice y cambie de titular en el contable.`); return; }
+  if (!confirm(`¿Desasignar las ${current.length} tablas de ${record.name}? Las tablas quedarán disponibles para asignarlas de nuevo.`)) return;
+  try {
+    await recordsCollection.doc(record.id).update({ tablesAssigned: [], assignmentUpdatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    record.tablesAssigned = []; closeAssignmentModal(); renderAdminTable(); updateAssignmentSummary();
+  } catch (error) { console.error(error); alert('No se pudieron desasignar las tablas en Firebase.'); }
+}
+async function unassignSingleTable(index, code) {
+  const record = localRecords[index]; if (!record) return;
+  const current = getAssigned(record);
+  if (!current.includes(code)) return;
+  if (isAccountingLocked(record, code)) { alert(`${code} ya está en una exportación pendiente o confirmada del sistema contable y no puede desasignarse ni reutilizarse sin crear una inconsistencia.`); return; }
+  if (!confirm(`¿Desasignar ${code} de ${record.name}?`)) return;
+  const next = current.filter(t=>t!==code);
+  try {
+    await recordsCollection.doc(record.id).update({ tablesAssigned: next, assignmentUpdatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    record.tablesAssigned = next; renderAdminTable(); updateAssignmentSummary();
+  } catch (error) { console.error(error); alert(`No se pudo desasignar ${code}.`); }
+}
+async function assignRandomToPending() {
+  if (!localRecords.length) { alert('No hay participantes cargados.'); return; }
+  const assignedMap = allAssignedMap();
+  const available = [];
+  for (let n=tableRangeStart; n<=tableRangeEnd; n++) { const code=normalizeTableCode(n); if (!assignedMap.has(code)) available.push(code); }
+  const pending = localRecords.map((r,index)=>({r,index,remaining:Math.max(0,(Number(r.tablesCount)||0)-getAssigned(r).length)})).filter(x=>x.remaining>0);
+  const needed = pending.reduce((sum,x)=>sum+x.remaining,0);
+  if (!needed) { alert('Todos los participantes ya tienen asignada la cantidad solicitada.'); return; }
+  if (available.length < needed) { alert(`No hay suficientes tablas libres. Se necesitan ${needed} y solo hay ${available.length} disponibles. Amplía el rango antes de continuar.`); return; }
+  if (!confirm(`Se asignarán ${needed} tablas aleatorias a ${pending.length} participante(s) pendientes. Las asignaciones existentes no se modificarán. ¿Continuar?`)) return;
+  // Barajar las disponibles; se asigna solo la diferencia que le falta a cada persona.
+  for (let i=available.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [available[i],available[j]]=[available[j],available[i]]; }
+  let cursor=0; const planned=[];
+  pending.forEach(({r,index,remaining})=> { const current=getAssigned(r); const add=available.slice(cursor,cursor+remaining); cursor+=remaining; planned.push({r,index,next:[...current,...add].sort((a,b)=>tableNumber(a)-tableNumber(b))}); });
+  try {
+    // Firestore batch writes: either the planned group commits together or none does.
+    for (let offset=0; offset<planned.length; offset+=400) {
+      const batch=db.batch();
+      planned.slice(offset,offset+400).forEach(item=>batch.update(recordsCollection.doc(item.r.id),{tablesAssigned:item.next,assignmentUpdatedAt:firebase.firestore.FieldValue.serverTimestamp()}));
+      await batch.commit();
+    }
+    planned.forEach(item=>{item.r.tablesAssigned=item.next;});
+    renderAdminTable(); updateAssignmentSummary();
+    alert(`Asignación aleatoria terminada. Se asignaron ${needed} tablas. Las asignaciones anteriores se conservaron.`);
+  } catch (error) { console.error(error); alert('Hubo un error al guardar la asignación aleatoria. Revisa Firebase y vuelve a cargar los registros antes de repetirla.'); await loadRecords(); }
+}
+function dateToDisplay(date) { const m=String(date||'').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? `${m[3]}/${m[2]}/${m[1]}` : String(date||''); }
+async function exportForAccounting() {
+  const assignedMap = new Map(); const duplicates=[]; const rows=[]; const pendingByRecord=new Map();
+  localRecords.forEach(record=>getAssigned(record).forEach(code=>{
+    if (assignedMap.has(code)) duplicates.push(code); else assignedMap.set(code,record);
+    const imported = getImportedTables(record);
+    if (!imported.includes(code)) {
+      rows.push({ tabla:code, nombre:record.name||'', referencia:record.neighborhood||'', whatsapp:record.whatsapp||'', estado:'PAGADO', destino:'CONSIGNACIÓN' });
+      if (!pendingByRecord.has(record.id)) pendingByRecord.set(record.id,{record,codes:[]});
+      pendingByRecord.get(record.id).codes.push(code);
+    }
+  }));
+  if (duplicates.length) { alert('No se puede exportar: hay tablas duplicadas en los registros: '+[...new Set(duplicates)].join(', ')+'. Corrige las asignaciones primero.'); return; }
+  if (!rows.length) { alert('No hay tablas nuevas pendientes de exportar. Las tablas ya confirmadas no se vuelven a incluir para evitar que el sistema contable las sobrescriba.'); return; }
+  if (!eventSettings.date || !eventSettings.time) { alert('Guarda primero la fecha y hora del evento.'); return; }
+  const payload = { version:'tablas_bingo_v2', fechaBingo:dateToDisplay(eventSettings.date), horaBingo:eventSettings.time, linkTransmision:eventSettings.youtube||'', valorTabla:Number(eventSettings.value)||0, tablas:rows };
+  try {
+    // Registrar en Firebase las tablas incluidas en el archivo antes de descargarlo.
+    // Se consideran pendientes hasta que el administrador confirme que sí importó el JSON.
+    const updates=[...pendingByRecord.values()];
+    for (let offset=0; offset<updates.length; offset+=400) {
+      const batch=db.batch();
+      updates.slice(offset,offset+400).forEach(({record,codes})=>{
+        const merged=[...new Set([...getPendingExportTables(record),...codes])];
+        batch.update(recordsCollection.doc(record.id),{accountingPendingTables:merged,accountingPendingAt:firebase.firestore.FieldValue.serverTimestamp()});
+        record.accountingPendingTables=merged;
+      });
+      await batch.commit();
+    }
+    const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'});
+    const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='ventas_bingo_especial_para_contable.json'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000);
+    renderAdminTable(); updateAssignmentSummary();
+    alert(`Archivo generado con ${rows.length} tabla(s) nuevas o pendientes. Importa el archivo en el sistema contable y después pulsa “Confirmar importación contable”. Si aún no lo has importado, puedes volver a descargar el mismo lote.`);
+  } catch(error) { console.error(error); alert('No se pudo registrar el lote de exportación en Firebase. No se descargó el archivo para evitar perder el control de las tablas.'); await loadRecords(); }
+}
+async function confirmAccountingImport() {
+  const recordsWithPending=localRecords.filter(r=>getPendingExportTables(r).length);
+  const total=recordsWithPending.reduce((sum,r)=>sum+getPendingExportTables(r).length,0);
+  if (!total) { alert('No hay tablas pendientes de confirmar. Primero exporta e importa el archivo en el sistema contable.'); return; }
+  if (!confirm(`Confirma únicamente si ya importaste correctamente el último archivo en el sistema contable. Se marcarán ${total} tabla(s) como importadas y no volverán a exportarse ni podrán reasignarse. ¿Ya completaste la importación?`)) return;
+  try {
+    for (let offset=0; offset<recordsWithPending.length; offset+=400) {
+      const batch=db.batch();
+      recordsWithPending.slice(offset,offset+400).forEach(record=>{
+        const imported=[...new Set([...getImportedTables(record),...getPendingExportTables(record)])];
+        batch.update(recordsCollection.doc(record.id),{accountingImportedTables:imported,accountingPendingTables:[],accountingImportedAt:firebase.firestore.FieldValue.serverTimestamp()});
+        record.accountingImportedTables=imported; record.accountingPendingTables=[];
+      });
+      await batch.commit();
+    }
+    renderAdminTable(); updateAssignmentSummary();
+    alert(`Confirmación guardada: ${total} tabla(s) quedan protegidas como importadas. Las próximas exportaciones incluirán solo tablas nuevas.`);
+  } catch(error) { console.error(error); alert('No se pudo confirmar el lote en Firebase. Vuelve a cargar los registros y verifica el estado antes de repetir.'); await loadRecords(); }
+}
+
+// Extiende la tabla administrativa para mostrar y gestionar las asignaciones.
+const originalRenderAdminTable = renderAdminTable;
+renderAdminTable = function() {
+  originalRenderAdminTable();
+  const tbody=document.getElementById('admin-table-body');
+  if (!tbody) return;
+  tbody.querySelectorAll('tr').forEach((tr)=>{
+    const cells=tr.querySelectorAll('td');
+    if (!cells.length || cells.length < 10) return;
+    const rowIndexInput=tr.querySelector('input[type="checkbox"][onchange*="toggleRecordProcessed"]');
+    const match=rowIndexInput?.getAttribute('onchange')?.match(/toggleRecordProcessed\((\d+)/);
+    if (!match) return;
+    const index=Number(match[1]); const record=localRecords[index]; if (!record) return;
+    const assigned=getAssigned(record);
+    const cell=document.createElement('td'); cell.className='p-3 text-center min-w-[220px]';
+    const tokens=assigned.length ? assigned.map(code=>`<span class="inline-flex items-center gap-1 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-md px-2 py-1 m-0.5 text-xs font-black">${escapeHtml(code)} <button type="button" title="Desasignar ${escapeHtml(code)}" onclick="unassignSingleTable(${index},'${code}')" class="text-red-700 font-black">×</button></span>`).join('') : '<span class="text-amber-700 font-bold text-sm">Sin asignar</span>';
+    cell.innerHTML=`<div class="mb-2">${tokens}</div><div class="text-xs font-bold text-slate-500 mb-2">${assigned.length} / ${Number(record.tablesCount)||0} asignadas</div><button type="button" onclick="openAssignmentModal(${index})" class="bg-indigo-700 hover:bg-indigo-800 text-white px-3 py-2 rounded-lg text-sm font-bold">${assigned.length?'Editar asignación':'Asignar tablas'}</button>`;
+    // Existing cell order: requested count is index 6; insert assignment details after it.
+    cells[6].after(cell);
+  });
+  updateAssignmentSummary();
+};
+loadLocalSettings();
 
 calculateTotal();
     </script>
