@@ -240,7 +240,7 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                         <div><label for="range-start" class="block text-sm font-bold text-slate-700 mb-1">Asignar desde la tabla n.º</label><input id="range-start" type="number" min="1" max="5000" value="1" class="w-full px-3 py-2 rounded-lg border-2 border-slate-300"></div>
                         <div><label for="range-end" class="block text-sm font-bold text-slate-700 mb-1">Asignar hasta la tabla n.º</label><input id="range-end" type="number" min="1" max="5000" value="200" class="w-full px-3 py-2 rounded-lg border-2 border-slate-300"></div>
-                        <div class="sm:col-span-2 flex items-end"><button type="button" onclick="saveTableRange()" class="w-full bg-indigo-700 hover:bg-indigo-800 text-white font-bold px-4 py-3 rounded-lg">Guardar rango de tablas</button></div>
+                        <div class="sm:col-span-2 flex items-end"><p class="text-sm text-slate-600">El rango se guardará junto con los datos del evento.</p></div>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                         <div><label for="event-date" class="block text-sm font-bold text-slate-700 mb-1">Fecha del bingo</label><input id="event-date" type="date" value="2026-10-25" class="w-full px-3 py-2 rounded-lg border-2 border-slate-300"></div>
@@ -249,13 +249,13 @@
                         <div><label for="event-youtube" class="block text-sm font-bold text-slate-700 mb-1">Enlace de transmisión YouTube</label><input id="event-youtube" type="url" placeholder="https://youtube.com/live/..." class="w-full px-3 py-2 rounded-lg border-2 border-slate-300"></div>
                     </div>
                     <div class="flex flex-col sm:flex-row gap-3">
-                        <button type="button" onclick="saveEventSettings()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-5 py-3 rounded-lg">Guardar datos del evento</button>
-                        <button type="button" onclick="assignRandomToPending()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-5 py-3 rounded-lg">🎲 Asignar aleatoriamente pendientes</button>
-                        <button type="button" onclick="exportForAccounting()" class="bg-amber-600 hover:bg-amber-700 text-white font-black px-5 py-3 rounded-lg">⬇️ Exportar tablas nuevas / pendientes</button>
-                        <button type="button" onclick="confirmAccountingImport()" class="bg-teal-700 hover:bg-teal-800 text-white font-black px-5 py-3 rounded-lg">✅ Confirmar importación contable</button>
+                        <button type="button" onclick="saveAllSettings()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-5 py-3 rounded-lg">💾 Guardar configuración</button>
+                        <button type="button" onclick="assignRandomToPending()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-5 py-3 rounded-lg">🎲 Asignar aleatoriamente</button>
+                        <button type="button" onclick="exportForAccounting()" class="bg-amber-600 hover:bg-amber-700 text-white font-black px-5 py-3 rounded-lg">⬇️ Exportar archivo</button>
+                        <button id="btn-confirm-accounting-import" type="button" onclick="confirmAccountingImport()" class="hidden bg-teal-700 hover:bg-teal-800 text-white font-black px-5 py-3 rounded-lg">✅ Confirmar importación</button>
                     </div>
                     <div id="assignment-summary" class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center"></div>
-                    <p class="text-xs text-slate-600">Solo se exportan tablas nuevas o pendientes de confirmar. Después de importar correctamente el archivo en el sistema contable, pulsa <strong>Confirmar importación contable</strong>. Las tablas confirmadas quedan protegidas para no volver a exportarse ni reasignarse. Todas se registran como pagadas por <strong>CONSIGNACIÓN</strong>.</p>
+                    <p class="text-xs text-slate-600">Primero guarda la configuración, asigna las tablas y exporta el archivo. Después de importarlo correctamente, confirma la importación cuando aparezca el botón. Las tablas confirmadas quedan protegidas. Todas se registran como pagadas por <strong>CONSIGNACIÓN</strong>.</p>
                 </div>
 
                 <!-- Tabla de Registros en Ancho Completo -->
@@ -999,6 +999,33 @@ function loadLocalSettings() {
   const value = document.getElementById('event-value'); if (value) value.value = eventSettings.value ?? 3000;
   const youtube = document.getElementById('event-youtube'); if (youtube) youtube.value = eventSettings.youtube || '';
 }
+function saveAllSettings() {
+  const start = Number(document.getElementById('range-start').value);
+  const end = Number(document.getElementById('range-end').value);
+  const date = document.getElementById('event-date').value;
+  const time = document.getElementById('event-time').value;
+  const value = Number(document.getElementById('event-value').value);
+  const youtube = document.getElementById('event-youtube').value.trim();
+  if (!Number.isInteger(start) || !Number.isInteger(end) || start < 1 || end < start || end > 5000 || end-start > 4999) {
+    alert('Ingresa un rango válido entre 1 y 5.000.'); return;
+  }
+  if (!date || !time || !Number.isFinite(value) || value < 0) {
+    alert('Completa la fecha, la hora y un valor válido por tabla.'); return;
+  }
+  if (youtube && !/^https:\/\/(www\.)?(youtube\.com|youtu\.be)\//i.test(youtube)) {
+    alert('El enlace debe ser una URL válida de YouTube.'); return;
+  }
+  const assigned = allAssignedMap();
+  const outside = [...assigned.keys()].filter(code => tableNumber(code) < start || tableNumber(code) > end);
+  if (outside.length && !confirm(`Hay ${outside.length} tabla(s) ya asignadas fuera del nuevo rango. Se conservarán sin cambios y no se usarán para nuevas asignaciones. ¿Deseas continuar?`)) return;
+  tableRangeStart = start; tableRangeEnd = end;
+  eventSettings = { date, time, value, youtube };
+  localStorage.setItem('terrazaEspecialTableRange', JSON.stringify({start, end}));
+  localStorage.setItem('terrazaEspecialEventSettings', JSON.stringify(eventSettings));
+  updateAssignmentSummary();
+  alert(`Configuración guardada. Rango: ${normalizeTableCode(start)} a ${normalizeTableCode(end)}.`);
+}
+
 function saveTableRange() {
   const start = Number(document.getElementById('range-start').value);
   const end = Number(document.getElementById('range-end').value);
@@ -1025,6 +1052,8 @@ function saveEventSettings() {
   alert('Datos del evento guardados en este navegador.');
 }
 function updateAssignmentSummary() {
+  const confirmButton = document.getElementById('btn-confirm-accounting-import');
+  if (confirmButton) confirmButton.classList.toggle('hidden', !localRecords.some(r => getPendingExportTables(r).length));
   const assignedCount = localRecords.reduce((sum,r)=>sum+getAssigned(r).length,0);
   const unique = allAssignedMap();
   const total = tableRangeEnd - tableRangeStart + 1;
@@ -1194,6 +1223,7 @@ async function confirmAccountingImport() {
       await batch.commit();
     }
     renderAdminTable(); updateAssignmentSummary();
+    updateAssignmentSummary();
     alert(`Confirmación guardada: ${total} tabla(s) quedan protegidas como importadas. Las próximas exportaciones incluirán solo tablas nuevas.`);
   } catch(error) { console.error(error); alert('No se pudo confirmar el lote en Firebase. Vuelve a cargar los registros y verifica el estado antes de repetir.'); await loadRecords(); }
 }
