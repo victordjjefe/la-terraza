@@ -164,6 +164,21 @@
                     </div>
                 </div>
 
+                <!-- Consulta pública de tablas asignadas por WhatsApp -->
+                <section id="public-table-lookup" class="mx-6 mb-6 rounded-2xl border-2 border-indigo-200 bg-indigo-50 p-5 sm:p-6">
+                    <div class="max-w-2xl mx-auto space-y-4">
+                        <div class="text-center">
+                            <h3 class="text-2xl font-black text-indigo-950">🔎 Consulta tus tablas</h3>
+                            <p class="mt-1 text-sm text-indigo-900">Escribe el mismo WhatsApp que utilizaste al registrarte para consultar todas tus tablas asignadas.</p>
+                        </div>
+                        <form id="public-table-lookup-form" class="flex flex-col sm:flex-row gap-3" onsubmit="lookupMyTables(event)">
+                            <input id="lookup-whatsapp" type="tel" inputmode="numeric" autocomplete="tel-national" maxlength="10" required oninput="sanitizePhoneInput(this)" placeholder="Tu número de WhatsApp (10 dígitos)" class="min-w-0 flex-1 rounded-xl border-2 border-indigo-200 bg-white px-4 py-3 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <button id="lookup-submit" type="submit" class="rounded-xl bg-indigo-700 px-5 py-3 font-black text-white shadow hover:bg-indigo-800">Consultar tablas</button>
+                        </form>
+                        <div id="public-lookup-result" class="hidden" aria-live="polite"></div>
+                    </div>
+                </section>
+
                 <!-- Formulario de Registro -->
                 <div class="px-6 space-y-6">
                     <div class="border-t border-slate-200 pt-4">
@@ -506,6 +521,10 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
 const recordsCollection = db.collection("registros");
+// Colecciones públicas de consulta: contienen solo tablas asignadas y configuración del evento.
+const publicLookupsCollection = db.collection("publicLookups");
+const publicConfigDoc = db.collection("publicConfig").doc("event");
+const BASE_LINK_DIGITAL_VENTAS = "https://laterrazacalipodcast.top/tabla-digital/";
 let localRecords = [];
 let isSubmitting = false;
 const PRICE_PER_TABLE = 3000;
@@ -891,6 +910,8 @@ async function loadRecords() {
       const bt = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
       return bt - at;
     });
+    // Indexa también las asignaciones existentes para que la nueva consulta funcione sin reasignar tablas.
+    syncPublicLookupForPhones(localRecords.map(record => record.whatsapp)).catch(error => console.warn('No se pudo inicializar el índice público de tablas.', error));
     renderAdminTable();
     updateMoneyCounter();
   } catch (error) {
@@ -1108,6 +1129,123 @@ function normalizeTableCode(value) {
 }
 function tableNumber(code) { const m = normalizeTableCode(code).match(/^T(\d+)$/); return m ? Number(m[1]) : 0; }
 function getAssigned(record) { return Array.isArray(record?.tablesAssigned) ? [...new Set(record.tablesAssigned.map(normalizeTableCode).filter(Boolean))].sort((a,b)=>tableNumber(a)-tableNumber(b)) : []; }
+
+function normalizeWhatsapp(value) { return String(value ?? '').replace(/\D/g, ''); }
+function youtubeVideoId(value) {
+  try {
+    const url = new URL(String(value || ''));
+    let id = '';
+    if (url.pathname.includes('/live/')) id = url.pathname.split('/live/')[1].split('/')[0];
+    else if (url.pathname.includes('/shorts/')) id = url.pathname.split('/shorts/')[1].split('/')[0];
+    else if (url.pathname.includes('/embed/')) id = url.pathname.split('/embed/')[1].split('/')[0];
+    else if (url.hostname.includes('youtu.be')) id = url.pathname.replace(/^\/+/, '').split('/')[0];
+    else id = url.searchParams.get('v') || '';
+    return String(id || '').trim().replace(/[^A-Za-z0-9_-]/g, '');
+  } catch (_) { return ''; }
+}
+function buildDigitalLink(tables, name, event) {
+  const dateDigits = String(event?.date || '').replace(/\D/g, '');
+  const normalizedName = String(name || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  const videoId = youtubeVideoId(event?.youtube || '');
+  if (!Array.isArray(tables) || !tables.length || !/^\d{8}$/.test(dateDigits) || !normalizedName || !videoId) return '';
+  const codes = [...new Set(tables.map(normalizeTableCode).filter(Boolean))].sort((a,b)=>tableNumber(a)-tableNumber(b));
+  const numbers = codes.map(code => tableNumber(code)).filter(n => n > 0);
+  if (!numbers.length) return '';
+  return BASE_LINK_DIGITAL_VENTAS + '?tablas=' + numbers.join(',') + '&vence=' + dateDigits + '&nombre=' + encodeURIComponent(normalizedName) + '&video=' + encodeURIComponent(videoId);
+}
+
+// El panel administrativo publica solo un índice mínimo por WhatsApp; nunca expone comprobantes.
+async function syncPublicLookupForPhone(phone) {
+  const digits = normalizeWhatsapp(phone);
+  if (!digits) return;
+  const matching = localRecords.filter(record => normalizeWhatsapp(record.whatsapp) === digits);
+  const tables = [...new Set(matching.flatMap(getAssigned))].sort((a,b)=>tableNumber(a)-tableNumber(b));
+  const recordWithName = matching.find(record => String(record.name || '').trim()) || matching[0];
+  const ref = publicLookupsCollection.doc(digits);
+  try {
+    if (!tables.length || !recordWithName) {
+      await ref.delete();
+      return;
+    }
+    await ref.set({ whatsapp: digits, name: String(recordWithName.name || '').trim(), tables, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+  } catch (error) {
+    // La falta de permisos de la consulta pública no debe deshacer ni reportar como fallida la asignación original.
+    console.warn('No se pudo actualizar el índice público de tablas. Revisa las reglas de Firestore.', error);
+  }
+}
+async function syncPublicLookupForPhones(phones) {
+  const digits = [...new Set((phones || []).map(normalizeWhatsapp).filter(Boolean))];
+  if (!digits.length) return;
+  // Construye el índice a partir de todos los registros ya cargados, incluidos los antiguos.
+  const batch = db.batch();
+  let operations = 0;
+  for (const phone of digits) {
+    const matching = localRecords.filter(record => normalizeWhatsapp(record.whatsapp) === phone);
+    const tables = [...new Set(matching.flatMap(getAssigned))].sort((a,b)=>tableNumber(a)-tableNumber(b));
+    const recordWithName = matching.find(record => String(record.name || '').trim()) || matching[0];
+    const ref = publicLookupsCollection.doc(phone);
+    if (!tables.length || !recordWithName) batch.delete(ref);
+    else batch.set(ref, { whatsapp: phone, name: String(recordWithName.name || '').trim(), tables, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    operations++;
+    if (operations === 400) { try { await batch.commit(); } catch (error) { console.warn('No se pudo sincronizar el índice público de tablas. Revisa las reglas de Firestore.', error); return; } operations = 0; }
+  }
+  if (operations) {
+    try { await batch.commit(); }
+    catch (error) { console.warn('No se pudo sincronizar el índice público de tablas. Revisa las reglas de Firestore.', error); }
+  }
+}
+function publishPublicEventSettings() {
+  if (!eventSettings?.date || !eventSettings?.youtube) return;
+  publicConfigDoc.set({ date: eventSettings.date, time: eventSettings.time || '', youtube: eventSettings.youtube, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
+    .catch(error => console.warn('No se pudo publicar la configuración para la consulta pública. Revisa las reglas de Firestore.', error));
+}
+async function lookupMyTables(event) {
+  event.preventDefault();
+  const input = document.getElementById('lookup-whatsapp');
+  const button = document.getElementById('lookup-submit');
+  const result = document.getElementById('public-lookup-result');
+  const phone = normalizeWhatsapp(input?.value);
+  result.className = 'rounded-xl border bg-white p-4 text-sm';
+  result.textContent = '';
+  if (!/^\d{10}$/.test(phone)) {
+    result.classList.add('border-amber-300', 'text-amber-900');
+    result.textContent = 'Ingresa un número de WhatsApp válido de 10 dígitos.';
+    return;
+  }
+  button.disabled = true; button.textContent = 'Buscando…';
+  result.classList.remove('hidden'); result.classList.add('border-slate-200', 'text-slate-700');
+  result.textContent = 'Consultando las tablas asignadas…';
+  try {
+    // get() sobre una referencia concreta: las reglas de Firestore deben permitir get, pero no list.
+    const [lookupSnap, eventSnap] = await Promise.all([publicLookupsCollection.doc(phone).get(), publicConfigDoc.get()]);
+    if (!lookupSnap.exists) {
+      result.className = 'rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm font-semibold text-amber-900';
+      result.textContent = 'No encontramos tablas asignadas a ese número. Si acabas de registrarte, consulta nuevamente cuando el administrador haya asignado tus tablas.';
+      return;
+    }
+    const data = lookupSnap.data() || {};
+    const eventData = eventSnap.exists ? eventSnap.data() : {};
+    const link = buildDigitalLink(data.tables || [], data.name || 'jugador', eventData);
+    const chips = (data.tables || []).map(code => `<span class="inline-flex rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1 font-black text-emerald-800">${escapeHtml(code)}</span>`).join(' ');
+    result.className = 'space-y-4 rounded-xl border border-emerald-200 bg-white p-4';
+    result.innerHTML = `<div><p class="font-black text-emerald-900">Encontramos ${(data.tables || []).length} tabla(s) asignadas</p><div class="mt-2 flex flex-wrap gap-2">${chips}</div></div>`;
+    if (link) {
+      result.insertAdjacentHTML('beforeend', `<div class="break-all rounded-lg bg-slate-50 p-3 text-xs text-slate-700">${escapeHtml(link)}</div><div class="grid grid-cols-1 gap-2 sm:grid-cols-2"><a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer" class="rounded-xl bg-emerald-600 px-4 py-3 text-center font-black text-white hover:bg-emerald-700">Abrir mis tablas</a><button type="button" id="copy-public-table-link" class="rounded-xl bg-indigo-700 px-4 py-3 font-black text-white hover:bg-indigo-800">Copiar enlace</button></div>`);
+      document.getElementById('copy-public-table-link')?.addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(link); const copyButton = document.getElementById('copy-public-table-link'); if (copyButton) copyButton.textContent = 'Enlace copiado'; }
+        catch (_) { window.prompt('Copia este enlace:', link); }
+      });
+    } else {
+      result.insertAdjacentHTML('beforeend', '<p class="rounded-lg bg-amber-50 p-3 text-sm font-semibold text-amber-900">Tus tablas están asignadas, pero falta configurar la fecha del bingo o el enlace de YouTube. Intenta nuevamente más tarde.</p>');
+    }
+  } catch (error) {
+    console.error('Error en consulta pública de tablas:', error);
+    result.className = 'rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-800';
+    result.textContent = 'No se pudo realizar la consulta. Es necesario habilitar en las reglas de Firestore la lectura individual de publicLookups y publicConfig/event. No se consultaron ni expusieron los comprobantes de pago.';
+  } finally {
+    button.disabled = false; button.textContent = 'Consultar tablas';
+  }
+}
 function getImportedTables(record) { return Array.isArray(record?.accountingImportedTables) ? [...new Set(record.accountingImportedTables.map(normalizeTableCode).filter(Boolean))] : []; }
 function getPendingExportTables(record) { return Array.isArray(record?.accountingPendingTables) ? [...new Set(record.accountingPendingTables.map(normalizeTableCode).filter(Boolean))] : []; }
 function isAccountingLocked(record, code) { return getImportedTables(record).includes(normalizeTableCode(code)) || getPendingExportTables(record).includes(normalizeTableCode(code)); }
@@ -1133,6 +1271,7 @@ function loadLocalSettings() {
   const time = document.getElementById('event-time'); if (time) time.value = eventSettings.time || '';
   const value = document.getElementById('event-value'); if (value) value.value = eventSettings.value ?? 3000;
   const youtube = document.getElementById('event-youtube'); if (youtube) youtube.value = eventSettings.youtube || '';
+  publishPublicEventSettings();
 }
 function saveAllSettings() {
   const start = Number(document.getElementById('range-start').value);
@@ -1157,6 +1296,7 @@ function saveAllSettings() {
   eventSettings = { date, time, value, youtube };
   localStorage.setItem('terrazaEspecialTableRange', JSON.stringify({start, end}));
   localStorage.setItem('terrazaEspecialEventSettings', JSON.stringify(eventSettings));
+  publishPublicEventSettings();
   updateAssignmentSummary();
   alert(`Configuración guardada. Rango: ${normalizeTableCode(start)} a ${normalizeTableCode(end)}.`);
 }
@@ -1184,7 +1324,8 @@ function saveEventSettings() {
   if (youtube && !/^https:\/\/(www\.)?(youtube\.com|youtu\.be)\//i.test(youtube)) { alert('El enlace debe ser una URL válida de YouTube.'); return; }
   eventSettings = { date, time, value, youtube };
   localStorage.setItem('terrazaEspecialEventSettings', JSON.stringify(eventSettings));
-  alert('Datos del evento guardados en este navegador.');
+  publishPublicEventSettings();
+  alert('Datos del evento guardados en este navegador y enviados a la consulta pública.');
 }
 function updateAssignmentSummary() {
   updateCopyListsCount();
@@ -1265,6 +1406,7 @@ async function saveManualAssignment() {
   try {
     await recordsCollection.doc(record.id).update({ tablesAssigned: next, assignmentUpdatedAt: firebase.firestore.FieldValue.serverTimestamp() });
     record.tablesAssigned = next;
+    await syncPublicLookupForPhone(record.whatsapp);
     closeAssignmentModal(); renderAdminTable(); updateAssignmentSummary();
     alert(`Asignación guardada para ${record.name}.`);
   } catch (error) { console.error(error); alert('No se pudo guardar la asignación en Firebase. No se cambió el registro local.'); }
@@ -1283,6 +1425,7 @@ async function unassignAllForParticipant(index, closeModalAfter = false) {
   try {
     await recordsCollection.doc(record.id).update({ tablesAssigned: [], assignmentUpdatedAt: firebase.firestore.FieldValue.serverTimestamp() });
     record.tablesAssigned = [];
+    await syncPublicLookupForPhone(record.whatsapp);
     if (closeModalAfter) closeAssignmentModal();
     renderAdminTable(); updateAssignmentSummary();
     alert(`Se desasignaron todas las tablas de ${record.name}.`);
@@ -1297,7 +1440,7 @@ async function unassignSingleTable(index, code) {
   const next = current.filter(t=>t!==code);
   try {
     await recordsCollection.doc(record.id).update({ tablesAssigned: next, assignmentUpdatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-    record.tablesAssigned = next; renderAdminTable(); updateAssignmentSummary();
+    record.tablesAssigned = next; await syncPublicLookupForPhone(record.whatsapp); renderAdminTable(); updateAssignmentSummary();
   } catch (error) { console.error(error); alert(`No se pudo desasignar ${code}.`); }
 }
 async function unassignAllParticipantsTables() {
@@ -1321,11 +1464,13 @@ async function unassignAllParticipantsTables() {
       });
       await batch.commit();
     }
+    const affectedPhones = localRecords.map(record => record.whatsapp);
     localRecords.forEach(record => {
       record.tablesAssigned = [];
       record.accountingPendingTables = [];
       record.accountingImportedTables = [];
     });
+    await syncPublicLookupForPhones(affectedPhones);
     if (currentAssignmentIndex !== null) closeAssignmentModal();
     renderAdminTable();
     updateAssignmentSummary();
@@ -1370,6 +1515,7 @@ async function assignRandomToPending() {
       await batch.commit();
     }
     planned.forEach(item=>{item.r.tablesAssigned=item.next;});
+    await syncPublicLookupForPhones(planned.map(item=>item.r.whatsapp));
     renderAdminTable(); updateAssignmentSummary();
     alert(`Asignación aleatoria terminada. Se asignaron ${needed} tablas. Las asignaciones anteriores se conservaron.`);
   } catch (error) { console.error(error); alert('Hubo un error al guardar la asignación aleatoria. Revisa Firebase y vuelve a cargar los registros antes de repetirla.'); await loadRecords(); }
