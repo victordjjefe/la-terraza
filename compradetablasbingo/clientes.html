@@ -1236,24 +1236,38 @@
       );
 
       ultimoLookupMensaje =
-        `🎱✨ *LA TERRAZA BINGO* ✨🎱
+        `🎱 *LA TERRAZA BINGO* 🎱
 
 ` +
-        `Hola ${nombreMostrar}! 👋
+        `¡Hola *${nombreMostrar}*! 👋 Tu registro está confirmado. 🍀
 
 ` +
-        `⬇️ *Ingresa al siguiente enlace para acceder a tus tablas digitales y a la transmisión en vivo:*
+        `🎟️ *TUS TABLAS:*
+` +
+        `${tablasEncontradas.map(codigo => '🔢 *TABLA ' + codigo + '*').join('\\n')}
 
 ` +
-        `🔗 ${ultimoLookupEnlace}
-
-` +
-        `📅 *Fecha del Bingo:* ${config?.fecha || ''}
+        `📅 *Fecha:* ${config?.fecha || ''}
 ` +
         `⏰ *Hora:* ${config?.hora || ''}
 
 ` +
-        `🎟️ *Tablas:* ${tablasEncontradas.join(' | ')}`;
+        `👇👇 *TOCA AQUÍ PARA VER TUS TABLAS Y ENTRAR A LA TRANSMISIÓN* 👇👇
+` +
+        `🔗 *${ultimoLookupEnlace}*
+
+` +
+        `📢 *¡IMPORTANTE! ÚNETE AL GRUPO OFICIAL DE WHATSAPP*
+` +
+        `Allí publicamos la información del bingo y puedes escribirnos si tienes dudas. Para no perderte avisos importantes, entra ahora:
+
+` +
+        `👉 *ÚNETE AL GRUPO AQUÍ:*
+` +
+        `https://chat.whatsapp.com/HMDDclDV3o31QbqJhcjaF4
+
+` +
+        `🍀 ¡Mucha suerte! ¡Que pronto cantes BINGO! 🎉`;
 
       document.getElementById('lookup-link-box').innerHTML =
         ``;
@@ -2690,18 +2704,26 @@ function startReservationTimer() {
         </div>
       `;
 
-      ultimoMensajeDigital = `🎱✨ *LA TERRAZA BINGO* ✨🎱
+      ultimoMensajeDigital = `🎱 *LA TERRAZA BINGO* 🎱
 
-Hola ${buyerName}! 👋
+¡Hola *${buyerName}*! 👋 Tu registro está confirmado. 🍀
 
-🎟️ *Tablas:* ${tablasConsolidadas.join(' | ')}
+🎟️ *TUS TABLAS:*
+${tablasConsolidadas.map(codigo => '🔢 *TABLA ' + codigo + '*').join('\\n')}
 
-📅 *Fecha del Bingo:* ${config?.fecha || ''}
+📅 *Fecha:* ${config?.fecha || ''}
 ⏰ *Hora:* ${config?.hora || ''}
 
-⬇️ *Ingresa al siguiente enlace para acceder a tus tablas digitales y a la transmisión en vivo:*
+👇👇 *TOCA AQUÍ PARA VER TUS TABLAS Y ENTRAR A LA TRANSMISIÓN* 👇👇
+🔗 *${ultimoEnlaceDigital}*
 
-🔗 ${ultimoEnlaceDigital}`;
+📢 *¡IMPORTANTE! ÚNETE AL GRUPO OFICIAL DE WHATSAPP*
+Allí publicamos la información del bingo y puedes escribirnos si tienes dudas. Para no perderte avisos importantes, entra ahora:
+
+👉 *ÚNETE AL GRUPO AQUÍ:*
+https://chat.whatsapp.com/HMDDclDV3o31QbqJhcjaF4
+
+🍀 ¡Mucha suerte! ¡Que pronto cantes BINGO! 🎉`;
 
       document.getElementById('bingo-info-success').innerHTML = `📅 <b>Fecha del Bingo:</b> ${config?.fecha || '--'}<br>⏰ <b>Hora:</b> ${config?.hora || '--'}`;
       document.getElementById('digital-link-box').innerHTML = '';
