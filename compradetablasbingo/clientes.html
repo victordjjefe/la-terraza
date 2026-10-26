@@ -950,6 +950,9 @@
   let config = null;
   let selectedTables = [];
   let proofFile = null;
+  let comprobanteValidadoFile = null;
+  let comprobanteValidacionPromise = null;
+  let tesseractLoaderPromise = null;
   let allTablesData = [];
 
   function saveLocalReservation() {
@@ -1236,38 +1239,24 @@
       );
 
       ultimoLookupMensaje =
-        `🎱 *LA TERRAZA BINGO* 🎱
+        `🎱✨ *LA TERRAZA BINGO* ✨🎱
 
 ` +
-        `¡Hola *${nombreMostrar}*! 👋 Tu registro está confirmado. 🍀
+        `Hola ${nombreMostrar}! 👋
 
 ` +
-        `🎟️ *TUS TABLAS:*
-` +
-        `${tablasEncontradas.map(codigo => '🔢 *TABLA ' + codigo + '*').join('\\n')}
+        `⬇️ *Ingresa al siguiente enlace para acceder a tus tablas digitales y a la transmisión en vivo:*
 
 ` +
-        `📅 *Fecha:* ${config?.fecha || ''}
+        `🔗 ${ultimoLookupEnlace}
+
+` +
+        `📅 *Fecha del Bingo:* ${config?.fecha || ''}
 ` +
         `⏰ *Hora:* ${config?.hora || ''}
 
 ` +
-        `👇👇 *TOCA AQUÍ PARA VER TUS TABLAS Y ENTRAR A LA TRANSMISIÓN* 👇👇
-` +
-        `🔗 *${ultimoLookupEnlace}*
-
-` +
-        `📢 *¡IMPORTANTE! ÚNETE AL GRUPO OFICIAL DE WHATSAPP*
-` +
-        `Allí publicamos la información del bingo y puedes escribirnos si tienes dudas. Para no perderte avisos importantes, entra ahora:
-
-` +
-        `👉 *ÚNETE AL GRUPO AQUÍ:*
-` +
-        `https://chat.whatsapp.com/HMDDclDV3o31QbqJhcjaF4
-
-` +
-        `🍀 ¡Mucha suerte! ¡Que pronto cantes BINGO! 🎉`;
+        `🎟️ *Tablas:* ${tablasEncontradas.join(' | ')}`;
 
       document.getElementById('lookup-link-box').innerHTML =
         ``;
@@ -2286,26 +2275,91 @@ function startReservationTimer() {
   });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && proofRequiredModal.classList.contains('active')) cerrarAvisoComprobante(); });
 
-  document.getElementById('proof-file').addEventListener('change', function(e) {
+  // Carga OCR en el navegador. No envía la imagen a un servicio externo ni cobra por imagen.
+  // El primer uso requiere conexión para descargar la biblioteca y el modelo de idioma.
+  function cargarMotorOCRComprobante() {
+    if (window.Tesseract) return Promise.resolve(window.Tesseract);
+    if (tesseractLoaderPromise) return tesseractLoaderPromise;
+    tesseractLoaderPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+      script.async = true;
+      script.onload = () => window.Tesseract ? resolve(window.Tesseract) : reject(new Error('No se pudo iniciar el lector de texto.'));
+      script.onerror = () => reject(new Error('No se pudo descargar el lector de texto. Revisa la conexión e inténtalo de nuevo.'));
+      document.head.appendChild(script);
+    });
+    return tesseractLoaderPromise;
+  }
+
+  function textoPareceComprobantePago(textoOCR) {
+    const texto = String(textoOCR || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const palabrasPago = /comprobante|transferencia|transaccion|pago|pagaste|recibiste|enviaste|enviado|recibido|operacion exitosa|transaccion exitosa|pago exitoso|aprobada|aprobado|movimiento|numero de aprobacion|detalle del pago|detalle de transaccion/.test(texto);
+    const entidadFinanciera = /nequi|daviplata|bancolombia|davivienda|bbva|banco de bogota|banco popular|banco de occidente|av villas|scotiabank|colpatria|transfiya|pse|dale|movii|nu bank|banco caja social|finandina|itau|bold|mercado pago|mercadopago/.test(texto);
+    const camposTransaccion = /valor|monto|total|fecha|hora|referencia|destino|destinatario|origen|cuenta|numero|id de transaccion|id transaccion|cop|pesos|saldo/.test(texto);
+    const contieneImporteONumero = /(?:\$\s?\d[\d.,]*|\b\d[\d.,]{2,}\b)/.test(texto);
+    // Se exigen varias señales independientes para no aceptar una foto o un logo con una sola palabra.
+    const grupos = [palabrasPago, entidadFinanciera, camposTransaccion, contieneImporteONumero].filter(Boolean).length;
+    return { valido: grupos >= 3 && (palabrasPago || entidadFinanciera) && (camposTransaccion || contieneImporteONumero), texto, grupos };
+  }
+
+  async function validarComprobantePorContenido(file) {
+    if (!file || !['image/jpeg', 'image/png'].includes(file.type)) {
+      return { valido: false, mensaje: 'Solo se aceptan capturas JPG o PNG de un comprobante de pago.' };
+    }
+    if (comprobanteValidadoFile === file) return { valido: true, cache: true };
+    if (comprobanteValidacionPromise && comprobanteValidacionPromise.file === file) return comprobanteValidacionPromise.promise;
+
+    const promise = (async () => {
+      try {
+        const ocr = await cargarMotorOCRComprobante();
+        const resultado = await ocr.recognize(file, 'spa+eng');
+        const lectura = textoPareceComprobantePago(resultado?.data?.text || '');
+        if (!lectura.valido) {
+          return { valido: false, mensaje: 'No pudimos identificar un comprobante de pago en esta imagen. No se aceptan fotos de personas, animales, paisajes, logos ni otras imágenes. Sube una captura legible de tu transferencia o pago.' };
+        }
+        comprobanteValidadoFile = file;
+        return { valido: true };
+      } catch (error) {
+        console.error('Error al analizar el comprobante:', error);
+        return { valido: false, mensaje: 'No fue posible analizar la imagen. Verifica tu conexión e inténtalo de nuevo con una captura clara del comprobante.' };
+      }
+    })();
+    comprobanteValidacionPromise = { file, promise };
+    const resultado = await promise;
+    if (comprobanteValidacionPromise?.file === file) comprobanteValidacionPromise = null;
+    return resultado;
+  }
+
+  document.getElementById('proof-file').addEventListener('change', async function(e) {
     const file = e.target.files[0];
+    proofFile = null;
+    comprobanteValidadoFile = null;
     if (!file) {
-      proofFile = null;
       actualizarEstadoArchivoComprobante();
       return;
     }
 
     const allowedTypes = ['image/jpeg', 'image/png'];
-
     if (!allowedTypes.includes(file.type)) {
+      e.target.value = '';
+      actualizarEstadoArchivoComprobante('Selecciona únicamente una imagen JPG o PNG.');
       alert('Selecciona únicamente una imagen JPG o PNG.');
+      return;
+    }
+
+    actualizarEstadoArchivoComprobante('Analizando el contenido de la imagen. Debe ser un comprobante real y legible…');
+    const resultado = await validarComprobantePorContenido(file);
+    if (e.target.files[0] !== file) return;
+    if (!resultado.valido) {
       e.target.value = '';
       proofFile = null;
-      actualizarEstadoArchivoComprobante('Selecciona únicamente una imagen JPG o PNG.');
+      actualizarEstadoArchivoComprobante(resultado.mensaje || 'No se reconoce un comprobante de pago. Sube una captura legible.');
+      alert(resultado.mensaje || 'No se reconoce un comprobante de pago. Sube una captura legible.');
       return;
     }
 
     proofFile = file;
-    actualizarEstadoArchivoComprobante();
+    actualizarEstadoArchivoComprobante('Comprobante con texto de pago detectado. Recuerda que debes verificar manualmente que el dinero haya llegado.');
     cerrarAvisoComprobante();
   });
 
@@ -2452,6 +2506,19 @@ function startReservationTimer() {
     if (exigeComprobante() && (!proofFile || !['image/jpeg', 'image/png'].includes(proofFile.type))) {
       avisoComprobanteSegunCortesia();
       return;
+    }
+
+    if (exigeComprobante()) {
+      const validacionContenido = await validarComprobantePorContenido(proofFile);
+      if (!validacionContenido.valido) {
+        proofFile = null;
+        comprobanteValidadoFile = null;
+        const inputComprobante = document.getElementById('proof-file');
+        if (inputComprobante) inputComprobante.value = '';
+        actualizarEstadoArchivoComprobante(validacionContenido.mensaje || 'Debes subir una captura legible de un comprobante de pago.');
+        alert(validacionContenido.mensaje || 'No se reconoce un comprobante de pago. Sube una captura legible.');
+        return;
+      }
     }
 
     // Congelamos la selección exacta que se va a comprar para que toda la operación
@@ -2704,26 +2771,18 @@ function startReservationTimer() {
         </div>
       `;
 
-      ultimoMensajeDigital = `🎱 *LA TERRAZA BINGO* 🎱
+      ultimoMensajeDigital = `🎱✨ *LA TERRAZA BINGO* ✨🎱
 
-¡Hola *${buyerName}*! 👋 Tu registro está confirmado. 🍀
+Hola ${buyerName}! 👋
 
-🎟️ *TUS TABLAS:*
-${tablasConsolidadas.map(codigo => '🔢 *TABLA ' + codigo + '*').join('\\n')}
+🎟️ *Tablas:* ${tablasConsolidadas.join(' | ')}
 
-📅 *Fecha:* ${config?.fecha || ''}
+📅 *Fecha del Bingo:* ${config?.fecha || ''}
 ⏰ *Hora:* ${config?.hora || ''}
 
-👇👇 *TOCA AQUÍ PARA VER TUS TABLAS Y ENTRAR A LA TRANSMISIÓN* 👇👇
-🔗 *${ultimoEnlaceDigital}*
+⬇️ *Ingresa al siguiente enlace para acceder a tus tablas digitales y a la transmisión en vivo:*
 
-📢 *¡IMPORTANTE! ÚNETE AL GRUPO OFICIAL DE WHATSAPP*
-Allí publicamos la información del bingo y puedes escribirnos si tienes dudas. Para no perderte avisos importantes, entra ahora:
-
-👉 *ÚNETE AL GRUPO AQUÍ:*
-https://chat.whatsapp.com/HMDDclDV3o31QbqJhcjaF4
-
-🍀 ¡Mucha suerte! ¡Que pronto cantes BINGO! 🎉`;
+🔗 ${ultimoEnlaceDigital}`;
 
       document.getElementById('bingo-info-success').innerHTML = `📅 <b>Fecha del Bingo:</b> ${config?.fecha || '--'}<br>⏰ <b>Hora:</b> ${config?.hora || '--'}`;
       document.getElementById('digital-link-box').innerHTML = '';
