@@ -644,6 +644,18 @@
 #proof-file-status{margin-top:14px;padding:12px;background:white;border:1px solid #f59e0b;border-radius:10px;color:#92400e;font-size:.92rem;font-weight:700;overflow-wrap:anywhere}
 #proof-file-status.ready{background:#ecfdf5;border-color:#10b981;color:#065f46}
 #proof-file-status.error{background:#fef2f2;border-color:#ef4444;color:#991b1b}
+#proof-validation-modal{position:fixed;inset:0;z-index:60000;background:rgba(15,23,42,.76);display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(5px)}
+#proof-validation-modal.active{display:flex}
+#proof-validation-modal .validation-dialog{width:min(100%,480px);background:#fff;border-radius:20px;padding:28px 24px;box-shadow:0 24px 80px rgba(0,0,0,.3);text-align:center;color:#1f2937;animation:proofModalIn .18s ease-out}
+#proof-validation-modal .validation-icon{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:34px;font-weight:900;background:#fef2f2;color:#dc2626}
+#proof-validation-modal h2{font-size:1.35rem;line-height:1.25;margin:0 0 10px;font-weight:850}
+#proof-validation-modal p{font-size:1rem;line-height:1.55;margin:0 0 22px;color:#4b5563}
+#proof-validation-modal .validation-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+#proof-validation-modal .validation-actions button{min-height:46px;padding:12px 18px;border:0;border-radius:11px;font-weight:800;font-size:.98rem;cursor:pointer;flex:1 1 150px}
+#proof-validation-back{background:#e5e7eb;color:#111827}
+#proof-validation-retry{background:#15803d;color:#fff}
+@keyframes proofModalIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(max-width:480px){#proof-validation-modal .validation-dialog{padding:24px 18px}#proof-validation-modal .validation-actions{flex-direction:column}#proof-validation-modal .validation-actions button{width:100%;flex-basis:auto}}
 </style>
 <style>
 /* Cortesía: opción discreta y táctil bajo el comprobante */
@@ -2315,13 +2327,13 @@ function startReservationTimer() {
         const resultado = await ocr.recognize(file, 'spa+eng');
         const lectura = textoPareceComprobantePago(resultado?.data?.text || '');
         if (!lectura.valido) {
-          return { valido: false, mensaje: 'No pudimos identificar un comprobante de pago en esta imagen. No se aceptan fotos de personas, animales, paisajes, logos ni otras imágenes. Sube una captura legible de tu transferencia o pago.' };
+          return { valido: false, mensaje: 'Este es un sistema de validación automática de pagos. El archivo seleccionado no contiene señales suficientes de un comprobante válido. Debes realizar un pago real y subir una captura auténtica, completa y legible de la transacción. No se aceptan fotos, paisajes, personas, animales, logos ni imágenes ajenas a un pago.' };
         }
         comprobanteValidadoFile = file;
         return { valido: true };
       } catch (error) {
         console.error('Error al analizar el comprobante:', error);
-        return { valido: false, mensaje: 'No fue posible analizar la imagen. Verifica tu conexión e inténtalo de nuevo con una captura clara del comprobante.' };
+        return { valido: false, mensaje: 'No fue posible completar la validación automática. Verifica tu conexión e intenta nuevamente con una captura auténtica, completa y legible de tu comprobante de pago.' };
       }
     })();
     comprobanteValidacionPromise = { file, promise };
@@ -2329,6 +2341,32 @@ function startReservationTimer() {
     if (comprobanteValidacionPromise?.file === file) comprobanteValidacionPromise = null;
     return resultado;
   }
+
+  const proofValidationModal = document.getElementById('proof-validation-modal');
+  const proofValidationTitle = document.getElementById('proof-validation-title');
+  const proofValidationMessage = document.getElementById('proof-validation-message');
+  const proofValidationIcon = document.getElementById('proof-validation-icon');
+  function mostrarModalValidacionComprobante(mensaje) {
+    proofValidationTitle.textContent = 'Comprobante inválido';
+    proofValidationMessage.textContent = mensaje || 'Este sistema valida automáticamente los comprobantes de pago. Debes subir una captura auténtica, completa y legible de una transacción real. No se aceptan fotos, paisajes, personas, animales, logos ni imágenes ajenas a un pago.';
+    proofValidationIcon.textContent = '✕';
+    proofValidationIcon.style.background = '#fef2f2';
+    proofValidationIcon.style.color = '#dc2626';
+    proofValidationModal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('proof-validation-retry').focus();
+  }
+  function cerrarModalValidacionComprobante() {
+    proofValidationModal.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+  document.getElementById('proof-validation-back').addEventListener('click', cerrarModalValidacionComprobante);
+  proofValidationModal.addEventListener('click', e => { if (e.target === proofValidationModal) cerrarModalValidacionComprobante(); });
+  document.getElementById('proof-validation-retry').addEventListener('click', () => {
+    cerrarModalValidacionComprobante();
+    document.getElementById('proof-file').click();
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && proofValidationModal.classList.contains('active')) cerrarModalValidacionComprobante(); });
 
   document.getElementById('proof-file').addEventListener('change', async function(e) {
     const file = e.target.files[0];
@@ -2347,19 +2385,27 @@ function startReservationTimer() {
       return;
     }
 
-    actualizarEstadoArchivoComprobante('Analizando el contenido de la imagen. Debe ser un comprobante real y legible…');
+    const estadoAnalisis = document.getElementById('proof-file-status');
+    if (estadoAnalisis) { estadoAnalisis.classList.remove('ready', 'error'); estadoAnalisis.textContent = '⏳ Validando automáticamente el comprobante…'; }
     const resultado = await validarComprobantePorContenido(file);
     if (e.target.files[0] !== file) return;
     if (!resultado.valido) {
       e.target.value = '';
       proofFile = null;
-      actualizarEstadoArchivoComprobante(resultado.mensaje || 'No se reconoce un comprobante de pago. Sube una captura legible.');
-      alert(resultado.mensaje || 'No se reconoce un comprobante de pago. Sube una captura legible.');
+      comprobanteValidadoFile = null;
+      const mensaje = resultado.mensaje || 'Comprobante inválido. Debes subir una captura auténtica y legible de un pago real.';
+      actualizarEstadoArchivoComprobante('Comprobante inválido. Sube una captura auténtica y legible de un pago real.');
+      mostrarModalValidacionComprobante(mensaje);
       return;
     }
 
     proofFile = file;
-    actualizarEstadoArchivoComprobante('Comprobante con texto de pago detectado. Recuerda que debes verificar manualmente que el dinero haya llegado.');
+    const estadoComprobanteValido = document.getElementById('proof-file-status');
+    if (estadoComprobanteValido) {
+      estadoComprobanteValido.classList.remove('error');
+      estadoComprobanteValido.classList.add('ready');
+      estadoComprobanteValido.textContent = '✅ Comprobante reconocido. El sistema verificará el ingreso de este pago. Si el pago no se confirma, el registro podrá anularse y las tablas liberarse. Ya puedes presionar «Registrar / Comprar».';
+    }
     cerrarAvisoComprobante();
   });
 
@@ -2515,8 +2561,9 @@ function startReservationTimer() {
         comprobanteValidadoFile = null;
         const inputComprobante = document.getElementById('proof-file');
         if (inputComprobante) inputComprobante.value = '';
-        actualizarEstadoArchivoComprobante(validacionContenido.mensaje || 'Debes subir una captura legible de un comprobante de pago.');
-        alert(validacionContenido.mensaje || 'No se reconoce un comprobante de pago. Sube una captura legible.');
+        const mensaje = validacionContenido.mensaje || 'Comprobante inválido. Debes subir una captura auténtica y legible de un pago real.';
+        actualizarEstadoArchivoComprobante('Comprobante inválido. Sube una captura auténtica y legible de un pago real.');
+        mostrarModalValidacionComprobante(mensaje);
         return;
       }
     }
@@ -3145,5 +3192,16 @@ function validarConfirmacionWhatsapp(numero){
   });
 }
 </script>
+<div id="proof-validation-modal" role="dialog" aria-modal="true" aria-labelledby="proof-validation-title" aria-describedby="proof-validation-message">
+  <div class="validation-dialog">
+    <div class="validation-icon" id="proof-validation-icon">!</div>
+    <h2 id="proof-validation-title">No se reconoce el comprobante</h2>
+    <p id="proof-validation-message">Debes subir una captura legible de tu comprobante de pago. No se aceptan fotos de personas, animales, paisajes, logos ni otras imágenes.</p>
+    <div class="validation-actions">
+      <button type="button" id="proof-validation-back">Volver</button>
+      <button type="button" id="proof-validation-retry">Subir otro comprobante</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
