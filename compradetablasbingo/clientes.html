@@ -654,6 +654,14 @@
 #proof-validation-modal .validation-actions button{min-height:46px;padding:12px 18px;border:0;border-radius:11px;font-weight:800;font-size:.98rem;cursor:pointer;flex:1 1 150px}
 #proof-validation-back{background:#e5e7eb;color:#111827}
 #proof-validation-retry{background:#15803d;color:#fff}
+#proof-validation-register{background:#15803d;color:#fff;display:none}
+#proof-validation-modal.is-loading .validation-icon{background:#fff7ed;color:#c2410c;animation:proofSpin 1.1s linear infinite}
+#proof-validation-modal.is-valid .validation-icon{background:#dcfce7;color:#15803d}
+#proof-validation-modal.is-valid #proof-validation-register{display:block}
+#proof-validation-modal.is-valid #proof-validation-back,
+#proof-validation-modal.is-valid #proof-validation-retry{display:none}
+#proof-validation-modal.is-loading .validation-actions{display:none}
+@keyframes proofSpin{to{transform:rotate(360deg)}}
 @keyframes proofModalIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
 @media(max-width:480px){#proof-validation-modal .validation-dialog{padding:24px 18px}#proof-validation-modal .validation-actions{flex-direction:column}#proof-validation-modal .validation-actions button{width:100%;flex-basis:auto}}
 </style>
@@ -2346,27 +2354,70 @@ function startReservationTimer() {
   const proofValidationTitle = document.getElementById('proof-validation-title');
   const proofValidationMessage = document.getElementById('proof-validation-message');
   const proofValidationIcon = document.getElementById('proof-validation-icon');
+  const proofValidationBack = document.getElementById('proof-validation-back');
+  const proofValidationRetry = document.getElementById('proof-validation-retry');
+  const proofValidationRegister = document.getElementById('proof-validation-register');
+
+  function abrirModalValidacionBase(estado) {
+    proofValidationModal.classList.remove('is-loading', 'is-valid');
+    if (estado) proofValidationModal.classList.add(estado);
+    proofValidationModal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+  function mostrarModalValidandoComprobante() {
+    proofValidationTitle.textContent = 'Validando comprobante…';
+    proofValidationMessage.textContent = 'Este es un sistema de validación automática de pagos. Estamos revisando el archivo seleccionado. Por favor, espera mientras termina la validación.';
+    proofValidationIcon.textContent = '⟳';
+    proofValidationIcon.style.background = '';
+    proofValidationIcon.style.color = '';
+    proofValidationBack.style.display = 'none';
+    proofValidationRetry.style.display = 'none';
+    proofValidationRegister.style.display = 'none';
+    abrirModalValidacionBase('is-loading');
+  }
   function mostrarModalValidacionComprobante(mensaje) {
     proofValidationTitle.textContent = 'Comprobante inválido';
-    proofValidationMessage.textContent = mensaje || 'Este sistema valida automáticamente los comprobantes de pago. Debes subir una captura auténtica, completa y legible de una transacción real. No se aceptan fotos, paisajes, personas, animales, logos ni imágenes ajenas a un pago.';
+    proofValidationMessage.textContent = 'Este es un sistema de validación automática de pagos. El comprobante no es válido. Debes realizar el pago y subir una captura auténtica, completa y legible del comprobante real de la transacción. No se aceptan imágenes distintas al comprobante del pago realizado.';
     proofValidationIcon.textContent = '✕';
     proofValidationIcon.style.background = '#fef2f2';
     proofValidationIcon.style.color = '#dc2626';
-    proofValidationModal.classList.add('active');
-    document.body.style.overflow = 'hidden';
-    document.getElementById('proof-validation-retry').focus();
+    proofValidationBack.style.display = '';
+    proofValidationRetry.style.display = '';
+    proofValidationRegister.style.display = 'none';
+    abrirModalValidacionBase('');
+    proofValidationRetry.focus();
+  }
+  function mostrarModalComprobanteValido() {
+    proofValidationTitle.textContent = '¡Comprobante válido!';
+    proofValidationMessage.textContent = 'El comprobante superó la validación automática. El sistema verificará que el pago haya ingresado. Si el pago no se confirma, el registro podrá anularse y las tablas liberarse.';
+    proofValidationIcon.textContent = '✓';
+    proofValidationIcon.style.background = '#dcfce7';
+    proofValidationIcon.style.color = '#15803d';
+    proofValidationBack.style.display = 'none';
+    proofValidationRetry.style.display = 'none';
+    proofValidationRegister.style.display = '';
+    abrirModalValidacionBase('is-valid');
+    proofValidationRegister.focus();
   }
   function cerrarModalValidacionComprobante() {
-    proofValidationModal.classList.remove('active');
+    proofValidationModal.classList.remove('active', 'is-loading', 'is-valid');
     document.body.style.overflow = '';
   }
-  document.getElementById('proof-validation-back').addEventListener('click', cerrarModalValidacionComprobante);
-  proofValidationModal.addEventListener('click', e => { if (e.target === proofValidationModal) cerrarModalValidacionComprobante(); });
-  document.getElementById('proof-validation-retry').addEventListener('click', () => {
+  proofValidationBack.addEventListener('click', cerrarModalValidacionComprobante);
+  proofValidationModal.addEventListener('click', e => {
+    if (e.target === proofValidationModal && !proofValidationModal.classList.contains('is-loading')) cerrarModalValidacionComprobante();
+  });
+  proofValidationRetry.addEventListener('click', () => {
     cerrarModalValidacionComprobante();
     document.getElementById('proof-file').click();
   });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && proofValidationModal.classList.contains('active')) cerrarModalValidacionComprobante(); });
+  proofValidationRegister.addEventListener('click', () => {
+    cerrarModalValidacionComprobante();
+    document.getElementById('btn-finish-order').click();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && proofValidationModal.classList.contains('active') && !proofValidationModal.classList.contains('is-loading')) cerrarModalValidacionComprobante();
+  });
 
   document.getElementById('proof-file').addEventListener('change', async function(e) {
     const file = e.target.files[0];
@@ -2386,7 +2437,8 @@ function startReservationTimer() {
     }
 
     const estadoAnalisis = document.getElementById('proof-file-status');
-    if (estadoAnalisis) { estadoAnalisis.classList.remove('ready', 'error'); estadoAnalisis.textContent = '⏳ Validando automáticamente el comprobante…'; }
+    if (estadoAnalisis) { estadoAnalisis.classList.remove('ready', 'error'); estadoAnalisis.textContent = 'Validación automática en curso…'; }
+    mostrarModalValidandoComprobante();
     const resultado = await validarComprobantePorContenido(file);
     if (e.target.files[0] !== file) return;
     if (!resultado.valido) {
@@ -2394,7 +2446,7 @@ function startReservationTimer() {
       proofFile = null;
       comprobanteValidadoFile = null;
       const mensaje = resultado.mensaje || 'Comprobante inválido. Debes subir una captura auténtica y legible de un pago real.';
-      actualizarEstadoArchivoComprobante('Comprobante inválido. Sube una captura auténtica y legible de un pago real.');
+      actualizarEstadoArchivoComprobante('❌ Comprobante inválido. Debes subir el comprobante real del pago realizado.');
       mostrarModalValidacionComprobante(mensaje);
       return;
     }
@@ -2404,9 +2456,10 @@ function startReservationTimer() {
     if (estadoComprobanteValido) {
       estadoComprobanteValido.classList.remove('error');
       estadoComprobanteValido.classList.add('ready');
-      estadoComprobanteValido.textContent = '✅ Comprobante reconocido. El sistema verificará el ingreso de este pago. Si el pago no se confirma, el registro podrá anularse y las tablas liberarse. Ya puedes presionar «Registrar / Comprar».';
+      estadoComprobanteValido.textContent = '✅ Comprobante válido: superó la validación automática. El pago aún debe verificarse.';
     }
     cerrarAvisoComprobante();
+    mostrarModalComprobanteValido();
   });
 
 
@@ -3195,11 +3248,12 @@ function validarConfirmacionWhatsapp(numero){
 <div id="proof-validation-modal" role="dialog" aria-modal="true" aria-labelledby="proof-validation-title" aria-describedby="proof-validation-message">
   <div class="validation-dialog">
     <div class="validation-icon" id="proof-validation-icon">!</div>
-    <h2 id="proof-validation-title">No se reconoce el comprobante</h2>
-    <p id="proof-validation-message">Debes subir una captura legible de tu comprobante de pago. No se aceptan fotos de personas, animales, paisajes, logos ni otras imágenes.</p>
+    <h2 id="proof-validation-title">Validando comprobante…</h2>
+    <p id="proof-validation-message">Estamos revisando automáticamente el archivo seleccionado. Por favor, espera.</p>
     <div class="validation-actions">
       <button type="button" id="proof-validation-back">Volver</button>
       <button type="button" id="proof-validation-retry">Subir otro comprobante</button>
+      <button type="button" id="proof-validation-register">Registrar / Comprar</button>
     </div>
   </div>
 </div>
