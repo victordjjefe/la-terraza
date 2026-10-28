@@ -1138,6 +1138,80 @@
     return consolidarTablasPorTelefono(pedidos, telefono, tablasNuevas, config?.idBingo || 'BINGO001');
   }
 
+  // Formato unificado de WhatsApp para registro y búsqueda de tablas.
+  // Se mantiene el enlace digital existente y se incluye la invitación al grupo oficial.
+  const LINK_GRUPO_WHATSAPP_BINGO = 'https://chat.whatsapp.com/HMDDclDV3o31QbqJhcjaF4';
+
+  function formatearFechaMensajeBingo(fecha) {
+    const valor = String(fecha || '').trim();
+    if (!valor) return 'Por confirmar';
+
+    let anio = '', mes = '', dia = '';
+    let m = valor.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (m) {
+      anio = m[1]; mes = m[2]; dia = m[3];
+    } else {
+      m = valor.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (m) { dia = m[1].padStart(2, '0'); mes = m[2].padStart(2, '0'); anio = m[3]; }
+    }
+    if (!anio || !mes || !dia) return valor;
+
+    const fechaLocal = new Date(Number(anio), Number(mes) - 1, Number(dia), 12, 0, 0);
+    if (Number.isNaN(fechaLocal.getTime())) return valor;
+    const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+    return `${dias[fechaLocal.getDay()]} ${dia}/${mes}/${anio}`;
+  }
+
+  function formatearHoraMensajeBingo(hora) {
+    const valor = String(hora || '').trim();
+    if (!valor) return 'Por confirmar';
+    const m = valor.match(/^(\d{1,2}):(\d{2})/);
+    if (!m) return valor;
+    let h = Number(m[1]);
+    const minutos = m[2];
+    const sufijo = h >= 12 ? 'p. m.' : 'a. m.';
+    h = h % 12 || 12;
+    return `${String(h).padStart(2, '0')}:${minutos} ${sufijo}`;
+  }
+
+  function codigoTablaParaMensaje(tabla) {
+    const texto = String(tabla ?? '').trim();
+    const digitos = texto.replace(/\D/g, '');
+    if (!digitos) return texto;
+    return formatTableCode(Number(digitos)) || texto;
+  }
+
+  function construirMensajeWhatsAppBingo({nombre, tablas, fecha, hora, enlace}) {
+    const nombreMostrar = String(nombre || 'jugador').trim() || 'jugador';
+    const listaTablas = [...new Set((Array.isArray(tablas) ? tablas : [])
+      .map(codigoTablaParaMensaje)
+      .filter(Boolean))];
+    const fechaTexto = formatearFechaMensajeBingo(fecha);
+    const horaTexto = formatearHoraMensajeBingo(hora);
+    const enlaceTexto = String(enlace || '').trim();
+
+    return `🎱 LA TERRAZA BINGO 🎱
+
+¡Hola ${nombreMostrar}! 👋 Tu registro está confirmado. 🍀
+
+🎟️ TUS TABLAS:
+${listaTablas.map(codigo => `🔢 TABLA ${codigo}`).join('\n')}
+
+📅 Fecha: ${fechaTexto}
+⏰ Hora: ${horaTexto}
+
+👇👇 TOCA AQUÍ PARA VER TUS TABLAS Y ENTRAR A LA TRANSMISIÓN 👇👇
+🔗 ${enlaceTexto}
+
+📢 ¡IMPORTANTE! ÚNETE AL GRUPO OFICIAL DE WHATSAPP
+Allí publicamos la información del bingo y puedes escribirnos si tienes dudas. Para no perderte avisos importantes, entra ahora:
+
+👉 ÚNETE AL GRUPO AQUÍ:
+${LINK_GRUPO_WHATSAPP_BINGO}
+
+🍀 ¡Mucha suerte! ¡Que pronto cantes BINGO! 🎉`;
+  }
+
   async function consultarTablas(countryId='lookup-country', inputId='lookup-input'){
     const campoIndicativo = document.getElementById(countryId);
     const campoNumero = document.getElementById(inputId);
@@ -1258,25 +1332,13 @@
         config?.idBingo || 'BINGO001'
       );
 
-      ultimoLookupMensaje =
-        `🎱✨ *LA TERRAZA BINGO* ✨🎱
-
-` +
-        `Hola ${nombreMostrar}! 👋
-
-` +
-        `⬇️ *Ingresa al siguiente enlace para acceder a tus tablas digitales y a la transmisión en vivo:*
-
-` +
-        `🔗 ${ultimoLookupEnlace}
-
-` +
-        `📅 *Fecha del Bingo:* ${config?.fecha || ''}
-` +
-        `⏰ *Hora:* ${config?.hora || ''}
-
-` +
-        `🎟️ *Tablas:* ${tablasEncontradas.join(' | ')}`;
+      ultimoLookupMensaje = construirMensajeWhatsAppBingo({
+        nombre: nombreMostrar,
+        tablas: tablasEncontradas,
+        fecha: config?.fecha || '',
+        hora: config?.hora || '',
+        enlace: ultimoLookupEnlace
+      });
 
       document.getElementById('lookup-link-box').innerHTML =
         ``;
@@ -2871,18 +2933,13 @@ function startReservationTimer() {
         </div>
       `;
 
-      ultimoMensajeDigital = `🎱✨ *LA TERRAZA BINGO* ✨🎱
-
-Hola ${buyerName}! 👋
-
-🎟️ *Tablas:* ${tablasConsolidadas.join(' | ')}
-
-📅 *Fecha del Bingo:* ${config?.fecha || ''}
-⏰ *Hora:* ${config?.hora || ''}
-
-⬇️ *Ingresa al siguiente enlace para acceder a tus tablas digitales y a la transmisión en vivo:*
-
-🔗 ${ultimoEnlaceDigital}`;
+      ultimoMensajeDigital = construirMensajeWhatsAppBingo({
+        nombre: buyerName,
+        tablas: tablasConsolidadas,
+        fecha: config?.fecha || '',
+        hora: config?.hora || '',
+        enlace: ultimoEnlaceDigital
+      });
 
       document.getElementById('bingo-info-success').innerHTML = `📅 <b>Fecha del Bingo:</b> ${config?.fecha || '--'}<br>⏰ <b>Hora:</b> ${config?.hora || '--'}`;
       document.getElementById('digital-link-box').innerHTML = '';
