@@ -549,7 +549,7 @@
 }
 #btn-accept-whatsapp:active { transform:translateY(5px); box-shadow:0 2px 0 #075E54; }
 @keyframes acceptPulse { 50% { transform:scale(1.04); } }
-.phone-row{display:flex;gap:8px;align-items:center}.country-code{max-width:130px;font-weight:700}.phone-confirm{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:30000}.phone-confirm.active{display:flex}.phone-confirm-box{background:#fff;border-radius:18px;padding:25px;max-width:360px;width:90%;text-align:center}.phone-confirm-actions{display:flex;gap:10px;margin-top:18px}
+.phone-row{display:flex;gap:8px;align-items:center}.country-code{max-width:130px;font-weight:700}
 </style>
 
 <style>
@@ -847,7 +847,7 @@
 
         <div class="form-group" id="proof-group-container">
           <span class="proof-title">📸 COMPROBANTE DE PAGO — OBLIGATORIO</span>
-          <label class="proof-upload-label" for="proof-file">📤 SELECCIONAR COMPROBANTE
+          <label class="proof-upload-label" for="proof-file">📤 PRESIONA AQUÍ PARA SUBIR EL COMPROBANTE
             <input type="file" id="proof-file" accept="image/jpeg,image/png,.jpg,.jpeg,.png" required aria-describedby="proof-file-status">
           </label>
           <div id="proof-file-status" role="status" aria-live="polite">⚠️ Todavía no has adjuntado tu comprobante. Solo se aceptan imágenes JPG o PNG.</div>
@@ -3045,21 +3045,8 @@ Gracias por tu compra.`;
       return;
     }
 
-    const modal = document.getElementById('phone-confirm');
-    const text = document.getElementById('phone-confirm-text');
-    text.textContent = phone;
-    modal.classList.add('active');
-
-    document.getElementById('phone-edit').onclick = () => {
-      modal.classList.remove('active');
-      phoneInput.focus();
-      document.getElementById('btn-finish-order').disabled = false;
-    };
-
-    document.getElementById('phone-ok').onclick = async () => {
-      modal.classList.remove('active');
-      await finishOrder();
-    };
+    // Se conserva la validación del WhatsApp, pero se elimina la confirmación visual adicional.
+    await finishOrder();
 });
   
   document.querySelectorAll('.btn-restart-action').forEach(btn => {
@@ -3070,7 +3057,6 @@ Gracias por tu compra.`;
   listenTables();
 
 </script>
-<div id="phone-confirm" class="phone-confirm"><div class="phone-confirm-box"><h3>¿Tu número está correcto?</h3><p id="phone-confirm-text" style="font-size:1.2rem;font-weight:800;margin-top:12px"></p><div class="phone-confirm-actions"><button id="phone-edit" class="btn btn-danger">Editar</button><button id="phone-ok" class="btn btn-success">Confirmar registro</button></div></div></div>
 
 
 
