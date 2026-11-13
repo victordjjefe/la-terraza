@@ -120,15 +120,12 @@
                             <h2 class="text-3xl font-black text-slate-900 leading-tight">Gran Bingo Virtual Especial</h2>
                             <p class="text-indigo-700 font-extrabold text-xl">📅 25 de octubre &nbsp;|&nbsp; ⏰ 8:00 p.m.</p>
                             <div class="inline-block bg-amber-100 text-amber-900 font-black text-lg px-4 py-1 rounded-xl mt-1">
-                                💰 Valor por tabla: $3.000
+                                💰 Valor por tabla: <span id="client-price-display">$3.000</span>
                             </div>
                         </div>
 
-                        <!-- Nota de Asignación Aleatoria -->
-                        <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-xl">
-                            <p class="text-amber-900 text-base font-semibold leading-relaxed">
-                                📌 <strong>Información importante:</strong> Los números de las tablas se entregarán de forma aleatoria según la cantidad de tablas que escoja cada participante.
-                            </p>
+                        <div class="bg-indigo-50 border-l-4 border-indigo-500 p-4 rounded-r-xl">
+                            <p class="text-indigo-900 text-sm font-semibold leading-relaxed">📌 Primero sube tu comprobante de pago. Después podrás escoger directamente los números de tus tablas.</p>
                         </div>
 
                         <!-- Premios y Dinámica -->
@@ -169,79 +166,88 @@
                     </div>
                 </div>
 
-                <!-- Formulario de Registro -->
-                <div class="px-6 space-y-6">
-                    <div class="border-t border-slate-200 pt-4">
-                        <h3 class="text-2xl font-black text-slate-900 mb-2">📝 Registro de Tablas</h3>
-                        
-                        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-950 space-y-1">
-                            <p class="font-extrabold text-base">⚠️ Importante para tu compra:</p>
-                            <p class="leading-relaxed">Cada registro asigna las tablas a un solo nombre. Si compras tablas para un amigo o familiar, <strong>debes realizar un registro por separado a nombre de cada persona</strong> con el valor exacto de sus tablas.</p>
+                <!-- Compra en dos pasos: comprobante primero, selección y registro después -->
+                <div class="px-6 space-y-5">
+                    <div id="purchase-step-proof" class="space-y-5">
+                        <div class="border-t border-slate-200 pt-4 space-y-2">
+                            <h3 class="text-2xl font-black text-slate-900">1. Prepara tu compra</h3>
+                            <p class="text-sm text-slate-600">Selecciona cuántas tablas deseas, realiza el pago y sube la captura del comprobante. Después podrás escoger tus números.</p>
                         </div>
+                        <div class="rounded-2xl border-2 border-indigo-200 bg-indigo-50 p-4 space-y-3">
+                            <label for="tables-count" class="block text-base font-extrabold text-indigo-950">¿Cuántas tablas vas a comprar?</label>
+                            <div class="flex items-center gap-3">
+                                <button type="button" onclick="changeTableQuantity(-1)" class="h-12 w-12 rounded-xl bg-white border-2 border-indigo-200 text-2xl font-black text-indigo-800">−</button>
+                                <input type="number" id="tables-count" min="1" max="200" value="1" oninput="calculateTotal()" class="min-w-0 flex-1 text-center text-2xl font-black px-3 py-2 rounded-xl border-2 border-indigo-300" inputmode="numeric">
+                                <button type="button" onclick="changeTableQuantity(1)" class="h-12 w-12 rounded-xl bg-white border-2 border-indigo-200 text-2xl font-black text-indigo-800">+</button>
+                            </div>
+                            <div class="flex items-center justify-between border-t border-indigo-200 pt-3">
+                                <span class="font-bold text-indigo-950">Total a pagar</span>
+                                <span id="total-price-display" class="text-2xl font-black text-indigo-700">$3.000</span>
+                            </div>
+                            <p id="payment-exact-message" class="rounded-xl bg-amber-100 border border-amber-300 p-3 text-sm font-semibold text-amber-950">Tu comprobante debe ser exactamente por $3.000.</p>
+                        </div>
+
+                        <div class="bg-emerald-50 border-2 border-emerald-300 rounded-2xl p-5 space-y-3">
+                            <p class="font-black text-lg text-emerald-950">💳 Realiza tu pago</p>
+                            <p class="text-sm text-emerald-900">Envía el valor exacto al siguiente número de Nequi:</p>
+                            <div class="bg-white p-3 rounded-xl border border-emerald-300 flex items-center justify-between gap-2">
+                                <span id="nequi-number" class="text-emerald-950 font-black text-2xl tracking-wide">3234370590</span>
+                                <button type="button" onclick="copyNequiNumber()" id="copy-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm px-4 py-2.5 rounded-lg"> <span id="copy-btn-text">Copiar</span></button>
+                            </div>
+                            <p class="text-xs text-emerald-900">Toma una captura del pago y selecciónala aquí. El registro todavía no se guardará.</p>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="block text-base font-extrabold text-slate-800">Sube aquí tu comprobante de pago</label>
+                            <label for="receipt-file" class="flex flex-col items-center justify-center gap-2 w-full min-h-32 p-5 rounded-2xl border-2 border-dashed border-indigo-400 bg-indigo-50 hover:bg-indigo-100 cursor-pointer text-center">
+                                <span class="text-3xl">📤</span>
+                                <span class="font-black text-indigo-900">PRESIONA AQUÍ PARA SUBIR EL COMPROBANTE</span>
+                                <span class="text-xs text-indigo-700">Solo imágenes JPG o PNG</span>
+                            </label>
+                            <input type="file" id="receipt-file" accept="image/jpeg,image/png" class="hidden">
+                            <div id="receipt-upload-status" class="hidden rounded-xl p-3 text-sm font-semibold" role="status" aria-live="polite"></div>
+                            <img id="receipt-temporary-preview" class="hidden max-h-48 mx-auto rounded-xl border border-slate-200" alt="Vista previa temporal del comprobante">
+                        </div>
+                        <button type="button" id="continue-to-tables" onclick="continueToTables()" disabled class="w-full bg-slate-400 text-white font-black text-lg py-4 px-6 rounded-xl shadow-lg cursor-not-allowed">Primero sube tu comprobante</button>
                     </div>
 
-                    <form id="bingo-form" class="space-y-5" onsubmit="handleFormSubmit(event)">
-                        <div>
-                            <label class="block text-base font-extrabold text-slate-800 mb-1">Nombre Completo *</label>
-                            <input type="text" id="name" required onblur="validateNameField()" class="w-full px-4 py-3 rounded-xl border-2 border-slate-300 text-base font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Escribe tu nombre completo">
-                            <p id="name-error" class="hidden text-red-600 text-sm font-bold mt-2">⚠️ Te falta colocar el apellido. Escribe tu nombre y apellido.</p>
+                    <div id="purchase-step-details" class="hidden space-y-5">
+                        <div class="border-t border-slate-200 pt-4 space-y-2">
+                            <h3 class="text-2xl font-black text-slate-900">2. Tus datos y tus tablas</h3>
+                            <p class="text-sm text-slate-600">Comprobante recibido correctamente. Completa tus datos y selecciona exactamente las tablas que pagaste.</p>
+                            <div class="rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-sm font-bold text-emerald-900" id="proof-ready-summary">✅ Comprobante preparado correctamente.</div>
                         </div>
-
-                        <div>
-                            <label class="block text-base font-extrabold text-slate-800 mb-1">Barrio / Ciudad *</label>
-                            <input type="text" id="neighborhood" required class="w-full px-4 py-3 rounded-xl border-2 border-slate-300 text-base font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Ej: Las Américas, Cali">
-                        </div>
-
-                        <div>
-                            <label class="block text-base font-extrabold text-slate-800 mb-1">Número de WhatsApp (10 dígitos) *</label>
-                            <input type="tel" id="whatsapp" required maxlength="10" oninput="sanitizePhoneInput(this)" class="w-full px-4 py-3 rounded-xl border-2 border-slate-300 text-base font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Ej: 3001234567">
-                        </div>
-
-                        <div>
-                            <label class="block text-base font-extrabold text-slate-800 mb-1">Confirmar Número de WhatsApp *</label>
-                            <input type="tel" id="whatsapp-confirm" required maxlength="10" oninput="sanitizePhoneInput(this)" class="w-full px-4 py-3 rounded-xl border-2 border-slate-300 text-base font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Repite tu número de WhatsApp">
-                        </div>
-
-                        <div>
-                            <label class="block text-base font-extrabold text-slate-800 mb-1">¿Cuántas tablas desea? *</label>
-                            <input type="number" id="tables-count" min="1" value="1" required oninput="calculateTotal()" class="w-full px-4 py-3 rounded-xl border-2 border-slate-300 text-lg font-bold focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                        </div>
-
-                        <!-- Caja de Cálculo del Total a Pagar -->
-                        <div class="bg-indigo-50 border-2 border-indigo-300 rounded-2xl p-4 flex items-center justify-between">
-                            <span class="text-indigo-950 font-extrabold text-base">Total a Pagar:</span>
-                            <span id="total-price-display" class="text-indigo-700 font-black text-2xl">$3.000</span>
-                        </div>
-
-                        <!-- Información de Pago Nequi -->
-                        <div class="bg-emerald-50 border-2 border-emerald-300 rounded-2xl p-5 space-y-4 shadow-sm">
-                            <div class="space-y-2">
-                                <p class="font-black text-lg text-emerald-950">💳 Información de Pago</p>
-                                <p class="text-base text-emerald-900 font-medium">Por favor realiza el pago al Nequi:</p>
-                                <div class="bg-white p-3 rounded-xl border border-emerald-300 flex items-center justify-between">
-                                    <span id="nequi-number" class="text-emerald-950 font-black text-2xl tracking-wide">3234370590</span>
-                                    <button type="button" onclick="copyNequiNumber()" id="copy-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm px-4 py-2.5 rounded-lg transition shadow flex items-center space-x-1">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                        </svg>
-                                        <span id="copy-btn-text">Copiar</span>
-                                    </button>
-                                </div>
+                        <form id="bingo-form" class="space-y-4" onsubmit="handleFormSubmit(event)">
+                            <div>
+                                <label class="block text-sm font-extrabold text-slate-800 mb-1">Nombre completo *</label>
+                                <input type="text" id="name" required onblur="validateNameField()" class="w-full px-4 py-3 rounded-xl border-2 border-slate-300 text-base font-medium" placeholder="Nombre y apellido">
+                                <p id="name-error" class="hidden text-red-600 text-sm font-bold mt-2">Escribe tu nombre y apellido.</p>
                             </div>
-                            <p class="text-sm text-emerald-900 font-semibold border-t border-emerald-200/80 pt-3 leading-relaxed">
-                                ⚠️ Toma una captura de pantalla al pago realizado y súbela en el botón de abajo. <strong>Si no realiza el pago y adjunta el comprobante, no podrá completar el registro de sus tablas.</strong>
-                            </p>
-                        </div>
-
-                        <div>
-                            <label class="block text-base font-extrabold text-slate-800 mb-1">Comprobante de Pago (Obligatorio) *</label>
-                            <input type="file" id="receipt-file" accept="image/*" required class="w-full text-base text-slate-600 file:mr-4 file:py-3 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-indigo-100 file:text-indigo-800 hover:file:bg-indigo-200 cursor-pointer border-2 border-slate-300 rounded-xl">
-                        </div>
-
-                        <button type="submit" id="submit-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-lg py-4 px-6 rounded-xl transition shadow-lg cursor-pointer">
-                            Enviar Registro y Comprobante
-                        </button>
-                    </form>
+                            <div>
+                                <label class="block text-sm font-extrabold text-slate-800 mb-1">Barrio / Ciudad *</label>
+                                <input type="text" id="neighborhood" required class="w-full px-4 py-3 rounded-xl border-2 border-slate-300 text-base" placeholder="Ej.: Las Américas, Cali">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-extrabold text-slate-800 mb-1">WhatsApp (10 dígitos) *</label>
+                                <input type="tel" id="whatsapp" required maxlength="10" oninput="sanitizePhoneInput(this)" class="w-full px-4 py-3 rounded-xl border-2 border-slate-300 text-base" placeholder="3001234567" inputmode="numeric">
+                            </div>
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between gap-2">
+                                    <h4 class="font-black text-slate-900">3. Escoge tus tablas</h4>
+                                    <span id="table-selection-counter" class="rounded-full bg-indigo-100 text-indigo-900 px-3 py-1 text-xs font-black">0 de 1</span>
+                                </div>
+                                <p class="text-xs text-slate-600">Las tablas ocupadas aparecen bloqueadas. Debes seleccionar exactamente la cantidad que pagaste.</p>
+                                <div id="client-table-grid" class="grid grid-cols-4 sm:grid-cols-5 gap-2 max-h-80 overflow-y-auto p-2 rounded-xl border border-slate-200 bg-slate-50"></div>
+                                <p id="table-selection-message" class="text-sm font-bold text-amber-800" aria-live="polite">Te falta seleccionar 1 tabla.</p>
+                            </div>
+                            <div class="rounded-xl bg-indigo-50 border border-indigo-200 p-3 flex justify-between items-center">
+                                <span class="font-bold text-indigo-950">Total pagado declarado</span>
+                                <strong id="final-total-display" class="text-xl text-indigo-800">$3.000</strong>
+                            </div>
+                            <button type="submit" id="submit-btn" disabled class="w-full bg-slate-400 text-white font-black text-lg py-4 px-6 rounded-xl shadow-lg">Selecciona tus tablas para continuar</button>
+                            <button type="button" onclick="backToProofStep()" class="w-full bg-slate-100 text-slate-700 font-bold py-3 rounded-xl">Volver al comprobante</button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </section>
@@ -291,44 +297,32 @@
                     <p id="record-search-count" class="text-sm font-bold text-indigo-800" aria-live="polite"></p>
                 </div>
 
-                <!-- Gestión de tablas del bingo especial: independiente de los otros sistemas -->
-                <div class="mb-6 rounded-2xl border-2 border-indigo-200 bg-indigo-50 p-5 space-y-5">
+                <!-- Configuración de selección pública y sincronización contable -->
+                <div class="mb-6 rounded-2xl border-2 border-indigo-200 bg-indigo-50 p-5 space-y-4">
                     <div>
-                        <h4 class="text-xl font-black text-indigo-950">🎟️ Asignación de tablas</h4>
-                        <p class="text-sm text-indigo-900 mt-1">Las asignaciones se guardan en Firebase. La asignación aleatoria solo trabaja con participantes pendientes y nunca cambia tablas ya asignadas.</p>
-                    </div>
-                    <p class="text-sm text-indigo-900">Elige el rango para las próximas asignaciones. Puedes cambiarlo cuando necesites ampliar o reducir el rango; las tablas ya asignadas se conservarán y no se volverán a sortear.</p>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                        <div><label for="range-start" class="block text-sm font-bold text-slate-700 mb-1">Asignar desde la tabla n.º</label><input id="range-start" type="number" min="1" max="5000" value="1" class="w-full px-3 py-2 rounded-lg border-2 border-slate-300"></div>
-                        <div><label for="range-end" class="block text-sm font-bold text-slate-700 mb-1">Asignar hasta la tabla n.º</label><input id="range-end" type="number" min="1" max="5000" value="200" class="w-full px-3 py-2 rounded-lg border-2 border-slate-300"></div>
-                        <div class="sm:col-span-2 flex items-end"><p class="text-sm text-slate-600">El rango se guardará junto con los datos del evento.</p></div>
+                        <h4 class="text-xl font-black text-indigo-950">⚙️ Configuración de tablas</h4>
+                        <p class="text-sm text-indigo-900 mt-1">Los participantes escogen sus propios números. Ya no se realizan asignaciones aleatorias ni manuales desde este panel.</p>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div><label for="range-start" class="block text-sm font-bold text-slate-700 mb-1">Primera tabla</label><input id="range-start" type="number" min="1" max="5000" value="1" class="w-full px-3 py-2 rounded-lg border-2 border-slate-300"></div>
+                        <div><label for="range-end" class="block text-sm font-bold text-slate-700 mb-1">Última tabla</label><input id="range-end" type="number" min="1" max="5000" value="200" class="w-full px-3 py-2 rounded-lg border-2 border-slate-300"></div>
+                        <div><label for="event-value" class="block text-sm font-bold text-slate-700 mb-1">Valor por tabla ($)</label><input id="event-value" type="number" min="1" value="3000" class="w-full px-3 py-2 rounded-lg border-2 border-slate-300"></div>
+                        <div><label for="event-youtube" class="block text-sm font-bold text-slate-700 mb-1">Enlace de transmisión</label><input id="event-youtube" type="url" placeholder="https://youtube.com/live/..." class="w-full px-3 py-2 rounded-lg border-2 border-slate-300"></div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div><label for="event-date" class="block text-sm font-bold text-slate-700 mb-1">Fecha del bingo</label><input id="event-date" type="date" value="2026-10-25" class="w-full px-3 py-2 rounded-lg border-2 border-slate-300"></div>
                         <div><label for="event-time" class="block text-sm font-bold text-slate-700 mb-1">Hora</label><input id="event-time" type="time" value="20:00" class="w-full px-3 py-2 rounded-lg border-2 border-slate-300"></div>
-                        <div><label for="event-value" class="block text-sm font-bold text-slate-700 mb-1">Valor por tabla ($)</label><input id="event-value" type="number" min="0" value="3000" class="w-full px-3 py-2 rounded-lg border-2 border-slate-300"></div>
-                        <div><label for="event-youtube" class="block text-sm font-bold text-slate-700 mb-1">Enlace de transmisión YouTube</label><input id="event-youtube" type="url" placeholder="https://youtube.com/live/..." class="w-full px-3 py-2 rounded-lg border-2 border-slate-300"></div>
                     </div>
                     <div class="rounded-xl border-2 border-amber-300 bg-amber-50 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                        <div>
-                            <h4 class="font-black text-amber-950">🔒 Control de inscripciones</h4>
-                            <p id="registration-status-description" class="text-sm text-amber-900">Estado: sincronizando...</p>
-                            <p class="text-xs text-amber-900 mt-1">Al bloquear, la página pública mostrará “El tiempo de registro pasó” y no permitirá enviar nuevos registros.</p>
-                        </div>
-                        <label class="inline-flex items-center gap-3 font-bold text-amber-950 cursor-pointer">
-                            <input id="registration-closed-toggle" type="checkbox" class="h-6 w-6 accent-red-600" onchange="setRegistrationClosed(this.checked)">
-                            <span>Bloquear inscripciones</span>
-                        </label>
+                        <div><h4 class="font-black text-amber-950">🔒 Control de inscripciones</h4><p id="registration-status-description" class="text-sm text-amber-900">Estado: sincronizando...</p></div>
+                        <label class="inline-flex items-center gap-3 font-bold text-amber-950 cursor-pointer"><input id="registration-closed-toggle" type="checkbox" class="h-6 w-6 accent-red-600" onchange="setRegistrationClosed(this.checked)"><span>Bloquear inscripciones</span></label>
                     </div>
                     <div class="flex flex-col sm:flex-row gap-3">
                         <button type="button" onclick="saveAllSettings()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2.5 rounded-lg">💾 Guardar configuración</button>
-                        <button type="button" onclick="assignRandomToPending()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-4 py-2.5 rounded-lg">🎲 Asignar aleatoriamente</button>
-                        <button type="button" onclick="exportForAccounting()" class="bg-amber-600 hover:bg-amber-700 text-white font-black px-4 py-2.5 rounded-lg">⬇️ Exportar archivo</button>
-                        <button type="button" onclick="unassignAllParticipantsTables()" class="bg-red-700 hover:bg-red-800 text-white font-black px-4 py-2.5 rounded-lg">🧹 Desasignar todas las tablas de todos</button>
+                        <button type="button" onclick="exportForAccounting()" class="bg-amber-600 hover:bg-amber-700 text-white font-black px-4 py-2.5 rounded-lg">⬇️ Exportar archivo contable</button>
                         <button id="btn-confirm-accounting-import" type="button" onclick="confirmAccountingImport()" class="hidden bg-teal-700 hover:bg-teal-800 text-white font-black px-5 py-3 rounded-lg">✅ Confirmar importación</button>
                     </div>
                     <div id="assignment-summary" class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center"></div>
-                    <p class="text-xs text-slate-600">Primero guarda la configuración, asigna las tablas y exporta el archivo. Después de importarlo correctamente, confirma la importación cuando aparezca el botón. Las tablas confirmadas quedan protegidas. Todas se registran como pagadas por <strong>CONSIGNACIÓN</strong>.</p>
                 </div>
 
                 <!-- Listados para sorteo y comunicación de asignaciones -->
@@ -336,8 +330,8 @@
                     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
                         <div>
                             <h4 class="text-base font-extrabold text-slate-800">📋 Listados de participantes</h4>
-                            <p id="copy-lists-count" class="text-sm text-slate-600 mt-1">Participantes con tablas asignadas: 0</p>
-                            <p class="text-xs text-slate-500">El listado para la ruleta copia únicamente los nombres. El listado completo incluye consecutivo, nombre y tablas asignadas.</p>
+                            <p id="copy-lists-count" class="text-sm text-slate-600 mt-1">Participantes con tablas seleccionadas: 0</p>
+                            <p class="text-xs text-slate-500">El listado para la ruleta copia únicamente los nombres. El listado completo incluye consecutivo, nombre y tablas seleccionadas.</p>
                         </div>
                         <div class="flex flex-col sm:flex-row gap-2">
                             <button type="button" onclick="copyRouletteNames()" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-4 py-2.5 rounded-lg">🎡 Copiar solo nombres para ruleta</button>
@@ -382,8 +376,8 @@
         <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center space-y-6">
             <div class="w-16 h-16 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center mx-auto text-2xl font-bold animate-pulse">📤</div>
             <div>
-                <h3 class="text-2xl font-black text-slate-900">Enviando Registro</h3>
-                <p class="text-sm text-slate-500 mt-1">Procesando el comprobante y guardando el registro. No cierres esta ventana...</p>
+                <h3 class="text-2xl font-black text-slate-900">Confirmando tu registro</h3>
+                <p class="text-sm text-slate-500 mt-1">Verificando disponibilidad y guardando tus tablas. No cierres esta ventana...</p>
             </div>
             
             <!-- Barra de Progreso -->
@@ -406,7 +400,7 @@
                     ¡Gracias por participar en <strong>La Terraza Bingo</strong>! ❤️
                 </p>
                 <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 text-indigo-950 font-semibold text-sm">
-                    📱 Antes del bingo se te enviarán las tablas seleccionadas directamente a tu número de WhatsApp.
+                    🎟️ Tus tablas quedaron registradas. Próximamente podrás consultar aquí mismo tus números y el enlace del bingo.
                 </div>
             </div>
             <button onclick="closeSuccessModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black text-lg py-3.5 px-6 rounded-xl transition shadow-lg cursor-pointer">
@@ -487,19 +481,6 @@
         </div>
     </div>
 
-    <!-- Modal de asignación manual y desasignación individual -->
-    <div id="assignment-modal" class="fixed inset-0 bg-slate-950/80 hidden items-center justify-center p-3 sm:p-6 z-[80]">
-      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[94vh] overflow-hidden flex flex-col">
-        <div class="p-4 sm:p-6 border-b flex items-start justify-between gap-3"><div><h3 id="assignment-modal-title" class="text-xl sm:text-2xl font-black text-slate-900">Asignar tablas</h3><p id="assignment-modal-subtitle" class="text-sm text-slate-600 mt-1"></p></div><button type="button" onclick="closeAssignmentModal()" class="bg-slate-200 px-4 py-2 rounded-lg font-bold">Cerrar ✕</button></div>
-        <div class="p-4 sm:p-6 overflow-y-auto space-y-4">
-          <div class="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between"><p id="assignment-selection-count" class="font-bold text-indigo-900">Seleccionadas: 0</p><div class="flex gap-2"><button type="button" onclick="clearAssignmentSelection()" class="px-3 py-2 rounded-lg bg-slate-200 font-bold">Limpiar selección</button><button type="button" onclick="unassignAllForCurrent()" class="px-3 py-2 rounded-lg bg-red-100 text-red-800 font-bold">Desasignar todas</button></div></div>
-          <p class="text-sm text-slate-600">Pulsa las tablas para seleccionarlas o quitarlas. Las ocupadas por otras personas aparecen bloqueadas. Para guardar, selecciona exactamente la cantidad solicitada; si estás editando una asignación parcial, puedes guardar una cantidad menor.</p>
-          <div id="assignment-table-grid" class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-2"></div>
-        </div>
-        <div class="p-4 sm:p-6 border-t bg-slate-50 flex flex-col sm:flex-row gap-3 sm:justify-end"><button type="button" onclick="closeAssignmentModal()" class="px-5 py-3 rounded-lg bg-slate-200 font-bold">Cancelar</button><button type="button" onclick="saveManualAssignment()" class="px-5 py-3 rounded-lg bg-indigo-700 hover:bg-indigo-800 text-white font-black">Guardar asignación</button></div>
-      </div>
-    </div>
-
     <footer class="bg-white border-t border-slate-300 py-6 text-center text-sm font-medium text-slate-600 mt-12">
         La Terraza Bingo &copy; 2026 - Todos los derechos reservados.
     </footer>
@@ -528,7 +509,16 @@ let registrationClosed = false;
 let registrationStatusReady = false;
 let localRecords = [];
 let isSubmitting = false;
-const PRICE_PER_TABLE = 3000;
+let PRICE_PER_TABLE = 3000;
+const inventoryCollection = db.collection('disponibilidadTablas');
+const tableConfigRef = db.collection('configuracion').doc('parametrosTablas');
+let publicTableStart = 1;
+let publicTableEnd = 200;
+let pendingReceiptDataUrl = null;
+let pendingReceiptFileName = '';
+let selectedClientTables = new Set();
+let cachedOccupiedTables = {};
+let requestedTableCount = 1;
 
 function applyRegistrationStatus() {
   const message = document.getElementById('registration-closed-message');
@@ -617,15 +607,33 @@ async function saveEditRecord(){
   const tables = parseInt(document.getElementById('edit-tables').value,10);
   if (!record || name.split(/\s+/).filter(Boolean).length < 2) { alert('Debe colocar nombre y apellido.'); return; }
   if (whatsapp.length !== 10 || !Number.isInteger(tables) || tables < 1) { alert('Verifica WhatsApp y cantidad de tablas.'); return; }
+  const assignedNow = getAssigned(record);
+  if (tables !== assignedNow.length && assignedNow.length) { alert(`Este participante ya tiene ${assignedNow.length} tabla(s) asignada(s). Para evitar inconsistencias, la cantidad debe coincidir con sus tablas.`); return; }
   await recordsCollection.doc(record.id).update({name, whatsapp, tablesCount: tables, totalPrice: tables * PRICE_PER_TABLE});
   record.name=name; record.whatsapp=whatsapp; record.tablesCount=tables; record.totalPrice=tables*PRICE_PER_TABLE;
   closeEditModal(); renderAdminTable();
 }
 
 function calculateTotal() {
-  const count = parseInt(document.getElementById('tables-count').value) || 0;
-  document.getElementById('total-price-display').innerText =
-    '$' + (count * PRICE_PER_TABLE).toLocaleString('es-CO');
+  const input = document.getElementById('tables-count');
+  const count = Math.max(1, Math.min(5000, parseInt(input?.value, 10) || 1));
+  if (input) input.value = count;
+  requestedTableCount = count;
+  const total = count * PRICE_PER_TABLE;
+  const formatted = '$' + total.toLocaleString('es-CO');
+  const totalEl = document.getElementById('total-price-display');
+  const exactEl = document.getElementById('payment-exact-message');
+  const finalEl = document.getElementById('final-total-display');
+  const priceEl = document.getElementById('client-price-display');
+  if (totalEl) totalEl.textContent = formatted;
+  if (finalEl) finalEl.textContent = formatted;
+  if (exactEl) exactEl.textContent = `Tu comprobante debe ser exactamente por ${formatted}.`;
+  if (priceEl) priceEl.textContent = '$' + PRICE_PER_TABLE.toLocaleString('es-CO');
+}
+function changeTableQuantity(delta) {
+  const input = document.getElementById('tables-count');
+  input.value = Math.max(1, Math.min(5000, (parseInt(input.value, 10) || 1) + delta));
+  calculateTotal();
 }
 
 function showModal(id) {
@@ -732,7 +740,18 @@ async function deleteSingleRecord(index) {
   if (!confirm(`¿Eliminar el registro de ${record.name}?${assigned.length ? `\n\nSe liberarán ${assigned.length} tabla(s): ${assigned.join(', ')}.` : ''}${historyWarning}\n\nEsta acción no se puede deshacer.`)) return;
 
   try {
-    await recordsCollection.doc(record.id).delete();
+    const assignedCodes = getAssigned(record);
+    const shardIds = [...new Set(assignedCodes.map(tableShardId))];
+    await db.runTransaction(async transaction => {
+      const snapshots = await Promise.all(shardIds.map(id => transaction.get(tableShardRef(id))));
+      snapshots.forEach((snap, index) => {
+        const id = shardIds[index];
+        const occupied = snap.exists ? (snap.data().occupied || {}) : {};
+        assignedCodes.filter(code => tableShardId(code) === id).forEach(code => { if (occupied[code]?.recordId === record.id) delete occupied[code]; });
+        transaction.set(tableShardRef(id), { occupied, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
+      });
+      transaction.delete(recordsCollection.doc(record.id));
+    });
     localRecords.splice(index, 1);
     renderAdminTable();
     updateMoneyCounter();
@@ -829,100 +848,265 @@ function compressReceipt(file) {
   });
 }
 
-async function handleFormSubmit(e) {
-  e.preventDefault();
+function tableShardId(code) {
+  const n = tableNumber(code);
+  return 'lote_' + String(Math.floor((n - 1) / 10)).padStart(3, '0');
+}
+function tableShardRef(shardId) { return inventoryCollection.doc(shardId); }
+async function loadOccupiedTableCache() {
+  const shardIds = new Set();
+  for (let n=publicTableStart; n<=publicTableEnd; n++) shardIds.add(tableShardId(normalizeTableCode(n)));
+  const ids = [...shardIds];
+  const snapshots = await Promise.all(ids.map(id => tableShardRef(id).get()));
+  const occupied = {};
+  snapshots.forEach(snap => {
+    if (snap.exists) Object.assign(occupied, snap.data().occupied || {});
+  });
+  cachedOccupiedTables = occupied;
+}
+
+async function loadPublicTableConfig() {
   try {
-    if (await isRegistrationClosedOnServer()) {
-      registrationClosed = true;
-      applyRegistrationStatus();
-      alert('El tiempo de registro pasó. Ya no se reciben nuevos registros.');
-      return;
+    const snap = await tableConfigRef.get();
+    if (snap.exists) {
+      const cfg = snap.data() || {};
+      publicTableStart = Math.max(1, Number(cfg.rangeStart) || 1);
+      publicTableEnd = Math.max(publicTableStart, Number(cfg.rangeEnd) || 200);
+      PRICE_PER_TABLE = Math.max(1, Number(cfg.pricePerTable) || 3000);
+      if (cfg.nequiNumber) document.getElementById('nequi-number').textContent = cfg.nequiNumber;
+      const rs=document.getElementById('range-start'); if (rs) rs.value=publicTableStart;
+      const re=document.getElementById('range-end'); if (re) re.value=publicTableEnd;
+      const ev=document.getElementById('event-value'); if (ev) ev.value=PRICE_PER_TABLE;
+      if (cfg.date) { const d=document.getElementById('event-date'); if (d) d.value=cfg.date; }
+      if (cfg.time) { const t=document.getElementById('event-time'); if (t) t.value=cfg.time; }
+      if (cfg.youtube) { const y=document.getElementById('event-youtube'); if (y) y.value=cfg.youtube; }
+      tableRangeStart=publicTableStart; tableRangeEnd=publicTableEnd;
+      eventSettings={...eventSettings,date:cfg.date||eventSettings.date,time:cfg.time||eventSettings.time,value:PRICE_PER_TABLE,youtube:cfg.youtube||eventSettings.youtube};
     }
-  } catch (statusError) {
-    console.error('No se pudo verificar el estado de inscripciones:', statusError);
-    alert('No se pudo verificar si el registro está habilitado. Inténtalo nuevamente.');
+    calculateTotal();
+  } catch (error) {
+    console.error('No se pudo cargar la configuración pública:', error);
+    // Se mantienen los valores iniciales visibles, pero la compra final se validará con la configuración guardada.
+  }
+}
+
+function setReceiptUploadStatus(message, ok=false) {
+  const box = document.getElementById('receipt-upload-status');
+  if (!box) return;
+  box.classList.remove('hidden','bg-emerald-50','border','border-emerald-300','text-emerald-900','bg-red-50','border-red-300','text-red-800','bg-amber-50','border-amber-300','text-amber-900');
+  box.classList.add('border', 'rounded-xl', 'p-3', 'text-sm', 'font-semibold');
+  box.classList.add(ok ? 'bg-emerald-50' : 'bg-red-50', ok ? 'border-emerald-300' : 'border-red-300', ok ? 'text-emerald-900' : 'text-red-800');
+  box.textContent = message;
+}
+
+document.getElementById('receipt-file').addEventListener('change', async function(event) {
+  const file = event.target.files?.[0];
+  const continueButton = document.getElementById('continue-to-tables');
+  pendingReceiptDataUrl = null;
+  pendingReceiptFileName = '';
+  continueButton.disabled = true;
+  continueButton.textContent = 'Validando comprobante...';
+  continueButton.className = 'w-full bg-slate-400 text-white font-black text-lg py-4 px-6 rounded-xl shadow-lg cursor-not-allowed';
+  document.getElementById('receipt-temporary-preview').classList.add('hidden');
+  if (!file) {
+    setReceiptUploadStatus('Selecciona una captura JPG o PNG.');
+    continueButton.textContent = 'Primero sube tu comprobante';
     return;
   }
-  // Bloqueo inmediato contra envíos repetidos mientras se procesa el mismo formulario.
+  if (!['image/jpeg','image/png'].includes(file.type)) {
+    event.target.value = '';
+    setReceiptUploadStatus('Formato no permitido. Selecciona una imagen JPG o PNG.');
+    continueButton.textContent = 'Primero sube tu comprobante';
+    return;
+  }
+  try {
+    const compressed = await compressReceipt(file);
+    if (event.target.files?.[0] !== file) return;
+    const preview = document.getElementById('receipt-temporary-preview');
+    preview.src = compressed;
+    preview.classList.remove('hidden');
+    pendingReceiptDataUrl = compressed;
+    pendingReceiptFileName = file.name || 'comprobante.jpg';
+    setReceiptUploadStatus('✅ Comprobante recibido y preparado correctamente. Aún no se ha guardado ningún registro.', true);
+    continueButton.disabled = false;
+    continueButton.textContent = 'Continuar para registrar mis tablas';
+    continueButton.className = 'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-lg py-4 px-6 rounded-xl shadow-lg';
+  } catch (error) {
+    console.error(error);
+    event.target.value = '';
+    setReceiptUploadStatus(error.message || 'No se pudo leer el comprobante. Intenta con otra captura.');
+    continueButton.textContent = 'Primero sube tu comprobante';
+  }
+});
+
+async function continueToTables() {
+  if (!pendingReceiptDataUrl) { alert('Primero sube un comprobante válido.'); return; }
+  if (await isRegistrationClosedOnServer()) {
+    registrationClosed = true; applyRegistrationStatus();
+    alert('El tiempo de registro pasó. Ya no se reciben nuevos registros.'); return;
+  }
+  requestedTableCount = Math.max(1, parseInt(document.getElementById('tables-count').value, 10) || 1);
+  selectedClientTables = new Set();
+  try {
+    await loadOccupiedTableCache();
+    renderClientTableGrid();
+    document.getElementById('proof-ready-summary').textContent = `✅ Comprobante preparado. Debes seleccionar exactamente ${requestedTableCount} tabla(s). Total: $${(requestedTableCount * PRICE_PER_TABLE).toLocaleString('es-CO')}.`;
+    document.getElementById('purchase-step-proof').classList.add('hidden');
+    document.getElementById('purchase-step-details').classList.remove('hidden');
+    document.getElementById('name').focus();
+  } catch (error) {
+    console.error(error);
+    alert('No se pudo cargar la disponibilidad de tablas. No has perdido el comprobante; intenta continuar nuevamente.');
+  }
+}
+
+function backToProofStep() {
+  document.getElementById('purchase-step-details').classList.add('hidden');
+  document.getElementById('purchase-step-proof').classList.remove('hidden');
+}
+
+function renderClientTableGrid() {
+  const grid = document.getElementById('client-table-grid');
+  if (!grid) return;
+  const codes = [];
+  for (let n=publicTableStart; n<=publicTableEnd; n++) codes.push(normalizeTableCode(n));
+  grid.innerHTML = codes.map(code => {
+    const occupied = Boolean(cachedOccupiedTables[code]);
+    const selected = selectedClientTables.has(code);
+    const cls = occupied ? 'bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed' : selected ? 'bg-indigo-700 text-white border-indigo-900' : 'bg-white text-slate-800 border-slate-300 hover:bg-indigo-50 hover:border-indigo-500';
+    return `<button type="button" ${occupied?'disabled':''} onclick="toggleClientTable('${code}')" class="border-2 rounded-lg py-3 px-1 text-sm font-black ${cls}" title="${occupied?'Tabla ocupada':selected?'Seleccionada':'Disponible'}">${code}${occupied?' 🔒':selected?' ✓':''}</button>`;
+  }).join('');
+  updateClientSelectionStatus();
+}
+
+function toggleClientTable(code) {
+  if (cachedOccupiedTables[code]) return;
+  if (selectedClientTables.has(code)) selectedClientTables.delete(code);
+  else {
+    if (selectedClientTables.size >= requestedTableCount) {
+      document.getElementById('table-selection-message').textContent = `Ya seleccionaste las ${requestedTableCount} tablas pagadas. No puedes elegir más.`;
+      return;
+    }
+    selectedClientTables.add(code);
+  }
+  renderClientTableGrid();
+}
+
+function updateClientSelectionStatus() {
+  const count = selectedClientTables.size;
+  const counter = document.getElementById('table-selection-counter');
+  const message = document.getElementById('table-selection-message');
+  const button = document.getElementById('submit-btn');
+  if (counter) counter.textContent = `${count} de ${requestedTableCount}`;
+  if (count < requestedTableCount) {
+    const missing = requestedTableCount - count;
+    message.textContent = `Te ${missing === 1 ? 'falta' : 'faltan'} ${missing} tabla(s) por seleccionar.`;
+    message.className = 'text-sm font-bold text-amber-800';
+    button.disabled = true;
+    button.textContent = `Te faltan ${missing} tabla(s)`;
+    button.className = 'w-full bg-slate-400 text-white font-black text-lg py-4 px-6 rounded-xl shadow-lg';
+  } else {
+    message.textContent = `✅ Seleccionaste exactamente ${requestedTableCount} tabla(s). Ya puedes confirmar tu registro.`;
+    message.className = 'text-sm font-bold text-emerald-800';
+    button.disabled = false;
+    button.textContent = 'CONFIRMAR MI REGISTRO';
+    button.className = 'w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black text-lg py-4 px-6 rounded-xl shadow-lg';
+  }
+}
+
+async function handleFormSubmit(e) {
+  e.preventDefault();
   if (isSubmitting) return;
+  if (!pendingReceiptDataUrl) { alert('El comprobante no está disponible. Vuelve al primer paso y súbelo nuevamente.'); backToProofStep(); return; }
+  if (selectedClientTables.size !== requestedTableCount) { updateClientSelectionStatus(); return; }
+  if (await isRegistrationClosedOnServer()) { registrationClosed = true; applyRegistrationStatus(); alert('El tiempo de registro pasó.'); return; }
+
   const name = document.getElementById('name').value.trim();
   const neighborhood = document.getElementById('neighborhood').value.trim();
   const whatsapp = document.getElementById('whatsapp').value.trim();
-  const whatsappConfirm = document.getElementById('whatsapp-confirm').value.trim();
-  const tablesCount = parseInt(document.getElementById('tables-count').value, 10);
-  const file = document.getElementById('receipt-file').files[0];
-
-  if (!validateNameField()) {
-    alert('Debes colocar el nombre completo con nombre y apellido.');
-    return;
-  }
-
-  if (whatsapp.length !== 10) {
-    alert("El número de WhatsApp debe contener exactamente 10 dígitos (sin prefijo +57).");
-    return;
-  }
-  if (whatsapp !== whatsappConfirm) {
-    alert("Los números de WhatsApp no coinciden.");
-    return;
-  }
-  if (!Number.isInteger(tablesCount) || tablesCount < 1) {
-    alert("La cantidad de tablas debe ser al menos 1.");
-    return;
-  }
-  if (!file) {
-    alert("Debes adjuntar el comprobante de pago.");
-    return;
-  }
+  if (!validateNameField()) { alert('Debes colocar nombre y apellido.'); return; }
+  if (whatsapp.length !== 10) { alert('El WhatsApp debe contener exactamente 10 dígitos.'); return; }
 
   isSubmitting = true;
-  setSubmitBusy(true);
-  const loadingModal = document.getElementById('loading-modal');
-  const progressBar = document.getElementById('progress-bar');
-  const progressPercent = document.getElementById('progress-percent');
+  const button = document.getElementById('submit-btn');
+  button.disabled = true; button.textContent = 'Confirmando tablas...';
   showModal('loading-modal');
-  progressBar.style.width = '10%';
-  progressPercent.innerText = '10%';
+  document.getElementById('progress-bar').style.width = '25%';
+  document.getElementById('progress-percent').textContent = '25%';
 
+  const selectedCodes = [...selectedClientTables].sort((a,b)=>tableNumber(a)-tableNumber(b));
+  const recordRef = recordsCollection.doc();
   try {
-    progressBar.style.width = '25%';
-    progressPercent.innerText = '25%';
-    const receiptUrl = await compressReceipt(file);
+    if (selectedCodes.length !== requestedTableCount) throw new Error('La cantidad seleccionada no coincide con la cantidad pagada.');
 
-    progressBar.style.width = '65%';
-    progressPercent.innerText = '65%';
+    document.getElementById('progress-bar').style.width = '55%';
+    document.getElementById('progress-percent').textContent = '55%';
     const now = new Date();
-    const record = {
-      date: now.toLocaleString('es-CO'),
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      name,
-      neighborhood,
-      whatsapp,
-      tablesCount,
-      totalPrice: tablesCount * PRICE_PER_TABLE,
-      receiptUrl,
-      receiptType: 'image/jpeg',
-      processed: false
-    };
+    await db.runTransaction(async transaction => {
+      const configSnap = await transaction.get(tableConfigRef);
+      const shardIds = [...new Set(selectedCodes.map(tableShardId))];
+      const shardSnaps = await Promise.all(shardIds.map(id => transaction.get(tableShardRef(id))));
+      const cfg = configSnap.exists ? configSnap.data() : {};
+      const livePrice = Math.max(1, Number(cfg.pricePerTable) || PRICE_PER_TABLE);
+      const liveStart = Math.max(1, Number(cfg.rangeStart) || 1);
+      const liveEnd = Math.max(liveStart, Number(cfg.rangeEnd) || publicTableEnd);
+      if (selectedCodes.some(code => tableNumber(code) < liveStart || tableNumber(code) > liveEnd)) {
+        throw new Error('El rango de tablas cambió. Regresa y actualiza tu selección.');
+      }
+      const occupiedByShard = {};
+      shardSnaps.forEach((snap, index) => { occupiedByShard[shardIds[index]] = snap.exists ? (snap.data().occupied || {}) : {}; });
+      const conflicts = selectedCodes.filter(code => occupiedByShard[tableShardId(code)]?.[code]);
+      if (conflicts.length) throw new Error(`Estas tablas acaban de ser seleccionadas por otra persona: ${conflicts.join(', ')}. Tus datos y comprobante siguen en esta pantalla. Actualiza la disponibilidad y elige otras.`);
+      const nextByShard = {};
+      shardIds.forEach(id => { nextByShard[id] = { ...(occupiedByShard[id] || {}) }; });
+      selectedCodes.forEach(code => { nextByShard[tableShardId(code)][code] = { recordId: recordRef.id, name, whatsapp, assignedAt: Date.now() }; });
+      const record = {
+        date: now.toLocaleString('es-CO'),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        name, neighborhood, whatsapp,
+        tablesCount: selectedCodes.length,
+        tablesAssigned: selectedCodes,
+        totalPrice: selectedCodes.length * livePrice,
+        receiptUrl: pendingReceiptDataUrl,
+        receiptType: 'image/jpeg',
+        processed: false,
+        assignmentMethod: 'CLIENTE_SELECCION'
+      };
+      transaction.set(recordRef, record);
+      shardIds.forEach(id => transaction.set(tableShardRef(id), { occupied: nextByShard[id], updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }));
+    });
 
-    await recordsCollection.add(record);
-
-    progressBar.style.width = '100%';
-    progressPercent.innerText = '100%';
+    document.getElementById('progress-bar').style.width = '100%';
+    document.getElementById('progress-percent').textContent = '100%';
     hideModal('loading-modal');
+    pendingReceiptDataUrl = null;
+    pendingReceiptFileName = '';
     document.getElementById('bingo-form').reset();
+    document.getElementById('receipt-file').value = '';
+    document.getElementById('receipt-temporary-preview').classList.add('hidden');
+    document.getElementById('receipt-upload-status').classList.add('hidden');
+    document.getElementById('purchase-step-details').classList.add('hidden');
+    document.getElementById('purchase-step-proof').classList.remove('hidden');
+    document.getElementById('tables-count').value = 1;
+    selectedClientTables = new Set();
     calculateTotal();
     showModal('success-modal');
   } catch (error) {
-    console.error("Error guardando en Firestore:", error);
+    console.error('Error al confirmar registro:', error);
     hideModal('loading-modal');
-    if (error.message && error.message.includes("demasiado pesado")) {
+    if (String(error.message || '').includes('acaban de ser seleccionadas')) {
+      try {
+        await loadOccupiedTableCache();
+        selectedCodes.forEach(code => { if (cachedOccupiedTables[code]) selectedClientTables.delete(code); });
+        renderClientTableGrid();
+      } catch (refreshError) { console.warn('No se pudo refrescar la disponibilidad', refreshError); }
       alert(error.message);
     } else {
-      alert("No se pudo guardar el registro en Firebase. Es probable que las reglas de Firestore estén bloqueando el acceso. No se ha confirmado el registro; inténtalo después de configurar los permisos.");
+      alert(error.message || 'No se pudo completar el registro. Tu comprobante permanece temporalmente en esta pantalla; verifica tu conexión e inténtalo nuevamente.');
     }
   } finally {
-    setSubmitBusy(false);
     isSubmitting = false;
+    if (button) { button.disabled = selectedClientTables.size !== requestedTableCount; updateClientSelectionStatus(); }
   }
 }
 
@@ -965,6 +1149,29 @@ function closeReceiptModal() {
   }
 }
 
+async function syncInventoryFromExistingRecords() {
+  const grouped = new Map();
+  localRecords.forEach(record => getAssigned(record).forEach(code => {
+    const shardId = tableShardId(code);
+    if (!grouped.has(shardId)) grouped.set(shardId, {});
+    grouped.get(shardId)[code] = { recordId: record.id, name: record.name || '', whatsapp: record.whatsapp || '', assignedAt: Date.now() };
+  }));
+  if (!grouped.size) return;
+  const shardIds = [...grouped.keys()];
+  await db.runTransaction(async transaction => {
+    const snapshots = await Promise.all(shardIds.map(id => transaction.get(tableShardRef(id))));
+    snapshots.forEach((snap, index) => {
+      const id = shardIds[index];
+      const occupied = snap.exists ? (snap.data().occupied || {}) : {};
+      let changed = false;
+      Object.entries(grouped.get(id)).forEach(([code, owner]) => {
+        if (!occupied[code]) { occupied[code] = owner; changed = true; }
+      });
+      if (changed || !snap.exists) transaction.set(tableShardRef(id), { occupied, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    });
+  });
+}
+
 async function loadRecords() {
   const tbody = document.getElementById('admin-table-body');
   tbody.innerHTML = '<tr><td colspan="11" class="text-center py-8 text-slate-500">Cargando registros desde Firebase...</td></tr>';
@@ -976,6 +1183,7 @@ async function loadRecords() {
       const bt = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
       return bt - at;
     });
+    try { await syncInventoryFromExistingRecords(); } catch(syncError) { console.warn('No se pudo sincronizar el índice de tablas heredadas:', syncError); }
     renderAdminTable();
     updateMoneyCounter();
   } catch (error) {
@@ -1113,6 +1321,7 @@ function renderAdminTable() {
           </a>
         </td>
         <td class="p-4 text-center font-black text-indigo-700 text-lg">${Number(record.tablesCount) || 0}</td>
+        <td class="p-2 text-center">${getAssigned(record).length ? getAssigned(record).map(code => `<span class="inline-block m-1 px-2 py-1 rounded-lg bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-black">${escapeHtml(code)}</span>`).join('') : '<span class="text-slate-400">Sin tablas</span>'}</td>
         <td class="p-4 text-center font-black text-emerald-800 text-lg">$${(Number(record.totalPrice) || 0).toLocaleString('es-CO')}</td>
         <td class="p-4 text-center">
           ${receipt ? `<button type="button" onclick="viewReceipt(${index})" class="inline-block bg-indigo-100 hover:bg-indigo-200 text-indigo-900 px-4 py-2 rounded-xl text-sm font-bold transition shadow-sm">Ver Comprobante</button>` : '<span class="text-slate-400">Sin comprobante</span>'}
@@ -1219,7 +1428,7 @@ function loadLocalSettings() {
   const value = document.getElementById('event-value'); if (value) value.value = eventSettings.value ?? 3000;
   const youtube = document.getElementById('event-youtube'); if (youtube) youtube.value = eventSettings.youtube || '';
 }
-function saveAllSettings() {
+async function saveAllSettings() {
   const start = Number(document.getElementById('range-start').value);
   const end = Number(document.getElementById('range-end').value);
   const date = document.getElementById('event-date').value;
@@ -1242,11 +1451,13 @@ function saveAllSettings() {
   eventSettings = { date, time, value, youtube };
   localStorage.setItem('terrazaEspecialTableRange', JSON.stringify({start, end}));
   localStorage.setItem('terrazaEspecialEventSettings', JSON.stringify(eventSettings));
+  try { await tableConfigRef.set({ rangeStart:start, rangeEnd:end, pricePerTable:value, date, time, youtube, updatedAt:firebase.firestore.FieldValue.serverTimestamp() }, { merge:true }); } catch(error) { console.error(error); alert('No se pudo publicar la configuración en Firebase. La página pública seguirá usando la configuración anterior.'); return; }
+  publicTableStart=start; publicTableEnd=end; PRICE_PER_TABLE=value; calculateTotal();
   updateAssignmentSummary();
-  alert(`Configuración guardada. Rango: ${normalizeTableCode(start)} a ${normalizeTableCode(end)}.`);
+  alert(`Configuración guardada y publicada. Rango: ${normalizeTableCode(start)} a ${normalizeTableCode(end)}.`);
 }
 
-function saveTableRange() {
+async function saveTableRange() {
   const start = Number(document.getElementById('range-start').value);
   const end = Number(document.getElementById('range-end').value);
   if (!Number.isInteger(start) || !Number.isInteger(end) || start < 1 || end < start || end > 5000 || end-start > 4999) {
@@ -1257,10 +1468,11 @@ function saveTableRange() {
   if (outside.length && !confirm(`Hay ${outside.length} tabla(s) ya asignadas fuera del nuevo rango. Se conservarán sin cambios, pero no se usarán para nuevas asignaciones. ¿Deseas continuar?`)) return;
   tableRangeStart = start; tableRangeEnd = end;
   localStorage.setItem('terrazaEspecialTableRange', JSON.stringify({start, end}));
-  updateAssignmentSummary();
-  alert(`Rango guardado: ${normalizeTableCode(start)} a ${normalizeTableCode(end)}. Las asignaciones existentes se conservaron.`);
+  try { await tableConfigRef.set({rangeStart:start, rangeEnd:end, pricePerTable:PRICE_PER_TABLE, updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true}); } catch(error) { alert('No se pudo publicar el rango en Firebase.'); return; }
+  publicTableStart=start; publicTableEnd=end; updateAssignmentSummary();
+  alert(`Rango guardado: ${normalizeTableCode(start)} a ${normalizeTableCode(end)}.`);
 }
-function saveEventSettings() {
+async function saveEventSettings() {
   const date = document.getElementById('event-date').value;
   const time = document.getElementById('event-time').value;
   const value = Number(document.getElementById('event-value').value);
@@ -1269,196 +1481,27 @@ function saveEventSettings() {
   if (youtube && !/^https:\/\/(www\.)?(youtube\.com|youtu\.be)\//i.test(youtube)) { alert('El enlace debe ser una URL válida de YouTube.'); return; }
   eventSettings = { date, time, value, youtube };
   localStorage.setItem('terrazaEspecialEventSettings', JSON.stringify(eventSettings));
-  alert('Datos del evento guardados en este navegador.');
+  try { await tableConfigRef.set({date,time,pricePerTable:value,youtube,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true}); PRICE_PER_TABLE=value; calculateTotal(); alert('Datos del evento guardados y publicados en Firebase.'); } catch(error) { console.error(error); alert('No se pudo publicar la configuración en Firebase.'); }
 }
 function updateAssignmentSummary() {
   updateCopyListsCount();
   const confirmButton = document.getElementById('btn-confirm-accounting-import');
   if (confirmButton) confirmButton.classList.toggle('hidden', !localRecords.some(r => getPendingExportTables(r).length));
-  const assignedCount = localRecords.reduce((sum,r)=>sum+getAssigned(r).length,0);
-  const unique = allAssignedMap();
+  const assignedCodes = new Set(localRecords.flatMap(r => getAssigned(r)));
   const total = tableRangeEnd - tableRangeStart + 1;
-  const pending = localRecords.filter(r=>getAssigned(r).length < (Number(r.tablesCount)||0)).length;
-  const allAssignedCodes = new Set(localRecords.flatMap(r => getAssigned(r)));
   const importedCodes = new Set(localRecords.flatMap(r => getImportedTables(r)));
   const pendingCodes = new Set(localRecords.flatMap(r => getPendingExportTables(r)));
-  const assignedNewCount = [...allAssignedCodes].filter(code => !importedCodes.has(code) && !pendingCodes.has(code)).length;
-  const pendingImportCount = [...pendingCodes].filter(code => !importedCodes.has(code)).length;
-  const importedCount = [...allAssignedCodes].filter(code => importedCodes.has(code)).length;
   const summary = document.getElementById('assignment-summary');
   if (summary) summary.innerHTML = [
     ['Tablas en rango', total],
-    ['Tablas libres', Math.max(0,total-[...unique.keys()].filter(c=>tableNumber(c)>=tableRangeStart&&tableNumber(c)<=tableRangeEnd).length)],
-    ['Tablas importadas', importedCount],
-    ['Pendientes de confirmar', pendingImportCount],
-    ['Asignadas nuevas', assignedNewCount],
-    ['Participantes pendientes', pending]
+    ['Tablas disponibles', Math.max(0,total-[...assignedCodes].filter(c=>tableNumber(c)>=tableRangeStart&&tableNumber(c)<=tableRangeEnd).length)],
+    ['Tablas seleccionadas', assignedCodes.size],
+    ['Participantes', localRecords.length],
+    ['Exportadas pendientes', pendingCodes.size],
+    ['Importadas', importedCodes.size]
   ].map(([label,value])=>`<div class="bg-white border border-indigo-200 rounded-xl p-3"><div class="text-2xl font-black text-indigo-800">${value}</div><div class="text-xs font-bold text-slate-600">${label}</div></div>`).join('');
 }
-function openAssignmentModal(index) {
-  const record = localRecords[index]; if (!record) return;
-  currentAssignmentIndex = index;
-  selectedAssignmentTables = new Set(getAssigned(record));
-  document.getElementById('assignment-modal-title').textContent = 'Asignar tablas: ' + (record.name || 'Participante');
-  document.getElementById('assignment-modal-subtitle').textContent = `Solicitó ${Number(record.tablesCount)||0} tabla(s) · Tiene ${getAssigned(record).length} asignada(s) · WhatsApp ${record.whatsapp||'sin número'}`;
-  renderAssignmentGrid();
-  showModal('assignment-modal');
-}
-function closeAssignmentModal() { hideModal('assignment-modal'); currentAssignmentIndex = null; selectedAssignmentTables = new Set(); }
-function renderAssignmentGrid() {
-  const grid = document.getElementById('assignment-table-grid'); if (!grid) return;
-  const occupied = allAssignedMap(currentAssignmentIndex);
-  const codes = [];
-  for (let n=tableRangeStart; n<=tableRangeEnd; n++) codes.push(normalizeTableCode(n));
-  // Mantener visibles las asignaciones existentes aunque queden fuera del rango recién elegido.
-  const existing = getAssigned(localRecords[currentAssignmentIndex]);
-  existing.forEach(code => { if (!codes.includes(code)) codes.push(code); });
-  codes.sort((a,b)=>tableNumber(a)-tableNumber(b));
-  grid.innerHTML = codes.map(code => {
-    const selected = selectedAssignmentTables.has(code);
-    const owner = occupied.has(code);
-    const cls = selected ? 'bg-indigo-700 text-white border-indigo-900' : owner ? 'bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed' : 'bg-white text-slate-800 border-slate-300 hover:bg-emerald-50 hover:border-emerald-500';
-    return `<button type="button" ${owner&&!selected?'disabled':''} onclick="toggleAssignmentTable('${code}')" title="${owner&&!selected?'Ya asignada a otro participante':selected?'Seleccionada':'Disponible'}" class="border-2 rounded-lg p-2 text-sm font-black ${cls}">${code}${owner&&!selected?' 🔒':selected?' ✓':''}</button>`;
-  }).join('');
-  document.getElementById('assignment-selection-count').textContent = `Seleccionadas: ${selectedAssignmentTables.size} / ${Number(localRecords[currentAssignmentIndex]?.tablesCount)||0} solicitadas`;
-}
-function toggleAssignmentTable(code) {
-  const occupied = allAssignedMap(currentAssignmentIndex);
-  if (!selectedAssignmentTables.has(code) && occupied.has(code)) return;
-  if (selectedAssignmentTables.has(code)) selectedAssignmentTables.delete(code); else selectedAssignmentTables.add(code);
-  renderAssignmentGrid();
-}
-function clearAssignmentSelection() {
-  // Evita borrar por accidente las tablas ya asignadas: solo limpia la selección nueva.
-  selectedAssignmentTables = new Set(getAssigned(localRecords[currentAssignmentIndex]));
-  renderAssignmentGrid();
-}
-async function saveManualAssignment() {
-  const record = localRecords[currentAssignmentIndex]; if (!record) return;
-  const requested = Number(record.tablesCount)||0;
-  const lockedForRecord = [...new Set([...getImportedTables(record), ...getPendingExportTables(record)])].filter(code=>getAssigned(record).includes(code));
-  const removedLocked = lockedForRecord.filter(code=>!selectedAssignmentTables.has(code));
-  if (removedLocked.length) { alert(`No puedes quitar ${removedLocked.join(", ")} porque ya fue exportada o importada al sistema contable. Para evitar inconsistencias, conserva esa asignación.`); return; }
-  if (selectedAssignmentTables.size > requested) { alert(`Esta persona solicitó ${requested} tabla(s). No puedes asignarle ${selectedAssignmentTables.size}.`); return; }
-  const currentAssigned = getAssigned(record);
-  const removedExisting = currentAssigned.filter(code => !selectedAssignmentTables.has(code));
-  if (removedExisting.length && !confirm(`Vas a desasignar manualmente ${removedExisting.join(', ')} de ${record.name}. Esas tablas quedarán libres para futuras asignaciones. ¿Deseas continuar?`)) return;
-  const occupied = allAssignedMap(currentAssignmentIndex);
-  const conflict = [...selectedAssignmentTables].find(code=>occupied.has(code));
-  if (conflict) { alert(`${conflict} acaba de quedar asignada a otra persona. Actualiza la selección.`); renderAssignmentGrid(); return; }
-  const next = [...selectedAssignmentTables].sort((a,b)=>tableNumber(a)-tableNumber(b));
-  try {
-    await recordsCollection.doc(record.id).update({ tablesAssigned: next, assignmentUpdatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-    record.tablesAssigned = next;
-    closeAssignmentModal(); renderAdminTable(); updateAssignmentSummary();
-    alert(`Asignación guardada para ${record.name}.`);
-  } catch (error) { console.error(error); alert('No se pudo guardar la asignación en Firebase. No se cambió el registro local.'); }
-}
-async function unassignAllForCurrent() {
-  if (currentAssignmentIndex === null || currentAssignmentIndex === undefined) return;
-  await unassignAllForParticipant(currentAssignmentIndex, true);
-}
-async function unassignAllForParticipant(index, closeModalAfter = false) {
-  const record = localRecords[index]; if (!record) return;
-  const current = getAssigned(record);
-  if (!current.length) { alert('Esta persona no tiene tablas asignadas.'); return; }
-  const locked = current.filter(code=>isAccountingLocked(record, code));
-  if (locked.length) { alert(`No se pueden desasignar ${locked.join(", ")} porque ya están en una exportación pendiente o confirmada. Para evitar inconsistencias, esas tablas deben conservarse asignadas.`); return; }
-  if (!confirm(`¿Desasignar TODAS las ${current.length} tablas de ${record.name}? Las tablas quedarán libres para futuras asignaciones.`)) return;
-  try {
-    await recordsCollection.doc(record.id).update({ tablesAssigned: [], assignmentUpdatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-    record.tablesAssigned = [];
-    if (closeModalAfter) closeAssignmentModal();
-    renderAdminTable(); updateAssignmentSummary();
-    alert(`Se desasignaron todas las tablas de ${record.name}.`);
-  } catch (error) { console.error(error); alert('No se pudieron desasignar las tablas en Firebase.'); }
-}
-async function unassignSingleTable(index, code) {
-  const record = localRecords[index]; if (!record) return;
-  const current = getAssigned(record);
-  if (!current.includes(code)) return;
-  if (isAccountingLocked(record, code)) { alert(`${code} ya está en una exportación pendiente o confirmada del sistema contable y no puede desasignarse ni reutilizarse sin crear una inconsistencia.`); return; }
-  if (!confirm(`¿Desasignar ${code} de ${record.name}?`)) return;
-  const next = current.filter(t=>t!==code);
-  try {
-    await recordsCollection.doc(record.id).update({ tablesAssigned: next, assignmentUpdatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-    record.tablesAssigned = next; renderAdminTable(); updateAssignmentSummary();
-  } catch (error) { console.error(error); alert(`No se pudo desasignar ${code}.`); }
-}
-async function unassignAllParticipantsTables() {
-  if (!localRecords.length) { alert('No hay participantes cargados.'); return; }
-  const total = localRecords.reduce((sum, record) => sum + getAssigned(record).length, 0);
-  if (!total) { alert('No hay tablas asignadas para liberar.'); return; }
-  const hasHistory = localRecords.some(hasAccountingHistory);
-  const historyWarning = hasHistory ? "\n\nIMPORTANTE: esta acción reinicia las asignaciones y el seguimiento de exportación SOLO en este sistema. No elimina ni revierte las tablas que ya hayas importado en el sistema contable. Si vuelves a asignar esos mismos números a otras personas, tendrás que gestionar esa diferencia por separado." : '';
-  if (!confirm(`¿Desasignar las ${total} tablas de TODOS los participantes?\n\nTodos los participantes seguirán registrados, pero sus tablas quedarán libres para volver a asignarse.${historyWarning}\n\n¿Continuar?`)) return;
-  try {
-    for (let offset = 0; offset < localRecords.length; offset += 400) {
-      const batch = db.batch();
-      localRecords.slice(offset, offset + 400).forEach(record => {
-        batch.update(recordsCollection.doc(record.id), {
-          tablesAssigned: [],
-          accountingPendingTables: [],
-          accountingImportedTables: [],
-          assignmentUpdatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-          accountingResetAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-      });
-      await batch.commit();
-    }
-    localRecords.forEach(record => {
-      record.tablesAssigned = [];
-      record.accountingPendingTables = [];
-      record.accountingImportedTables = [];
-    });
-    if (currentAssignmentIndex !== null) closeAssignmentModal();
-    renderAdminTable();
-    updateAssignmentSummary();
-    alert(`Listo: se liberaron ${total} tablas en el sistema del bingo especial. Los participantes se conservaron. Recuerda que los datos ya importados en el sistema contable no se borran con esta acción.`);
-  } catch (error) {
-    console.error(error);
-    alert('No se pudieron desasignar todas las tablas. Recarga los registros y verifica el estado antes de volver a intentarlo.');
-    await loadRecords();
-  }
-}
 
-async function assignRandomToPending() {
-  if (!localRecords.length) { alert('No hay participantes cargados.'); return; }
-  // Bloqueo preventivo: si ya existen códigos duplicados entre participantes,
-  // no asignar más tablas hasta corregirlos. Evita agravar una inconsistencia previa.
-  const occurrences = new Map();
-  localRecords.forEach(record => getAssigned(record).forEach(code => {
-    occurrences.set(code, (occurrences.get(code) || 0) + 1);
-  }));
-  const existingDuplicates = [...occurrences.entries()].filter(([, count]) => count > 1).map(([code]) => code);
-  if (existingDuplicates.length) {
-    alert('No se realizó ninguna asignación porque ya hay tablas duplicadas: ' + existingDuplicates.join(', ') + '. Corrige esas asignaciones antes de continuar.');
-    return;
-  }
-  const assignedMap = allAssignedMap();
-  const available = [];
-  for (let n=tableRangeStart; n<=tableRangeEnd; n++) { const code=normalizeTableCode(n); if (!assignedMap.has(code)) available.push(code); }
-  const pending = localRecords.map((r,index)=>({r,index,remaining:Math.max(0,(Number(r.tablesCount)||0)-getAssigned(r).length)})).filter(x=>x.remaining>0);
-  const needed = pending.reduce((sum,x)=>sum+x.remaining,0);
-  if (!needed) { alert('Todos los participantes ya tienen asignada la cantidad solicitada.'); return; }
-  if (available.length < needed) { alert(`No hay suficientes tablas libres. Se necesitan ${needed} y solo hay ${available.length} disponibles. Amplía el rango antes de continuar.`); return; }
-  if (!confirm(`Se asignarán ${needed} tablas aleatorias a ${pending.length} participante(s) pendientes. Las asignaciones existentes no se modificarán. ¿Continuar?`)) return;
-  // Barajar las disponibles; se asigna solo la diferencia que le falta a cada persona.
-  for (let i=available.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [available[i],available[j]]=[available[j],available[i]]; }
-  let cursor=0; const planned=[];
-  pending.forEach(({r,index,remaining})=> { const current=getAssigned(r); const add=available.slice(cursor,cursor+remaining); cursor+=remaining; planned.push({r,index,next:[...current,...add].sort((a,b)=>tableNumber(a)-tableNumber(b))}); });
-  try {
-    // Firestore batch writes: either the planned group commits together or none does.
-    for (let offset=0; offset<planned.length; offset+=400) {
-      const batch=db.batch();
-      planned.slice(offset,offset+400).forEach(item=>batch.update(recordsCollection.doc(item.r.id),{tablesAssigned:item.next,assignmentUpdatedAt:firebase.firestore.FieldValue.serverTimestamp()}));
-      await batch.commit();
-    }
-    planned.forEach(item=>{item.r.tablesAssigned=item.next;});
-    renderAdminTable(); updateAssignmentSummary();
-    alert(`Asignación aleatoria terminada. Se asignaron ${needed} tablas. Las asignaciones anteriores se conservaron.`);
-  } catch (error) { console.error(error); alert('Hubo un error al guardar la asignación aleatoria. Revisa Firebase y vuelve a cargar los registros antes de repetirla.'); await loadRecords(); }
-}
 function dateToDisplay(date) { const m=String(date||'').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? `${m[3]}/${m[2]}/${m[1]}` : String(date||''); }
 async function exportForAccounting() {
   const assignedMap = new Map(); const duplicates=[]; const rows=[]; const pendingByRecord=new Map();
@@ -1515,31 +1558,15 @@ async function confirmAccountingImport() {
   } catch(error) { console.error(error); alert('No se pudo confirmar el lote en Firebase. Vuelve a cargar los registros y verifica el estado antes de repetir.'); await loadRecords(); }
 }
 
-// Extiende la tabla administrativa para mostrar y gestionar las asignaciones.
+// Actualiza los indicadores del panel después de cada renderizado.
 const originalRenderAdminTable = renderAdminTable;
 renderAdminTable = function() {
   originalRenderAdminTable();
-  const tbody=document.getElementById('admin-table-body');
-  if (!tbody) return;
-  tbody.querySelectorAll('tr').forEach((tr)=>{
-    const cells=tr.querySelectorAll('td');
-    if (!cells.length || cells.length < 10) return;
-    const editButton=tr.querySelector('button[onclick*="openEditModal("]');
-    const match=editButton?.getAttribute('onclick')?.match(/openEditModal\((\d+)/);
-    if (!match) return;
-    const index=Number(match[1]); const record=localRecords[index]; if (!record) return;
-    const assigned=getAssigned(record);
-    const cell=document.createElement('td'); cell.className='text-center';
-    const tokens=assigned.length ? assigned.map(code=>`<span class="assignment-chip">${escapeHtml(code)}</span>`).join('') : '<span class="text-amber-700 font-bold">Sin asignar</span>';
-    const unassignAllButton = assigned.length ? `<button type="button" onclick="unassignAllForParticipant(${index})" class="mt-1 bg-red-700 hover:bg-red-800 text-white px-2 py-1 rounded-md text-xs font-black">Desasignar todas (${assigned.length})</button>` : '';
-    cell.innerHTML=`<div class="mb-1">${tokens}</div><div class="font-bold text-slate-500 mb-1">${assigned.length} / ${Number(record.tablesCount)||0}</div><div class="flex flex-col items-center gap-1"><button type="button" onclick="openAssignmentModal(${index})" class="bg-indigo-700 hover:bg-indigo-800 text-white px-2 py-1 rounded-md text-xs font-bold">${assigned.length?'Editar asignación':'Asignar tablas'}</button>${unassignAllButton}</div>`;
-    // Existing cell order: requested count is index 6; insert assignment details after it.
-    cells[6].after(cell);
-  });
   updateAssignmentSummary();
 };
 loadLocalSettings();
 listenRegistrationStatus();
+loadPublicTableConfig();
 
 calculateTotal();
     </script>
