@@ -1057,21 +1057,21 @@ function setSpecialEventAvailable(isAvailable) {
   const message = document.getElementById('no-special-event-message');
   if (!content || !message) return;
 
-  // La portada y el aviso se conservan; se ocultan todos los demás bloques.
+  // Cuando no hay evento, dentro del primer bloque se conservan ÚNICAMENTE
+  // el contenedor inmediato de la portada y el aviso. No se conserva el
+  // contenedor completo que también incluye premios e información de compra.
   const layout = content.firstElementChild;
   if (layout) {
     [...layout.children].forEach(child => {
-      const isCover = !!(child.querySelector && child.querySelector('#bingo-cover'));
+      const isCoverOnly = !!(child.querySelector && child.querySelector('#bingo-cover'))
+        && !child.querySelector('#no-special-event-message');
       const isMessage = child.id === 'no-special-event-message';
-      if (isCover || isMessage) {
-        child.classList.remove('hidden');
-      } else {
-        child.classList.toggle('hidden', !isAvailable);
-      }
+      child.classList.toggle('hidden', !isAvailable && !isCoverOnly && !isMessage);
+      if (isCoverOnly || isMessage) child.classList.remove('hidden');
     });
   }
 
-  // Compra, pago, comprobante y selección están en bloques hermanos del layout.
+  // Oculta cualquier sección hermana: compra, pago, comprobante, consultor, etc.
   [...content.children].forEach(child => {
     if (child !== layout) child.classList.toggle('hidden', !isAvailable);
   });
@@ -1120,7 +1120,19 @@ async function loadPublicTableConfig() {
   try {
     const snap = await tableConfigRef.get();
     const cfg = snap.exists ? (snap.data() || {}) : {};
-    setSpecialEventAvailable(snap.exists && cfg.eventAvailable === true);
+    // Compatibilidad: una configuración completa también activa el evento,
+    // aunque una versión anterior no haya guardado eventAvailable.
+    const hasCompleteEventConfig = snap.exists
+      && Number.isInteger(Number(cfg.rangeStart))
+      && Number(cfg.rangeStart) >= 1
+      && Number.isInteger(Number(cfg.rangeEnd))
+      && Number(cfg.rangeEnd) >= Number(cfg.rangeStart)
+      && typeof cfg.date === 'string' && cfg.date.trim() !== ''
+      && typeof cfg.time === 'string' && cfg.time.trim() !== ''
+      && Number.isFinite(Number(cfg.pricePerTable))
+      && Number(cfg.pricePerTable) >= 0;
+    const eventIsAvailable = snap.exists && (cfg.eventAvailable === true || hasCompleteEventConfig);
+    setSpecialEventAvailable(eventIsAvailable);
     consultorBlocked = cfg.consultorBlocked === true;
     consultorConfigReady = true;
     const consultorToggle = document.getElementById('consultor-blocked-toggle');
@@ -1935,8 +1947,9 @@ async function saveAllSettings() {
   eventSettings = { date, time, value, youtube, eventName };
   localStorage.setItem('terrazaEspecialTableRange', JSON.stringify({start, end}));
   localStorage.setItem('terrazaEspecialEventSettings', JSON.stringify(eventSettings));
-  try { await tableConfigRef.set({ rangeStart:start, rangeEnd:end, pricePerTable:value, date, time, youtube, eventName, consultorBlocked, updatedAt:firebase.firestore.FieldValue.serverTimestamp() }, { merge:true }); } catch(error) { console.error(error); alert('No se pudo publicar la configuración en Firebase. La página pública seguirá usando la configuración anterior.'); return; }
+  try { await tableConfigRef.set({ rangeStart:start, rangeEnd:end, pricePerTable:value, date, time, youtube, eventName, consultorBlocked, eventAvailable:true, updatedAt:firebase.firestore.FieldValue.serverTimestamp() }, { merge:true }); } catch(error) { console.error(error); alert('No se pudo publicar la configuración en Firebase. La página pública seguirá usando la configuración anterior.'); return; }
   publicTableStart=start; publicTableEnd=end; PRICE_PER_TABLE=value;
+  setSpecialEventAvailable(true);
   updateClientEventDisplay();
   calculateTotal();
   updateAssignmentSummary();
