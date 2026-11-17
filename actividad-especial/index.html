@@ -172,7 +172,7 @@
                             <label for="tables-count" class="block text-base font-extrabold text-indigo-950">¿Cuántas tablas vas a comprar?</label>
                             <div class="flex items-center gap-3">
                                 <button type="button" onclick="changeTableQuantity(-1)" class="h-12 w-12 rounded-xl bg-white border-2 border-indigo-200 text-2xl font-black text-indigo-800">−</button>
-                                <input type="number" id="tables-count" min="1" max="200" value="1" oninput="calculateTotal()" class="min-w-0 flex-1 text-center text-2xl font-black px-3 py-2 rounded-xl border-2 border-indigo-300" inputmode="numeric">
+                                <input type="number" id="tables-count" min="0" max="200" value="0" oninput="calculateTotal()" class="min-w-0 flex-1 text-center text-2xl font-black px-3 py-2 rounded-xl border-2 border-indigo-300" inputmode="numeric">
                                 <button type="button" onclick="changeTableQuantity(1)" class="h-12 w-12 rounded-xl bg-white border-2 border-indigo-200 text-2xl font-black text-indigo-800">+</button>
                             </div>
                             <div class="flex items-center justify-between border-t border-indigo-200 pt-3">
@@ -237,17 +237,18 @@
                                 <div id="client-table-grid" class="grid grid-cols-4 sm:grid-cols-5 gap-2 p-2 rounded-xl border border-slate-200 bg-slate-50"></div>
                                 <div id="client-table-pagination" class="flex items-center justify-between gap-3 pt-2">
                                     <button type="button" id="client-table-prev" onclick="changeClientTablePage(-1)" class="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 font-bold text-sm disabled:opacity-40 disabled:cursor-not-allowed" disabled>Anterior</button>
-                                    <span id="client-table-page-info" class="text-xs sm:text-sm font-bold text-slate-600 text-center" aria-live="polite">Mostrando 1–50</span>
+                                    <span class="text-xs sm:text-sm font-bold text-slate-700 text-center">Navega por las páginas</span>
                                     <button type="button" id="client-table-next" onclick="changeClientTablePage(1)" class="px-4 py-2 rounded-lg bg-indigo-600 text-white font-bold text-sm disabled:opacity-40 disabled:cursor-not-allowed">Siguiente</button>
                                 </div>
-                                <p id="table-selection-message" class="text-sm font-bold text-amber-800" aria-live="polite">Te falta seleccionar 1 tabla.</p>
+                                <p id="client-table-total-hint" class="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm font-extrabold text-amber-900 text-center" aria-live="polite">Total de tablas habilitadas: 200. Presiona «Siguiente» para ver las demás.</p>
+                                <p id="table-selection-message" class="text-sm font-bold text-amber-800" aria-live="polite">Selecciona la cantidad de tablas que vas a comprar.</p>
                             </div>
                             <div class="rounded-xl bg-indigo-50 border border-indigo-200 p-3 flex justify-between items-center">
                                 <span class="font-bold text-indigo-950">Total pagado declarado</span>
                                 <strong id="final-total-display" class="text-xl text-indigo-800">$3.000</strong>
                             </div>
                             <button type="submit" id="submit-btn" disabled class="w-full bg-slate-400 text-white font-black text-lg py-4 px-6 rounded-xl shadow-lg">Selecciona tus tablas para continuar</button>
-                            <button type="button" onclick="backToProofStep()" class="w-full bg-slate-100 text-slate-700 font-bold py-3 rounded-xl">Volver al comprobante</button>
+                            <button type="button" onclick="backToProofStep()" class="w-full bg-slate-100 text-slate-700 font-bold py-3 rounded-xl">Volver a corregir la compra (se conserva el comprobante)</button>
                         </form>
                     </div>
                 </div>
@@ -625,23 +626,43 @@ async function saveEditRecord(){
 
 function calculateTotal() {
   const input = document.getElementById('tables-count');
-  const count = Math.max(1, Math.min(5000, parseInt(input?.value, 10) || 1));
+  const rawCount = parseInt(input?.value, 10);
+  const count = Math.max(0, Math.min(5000, Number.isFinite(rawCount) ? rawCount : 0));
   if (input) input.value = count;
   requestedTableCount = count;
+
   const total = count * PRICE_PER_TABLE;
   const formatted = '$' + total.toLocaleString('es-CO');
   const totalEl = document.getElementById('total-price-display');
   const exactEl = document.getElementById('payment-exact-message');
   const finalEl = document.getElementById('final-total-display');
   const priceEl = document.getElementById('client-price-display');
+
   if (totalEl) totalEl.textContent = formatted;
   if (finalEl) finalEl.textContent = formatted;
-  if (exactEl) exactEl.textContent = `Tu comprobante debe ser exactamente por ${formatted}.`;
+  if (exactEl) {
+    exactEl.textContent = count > 0
+      ? `Tu comprobante debe ser exactamente por ${formatted}.`
+      : 'Primero selecciona cuántas tablas vas a comprar para calcular el valor exacto.';
+  }
   if (priceEl) priceEl.textContent = '$' + PRICE_PER_TABLE.toLocaleString('es-CO');
+
+  const continueButton = document.getElementById('continue-to-tables');
+  if (continueButton && pendingReceiptDataUrl) {
+    continueButton.disabled = count === 0;
+    continueButton.textContent = count === 0
+      ? 'Selecciona primero la cantidad de tablas'
+      : 'Continuar para registrar mis tablas';
+    continueButton.className = count === 0
+      ? 'w-full bg-slate-400 text-white font-black text-lg py-4 px-6 rounded-xl shadow-lg cursor-not-allowed'
+      : 'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-lg py-4 px-6 rounded-xl shadow-lg';
+  }
 }
+
 function changeTableQuantity(delta) {
   const input = document.getElementById('tables-count');
-  input.value = Math.max(1, Math.min(5000, (parseInt(input.value, 10) || 1) + delta));
+  const current = Number.parseInt(input.value, 10);
+  input.value = Math.max(0, Math.min(5000, (Number.isFinite(current) ? current : 0) + delta));
   calculateTotal();
 }
 
@@ -976,9 +997,14 @@ document.getElementById('receipt-file').addEventListener('change', async functio
     pendingReceiptDataUrl = compressed;
     pendingReceiptFileName = file.name || 'comprobante.jpg';
     setReceiptUploadStatus('✅ Comprobante recibido y preparado correctamente. Aún no se ha guardado ningún registro.', true);
-    continueButton.disabled = false;
-    continueButton.textContent = 'Continuar para registrar mis tablas';
-    continueButton.className = 'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-lg py-4 px-6 rounded-xl shadow-lg';
+    const quantity = Number.parseInt(document.getElementById('tables-count').value, 10) || 0;
+    continueButton.disabled = quantity < 1;
+    continueButton.textContent = quantity < 1
+      ? 'Selecciona primero la cantidad de tablas'
+      : 'Continuar para registrar mis tablas';
+    continueButton.className = quantity < 1
+      ? 'w-full bg-slate-400 text-white font-black text-lg py-4 px-6 rounded-xl shadow-lg cursor-not-allowed'
+      : 'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-lg py-4 px-6 rounded-xl shadow-lg';
   } catch (error) {
     console.error(error);
     event.target.value = '';
@@ -989,6 +1015,12 @@ document.getElementById('receipt-file').addEventListener('change', async functio
 
 async function continueToTables() {
   if (!pendingReceiptDataUrl) { alert('Primero sube un comprobante válido.'); return; }
+  const chosenQuantity = Number.parseInt(document.getElementById('tables-count').value, 10) || 0;
+  if (chosenQuantity < 1) {
+    alert('Primero selecciona cuántas tablas vas a comprar.');
+    document.getElementById('tables-count').focus();
+    return;
+  }
   if (await isRegistrationClosedOnServer()) {
     registrationClosed = true; applyRegistrationStatus();
     alert('El tiempo de registro pasó. Ya no se reciben nuevos registros.'); return;
@@ -1039,14 +1071,14 @@ function renderClientTableGrid() {
 
   const previousButton = document.getElementById('client-table-prev');
   const nextButton = document.getElementById('client-table-next');
-  const pageInfo = document.getElementById('client-table-page-info');
+  const totalHint = document.getElementById('client-table-total-hint');
 
   if (previousButton) previousButton.disabled = clientTablePage === 0;
   if (nextButton) nextButton.disabled = clientTablePage >= totalPages - 1;
-  if (pageInfo) {
-    pageInfo.textContent = totalTables
-      ? `Tablas ${firstNumber}–${lastNumber} de ${totalTables} · Página ${clientTablePage + 1} de ${totalPages}`
-      : 'No hay tablas habilitadas';
+  if (totalHint) {
+    totalHint.textContent = totalTables > CLIENT_TABLES_PER_PAGE
+      ? `Total de tablas habilitadas: ${totalTables}. Presiona «Siguiente» para ver las demás.`
+      : `Total de tablas habilitadas: ${totalTables}.`;
   }
 
   updateClientSelectionStatus();
@@ -1081,7 +1113,13 @@ function updateClientSelectionStatus() {
   const message = document.getElementById('table-selection-message');
   const button = document.getElementById('submit-btn');
   if (counter) counter.textContent = `${count} de ${requestedTableCount}`;
-  if (count < requestedTableCount) {
+  if (requestedTableCount < 1) {
+    message.textContent = 'Selecciona primero la cantidad de tablas que vas a comprar.';
+    message.className = 'text-sm font-bold text-amber-800';
+    button.disabled = true;
+    button.textContent = 'Primero indica cuántas tablas vas a comprar';
+    button.className = 'w-full bg-slate-400 text-white font-black text-lg py-4 px-6 rounded-xl shadow-lg';
+  } else if (count < requestedTableCount) {
     const missing = requestedTableCount - count;
     message.textContent = `Te ${missing === 1 ? 'falta' : 'faltan'} ${missing} tabla(s) por seleccionar.`;
     message.className = 'text-sm font-bold text-amber-800';
