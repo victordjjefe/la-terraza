@@ -6,11 +6,11 @@
     <title>La Terraza Bingo - Gran Bingo Virtual Especial</title>
     <meta property="og:title" content="La Terraza Bingo - Gran Bingo Virtual Especial">
     <meta property="og:description" content="Compra tus tablas para el Gran Bingo Virtual Especial. Registro y comprobante de pago en línea.">
-    <meta property="og:image" content="https://laterrazacalipodcast.top/actividad-especial/bingo.png">
+    <meta property="og:image" content="bingo.png">
     <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="La Terraza Bingo - Gran Bingo Virtual Especial">
-    <meta name="twitter:image" content="https://laterrazacalipodcast.top/actividad-especial/bingo.png">
+    <meta name="twitter:image" content="bingo.png">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -860,8 +860,6 @@ async function confirmDeleteAll(e) {
     alert("Clave incorrecta. No se pudieron eliminar los registros.");
     return;
   }
-  if (localRecords.some(hasAccountingHistory)) { alert("No se pueden eliminar todos los registros: hay tablas exportadas o importadas al sistema contable. Para proteger el historial contable, conserva esos registros."); return; }
-  if (!confirm("¿Confirmas que deseas eliminar TODOS los registros de Firestore? Esta acción no se puede deshacer.")) return;
 
   try {
     const snapshot = await recordsCollection.get();
