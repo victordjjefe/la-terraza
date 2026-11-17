@@ -125,11 +125,16 @@
                             <label for="consultor-whatsapp" class="block text-sm font-extrabold text-white">Número de WhatsApp</label>
                             <input id="consultor-whatsapp" type="tel" inputmode="numeric" autocomplete="tel" maxlength="18" placeholder="Ej. 3001234567"
                                 class="w-full rounded-xl border-2 border-white/70 bg-white px-4 py-3.5 text-lg font-bold tracking-wide text-slate-900 placeholder:text-slate-400 focus:border-amber-300 focus:outline-none focus:ring-4 focus:ring-amber-300/30">
-                            <button id="consultor-buscar-btn" type="button" onclick="consultarMisTablas()"
-                                class="w-full rounded-xl bg-amber-400 px-4 py-4 text-base sm:text-lg font-black uppercase tracking-wide text-indigo-950 shadow-lg transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:bg-slate-400 disabled:text-slate-700 disabled:shadow-none"
-                                disabled>PRESIONA AQUÍ PARA VER TUS TABLAS</button>
-                            <div id="consultor-estado" role="status" aria-live="polite" class="rounded-xl border border-amber-200/60 bg-white/95 px-4 py-3 text-center text-sm font-bold text-indigo-950">
+                            <div class="flex justify-center">
+                                <button id="consultor-buscar-btn" type="button" onclick="consultarMisTablas()"
+                                    class="inline-flex w-full max-w-md items-center justify-center rounded-xl bg-amber-400 px-5 py-3 text-sm sm:text-base font-black uppercase tracking-wide text-indigo-950 shadow-md transition duration-150 hover:-translate-y-0.5 hover:bg-amber-300 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-amber-300/40 disabled:cursor-not-allowed disabled:transform-none disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
+                                    disabled>PRESIONA AQUÍ PARA VER TUS TABLAS</button>
+                            </div>
+                            <div class="rounded-xl border border-amber-200/60 bg-white/95 px-4 py-2.5 text-center text-sm font-bold text-indigo-950">
                                 🔒 Podrás consultar tus tablas a partir del 3 de diciembre de 2026.
+                            </div>
+                            <div id="consultor-estado" role="status" aria-live="polite" class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-center text-xs sm:text-sm font-bold text-slate-700">
+                                Verificando el estado del consultor...
                             </div>
                         </div>
                     </section>
@@ -627,6 +632,14 @@ function listenRegistrationStatus() {
 
 async function setRegistrationClosed(closed) {
   const toggle = document.getElementById('registration-closed-toggle');
+  const accion = closed ? 'BLOQUEAR' : 'HABILITAR';
+  const detalle = closed
+    ? 'Los participantes no podrán realizar nuevas inscripciones.'
+    : 'Los participantes podrán volver a inscribirse.';
+  if (!confirm(`¿Confirmas que deseas ${accion} las inscripciones?\\n\\n${detalle}`)) {
+    if (toggle) toggle.checked = registrationClosed;
+    return;
+  }
   if (!auth.currentUser) {
     if (toggle) toggle.checked = registrationClosed;
     alert('Inicia sesión en Configuración para cambiar el estado de las inscripciones.');
@@ -1003,8 +1016,13 @@ function updateClientEventDisplay() {
 async function loadPublicTableConfig() {
   try {
     const snap = await tableConfigRef.get();
+    const cfg = snap.exists ? (snap.data() || {}) : {};
+    consultorBlocked = cfg.consultorBlocked === true;
+    consultorConfigReady = true;
+    const consultorToggle = document.getElementById('consultor-blocked-toggle');
+    if (consultorToggle) consultorToggle.checked = consultorBlocked;
+    updateConsultorAdminStatus();
     if (snap.exists) {
-      const cfg = snap.data() || {};
       publicTableStart = Math.max(1, Number(cfg.rangeStart) || 1);
       publicTableEnd = Math.max(publicTableStart, Number(cfg.rangeEnd) || 200);
       PRICE_PER_TABLE = Math.max(1, Number(cfg.pricePerTable) || 3000);
@@ -1017,10 +1035,6 @@ async function loadPublicTableConfig() {
       if (cfg.youtube) { const y=document.getElementById('event-youtube'); if (y) y.value=cfg.youtube; }
       const eventNameInput = document.getElementById('event-name');
       if (eventNameInput) eventNameInput.value = cfg.eventName || '';
-      consultorBlocked = cfg.consultorBlocked === true;
-      const consultorToggle = document.getElementById('consultor-blocked-toggle');
-      if (consultorToggle) consultorToggle.checked = consultorBlocked;
-      updateConsultorAdminStatus();
       tableRangeStart=publicTableStart; tableRangeEnd=publicTableEnd;
       eventSettings={...eventSettings,date:cfg.date||eventSettings.date,time:cfg.time||eventSettings.time,value:PRICE_PER_TABLE,youtube:cfg.youtube||eventSettings.youtube,eventName:cfg.eventName||''};
     }
@@ -1029,8 +1043,10 @@ async function loadPublicTableConfig() {
     actualizarEstadoConsultor();
     calculateTotal();
   } catch (error) {
+    consultorConfigReady = false;
     console.error('No se pudo cargar la configuración pública:', error);
-    // Se mantienen los valores iniciales visibles, pero la compra final se validará con la configuración guardada.
+    actualizarEstadoConsultor();
+    // Si no se puede leer el control remoto, el buscador permanece bloqueado por seguridad.
   }
 }
 
@@ -1622,6 +1638,7 @@ let tableRangeStart = 1;
 let tableRangeEnd = 200;
 let eventSettings = { date: '2026-10-25', time: '20:00', value: 3000, youtube: '', eventName: '' };
 let consultorBlocked = false;
+let consultorConfigReady = false;
 
 function normalizeTableCode(value) {
   const raw = String(value ?? '').trim().toUpperCase();
@@ -1713,6 +1730,14 @@ function updateConsultorAdminStatus() {
 
 async function setConsultorBlocked(blocked) {
   const toggle = document.getElementById('consultor-blocked-toggle');
+  const accion = blocked ? 'BLOQUEAR' : 'DESBLOQUEAR';
+  const detalle = blocked
+    ? 'Ningún participante podrá consultar sus tablas.'
+    : 'El buscador quedará disponible para los participantes.';
+  if (!confirm(`¿Confirmas que deseas ${accion} el consultor de tablas?\\n\\n${detalle}`)) {
+    if (toggle) toggle.checked = consultorBlocked;
+    return;
+  }
   if (!auth.currentUser) {
     if (toggle) toggle.checked = consultorBlocked;
     alert('Inicia sesión en Configuración para cambiar el estado del consultor.');
@@ -1725,9 +1750,11 @@ async function setConsultorBlocked(blocked) {
       consultorUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
     consultorBlocked = Boolean(blocked);
+    consultorConfigReady = true;
+    if (toggle) toggle.checked = consultorBlocked;
     updateConsultorAdminStatus();
     actualizarEstadoConsultor();
-    alert(consultorBlocked ? 'Consultor de tablas bloqueado.' : 'Consultor de tablas habilitado. La fecha de apertura sigue vigente.');
+    alert(consultorBlocked ? 'Consultor de tablas bloqueado correctamente.' : 'Consultor de tablas desbloqueado correctamente.');
   } catch (error) {
     console.error('No se pudo cambiar el estado del consultor:', error);
     if (toggle) toggle.checked = consultorBlocked;
@@ -1883,38 +1910,28 @@ loadPublicTableConfig();
 
 calculateTotal();
     
-// Consultor de tablas. Fechas expresadas en hora Colombia (UTC-5).
-const CONSULTOR_FECHA_APERTURA = new Date('2026-12-03T00:00:00-05:00');
-const CONSULTOR_FECHA_CIERRE_EXCLUSIVA = new Date('2026-12-07T00:00:00-05:00');
-function obtenerEstadoVentanaConsultor() {
-  const ahora = new Date();
-  if (ahora < CONSULTOR_FECHA_APERTURA) return 'pendiente';
-  if (ahora >= CONSULTOR_FECHA_CIERRE_EXCLUSIVA) return 'cerrado';
-  return 'abierto';
-}
-
+// El texto de fecha mostrado al público es únicamente informativo.
+// La disponibilidad real del buscador depende exclusivamente del interruptor administrativo.
 function actualizarEstadoConsultor() {
   const boton = document.getElementById('consultor-buscar-btn');
   const estado = document.getElementById('consultor-estado');
   if (!boton || !estado) return;
-  const ventana = obtenerEstadoVentanaConsultor();
+
+  if (!consultorConfigReady) {
+    boton.disabled = true;
+    estado.textContent = 'Verificando el estado del consultor...';
+    estado.className = 'rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-center text-xs sm:text-sm font-bold text-slate-700';
+    return;
+  }
 
   if (consultorBlocked) {
     boton.disabled = true;
-    estado.textContent = '🔒 La consulta de tablas está temporalmente deshabilitada por la organización.';
-    estado.className = 'rounded-xl border border-slate-300 bg-slate-100 px-4 py-3 text-center text-sm font-bold text-slate-700';
-  } else if (ventana === 'pendiente') {
-    boton.disabled = true;
-    estado.textContent = '🔒 Podrás consultar tus tablas a partir del 3 de diciembre de 2026.';
-    estado.className = 'rounded-xl border border-amber-200/60 bg-white/95 px-4 py-3 text-center text-sm font-bold text-indigo-950';
-  } else if (ventana === 'cerrado') {
-    boton.disabled = true;
-    estado.textContent = '🔒 El período para consultar las tablas finalizó el 6 de diciembre de 2026 a las 11:59 p. m.';
-    estado.className = 'rounded-xl border border-slate-300 bg-slate-100 px-4 py-3 text-center text-sm font-bold text-slate-700';
+    estado.textContent = '🔒 CONSULTOR BLOQUEADO. Por ahora no es posible consultar las tablas.';
+    estado.className = 'rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-center text-xs sm:text-sm font-bold text-rose-800';
   } else {
     boton.disabled = false;
-    estado.textContent = '✅ La consulta está habilitada. Ingresa tu WhatsApp y presiona el botón para abrir tus tablas.';
-    estado.className = 'rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center text-sm font-bold text-emerald-900';
+    estado.textContent = '🟢 CONSULTOR HABILITADO. Ingresa tu WhatsApp y presiona el botón para ver tus tablas.';
+    estado.className = 'rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-center text-xs sm:text-sm font-bold text-emerald-900';
   }
 }
 
@@ -1923,7 +1940,7 @@ async function consultarMisTablas() {
   const boton = document.getElementById('consultor-buscar-btn');
   const estado = document.getElementById('consultor-estado');
 
-  if (consultorBlocked || obtenerEstadoVentanaConsultor() !== 'abierto') {
+  if (!consultorConfigReady || consultorBlocked) {
     actualizarEstadoConsultor();
     return;
   }
@@ -1989,18 +2006,13 @@ async function consultarMisTablas() {
       : (error.message || 'Ocurrió un error al buscar tus tablas.');
     estado.className = 'rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-center text-sm font-bold text-rose-800';
   } finally {
-    if (obtenerEstadoVentanaConsultor() === 'abierto') {
-      boton.disabled = false;
-      boton.textContent = 'PRESIONA AQUÍ PARA VER TUS TABLAS';
-    } else {
-      actualizarEstadoConsultor();
-    }
+    actualizarEstadoConsultor();
+    boton.textContent = 'PRESIONA AQUÍ PARA VER TUS TABLAS';
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   actualizarEstadoConsultor();
-  window.setInterval(actualizarEstadoConsultor, 60000);
   const phoneInput = document.getElementById('consultor-whatsapp');
   if (phoneInput) phoneInput.addEventListener('keydown', event => {
     if (event.key === 'Enter') consultarMisTablas();
