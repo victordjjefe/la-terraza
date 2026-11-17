@@ -1238,28 +1238,25 @@ async function handleFormSubmit(e) {
       transaction.set(recordRef, record);
       shardIds.forEach(id => transaction.set(tableShardRef(id), { occupied: nextByShard[id], updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }));
 
-      // Consolida todas las compras de este WhatsApp en un solo documento.
+      // Índice del consultor: un documento por WhatsApp y una entrada por compra.
+      // El JSON de exportación contable no se modifica.
       const previousConsultor = consultorSnap.exists ? consultorSnap.data() : {};
-      const previousNumbers = Array.isArray(previousConsultor.tablas) ? previousConsultor.tablas : [];
-      const mergedNumbers = [...new Set([
-        ...previousNumbers.map(Number).filter(n => Number.isInteger(n) && n > 0),
-        ...selectedCodes.map(tableNumber).filter(n => n > 0)
-      ])].sort((a, b) => a - b);
-      const eventDateForLink = cfg.date || eventSettings.date;
-      const eventYoutubeForLink = cfg.youtube || eventSettings.youtube || '';
-      const consultorLink = buildConsultorLink(mergedNumbers, name, eventDateForLink, eventYoutubeForLink);
-      if (!consultorLink) {
-        throw new Error('No se pudo preparar el enlace de consulta. Verifica la fecha del bingo y el nombre del participante.');
-      }
+      const previousPurchases = previousConsultor.compras && typeof previousConsultor.compras === 'object'
+        ? previousConsultor.compras
+        : {};
+      const updatedPurchases = {
+        ...previousPurchases,
+        [recordRef.id]: {
+          nombre: name,
+          whatsapp: consultorPhone,
+          tablas: selectedCodes
+        }
+      };
       transaction.set(consultorRef, {
         whatsapp: consultorPhone,
         nombre: name,
-        nombreNormalizado: slugConsultorName(name),
-        tablas: mergedNumbers,
-        cantidadTablas: mergedNumbers.length,
-        enlace: consultorLink,
-        vence: compactConsultorDate(eventDateForLink),
-        video: extractConsultorVideoId(eventYoutubeForLink),
+        registroId: recordRef.id,
+        compras: updatedPurchases,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       }, { merge: true });
     });
@@ -1875,22 +1872,43 @@ async function consultarMisTablas() {
     }
 
     const result = snapshot.data() || {};
-    const link = String(result.enlace || '').trim();
-    if (!link || !Array.isArray(result.tablas) || result.tablas.length === 0) {
-      throw new Error('Encontramos tu registro, pero todavía no tiene un enlace de tablas disponible.');
+    const purchases = result.compras && typeof result.compras === 'object'
+      ? Object.values(result.compras)
+      : [];
+    const allCodes = purchases.flatMap(purchase =>
+      Array.isArray(purchase.tablas) ? purchase.tablas : []
+    );
+    const tableNumbers = [...new Set(allCodes.map(tableNumber).filter(number => number > 0))]
+      .sort((a, b) => a - b);
+
+    if (!tableNumbers.length) {
+      throw new Error('Encontramos tu registro, pero todavía no tiene tablas asociadas.');
+    }
+    if (!eventSettings.date) {
+      throw new Error('No se pudo cargar la fecha del bingo. Recarga la página e inténtalo nuevamente.');
+    }
+
+    const link = buildConsultorLink(
+      tableNumbers,
+      result.nombre || purchases[purchases.length - 1]?.nombre || '',
+      eventSettings.date,
+      eventSettings.youtube || ''
+    );
+    if (!link) {
+      throw new Error('No fue posible preparar tu enlace. Verifica la configuración del evento.');
     }
 
     const parsedLink = new URL(link);
     if (parsedLink.protocol !== 'https:' || parsedLink.hostname !== 'laterrazacalipodcast.top' || parsedLink.pathname !== '/tabla-digital/') {
-      throw new Error('El enlace guardado no corresponde a la aplicación oficial de tablas.');
+      throw new Error('El enlace generado no corresponde a la aplicación oficial de tablas.');
     }
 
-    estado.textContent = `Encontramos ${result.tablas.length} tabla(s). Abriendo tu enlace…`;
+    estado.textContent = `Encontramos ${tableNumbers.length} tabla(s). Abriendo tu enlace…`;
     window.location.assign(parsedLink.href);
   } catch (error) {
     console.error('Error al consultar tablas:', error);
     estado.textContent = error.code === 'permission-denied'
-      ? 'El consultor está preparado, pero faltan los permisos de Firestore. Configuraremos las reglas en el siguiente paso.'
+      ? 'Firebase no autorizó la consulta del consultor. Verifica que las reglas nuevas estén publicadas.'
       : (error.message || 'Ocurrió un error al buscar tus tablas.');
     estado.className = 'rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-center text-sm font-bold text-rose-800';
   } finally {
