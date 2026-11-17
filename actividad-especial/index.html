@@ -1056,17 +1056,28 @@ function setSpecialEventAvailable(isAvailable) {
   const content = document.getElementById('client-registration-content');
   const message = document.getElementById('no-special-event-message');
   if (!content || !message) return;
-  // La portada y el mensaje quedan visibles; TODO lo demás (consultor, compra,
-  // comprobante, premios y selección de tablas) se oculta si no hay evento.
+
+  // La portada y el aviso se conservan; se ocultan todos los demás bloques.
   const layout = content.firstElementChild;
   if (layout) {
     [...layout.children].forEach(child => {
-      const isCover = child.querySelector && child.querySelector('#bingo-cover');
-      if (isCover || child === message) return;
-      child.classList.toggle('hidden', !isAvailable);
+      const isCover = !!(child.querySelector && child.querySelector('#bingo-cover'));
+      const isMessage = child.id === 'no-special-event-message';
+      if (isCover || isMessage) {
+        child.classList.remove('hidden');
+      } else {
+        child.classList.toggle('hidden', !isAvailable);
+      }
     });
   }
+
+  // Compra, pago, comprobante y selección están en bloques hermanos del layout.
+  [...content.children].forEach(child => {
+    if (child !== layout) child.classList.toggle('hidden', !isAvailable);
+  });
+
   message.classList.toggle('hidden', isAvailable);
+  content.classList.toggle('event-unavailable', !isAvailable);
 }
 
 function updateClientEventDisplay() {
