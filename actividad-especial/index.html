@@ -118,6 +118,9 @@
                         <div class="text-center space-y-2">
                             <span class="bg-indigo-100 text-indigo-900 text-sm font-extrabold px-4 py-1.5 rounded-full uppercase tracking-wider inline-block">Gran Evento Virtual</span>
                             <h2 class="text-3xl font-black text-slate-900 leading-tight">Gran Bingo Virtual Especial</h2>
+                            <div id="client-event-name-wrap" class="hidden mt-1">
+                                <span id="client-event-name" class="inline-block bg-indigo-100 text-indigo-900 font-black text-lg px-4 py-1 rounded-xl"></span>
+                            </div>
                             <p class="text-indigo-700 font-extrabold text-xl">📅 <span id="client-event-date">Fecha por confirmar</span> &nbsp;|&nbsp; ⏰ <span id="client-event-time">Hora por confirmar</span></p>
                             <div class="inline-block bg-amber-100 text-amber-900 font-black text-lg px-4 py-1 rounded-xl mt-1">
                                 💰 Valor por tabla: <span id="client-price-display">$3.000</span>
@@ -312,6 +315,11 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div><label for="event-date" class="block text-sm font-bold text-slate-700 mb-1">Fecha del bingo</label><input id="event-date" type="date" value="2026-10-25" class="w-full px-3 py-2 rounded-lg border-2 border-slate-300"></div>
                         <div><label for="event-time" class="block text-sm font-bold text-slate-700 mb-1">Hora</label><input id="event-time" type="time" value="20:00" class="w-full px-3 py-2 rounded-lg border-2 border-slate-300"></div>
+                    </div>
+                    <div>
+                        <label for="event-name" class="block text-sm font-bold text-slate-700 mb-1">Nombre o temática del bingo</label>
+                        <input id="event-name" type="text" maxlength="60" placeholder="Ej.: Navideño, Amor y Amistad, Reyes" class="w-full px-3 py-2 rounded-lg border-2 border-slate-300">
+                        <p class="text-xs text-slate-500 mt-1">Este nombre aparecerá debajo del título principal del bingo.</p>
                     </div>
                     <div class="rounded-xl border-2 border-amber-300 bg-amber-50 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div><h4 class="font-black text-amber-950">🔒 Control de inscripciones</h4><p id="registration-status-description" class="text-sm text-amber-900">Estado: sincronizando...</p></div>
@@ -868,8 +876,14 @@ async function loadOccupiedTableCache() {
 function updateClientEventDisplay() {
   const dateEl = document.getElementById('client-event-date');
   const timeEl = document.getElementById('client-event-time');
+  const eventNameWrap = document.getElementById('client-event-name-wrap');
+  const eventNameEl = document.getElementById('client-event-name');
+  const eventName = String(eventSettings?.eventName || '').trim();
   const dateValue = eventSettings?.date || '';
   const timeValue = eventSettings?.time || '';
+
+  if (eventNameEl) eventNameEl.textContent = eventName;
+  if (eventNameWrap) eventNameWrap.classList.toggle('hidden', !eventName);
 
   if (dateEl) {
     if (dateValue) {
@@ -910,8 +924,10 @@ async function loadPublicTableConfig() {
       if (cfg.date) { const d=document.getElementById('event-date'); if (d) d.value=cfg.date; }
       if (cfg.time) { const t=document.getElementById('event-time'); if (t) t.value=cfg.time; }
       if (cfg.youtube) { const y=document.getElementById('event-youtube'); if (y) y.value=cfg.youtube; }
+      const eventNameInput = document.getElementById('event-name');
+      if (eventNameInput) eventNameInput.value = cfg.eventName || '';
       tableRangeStart=publicTableStart; tableRangeEnd=publicTableEnd;
-      eventSettings={...eventSettings,date:cfg.date||eventSettings.date,time:cfg.time||eventSettings.time,value:PRICE_PER_TABLE,youtube:cfg.youtube||eventSettings.youtube};
+      eventSettings={...eventSettings,date:cfg.date||eventSettings.date,time:cfg.time||eventSettings.time,value:PRICE_PER_TABLE,youtube:cfg.youtube||eventSettings.youtube,eventName:cfg.eventName||''};
     }
     updateClientEventDisplay();
     calculateTotal();
@@ -1422,7 +1438,7 @@ let currentAssignmentIndex = null;
 let selectedAssignmentTables = new Set();
 let tableRangeStart = 1;
 let tableRangeEnd = 200;
-let eventSettings = { date: '2026-10-25', time: '20:00', value: 3000, youtube: '' };
+let eventSettings = { date: '2026-10-25', time: '20:00', value: 3000, youtube: '', eventName: '' };
 
 function normalizeTableCode(value) {
   const raw = String(value ?? '').trim().toUpperCase();
@@ -1458,6 +1474,7 @@ function loadLocalSettings() {
   const time = document.getElementById('event-time'); if (time) time.value = eventSettings.time || '';
   const value = document.getElementById('event-value'); if (value) value.value = eventSettings.value ?? 3000;
   const youtube = document.getElementById('event-youtube'); if (youtube) youtube.value = eventSettings.youtube || '';
+  const eventName = document.getElementById('event-name'); if (eventName) eventName.value = eventSettings.eventName || '';
   updateClientEventDisplay();
 }
 async function saveAllSettings() {
@@ -1467,6 +1484,7 @@ async function saveAllSettings() {
   const time = document.getElementById('event-time').value;
   const value = Number(document.getElementById('event-value').value);
   const youtube = document.getElementById('event-youtube').value.trim();
+  const eventName = document.getElementById('event-name').value.trim();
   if (!Number.isInteger(start) || !Number.isInteger(end) || start < 1 || end < start || end > 5000 || end-start > 4999) {
     alert('Ingresa un rango válido entre 1 y 5.000.'); return;
   }
@@ -1480,10 +1498,10 @@ async function saveAllSettings() {
   const outside = [...assigned.keys()].filter(code => tableNumber(code) < start || tableNumber(code) > end);
   if (outside.length && !confirm(`Hay ${outside.length} tabla(s) ya asignadas fuera del nuevo rango. Se conservarán sin cambios y no se usarán para nuevas asignaciones. ¿Deseas continuar?`)) return;
   tableRangeStart = start; tableRangeEnd = end;
-  eventSettings = { date, time, value, youtube };
+  eventSettings = { date, time, value, youtube, eventName };
   localStorage.setItem('terrazaEspecialTableRange', JSON.stringify({start, end}));
   localStorage.setItem('terrazaEspecialEventSettings', JSON.stringify(eventSettings));
-  try { await tableConfigRef.set({ rangeStart:start, rangeEnd:end, pricePerTable:value, date, time, youtube, updatedAt:firebase.firestore.FieldValue.serverTimestamp() }, { merge:true }); } catch(error) { console.error(error); alert('No se pudo publicar la configuración en Firebase. La página pública seguirá usando la configuración anterior.'); return; }
+  try { await tableConfigRef.set({ rangeStart:start, rangeEnd:end, pricePerTable:value, date, time, youtube, eventName, updatedAt:firebase.firestore.FieldValue.serverTimestamp() }, { merge:true }); } catch(error) { console.error(error); alert('No se pudo publicar la configuración en Firebase. La página pública seguirá usando la configuración anterior.'); return; }
   publicTableStart=start; publicTableEnd=end; PRICE_PER_TABLE=value;
   updateClientEventDisplay();
   calculateTotal();
@@ -1511,11 +1529,12 @@ async function saveEventSettings() {
   const time = document.getElementById('event-time').value;
   const value = Number(document.getElementById('event-value').value);
   const youtube = document.getElementById('event-youtube').value.trim();
+  const eventName = document.getElementById('event-name').value.trim();
   if (!date || !time || !Number.isFinite(value) || value < 0) { alert('Completa fecha, hora y un valor válido por tabla.'); return; }
   if (youtube && !/^https:\/\/(www\.)?(youtube\.com|youtu\.be)\//i.test(youtube)) { alert('El enlace debe ser una URL válida de YouTube.'); return; }
-  eventSettings = { date, time, value, youtube };
+  eventSettings = { date, time, value, youtube, eventName };
   localStorage.setItem('terrazaEspecialEventSettings', JSON.stringify(eventSettings));
-  try { await tableConfigRef.set({date,time,pricePerTable:value,youtube,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true}); PRICE_PER_TABLE=value; updateClientEventDisplay(); calculateTotal(); alert('Datos del evento guardados y publicados en Firebase.'); } catch(error) { console.error(error); alert('No se pudo publicar la configuración en Firebase.'); }
+  try { await tableConfigRef.set({date,time,pricePerTable:value,youtube,eventName,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true}); PRICE_PER_TABLE=value; updateClientEventDisplay(); calculateTotal(); alert('Datos del evento guardados y publicados en Firebase.'); } catch(error) { console.error(error); alert('No se pudo publicar la configuración en Firebase.'); }
 }
 function updateAssignmentSummary() {
   updateCopyListsCount();
