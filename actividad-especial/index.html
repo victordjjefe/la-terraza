@@ -234,7 +234,12 @@
                                     <span id="table-selection-counter" class="rounded-full bg-indigo-100 text-indigo-900 px-3 py-1 text-xs font-black">0 de 1</span>
                                 </div>
                                 <p class="text-xs text-slate-600">Las tablas ocupadas aparecen bloqueadas. Debes seleccionar exactamente la cantidad que pagaste.</p>
-                                <div id="client-table-grid" class="grid grid-cols-4 sm:grid-cols-5 gap-2 max-h-80 overflow-y-auto p-2 rounded-xl border border-slate-200 bg-slate-50"></div>
+                                <div id="client-table-grid" class="grid grid-cols-4 sm:grid-cols-5 gap-2 p-2 rounded-xl border border-slate-200 bg-slate-50"></div>
+                                <div id="client-table-pagination" class="flex items-center justify-between gap-3 pt-2">
+                                    <button type="button" id="client-table-prev" onclick="changeClientTablePage(-1)" class="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 font-bold text-sm disabled:opacity-40 disabled:cursor-not-allowed" disabled>Anterior</button>
+                                    <span id="client-table-page-info" class="text-xs sm:text-sm font-bold text-slate-600 text-center" aria-live="polite">Mostrando 1–50</span>
+                                    <button type="button" id="client-table-next" onclick="changeClientTablePage(1)" class="px-4 py-2 rounded-lg bg-indigo-600 text-white font-bold text-sm disabled:opacity-40 disabled:cursor-not-allowed">Siguiente</button>
+                                </div>
                                 <p id="table-selection-message" class="text-sm font-bold text-amber-800" aria-live="polite">Te falta seleccionar 1 tabla.</p>
                             </div>
                             <div class="rounded-xl bg-indigo-50 border border-indigo-200 p-3 flex justify-between items-center">
@@ -521,6 +526,8 @@ let pendingReceiptFileName = '';
 let selectedClientTables = new Set();
 let cachedOccupiedTables = {};
 let requestedTableCount = 1;
+let clientTablePage = 0;
+const CLIENT_TABLES_PER_PAGE = 50;
 
 function applyRegistrationStatus() {
   const message = document.getElementById('registration-closed-message');
@@ -990,6 +997,7 @@ async function continueToTables() {
   selectedClientTables = new Set();
   try {
     await loadOccupiedTableCache();
+    clientTablePage = 0;
     renderClientTableGrid();
     document.getElementById('proof-ready-summary').textContent = `✅ Comprobante preparado. Debes seleccionar exactamente ${requestedTableCount} tabla(s). Total: $${(requestedTableCount * PRICE_PER_TABLE).toLocaleString('es-CO')}.`;
     document.getElementById('purchase-step-proof').classList.add('hidden');
@@ -1009,15 +1017,49 @@ function backToProofStep() {
 function renderClientTableGrid() {
   const grid = document.getElementById('client-table-grid');
   if (!grid) return;
+
+  const totalTables = Math.max(0, publicTableEnd - publicTableStart + 1);
+  const totalPages = Math.max(1, Math.ceil(totalTables / CLIENT_TABLES_PER_PAGE));
+  clientTablePage = Math.min(Math.max(0, clientTablePage), totalPages - 1);
+
+  const firstNumber = publicTableStart + clientTablePage * CLIENT_TABLES_PER_PAGE;
+  const lastNumber = Math.min(publicTableEnd, firstNumber + CLIENT_TABLES_PER_PAGE - 1);
   const codes = [];
-  for (let n=publicTableStart; n<=publicTableEnd; n++) codes.push(normalizeTableCode(n));
+
+  for (let n = firstNumber; n <= lastNumber; n++) {
+    codes.push(normalizeTableCode(n));
+  }
+
   grid.innerHTML = codes.map(code => {
     const occupied = Boolean(cachedOccupiedTables[code]);
     const selected = selectedClientTables.has(code);
     const cls = occupied ? 'bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed' : selected ? 'bg-indigo-700 text-white border-indigo-900' : 'bg-white text-slate-800 border-slate-300 hover:bg-indigo-50 hover:border-indigo-500';
     return `<button type="button" ${occupied?'disabled':''} onclick="toggleClientTable('${code}')" class="border-2 rounded-lg py-3 px-1 text-sm font-black ${cls}" title="${occupied?'Tabla ocupada':selected?'Seleccionada':'Disponible'}">${code}${occupied?' 🔒':selected?' ✓':''}</button>`;
   }).join('');
+
+  const previousButton = document.getElementById('client-table-prev');
+  const nextButton = document.getElementById('client-table-next');
+  const pageInfo = document.getElementById('client-table-page-info');
+
+  if (previousButton) previousButton.disabled = clientTablePage === 0;
+  if (nextButton) nextButton.disabled = clientTablePage >= totalPages - 1;
+  if (pageInfo) {
+    pageInfo.textContent = totalTables
+      ? `Tablas ${firstNumber}–${lastNumber} de ${totalTables} · Página ${clientTablePage + 1} de ${totalPages}`
+      : 'No hay tablas habilitadas';
+  }
+
   updateClientSelectionStatus();
+}
+
+function changeClientTablePage(direction) {
+  const totalTables = Math.max(0, publicTableEnd - publicTableStart + 1);
+  const totalPages = Math.max(1, Math.ceil(totalTables / CLIENT_TABLES_PER_PAGE));
+  const nextPage = clientTablePage + Number(direction || 0);
+
+  if (nextPage < 0 || nextPage >= totalPages) return;
+  clientTablePage = nextPage;
+  renderClientTableGrid();
 }
 
 function toggleClientTable(code) {
