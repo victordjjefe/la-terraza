@@ -1116,6 +1116,24 @@ function updateClientEventDisplay() {
   }
 }
 
+// Escucha en tiempo real el documento de configuración para que el
+// consultor se bloquee o habilite inmediatamente en todas las páginas abiertas.
+function listenConsultorConfig() {
+  tableConfigRef.onSnapshot(snapshot => {
+    const cfg = snapshot.exists ? (snapshot.data() || {}) : {};
+    consultorBlocked = cfg.consultorBlocked !== false; // bloqueado por defecto si no existe configuración explícita
+    consultorConfigReady = true;
+    const toggle = document.getElementById('consultor-blocked-toggle');
+    if (toggle) toggle.checked = consultorBlocked;
+    updateConsultorAdminStatus();
+    actualizarEstadoConsultor();
+  }, error => {
+    console.error('No se pudo sincronizar en tiempo real el consultor:', error);
+    consultorConfigReady = false;
+    actualizarEstadoConsultor();
+  });
+}
+
 async function loadPublicTableConfig() {
   try {
     const snap = await tableConfigRef.get();
@@ -2067,6 +2085,7 @@ renderAdminTable = function() {
 loadLocalSettings();
 listenRegistrationStatus();
 loadPublicTableConfig();
+listenConsultorConfig();
 
 calculateTotal();
     
