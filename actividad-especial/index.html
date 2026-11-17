@@ -545,6 +545,8 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
 const recordsCollection = db.collection("registros");
+// Índice auxiliar: un documento consolidado por número de WhatsApp.
+const consultorCollection = db.collection("consultorTablas");
 // Estado remoto para que el bloqueo se aplique a todos los visitantes.
 const registrationStatusRef = db.collection("configuracion").doc("estadoRegistro");
 let registrationClosed = false;
@@ -1201,6 +1203,12 @@ async function handleFormSubmit(e) {
       const configSnap = await transaction.get(tableConfigRef);
       const shardIds = [...new Set(selectedCodes.map(tableShardId))];
       const shardSnaps = await Promise.all(shardIds.map(id => transaction.get(tableShardRef(id))));
+      const consultorPhone = normalizeConsultorPhone(whatsapp);
+      if (consultorPhone.length < 10 || consultorPhone.length > 15) {
+        throw new Error('El número de WhatsApp no tiene un formato válido.');
+      }
+      const consultorRef = consultorCollection.doc(consultorPhone);
+      const consultorSnap = await transaction.get(consultorRef);
       const cfg = configSnap.exists ? configSnap.data() : {};
       const livePrice = Math.max(1, Number(cfg.pricePerTable) || PRICE_PER_TABLE);
       const liveStart = Math.max(1, Number(cfg.rangeStart) || 1);
@@ -1229,6 +1237,31 @@ async function handleFormSubmit(e) {
       };
       transaction.set(recordRef, record);
       shardIds.forEach(id => transaction.set(tableShardRef(id), { occupied: nextByShard[id], updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }));
+
+      // Consolida todas las compras de este WhatsApp en un solo documento.
+      const previousConsultor = consultorSnap.exists ? consultorSnap.data() : {};
+      const previousNumbers = Array.isArray(previousConsultor.tablas) ? previousConsultor.tablas : [];
+      const mergedNumbers = [...new Set([
+        ...previousNumbers.map(Number).filter(n => Number.isInteger(n) && n > 0),
+        ...selectedCodes.map(tableNumber).filter(n => n > 0)
+      ])].sort((a, b) => a - b);
+      const eventDateForLink = cfg.date || eventSettings.date;
+      const eventYoutubeForLink = cfg.youtube || eventSettings.youtube || '';
+      const consultorLink = buildConsultorLink(mergedNumbers, name, eventDateForLink, eventYoutubeForLink);
+      if (!consultorLink) {
+        throw new Error('No se pudo preparar el enlace de consulta. Verifica la fecha del bingo y el nombre del participante.');
+      }
+      transaction.set(consultorRef, {
+        whatsapp: consultorPhone,
+        nombre: name,
+        nombreNormalizado: slugConsultorName(name),
+        tablas: mergedNumbers,
+        cantidadTablas: mergedNumbers.length,
+        enlace: consultorLink,
+        vence: compactConsultorDate(eventDateForLink),
+        video: extractConsultorVideoId(eventYoutubeForLink),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
     });
 
     document.getElementById('progress-bar').style.width = '100%';
@@ -1561,6 +1594,50 @@ function normalizeTableCode(value) {
   return 'T' + String(parseInt(digits, 10)).padStart(3, '0');
 }
 function tableNumber(code) { const m = normalizeTableCode(code).match(/^T(\d+)$/); return m ? Number(m[1]) : 0; }
+
+function normalizeConsultorPhone(value) {
+  let digits = String(value ?? '').replace(/\D/g, '');
+  if (digits.length === 12 && digits.startsWith('57')) digits = digits.slice(2);
+  return digits;
+}
+function slugConsultorName(value) {
+  return String(value ?? '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+function extractConsultorVideoId(value) {
+  const raw = String(value ?? '').trim();
+  if (!raw) return '';
+  try {
+    const url = new URL(raw);
+    if (url.hostname.includes('youtu.be')) return url.pathname.split('/').filter(Boolean)[0] || '';
+    const v = url.searchParams.get('v');
+    if (v) return v;
+    const match = url.pathname.match(/\/(?:live|embed|shorts)\/([^/?]+)/i);
+    if (match) return match[1];
+  } catch (_) {}
+  const fallback = raw.match(/(?:v=|youtu\.be\/|\/live\/|\/embed\/)([A-Za-z0-9_-]{6,})/);
+  return fallback ? fallback[1] : '';
+}
+function compactConsultorDate(value) {
+  const raw = String(value ?? '').trim();
+  let match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (match) return `${match[1]}${match[2]}${match[3]}`;
+  match = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (match) return `${match[3]}${match[2]}${match[1]}`;
+  return '';
+}
+function buildConsultorLink(tableNumbers, name, bingoDate, youtubeUrl) {
+  const numbers = [...new Set((tableNumbers || []).map(Number).filter(n => Number.isInteger(n) && n > 0))]
+    .sort((a, b) => a - b);
+  const expiry = compactConsultorDate(bingoDate);
+  const slug = slugConsultorName(name);
+  const videoId = extractConsultorVideoId(youtubeUrl);
+  if (!numbers.length || !expiry || !slug) return '';
+  return `https://laterrazacalipodcast.top/tabla-digital/?tablas=${numbers.join(',')}&vence=${expiry}&nombre=${encodeURIComponent(slug)}&video=${encodeURIComponent(videoId)}`;
+}
+
 function getAssigned(record) { return Array.isArray(record?.tablesAssigned) ? [...new Set(record.tablesAssigned.map(normalizeTableCode).filter(Boolean))].sort((a,b)=>tableNumber(a)-tableNumber(b)) : []; }
 function getImportedTables(record) { return Array.isArray(record?.accountingImportedTables) ? [...new Set(record.accountingImportedTables.map(normalizeTableCode).filter(Boolean))] : []; }
 function getPendingExportTables(record) { return Array.isArray(record?.accountingPendingTables) ? [...new Set(record.accountingPendingTables.map(normalizeTableCode).filter(Boolean))] : []; }
@@ -1739,9 +1816,6 @@ calculateTotal();
 // Consultor de tablas. Fechas expresadas en hora Colombia (UTC-5).
 const CONSULTOR_FECHA_APERTURA = new Date('2026-12-03T00:00:00-05:00');
 const CONSULTOR_FECHA_CIERRE_EXCLUSIVA = new Date('2026-12-07T00:00:00-05:00');
-// La ruta requiere un endpoint de servidor que aún debe configurarse en el hosting.
-const CONSULTOR_API_ENDPOINT = '/api/consultor-tablas';
-
 function obtenerEstadoVentanaConsultor() {
   const ahora = new Date();
   if (ahora < CONSULTOR_FECHA_APERTURA) return 'pendiente';
@@ -1780,7 +1854,7 @@ async function consultarMisTablas() {
     return;
   }
 
-  const whatsapp = String(input?.value || '').replace(/\D/g, '');
+  const whatsapp = normalizeConsultorPhone(input?.value || '');
   if (whatsapp.length < 10 || whatsapp.length > 15) {
     estado.textContent = 'Escribe un número de WhatsApp válido para continuar.';
     estado.className = 'rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-center text-sm font-bold text-rose-800';
@@ -1794,31 +1868,30 @@ async function consultarMisTablas() {
   estado.className = 'rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-center text-sm font-bold text-indigo-900';
 
   try {
-    const response = await fetch(CONSULTOR_API_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ whatsapp })
-    });
-    if (!response.ok) {
-      if (response.status === 404 || response.status === 501) {
-        throw new Error('El servicio de consulta todavía no está conectado.');
-      }
-      throw new Error('No fue posible consultar en este momento. Inténtalo nuevamente.');
+    // Una sola lectura de un documento; no descarga registros ni escucha cambios en tiempo real.
+    const snapshot = await consultorCollection.doc(whatsapp).get();
+    if (!snapshot.exists) {
+      throw new Error('No encontramos tablas asociadas a ese número. Verifica el WhatsApp utilizado en tu compra.');
     }
 
-    const result = await response.json();
-    const link = String(result?.enlace || result?.url || '').trim();
-    if (!result?.ok || !link) {
-      throw new Error(result?.mensaje || 'No encontramos tablas asociadas a ese número. Verifica el WhatsApp utilizado en tu compra.');
+    const result = snapshot.data() || {};
+    const link = String(result.enlace || '').trim();
+    if (!link || !Array.isArray(result.tablas) || result.tablas.length === 0) {
+      throw new Error('Encontramos tu registro, pero todavía no tiene un enlace de tablas disponible.');
     }
 
     const parsedLink = new URL(link);
-    if (parsedLink.protocol !== 'https:' || parsedLink.hostname !== 'laterrazacalipodcast.top' || !parsedLink.pathname.startsWith('/tabla-digital/')) {
-      throw new Error('El enlace recibido no corresponde a la aplicación oficial de tablas.');
+    if (parsedLink.protocol !== 'https:' || parsedLink.hostname !== 'laterrazacalipodcast.top' || parsedLink.pathname !== '/tabla-digital/') {
+      throw new Error('El enlace guardado no corresponde a la aplicación oficial de tablas.');
     }
+
+    estado.textContent = `Encontramos ${result.tablas.length} tabla(s). Abriendo tu enlace…`;
     window.location.assign(parsedLink.href);
   } catch (error) {
-    estado.textContent = error.message || 'Ocurrió un error al buscar tus tablas.';
+    console.error('Error al consultar tablas:', error);
+    estado.textContent = error.code === 'permission-denied'
+      ? 'El consultor está preparado, pero faltan los permisos de Firestore. Configuraremos las reglas en el siguiente paso.'
+      : (error.message || 'Ocurrió un error al buscar tus tablas.');
     estado.className = 'rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-center text-sm font-bold text-rose-800';
   } finally {
     if (obtenerEstadoVentanaConsultor() === 'abierto') {
