@@ -118,7 +118,10 @@
                     <section id="consultor-tablas" class="mx-4 sm:mx-6 mt-4 rounded-2xl border-2 border-indigo-300 bg-gradient-to-br from-indigo-950 via-indigo-800 to-violet-700 p-5 sm:p-6 shadow-xl text-white">
                         <div class="text-center space-y-2">
                             <div class="inline-flex items-center justify-center rounded-full bg-white/15 px-3 py-1 text-xs font-black tracking-widest uppercase">La Terraza Bingo</div>
-                            <h2 class="text-2xl sm:text-3xl font-black tracking-tight">🔎 CONSULTA TUS TABLAS</h2>
+                            <div class="flex flex-wrap items-center justify-center gap-2">
+                                <h2 class="text-2xl sm:text-3xl font-black tracking-tight">🔎 CONSULTA TUS TABLAS</h2>
+                                <span id="consultor-estado" role="status" aria-live="polite" class="inline-flex items-center rounded-full border border-white/30 bg-white/10 px-2.5 py-1 text-[11px] font-extrabold tracking-wide text-white">(VERIFICANDO)</span>
+                            </div>
                             <p class="text-sm sm:text-base text-indigo-100">Escribe el número de WhatsApp con el que realizaste tu compra.</p>
                         </div>
                         <div class="mt-5 space-y-3">
@@ -127,14 +130,8 @@
                                 class="w-full rounded-xl border-2 border-white/70 bg-white px-4 py-3.5 text-lg font-bold tracking-wide text-slate-900 placeholder:text-slate-400 focus:border-amber-300 focus:outline-none focus:ring-4 focus:ring-amber-300/30">
                             <div class="flex justify-center">
                                 <button id="consultor-buscar-btn" type="button" onclick="consultarMisTablas()"
-                                    class="inline-flex w-full max-w-md items-center justify-center rounded-xl bg-amber-400 px-5 py-3 text-sm sm:text-base font-black uppercase tracking-wide text-indigo-950 shadow-md transition duration-150 hover:-translate-y-0.5 hover:bg-amber-300 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-amber-300/40 disabled:cursor-not-allowed disabled:transform-none disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
+                                    class="inline-flex w-full max-w-md items-center justify-center rounded-xl px-5 py-3 text-sm sm:text-base font-black uppercase tracking-wide text-white shadow-md transition duration-150 hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-emerald-300/40 disabled:cursor-not-allowed disabled:transform-none disabled:bg-slate-400 disabled:text-slate-100 disabled:shadow-none"
                                     disabled>PRESIONA AQUÍ PARA VER TUS TABLAS</button>
-                            </div>
-                            <div class="rounded-xl border border-amber-200/60 bg-white/95 px-4 py-2.5 text-center text-sm font-bold text-indigo-950">
-                                🔒 Podrás consultar tus tablas a partir del 3 de diciembre de 2026.
-                            </div>
-                            <div id="consultor-estado" role="status" aria-live="polite" class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-center text-xs sm:text-sm font-bold text-slate-700">
-                                Verificando el estado del consultor...
                             </div>
                         </div>
                     </section>
@@ -1910,8 +1907,8 @@ loadPublicTableConfig();
 
 calculateTotal();
     
-// El texto de fecha mostrado al público es únicamente informativo.
-// La disponibilidad real del buscador depende exclusivamente del interruptor administrativo.
+// El estado del consultor se muestra junto al título.
+// El interruptor administrativo es la única autoridad para habilitar o bloquear la consulta.
 function actualizarEstadoConsultor() {
   const boton = document.getElementById('consultor-buscar-btn');
   const estado = document.getElementById('consultor-estado');
@@ -1919,19 +1916,25 @@ function actualizarEstadoConsultor() {
 
   if (!consultorConfigReady) {
     boton.disabled = true;
-    estado.textContent = 'Verificando el estado del consultor...';
-    estado.className = 'rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-center text-xs sm:text-sm font-bold text-slate-700';
+    boton.classList.remove('bg-emerald-500', 'hover:bg-emerald-600');
+    boton.classList.add('bg-slate-400');
+    estado.textContent = '(VERIFICANDO)';
+    estado.className = 'inline-flex items-center rounded-full border border-white/30 bg-white/10 px-2.5 py-1 text-[11px] font-extrabold tracking-wide text-white';
     return;
   }
 
   if (consultorBlocked) {
     boton.disabled = true;
-    estado.textContent = '🔒 CONSULTOR BLOQUEADO. Por ahora no es posible consultar las tablas.';
-    estado.className = 'rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-center text-xs sm:text-sm font-bold text-rose-800';
+    boton.classList.remove('bg-emerald-500', 'hover:bg-emerald-600');
+    boton.classList.add('bg-slate-400');
+    estado.textContent = '(BLOQUEADO)';
+    estado.className = 'inline-flex items-center rounded-full border border-slate-300 bg-slate-200 px-2.5 py-1 text-[11px] font-extrabold tracking-wide text-slate-700';
   } else {
     boton.disabled = false;
-    estado.textContent = '🟢 CONSULTOR HABILITADO. Ingresa tu WhatsApp y presiona el botón para ver tus tablas.';
-    estado.className = 'rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-center text-xs sm:text-sm font-bold text-emerald-900';
+    boton.classList.remove('bg-slate-400');
+    boton.classList.add('bg-emerald-500', 'hover:bg-emerald-600');
+    estado.textContent = '(HABILITADO)';
+    estado.className = 'inline-flex items-center rounded-full border border-emerald-200 bg-emerald-100 px-2.5 py-1 text-[11px] font-extrabold tracking-wide text-emerald-800';
   }
 }
 
@@ -1947,16 +1950,16 @@ async function consultarMisTablas() {
 
   const whatsapp = normalizeConsultorPhone(input?.value || '');
   if (whatsapp.length < 10 || whatsapp.length > 15) {
-    estado.textContent = 'Escribe un número de WhatsApp válido para continuar.';
-    estado.className = 'rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-center text-sm font-bold text-rose-800';
+    estado.textContent = '(NÚMERO NO VÁLIDO)';
+    estado.className = 'inline-flex items-center rounded-full border border-rose-200 bg-rose-100 px-2.5 py-1 text-[11px] font-extrabold tracking-wide text-rose-800';
     input?.focus();
     return;
   }
 
   boton.disabled = true;
   boton.textContent = 'BUSCANDO TUS TABLAS…';
-  estado.textContent = 'Estamos buscando tu enlace. Un momento, por favor.';
-  estado.className = 'rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-center text-sm font-bold text-indigo-900';
+  estado.textContent = '(BUSCANDO…)';
+  estado.className = 'inline-flex items-center rounded-full border border-sky-200 bg-sky-100 px-2.5 py-1 text-[11px] font-extrabold tracking-wide text-sky-800';
 
   try {
     // Una sola lectura de un documento; no descarga registros ni escucha cambios en tiempo real.
@@ -1997,17 +2000,19 @@ async function consultarMisTablas() {
       throw new Error('El enlace generado no corresponde a la aplicación oficial de tablas.');
     }
 
-    estado.textContent = `Encontramos ${tableNumbers.length} tabla(s). Abriendo tu enlace…`;
+    estado.textContent = `(ABRIENDO ${tableNumbers.length} TABLAS…)`;
     window.location.assign(parsedLink.href);
   } catch (error) {
     console.error('Error al consultar tablas:', error);
     estado.textContent = error.code === 'permission-denied'
-      ? 'Firebase no autorizó la consulta del consultor. Verifica que las reglas nuevas estén publicadas.'
-      : (error.message || 'Ocurrió un error al buscar tus tablas.');
-    estado.className = 'rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-center text-sm font-bold text-rose-800';
+      ? '(ERROR DE PERMISOS)'
+      : '(NO SE ENCONTRARON TABLAS)';
+    estado.title = error.message || 'Ocurrió un error al buscar tus tablas.';
+    estado.className = 'inline-flex items-center rounded-full border border-rose-200 bg-rose-100 px-2.5 py-1 text-[11px] font-extrabold tracking-wide text-rose-800';
   } finally {
-    actualizarEstadoConsultor();
     boton.textContent = 'PRESIONA AQUÍ PARA VER TUS TABLAS';
+    boton.disabled = !consultorConfigReady || consultorBlocked;
+    if (!consultorConfigReady || consultorBlocked) actualizarEstadoConsultor();
   }
 }
 
