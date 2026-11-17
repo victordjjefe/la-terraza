@@ -496,20 +496,25 @@
 
     <!-- Modal de resultado del consultor: muestra el enlace antes de abrirlo -->
     <div id="consultor-link-modal" class="fixed inset-0 z-[70] hidden items-center justify-center bg-slate-950/75 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-labelledby="consultor-link-title">
-        <div class="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-2xl space-y-4">
+        <div class="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-2xl space-y-4">
             <div class="text-center">
                 <div class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-3xl">🎉</div>
                 <h3 id="consultor-link-title" class="text-xl sm:text-2xl font-black text-slate-900">¡Encontramos tus tablas!</h3>
-                <p id="consultor-link-summary" class="mt-1 text-sm text-slate-600">Tus tablas están listas para consultar.</p>
+                <p class="mt-1 text-sm text-slate-600">Verifica tus datos y los números de tus tablas antes de abrirlas.</p>
             </div>
-            <div class="space-y-2">
-                <label for="consultor-link-value" class="block text-sm font-bold text-slate-700">Este es tu enlace de tablas:</label>
-                <input id="consultor-link-value" type="text" readonly
-                    class="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-3 text-sm text-slate-800 focus:outline-none"
-                    aria-label="Enlace personal para consultar tus tablas">
-                <button type="button" onclick="copiarEnlaceConsultor()" class="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-100">
-                    Copiar enlace
-                </button>
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2">
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Nombre</p>
+                    <p id="consultor-link-name" class="text-base font-extrabold text-slate-900 break-words"></p>
+                </div>
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-wide text-slate-500">WhatsApp</p>
+                    <p id="consultor-link-phone" class="text-sm font-bold text-slate-800"></p>
+                </div>
+                <div class="border-t border-slate-200 pt-2">
+                    <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Todas tus tablas</p>
+                    <p id="consultor-link-tables" class="mt-1 text-sm sm:text-base font-extrabold leading-relaxed text-indigo-800 break-words"></p>
+                </div>
             </div>
             <a id="consultor-link-open" href="#" target="_blank" rel="noopener noreferrer"
                 onclick="window.open(this.href, '_blank', 'noopener,noreferrer'); return false;"
@@ -2009,20 +2014,20 @@ function actualizarEstadoConsultor() {
   }
 }
 
-function mostrarModalEnlaceConsultor(link, cantidadTablas) {
+function mostrarModalEnlaceConsultor(link, customerName, whatsapp, tableCodes) {
   const modal = document.getElementById('consultor-link-modal');
-  const input = document.getElementById('consultor-link-value');
   const abrir = document.getElementById('consultor-link-open');
-  const resumen = document.getElementById('consultor-link-summary');
-  if (!modal || !input || !abrir) {
-    throw new Error('No se pudo mostrar la ventana con tu enlace. Recarga la página e inténtalo nuevamente.');
+  const nameField = document.getElementById('consultor-link-name');
+  const phoneField = document.getElementById('consultor-link-phone');
+  const tablesField = document.getElementById('consultor-link-tables');
+  if (!modal || !abrir || !nameField || !phoneField || !tablesField) {
+    throw new Error('No se pudo mostrar el resumen de tus tablas. Recarga la página e inténtalo nuevamente.');
   }
 
-  input.value = link;
   abrir.href = link;
-  if (resumen) {
-    resumen.textContent = `Encontramos ${cantidadTablas} tabla(s) asociadas a tu número de WhatsApp. Presiona el botón para abrirlas.`;
-  }
+  nameField.textContent = customerName || 'Nombre no disponible';
+  phoneField.textContent = whatsapp;
+  tablesField.textContent = tableCodes.join(', ');
   modal.classList.remove('hidden');
   modal.classList.add('flex');
 }
@@ -2034,19 +2039,6 @@ function cerrarModalEnlaceConsultor() {
   modal.classList.remove('flex');
 }
 
-async function copiarEnlaceConsultor() {
-  const input = document.getElementById('consultor-link-value');
-  if (!input || !input.value) return;
-  try {
-    await navigator.clipboard.writeText(input.value);
-    alert('Enlace copiado. Ya puedes compartirlo o guardarlo.');
-  } catch (error) {
-    input.focus();
-    input.select();
-    const copied = document.execCommand('copy');
-    alert(copied ? 'Enlace copiado.' : 'No se pudo copiar automáticamente. Selecciona y copia el enlace.');
-  }
-}
 
 async function consultarMisTablas() {
   const input = document.getElementById('consultor-whatsapp');
@@ -2085,8 +2077,9 @@ async function consultarMisTablas() {
     const allCodes = purchases.flatMap(purchase =>
       Array.isArray(purchase.tablas) ? purchase.tablas : []
     );
-    const tableNumbers = [...new Set(allCodes.map(tableNumber).filter(number => number > 0))]
-      .sort((a, b) => a - b);
+    const tableCodes = [...new Set(allCodes.map(normalizeTableCode).filter(Boolean))]
+      .sort((a, b) => tableNumber(a) - tableNumber(b));
+    const tableNumbers = tableCodes.map(tableNumber);
 
     if (!tableNumbers.length) {
       throw new Error('Encontramos tu registro, pero todavía no tiene tablas asociadas.');
@@ -2112,7 +2105,7 @@ async function consultarMisTablas() {
 
     estado.textContent = `(ENLACE LISTO: ${tableNumbers.length} TABLAS)`;
     estado.className = 'inline-flex items-center rounded-full border border-emerald-200 bg-emerald-100 px-2.5 py-1 text-[11px] font-extrabold tracking-wide text-emerald-800';
-    mostrarModalEnlaceConsultor(parsedLink.href, tableNumbers.length);
+    mostrarModalEnlaceConsultor(parsedLink.href, result.nombre || purchases[purchases.length - 1]?.nombre || '', whatsapp, tableCodes);
   } catch (error) {
     console.error('Error al consultar tablas:', error);
     estado.textContent = error.code === 'permission-denied'
