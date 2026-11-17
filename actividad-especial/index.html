@@ -6,15 +6,11 @@
     <title>La Terraza Bingo - Gran Bingo Virtual Especial</title>
     <meta property="og:title" content="La Terraza Bingo - Gran Bingo Virtual Especial">
     <meta property="og:description" content="Compra tus tablas para el Gran Bingo Virtual Especial. Registro y comprobante de pago en línea.">
-    <meta property="og:image" content="https://laterrazacalipodcast.top/actividad-especial/bingo.png">
-    <meta property="og:image:alt" content="La Terraza Bingo - Gran Bingo Virtual Especial">
+    <meta property="og:image" content="bingo.png">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://laterrazacalipodcast.top/actividad-especial/">
-    <link rel="canonical" href="https://laterrazacalipodcast.top/actividad-especial/">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="La Terraza Bingo - Gran Bingo Virtual Especial">
-    <meta name="twitter:description" content="Compra tus tablas para el Gran Bingo Virtual Especial. Registro y comprobante de pago en línea.">
-    <meta name="twitter:image" content="https://laterrazacalipodcast.top/actividad-especial/bingo.png">
+    <meta name="twitter:image" content="bingo.png">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -118,53 +114,70 @@
                         <img id="bingo-cover" src="bingo.png" alt="La Terraza Bingo Cover" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='https://via.placeholder.com/600x400/1e1b4b/ffffff?text=La+Terraza+Bingo+(bingo.png)';">
                     </div>
 
+                    <!-- Consultor público de tablas: visible debajo de la portada -->
+                    <section id="consultor-tablas" class="mx-4 sm:mx-6 mt-4 rounded-2xl border-2 border-indigo-300 bg-gradient-to-br from-indigo-950 via-indigo-800 to-violet-700 p-5 sm:p-6 shadow-xl text-white">
+                        <div class="text-center space-y-2">
+                            <div class="inline-flex items-center justify-center rounded-full bg-white/15 px-3 py-1 text-xs font-black tracking-widest uppercase">La Terraza Bingo</div>
+                            <div class="flex flex-wrap items-center justify-center gap-2">
+                                <h2 class="text-2xl sm:text-3xl font-black tracking-tight">🔎 CONSULTA TUS TABLAS</h2>
+                                <span id="consultor-estado" role="status" aria-live="polite" class="inline-flex items-center rounded-full border border-white/30 bg-white/10 px-2.5 py-1 text-[11px] font-extrabold tracking-wide text-white">(VERIFICANDO)</span>
+                            </div>
+                            <p class="text-sm sm:text-base text-indigo-100">Escribe el número de WhatsApp con el que realizaste tu compra.</p>
+                        </div>
+                        <div class="mt-5 space-y-3">
+                            <label for="consultor-whatsapp" class="block text-sm font-extrabold text-white">Número de WhatsApp</label>
+                            <input id="consultor-whatsapp" type="tel" inputmode="numeric" autocomplete="tel" maxlength="18" placeholder="Ej. 3001234567"
+                                class="w-full rounded-xl border-2 border-white/70 bg-white px-4 py-3.5 text-lg font-bold tracking-wide text-slate-900 placeholder:text-slate-400 focus:border-amber-300 focus:outline-none focus:ring-4 focus:ring-amber-300/30">
+                            <div class="flex justify-center">
+                                <button id="consultor-buscar-btn" type="button" onclick="consultarMisTablas()"
+                                    class="inline-flex w-full max-w-md items-center justify-center rounded-xl px-5 py-3 text-sm sm:text-base font-black uppercase tracking-wide text-white shadow-md transition duration-150 hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-emerald-300/40 disabled:cursor-not-allowed disabled:transform-none disabled:bg-slate-400 disabled:text-slate-100 disabled:shadow-none"
+                                    disabled>PRESIONA AQUÍ PARA VER TUS TABLAS</button>
+                            </div>
+                        </div>
+                    </section>
+
                     <div class="px-6 space-y-5">
                         <div class="text-center space-y-2">
-                            <span class="bg-indigo-100 text-indigo-900 text-sm font-extrabold px-4 py-1.5 rounded-full uppercase tracking-wider inline-block">Gran Evento Virtual</span>
                             <h2 class="text-3xl font-black text-slate-900 leading-tight">Gran Bingo Virtual Especial</h2>
-                            <p class="text-indigo-700 font-extrabold text-xl">📅 25 de octubre &nbsp;|&nbsp; ⏰ 8:00 p.m.</p>
+                            <div id="client-event-name-wrap" class="hidden mt-1">
+                                <span id="client-event-name" class="inline-block bg-indigo-100 text-indigo-900 font-black text-lg px-4 py-1 rounded-xl"></span>
+                            </div>
+                            <p class="text-indigo-700 font-extrabold text-xl">📅 <span id="client-event-date">Fecha por confirmar</span> &nbsp;|&nbsp; ⏰ <span id="client-event-time">Hora por confirmar</span></p>
                             <div class="inline-block bg-amber-100 text-amber-900 font-black text-lg px-4 py-1 rounded-xl mt-1">
                                 💰 Valor por tabla: <span id="client-price-display">$3.000</span>
                             </div>
                         </div>
 
-                        <div class="bg-indigo-50 border-l-4 border-indigo-500 p-4 rounded-r-xl">
-                            <p class="text-indigo-900 text-sm font-semibold leading-relaxed">📌 Primero sube tu comprobante de pago. Después podrás escoger directamente los números de tus tablas.</p>
-                        </div>
-
-                        <!-- Premios y Dinámica -->
+                        <!-- Premios -->
                         <div class="bg-slate-50 rounded-2xl p-5 border border-slate-200 space-y-4 shadow-sm">
-                            <h3 class="font-extrabold text-slate-900 text-center uppercase text-base tracking-wide border-b border-slate-200 pb-2">🏆 Premios y Dinámica</h3>
+                            <h3 class="font-extrabold text-slate-900 text-center uppercase text-base tracking-wide border-b border-slate-200 pb-2">🏆 Premios</h3>
                             
                             <div class="space-y-3 text-base">
                                 <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-1">
                                     <span class="font-black text-indigo-950 text-lg block border-b pb-1">Primer Bingo:</span>
-                                    <p>🥇 <strong>1.er ganador:</strong> $100.000</p>
-                                    <p>🥈 <strong>2.º ganador (próximo bingo):</strong> Premio sorpresa</p>
+                                    <p>🥇 <strong>1.er ganador:</strong> 50</p>
+                                    <p>🥈 <strong>2.º ganador:</strong> 50</p>
                                 </div>
 
                                 <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-1">
                                     <span class="font-black text-indigo-950 text-lg block border-b pb-1">Segundo Bingo:</span>
-                                    <p>🥇 <strong>1.er ganador:</strong> $100.000</p>
-                                    <p>🥈 <strong>2.º ganador (próximo bingo):</strong> Premio sorpresa</p>
+                                    <p>🥇 <strong>1.er ganador:</strong> 100</p>
                                 </div>
 
                                 <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-1">
                                     <span class="font-black text-indigo-950 text-lg block border-b pb-1">Tercer Bingo:</span>
-                                    <p>🥇 <strong>1.er ganador:</strong> $250.000</p>
-                                    <p>🥈 <strong>2.º ganador (próximo bingo):</strong> Premio sorpresa</p>
-                                </div>
-
-                                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-1">
-                                    <span class="font-black text-indigo-950 text-lg block border-b pb-1">Cuarto Bingo:</span>
-                                    <p>🎁 <strong>Un único ganador:</strong> Electrodoméstico sorpresa</p>
+                                    <p>🥇 <strong>1.er ganador:</strong> 200</p>
                                 </div>
                             </div>
 
-                            <!-- Ruleta Feature -->
+                                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-1">
+                                    <span class="font-black text-indigo-950 text-lg block border-b pb-1">Cuarto Bingo:</span>
+                                    <p>🔊 <strong>Premio:</strong> Un parlante</p>
+                                </div>
+                            <!-- Ruletas especiales -->
                             <div class="bg-indigo-100 border-2 border-indigo-300 rounded-xl p-4 text-center">
-                                <span class="text-indigo-950 font-black text-lg block">🎡 ¡Sección Especial Ruleta!</span>
-                                <p class="text-indigo-800 text-base font-extrabold mt-1">Premio Ruleta: $50.000</p>
+                                <span class="text-indigo-950 font-black text-lg block">🎡 Sección especial: Ruletas</span>
+                                <p class="text-indigo-800 text-base font-extrabold mt-1">2 ruletas de 50 cada una</p>
                             </div>
                         </div>
                     </div>
@@ -181,7 +194,7 @@
                             <label for="tables-count" class="block text-base font-extrabold text-indigo-950">¿Cuántas tablas vas a comprar?</label>
                             <div class="flex items-center gap-3">
                                 <button type="button" onclick="changeTableQuantity(-1)" class="h-12 w-12 rounded-xl bg-white border-2 border-indigo-200 text-2xl font-black text-indigo-800">−</button>
-                                <input type="number" id="tables-count" min="1" max="200" value="1" oninput="calculateTotal()" class="min-w-0 flex-1 text-center text-2xl font-black px-3 py-2 rounded-xl border-2 border-indigo-300" inputmode="numeric">
+                                <input type="number" id="tables-count" min="0" max="200" value="0" oninput="calculateTotal()" class="min-w-0 flex-1 text-center text-2xl font-black px-3 py-2 rounded-xl border-2 border-indigo-300" inputmode="numeric">
                                 <button type="button" onclick="changeTableQuantity(1)" class="h-12 w-12 rounded-xl bg-white border-2 border-indigo-200 text-2xl font-black text-indigo-800">+</button>
                             </div>
                             <div class="flex items-center justify-between border-t border-indigo-200 pt-3">
@@ -203,11 +216,13 @@
 
                         <div class="space-y-2">
                             <label class="block text-base font-extrabold text-slate-800">Sube aquí tu comprobante de pago</label>
-                            <label for="receipt-file" class="flex flex-col items-center justify-center gap-2 w-full min-h-32 p-5 rounded-2xl border-2 border-dashed border-indigo-400 bg-indigo-50 hover:bg-indigo-100 cursor-pointer text-center">
-                                <span class="text-3xl">📤</span>
-                                <span class="font-black text-indigo-900">PRESIONA AQUÍ PARA SUBIR EL COMPROBANTE</span>
+                            <div class="flex flex-col items-center gap-2">
+                                <label for="receipt-file" class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border-2 border-indigo-600 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-black shadow cursor-pointer text-center">
+                                    <span class="text-lg">📤</span>
+                                    <span>PRESIONA AQUÍ PARA SUBIR EL COMPROBANTE</span>
+                                </label>
                                 <span class="text-xs text-indigo-700">Solo imágenes JPG o PNG</span>
-                            </label>
+                            </div>
                             <input type="file" id="receipt-file" accept="image/jpeg,image/png" class="hidden">
                             <div id="receipt-upload-status" class="hidden rounded-xl p-3 text-sm font-semibold" role="status" aria-live="polite"></div>
                             <img id="receipt-temporary-preview" class="hidden max-h-48 mx-auto rounded-xl border border-slate-200" alt="Vista previa temporal del comprobante">
@@ -241,15 +256,21 @@
                                     <span id="table-selection-counter" class="rounded-full bg-indigo-100 text-indigo-900 px-3 py-1 text-xs font-black">0 de 1</span>
                                 </div>
                                 <p class="text-xs text-slate-600">Las tablas ocupadas aparecen bloqueadas. Debes seleccionar exactamente la cantidad que pagaste.</p>
-                                <div id="client-table-grid" class="grid grid-cols-4 sm:grid-cols-5 gap-2 max-h-80 overflow-y-auto p-2 rounded-xl border border-slate-200 bg-slate-50"></div>
-                                <p id="table-selection-message" class="text-sm font-bold text-amber-800" aria-live="polite">Te falta seleccionar 1 tabla.</p>
+                                <div id="client-table-grid" class="grid grid-cols-4 sm:grid-cols-5 gap-2 p-2 rounded-xl border border-slate-200 bg-slate-50"></div>
+                                <div id="client-table-pagination" class="flex items-center justify-between gap-3 pt-2">
+                                    <button type="button" id="client-table-prev" onclick="changeClientTablePage(-1)" class="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 font-bold text-sm disabled:opacity-40 disabled:cursor-not-allowed" disabled>Anterior</button>
+                                    <span class="text-xs sm:text-sm font-bold text-slate-700 text-center">Navega por las páginas</span>
+                                    <button type="button" id="client-table-next" onclick="changeClientTablePage(1)" class="px-4 py-2 rounded-lg bg-indigo-600 text-white font-bold text-sm disabled:opacity-40 disabled:cursor-not-allowed">Siguiente</button>
+                                </div>
+                                <p id="client-table-total-hint" class="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm font-extrabold text-amber-900 text-center" aria-live="polite">Total de tablas habilitadas: 200. Presiona «Siguiente» para ver las demás.</p>
+                                <p id="table-selection-message" class="text-sm font-bold text-amber-800" aria-live="polite">Selecciona la cantidad de tablas que vas a comprar.</p>
                             </div>
                             <div class="rounded-xl bg-indigo-50 border border-indigo-200 p-3 flex justify-between items-center">
                                 <span class="font-bold text-indigo-950">Total pagado declarado</span>
                                 <strong id="final-total-display" class="text-xl text-indigo-800">$3.000</strong>
                             </div>
                             <button type="submit" id="submit-btn" disabled class="w-full bg-slate-400 text-white font-black text-lg py-4 px-6 rounded-xl shadow-lg">Selecciona tus tablas para continuar</button>
-                            <button type="button" onclick="backToProofStep()" class="w-full bg-slate-100 text-slate-700 font-bold py-3 rounded-xl">Volver al comprobante</button>
+                            <button type="button" onclick="backToProofStep()" class="inline-flex items-center justify-center gap-2 self-start bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold text-sm px-4 py-2 rounded-lg shadow-sm"><span aria-hidden="true">←</span><span>Volver</span></button>
                         </form>
                     </div>
                 </div>
@@ -259,67 +280,95 @@
         <!-- ================= VISTA ADMIN (CONFIGURACIÓN A TODO LO ANCHO) ================= -->
         <section id="view-admin" class="hidden w-full px-4 sm:px-8 space-y-6">
             <div class="bg-white rounded-3xl shadow-xl p-6 sm:p-8 border border-slate-200 w-full">
-                <div class="flex flex-col sm:flex-row justify-between items-center mb-6 border-b pb-4 gap-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 border-b pb-3 gap-3">
                     <div>
-                        <h3 class="text-2xl font-black text-slate-900">⚙️ Panel de Configuración</h3>
-                        <p class="text-base text-slate-500">Gestión completa de participantes, comprobantes y marcas de control.</p>
+                        <h3 class="text-xl font-black text-slate-900">⚙️ Panel de Configuración</h3>
+                        <p class="text-xs text-slate-500">Gestión de participantes, comprobantes y controles.</p>
                     </div>
-                    <div class="flex flex-wrap gap-3">
-                        <button type="button" onclick="promptDeleteAll()" class="bg-red-600 hover:bg-red-700 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition shadow cursor-pointer">🗑️ Eliminar Todos los Registros</button>
-                        <button type="button" onclick="handleLogout()" class="bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition shadow cursor-pointer">Cerrar Sesión</button>
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" onclick="promptDeleteAll()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-2 rounded-lg transition shadow cursor-pointer">🗑️ Eliminar registros</button>
+                        <button type="button" onclick="handleLogout()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-3 py-2 rounded-lg transition shadow cursor-pointer">Cerrar sesión</button>
                     </div>
                 </div>
 
-                <!-- Contador de dinero recaudado -->
-                <div class="mb-6 bg-emerald-50 border-2 border-emerald-300 rounded-3xl p-6 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4">
-                    <div>
-                        <h4 class="text-xl font-black text-emerald-950">💰 Total recaudado</h4>
-                        <p class="text-sm font-semibold text-emerald-800">Suma automática de todos los pagos registrados en Firebase</p>
+                <!-- Resumen y búsqueda: módulos compactos en una sola fila -->
+                <div class="mb-5 grid grid-cols-2 gap-3 items-stretch">
+                    <div class="rounded-2xl bg-emerald-50 border border-emerald-200 px-4 py-3 flex items-center justify-between gap-3 min-w-0">
+                        <div class="min-w-0">
+                            <h4 class="text-sm font-extrabold text-emerald-950">💰 Total recaudado</h4>
+                            <p class="text-xs text-emerald-800">Pagos registrados</p>
+                        </div>
+                        <div id="total-money-counter" class="text-2xl font-black text-emerald-700 shrink-0">$0</div>
                     </div>
-                    <div id="total-money-counter" class="text-3xl font-black text-emerald-700">$0</div>
-                </div>
-
-                <!-- Contador de tablas registradas -->
-                <div class="mb-6 bg-indigo-50 border-2 border-indigo-300 rounded-3xl p-6 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4">
-                    <div>
-                        <h4 class="text-xl font-black text-indigo-950">🎟️ Total de tablas registradas</h4>
-                        <p class="text-sm font-semibold text-indigo-800">Suma automática de las tablas de todos los participantes</p>
+                    <div class="rounded-2xl bg-indigo-50 border border-indigo-200 px-4 py-3 flex items-center justify-between gap-3 min-w-0">
+                        <div class="min-w-0">
+                            <h4 class="text-sm font-extrabold text-indigo-950">🎟️ Tablas registradas</h4>
+                            <p class="text-xs text-indigo-800">Total de tablas</p>
+                        </div>
+                        <div id="total-tables-counter" class="text-2xl font-black text-indigo-700 shrink-0">0</div>
                     </div>
-                    <div id="total-tables-counter" class="text-3xl font-black text-indigo-700">0</div>
-                </div>
-
-                <!-- Buscador de participantes -->
-                <div class="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-2">
-                    <label for="record-search" class="block text-base font-extrabold text-slate-800">🔎 Buscar participante</label>
-                    <div class="flex flex-col sm:flex-row gap-3">
-                        <input type="search" id="record-search" oninput="renderAdminTable()" autocomplete="off"
-                            class="w-full px-4 py-3 rounded-xl border-2 border-slate-300 text-base font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white"
-                            placeholder="Escribe nombre, apellido o parte del nombre..." aria-describedby="record-search-help">
-                        <button type="button" onclick="clearRecordSearch()" class="shrink-0 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-5 py-3 rounded-xl transition">Limpiar búsqueda</button>
-                    </div>
-                    <p id="record-search-help" class="text-sm text-slate-500">La búsqueda no distingue mayúsculas, minúsculas ni tildes. Los totales generales no cambian al filtrar.</p>
-                    <p id="record-search-count" class="text-sm font-bold text-indigo-800" aria-live="polite"></p>
                 </div>
 
                 <!-- Configuración de selección pública y sincronización contable -->
-                <div class="mb-6 rounded-2xl border-2 border-indigo-200 bg-indigo-50 p-5 space-y-4">
+                <div class="mb-6 rounded-2xl border-2 border-indigo-200 bg-indigo-50 p-4 space-y-3">
                     <div>
-                        <h4 class="text-xl font-black text-indigo-950">⚙️ Configuración de tablas</h4>
-                        <p class="text-sm text-indigo-900 mt-1">Los participantes escogen sus propios números. Ya no se realizan asignaciones aleatorias ni manuales desde este panel.</p>
+                        <h4 class="text-lg font-black text-indigo-950">⚙️ Configuración de tablas</h4>
+                        <p class="text-xs text-indigo-900 mt-1">Los participantes escogen sus propios números. Ya no se realizan asignaciones aleatorias ni manuales desde este panel.</p>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                        <div><label for="range-start" class="block text-sm font-bold text-slate-700 mb-1">Primera tabla</label><input id="range-start" type="number" min="1" max="5000" value="1" class="w-full px-3 py-2 rounded-lg border-2 border-slate-300"></div>
-                        <div><label for="range-end" class="block text-sm font-bold text-slate-700 mb-1">Última tabla</label><input id="range-end" type="number" min="1" max="5000" value="200" class="w-full px-3 py-2 rounded-lg border-2 border-slate-300"></div>
-                        <div><label for="event-value" class="block text-sm font-bold text-slate-700 mb-1">Valor por tabla ($)</label><input id="event-value" type="number" min="1" value="3000" class="w-full px-3 py-2 rounded-lg border-2 border-slate-300"></div>
-                        <div><label for="event-youtube" class="block text-sm font-bold text-slate-700 mb-1">Enlace de transmisión</label><input id="event-youtube" type="url" placeholder="https://youtube.com/live/..." class="w-full px-3 py-2 rounded-lg border-2 border-slate-300"></div>
+                    <div class="grid grid-cols-2 md:grid-cols-[90px_112px_132px_minmax(0,1fr)] gap-2.5 items-end">
+                        <div class="min-w-0">
+                            <label for="range-start" class="block text-xs font-bold text-slate-700 mb-1">Primera tabla</label>
+                            <input id="range-start" type="number" min="1" max="5000" value="1" class="w-full h-9 px-2 py-1 text-sm rounded-lg border border-slate-300">
+                        </div>
+                        <div class="min-w-0">
+                            <label for="range-end" class="block text-xs font-bold text-slate-700 mb-1">Última tabla</label>
+                            <input id="range-end" type="number" min="1" max="5000" value="200" class="w-full h-9 px-2 py-1 text-sm rounded-lg border border-slate-300">
+                        </div>
+                        <div class="min-w-0">
+                            <label for="event-value" class="block text-xs font-bold text-slate-700 mb-1">Valor por tabla ($)</label>
+                            <input id="event-value" type="number" min="1" value="3000" class="w-full h-9 px-2 py-1 text-sm rounded-lg border border-slate-300">
+                        </div>
+                        <div class="min-w-0 col-span-2 md:col-span-1">
+                            <label for="event-youtube" class="block text-xs font-bold text-slate-700 mb-1">Enlace de transmisión</label>
+                            <input id="event-youtube" type="url" placeholder="https://youtube.com/live/..." class="w-full h-9 px-3 py-1 text-sm rounded-lg border border-slate-300">
+                        </div>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div><label for="event-date" class="block text-sm font-bold text-slate-700 mb-1">Fecha del bingo</label><input id="event-date" type="date" value="2026-10-25" class="w-full px-3 py-2 rounded-lg border-2 border-slate-300"></div>
-                        <div><label for="event-time" class="block text-sm font-bold text-slate-700 mb-1">Hora</label><input id="event-time" type="time" value="20:00" class="w-full px-3 py-2 rounded-lg border-2 border-slate-300"></div>
+                    <div class="grid grid-cols-2 md:grid-cols-[180px_130px] gap-2.5 items-end">
+                        <div class="min-w-0">
+                            <label for="event-date" class="block text-xs font-bold text-slate-700 mb-1">Fecha del bingo</label>
+                            <input id="event-date" type="date" value="2026-10-25" class="w-full h-9 px-2 py-1 text-sm rounded-lg border border-slate-300">
+                        </div>
+                        <div class="min-w-0">
+                            <label for="event-time" class="block text-xs font-bold text-slate-700 mb-1">Hora</label>
+                            <input id="event-time" type="time" value="20:00" class="w-full h-9 px-2 py-1 text-sm rounded-lg border border-slate-300">
+                        </div>
                     </div>
-                    <div class="rounded-xl border-2 border-amber-300 bg-amber-50 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                        <div><h4 class="font-black text-amber-950">🔒 Control de inscripciones</h4><p id="registration-status-description" class="text-sm text-amber-900">Estado: sincronizando...</p></div>
-                        <label class="inline-flex items-center gap-3 font-bold text-amber-950 cursor-pointer"><input id="registration-closed-toggle" type="checkbox" class="h-6 w-6 accent-red-600" onchange="setRegistrationClosed(this.checked)"><span>Bloquear inscripciones</span></label>
+                    <div class="max-w-md">
+                        <label for="event-name" class="block text-xs font-bold text-slate-700 mb-1">Nombre o temática del bingo</label>
+                        <input id="event-name" type="text" maxlength="60" placeholder="Ej.: Navideño, Amor y Amistad, Reyes" class="w-full h-9 px-3 py-1 text-sm rounded-lg border border-slate-300">
+                        <p class="text-[11px] text-slate-500 mt-1">Este nombre aparecerá debajo del título principal del bingo.</p>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div class="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2.5 flex items-center justify-between gap-3">
+                            <div class="min-w-0">
+                                <h4 class="text-sm font-extrabold text-amber-950">🔒 Control de inscripciones</h4>
+                                <p id="registration-status-description" class="text-xs text-amber-900">Estado: sincronizando...</p>
+                            </div>
+                            <label class="inline-flex items-center gap-2 text-xs font-bold text-amber-950 cursor-pointer shrink-0">
+                                <input id="registration-closed-toggle" type="checkbox" class="h-5 w-5 accent-red-600" onchange="setRegistrationClosed(this.checked)">
+                                <span>Bloquear</span>
+                            </label>
+                        </div>
+                        <div class="rounded-xl border border-violet-300 bg-violet-50 px-3 py-2.5 flex items-center justify-between gap-3">
+                            <div class="min-w-0">
+                                <h4 class="text-sm font-extrabold text-violet-950">🔎 Consultor de tablas</h4>
+                                <p id="consultor-admin-status" class="text-xs text-violet-900">Estado: sincronizando...</p>
+                            </div>
+                            <label class="inline-flex items-center gap-2 text-xs font-bold text-violet-950 cursor-pointer shrink-0">
+                                <input id="consultor-blocked-toggle" type="checkbox" class="h-5 w-5 accent-violet-700" onchange="setConsultorBlocked(this.checked)">
+                                <span>Bloquear</span>
+                            </label>
+                        </div>
                     </div>
                     <div class="flex flex-col sm:flex-row gap-3">
                         <button type="button" onclick="saveAllSettings()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2.5 rounded-lg">💾 Guardar configuración</button>
@@ -329,19 +378,29 @@
                     <div id="assignment-summary" class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center"></div>
                 </div>
 
-                <!-- Listados para sorteo y comunicación de asignaciones -->
+                <!-- Búsqueda y herramientas de participantes en una sola barra -->
                 <div class="mb-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-                        <div>
-                            <h4 class="text-base font-extrabold text-slate-800">📋 Listados de participantes</h4>
-                            <p id="copy-lists-count" class="text-sm text-slate-600 mt-1">Participantes con tablas seleccionadas: 0</p>
-                            <p class="text-xs text-slate-500">El listado para la ruleta copia únicamente los nombres. El listado completo incluye consecutivo, nombre y tablas seleccionadas.</p>
+                    <div class="flex flex-col xl:flex-row xl:items-center gap-3">
+                        <div class="xl:w-52 shrink-0">
+                            <h4 class="text-sm font-extrabold text-slate-800">📋 Participantes</h4>
+                            <p id="copy-lists-count" class="text-xs text-slate-600 mt-1">Participantes con tablas seleccionadas: 0</p>
                         </div>
-                        <div class="flex flex-col sm:flex-row gap-2">
-                            <button type="button" onclick="copyRouletteNames()" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-4 py-2.5 rounded-lg">🎡 Copiar solo nombres para ruleta</button>
-                            <button type="button" onclick="copyNamesAndTables()" class="bg-indigo-700 hover:bg-indigo-800 text-white font-bold px-4 py-2.5 rounded-lg">📋 Copiar nombres + tablas</button>
+                        <div class="flex flex-1 flex-col sm:flex-row gap-2 min-w-0">
+                            <div class="flex flex-1 min-w-0 gap-2">
+                                <input type="search" id="record-search" oninput="renderAdminTable()" autocomplete="off"
+                                    class="min-w-0 flex-1 px-3 py-2 rounded-lg border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white"
+                                    placeholder="🔎 Buscar participante por nombre..." aria-describedby="record-search-help">
+                                <button type="button" onclick="clearRecordSearch()" class="shrink-0 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-2 rounded-lg transition">Limpiar</button>
+                            </div>
+                            <div class="flex flex-wrap gap-2 shrink-0">
+                                <button type="button" onclick="copyRouletteNames()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-bold px-3 py-2 rounded-lg">🎡 Copiar solo nombres</button>
+                                <button type="button" onclick="copyNamesAndTables()" class="bg-indigo-700 hover:bg-indigo-800 text-white text-xs sm:text-sm font-bold px-3 py-2 rounded-lg">📋 Copiar nombres + tablas</button>
+                            </div>
                         </div>
                     </div>
+                    <p id="record-search-count" class="text-xs font-bold text-indigo-800 mt-1" aria-live="polite"></p>
+                    <p id="record-search-help" class="sr-only">La búsqueda no distingue mayúsculas, minúsculas ni tildes. Los totales generales no cambian al filtrar.</p>
+                    <p class="text-[11px] text-slate-500 mt-1">El listado para la ruleta copia únicamente los nombres. El listado completo incluye consecutivo, nombre y tablas seleccionadas.</p>
                 </div>
 
                 <!-- Tabla de Registros en Ancho Completo -->
@@ -394,21 +453,76 @@
         </div>
     </div>
 
-    <!-- Modal de Agradecimiento y Éxito -->
+    <!-- Modal de Agradecimiento y Resumen del Registro -->
     <div id="success-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md hidden items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center space-y-6 border-2 border-emerald-300">
+        <div class="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 max-w-md w-full max-h-[90vh] overflow-y-auto text-center space-y-5 border-2 border-emerald-300">
             <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-4xl font-bold">🎉</div>
-            <div class="space-y-3">
-                <h3 class="text-3xl font-black text-slate-900">¡Registro Exitoso!</h3>
-                <p class="text-base text-slate-700 font-medium leading-relaxed">
-                    ¡Gracias por participar en <strong>La Terraza Bingo</strong>! ❤️
-                </p>
-                <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 text-indigo-950 font-semibold text-sm">
-                    🎟️ Tus tablas quedaron registradas. Próximamente podrás consultar aquí mismo tus números y el enlace del bingo.
+            <div class="space-y-2">
+                <h3 class="text-3xl font-black text-slate-900">¡Registro exitoso!</h3>
+                <p class="text-base text-slate-700 font-medium leading-relaxed">¡Gracias por participar en <strong>La Terraza Bingo</strong>! ❤️</p>
+            </div>
+            <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-left space-y-3">
+                <h4 class="text-sm font-black uppercase tracking-wide text-slate-800 text-center">Resumen de tu compra</h4>
+                <div>
+                    <p class="text-xs font-bold text-slate-500">Nombre</p>
+                    <p id="success-customer-name" class="text-base font-extrabold text-slate-900 break-words"></p>
+                </div>
+                <div>
+                    <p class="text-xs font-bold text-slate-500">WhatsApp</p>
+                    <p id="success-customer-whatsapp" class="text-base font-extrabold text-slate-900"></p>
+                </div>
+                <div>
+                    <p class="text-xs font-bold text-slate-500">Tablas de esta compra</p>
+                    <p id="success-customer-tables" class="text-base font-extrabold text-indigo-800 leading-relaxed break-words"></p>
+                </div>
+                <div id="success-previous-purchases-wrap" class="hidden border-t border-slate-200 pt-2">
+                    <p class="text-xs font-black uppercase tracking-wide text-emerald-800">Otras compras realizadas anteriormente</p>
+                    <div id="success-previous-purchases" class="mt-1 space-y-1"></div>
+                    <div class="border-t border-slate-200 pt-2 mt-2">
+                        <p class="text-xs font-black uppercase tracking-wide text-slate-700">Total tablas en juego</p>
+                        <p id="success-total-tables" class="mt-1 text-sm font-extrabold text-indigo-800 leading-relaxed break-words"></p>
+                    </div>
                 </div>
             </div>
+            <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 text-indigo-950 text-sm font-semibold leading-relaxed">
+                📅 A partir del <strong>3 de diciembre</strong> puedes consultar tus tablas en esta misma plataforma.
+            </div>
+            <p class="text-xs text-slate-500">Puedes tomar una captura de esta pantalla para guardar los datos de tu compra.</p>
             <button onclick="closeSuccessModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black text-lg py-3.5 px-6 rounded-xl transition shadow-lg cursor-pointer">
                 Aceptar
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal de resultado del consultor: muestra el enlace antes de abrirlo -->
+    <div id="consultor-link-modal" class="fixed inset-0 z-[70] hidden items-center justify-center bg-slate-950/75 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-labelledby="consultor-link-title">
+        <div class="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-2xl space-y-4">
+            <div class="text-center">
+                <div class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-3xl">🎉</div>
+                <h3 id="consultor-link-title" class="text-xl sm:text-2xl font-black text-slate-900">¡Encontramos tus tablas!</h3>
+                <p class="mt-1 text-sm text-slate-600">Verifica tus datos y los números de tus tablas antes de abrirlas.</p>
+            </div>
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2">
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Nombre</p>
+                    <p id="consultor-link-name" class="text-base font-extrabold text-slate-900 break-words"></p>
+                </div>
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-wide text-slate-500">WhatsApp</p>
+                    <p id="consultor-link-phone" class="text-sm font-bold text-slate-800"></p>
+                </div>
+                <div class="border-t border-slate-200 pt-2">
+                    <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Todas tus tablas</p>
+                    <p id="consultor-link-tables" class="mt-1 text-sm sm:text-base font-extrabold leading-relaxed text-indigo-800 break-words"></p>
+                </div>
+            </div>
+            <a id="consultor-link-open" href="#" target="_blank" rel="noopener noreferrer"
+                onclick="window.open(this.href, '_blank', 'noopener,noreferrer'); return false;"
+                class="flex w-full items-center justify-center rounded-xl bg-emerald-600 px-4 py-3 text-base font-black text-white shadow-md transition hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-300">
+                ABRIR MIS TABLAS
+            </a>
+            <button type="button" onclick="cerrarModalEnlaceConsultor()" class="w-full rounded-lg px-4 py-2 text-sm font-bold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800">
+                Cerrar
             </button>
         </div>
     </div>
@@ -507,6 +621,8 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
 const recordsCollection = db.collection("registros");
+// Índice auxiliar: un documento consolidado por número de WhatsApp.
+const consultorCollection = db.collection("consultorTablas");
 // Estado remoto para que el bloqueo se aplique a todos los visitantes.
 const registrationStatusRef = db.collection("configuracion").doc("estadoRegistro");
 let registrationClosed = false;
@@ -523,6 +639,8 @@ let pendingReceiptFileName = '';
 let selectedClientTables = new Set();
 let cachedOccupiedTables = {};
 let requestedTableCount = 1;
+let clientTablePage = 0;
+const CLIENT_TABLES_PER_PAGE = 50;
 
 function applyRegistrationStatus() {
   const message = document.getElementById('registration-closed-message');
@@ -552,6 +670,14 @@ function listenRegistrationStatus() {
 
 async function setRegistrationClosed(closed) {
   const toggle = document.getElementById('registration-closed-toggle');
+  const accion = closed ? 'BLOQUEAR' : 'HABILITAR';
+  const detalle = closed
+    ? 'Los participantes no podrán realizar nuevas inscripciones.'
+    : 'Los participantes podrán volver a inscribirse.';
+  if (!confirm(`¿Confirmas que deseas ${accion} las inscripciones?\\n\\n${detalle}`)) {
+    if (toggle) toggle.checked = registrationClosed;
+    return;
+  }
   if (!auth.currentUser) {
     if (toggle) toggle.checked = registrationClosed;
     alert('Inicia sesión en Configuración para cambiar el estado de las inscripciones.');
@@ -620,23 +746,43 @@ async function saveEditRecord(){
 
 function calculateTotal() {
   const input = document.getElementById('tables-count');
-  const count = Math.max(1, Math.min(5000, parseInt(input?.value, 10) || 1));
+  const rawCount = parseInt(input?.value, 10);
+  const count = Math.max(0, Math.min(5000, Number.isFinite(rawCount) ? rawCount : 0));
   if (input) input.value = count;
   requestedTableCount = count;
+
   const total = count * PRICE_PER_TABLE;
   const formatted = '$' + total.toLocaleString('es-CO');
   const totalEl = document.getElementById('total-price-display');
   const exactEl = document.getElementById('payment-exact-message');
   const finalEl = document.getElementById('final-total-display');
   const priceEl = document.getElementById('client-price-display');
+
   if (totalEl) totalEl.textContent = formatted;
   if (finalEl) finalEl.textContent = formatted;
-  if (exactEl) exactEl.textContent = `Tu comprobante debe ser exactamente por ${formatted}.`;
+  if (exactEl) {
+    exactEl.textContent = count > 0
+      ? `Tu comprobante debe ser exactamente por ${formatted}.`
+      : 'Primero selecciona cuántas tablas vas a comprar para calcular el valor exacto.';
+  }
   if (priceEl) priceEl.textContent = '$' + PRICE_PER_TABLE.toLocaleString('es-CO');
+
+  const continueButton = document.getElementById('continue-to-tables');
+  if (continueButton && pendingReceiptDataUrl) {
+    continueButton.disabled = count === 0;
+    continueButton.textContent = count === 0
+      ? 'Selecciona primero la cantidad de tablas'
+      : 'Continuar para registrar mis tablas';
+    continueButton.className = count === 0
+      ? 'w-full bg-slate-400 text-white font-black text-lg py-4 px-6 rounded-xl shadow-lg cursor-not-allowed'
+      : 'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-lg py-4 px-6 rounded-xl shadow-lg';
+  }
 }
+
 function changeTableQuantity(delta) {
   const input = document.getElementById('tables-count');
-  input.value = Math.max(1, Math.min(5000, (parseInt(input.value, 10) || 1) + delta));
+  const current = Number.parseInt(input.value, 10);
+  input.value = Math.max(0, Math.min(5000, (Number.isFinite(current) ? current : 0) + delta));
   calculateTotal();
 }
 
@@ -869,11 +1015,52 @@ async function loadOccupiedTableCache() {
   cachedOccupiedTables = occupied;
 }
 
+function updateClientEventDisplay() {
+  const dateEl = document.getElementById('client-event-date');
+  const timeEl = document.getElementById('client-event-time');
+  const eventNameWrap = document.getElementById('client-event-name-wrap');
+  const eventNameEl = document.getElementById('client-event-name');
+  const eventName = String(eventSettings?.eventName || '').trim();
+  const dateValue = eventSettings?.date || '';
+  const timeValue = eventSettings?.time || '';
+
+  if (eventNameEl) eventNameEl.textContent = eventName;
+  if (eventNameWrap) eventNameWrap.classList.toggle('hidden', !eventName);
+
+  if (dateEl) {
+    if (dateValue) {
+      const parts = dateValue.split('-').map(Number);
+      const date = parts.length === 3 ? new Date(parts[0], parts[1] - 1, parts[2]) : new Date(dateValue);
+      dateEl.textContent = Number.isNaN(date.getTime())
+        ? 'Fecha por confirmar'
+        : new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long' }).format(date);
+    } else {
+      dateEl.textContent = 'Fecha por confirmar';
+    }
+  }
+
+  if (timeEl) {
+    if (/^\d{2}:\d{2}$/.test(timeValue)) {
+      const [hours, minutes] = timeValue.split(':').map(Number);
+      const suffix = hours < 12 ? 'a. m.' : 'p. m.';
+      const displayHour = hours % 12 || 12;
+      timeEl.textContent = `${displayHour}:${String(minutes).padStart(2, '0')} ${suffix}`;
+    } else {
+      timeEl.textContent = 'Hora por confirmar';
+    }
+  }
+}
+
 async function loadPublicTableConfig() {
   try {
     const snap = await tableConfigRef.get();
+    const cfg = snap.exists ? (snap.data() || {}) : {};
+    consultorBlocked = cfg.consultorBlocked === true;
+    consultorConfigReady = true;
+    const consultorToggle = document.getElementById('consultor-blocked-toggle');
+    if (consultorToggle) consultorToggle.checked = consultorBlocked;
+    updateConsultorAdminStatus();
     if (snap.exists) {
-      const cfg = snap.data() || {};
       publicTableStart = Math.max(1, Number(cfg.rangeStart) || 1);
       publicTableEnd = Math.max(publicTableStart, Number(cfg.rangeEnd) || 200);
       PRICE_PER_TABLE = Math.max(1, Number(cfg.pricePerTable) || 3000);
@@ -884,13 +1071,20 @@ async function loadPublicTableConfig() {
       if (cfg.date) { const d=document.getElementById('event-date'); if (d) d.value=cfg.date; }
       if (cfg.time) { const t=document.getElementById('event-time'); if (t) t.value=cfg.time; }
       if (cfg.youtube) { const y=document.getElementById('event-youtube'); if (y) y.value=cfg.youtube; }
+      const eventNameInput = document.getElementById('event-name');
+      if (eventNameInput) eventNameInput.value = cfg.eventName || '';
       tableRangeStart=publicTableStart; tableRangeEnd=publicTableEnd;
-      eventSettings={...eventSettings,date:cfg.date||eventSettings.date,time:cfg.time||eventSettings.time,value:PRICE_PER_TABLE,youtube:cfg.youtube||eventSettings.youtube};
+      eventSettings={...eventSettings,date:cfg.date||eventSettings.date,time:cfg.time||eventSettings.time,value:PRICE_PER_TABLE,youtube:cfg.youtube||eventSettings.youtube,eventName:cfg.eventName||''};
     }
+    updateClientEventDisplay();
+    updateConsultorAdminStatus();
+    actualizarEstadoConsultor();
     calculateTotal();
   } catch (error) {
+    consultorConfigReady = false;
     console.error('No se pudo cargar la configuración pública:', error);
-    // Se mantienen los valores iniciales visibles, pero la compra final se validará con la configuración guardada.
+    actualizarEstadoConsultor();
+    // Si no se puede leer el control remoto, el buscador permanece bloqueado por seguridad.
   }
 }
 
@@ -932,9 +1126,14 @@ document.getElementById('receipt-file').addEventListener('change', async functio
     pendingReceiptDataUrl = compressed;
     pendingReceiptFileName = file.name || 'comprobante.jpg';
     setReceiptUploadStatus('✅ Comprobante recibido y preparado correctamente. Aún no se ha guardado ningún registro.', true);
-    continueButton.disabled = false;
-    continueButton.textContent = 'Continuar para registrar mis tablas';
-    continueButton.className = 'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-lg py-4 px-6 rounded-xl shadow-lg';
+    const quantity = Number.parseInt(document.getElementById('tables-count').value, 10) || 0;
+    continueButton.disabled = quantity < 1;
+    continueButton.textContent = quantity < 1
+      ? 'Selecciona primero la cantidad de tablas'
+      : 'Continuar para registrar mis tablas';
+    continueButton.className = quantity < 1
+      ? 'w-full bg-slate-400 text-white font-black text-lg py-4 px-6 rounded-xl shadow-lg cursor-not-allowed'
+      : 'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-lg py-4 px-6 rounded-xl shadow-lg';
   } catch (error) {
     console.error(error);
     event.target.value = '';
@@ -945,6 +1144,12 @@ document.getElementById('receipt-file').addEventListener('change', async functio
 
 async function continueToTables() {
   if (!pendingReceiptDataUrl) { alert('Primero sube un comprobante válido.'); return; }
+  const chosenQuantity = Number.parseInt(document.getElementById('tables-count').value, 10) || 0;
+  if (chosenQuantity < 1) {
+    alert('Primero selecciona cuántas tablas vas a comprar.');
+    document.getElementById('tables-count').focus();
+    return;
+  }
   if (await isRegistrationClosedOnServer()) {
     registrationClosed = true; applyRegistrationStatus();
     alert('El tiempo de registro pasó. Ya no se reciben nuevos registros.'); return;
@@ -953,6 +1158,7 @@ async function continueToTables() {
   selectedClientTables = new Set();
   try {
     await loadOccupiedTableCache();
+    clientTablePage = 0;
     renderClientTableGrid();
     document.getElementById('proof-ready-summary').textContent = `✅ Comprobante preparado. Debes seleccionar exactamente ${requestedTableCount} tabla(s). Total: $${(requestedTableCount * PRICE_PER_TABLE).toLocaleString('es-CO')}.`;
     document.getElementById('purchase-step-proof').classList.add('hidden');
@@ -972,15 +1178,49 @@ function backToProofStep() {
 function renderClientTableGrid() {
   const grid = document.getElementById('client-table-grid');
   if (!grid) return;
+
+  const totalTables = Math.max(0, publicTableEnd - publicTableStart + 1);
+  const totalPages = Math.max(1, Math.ceil(totalTables / CLIENT_TABLES_PER_PAGE));
+  clientTablePage = Math.min(Math.max(0, clientTablePage), totalPages - 1);
+
+  const firstNumber = publicTableStart + clientTablePage * CLIENT_TABLES_PER_PAGE;
+  const lastNumber = Math.min(publicTableEnd, firstNumber + CLIENT_TABLES_PER_PAGE - 1);
   const codes = [];
-  for (let n=publicTableStart; n<=publicTableEnd; n++) codes.push(normalizeTableCode(n));
+
+  for (let n = firstNumber; n <= lastNumber; n++) {
+    codes.push(normalizeTableCode(n));
+  }
+
   grid.innerHTML = codes.map(code => {
     const occupied = Boolean(cachedOccupiedTables[code]);
     const selected = selectedClientTables.has(code);
     const cls = occupied ? 'bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed' : selected ? 'bg-indigo-700 text-white border-indigo-900' : 'bg-white text-slate-800 border-slate-300 hover:bg-indigo-50 hover:border-indigo-500';
     return `<button type="button" ${occupied?'disabled':''} onclick="toggleClientTable('${code}')" class="border-2 rounded-lg py-3 px-1 text-sm font-black ${cls}" title="${occupied?'Tabla ocupada':selected?'Seleccionada':'Disponible'}">${code}${occupied?' 🔒':selected?' ✓':''}</button>`;
   }).join('');
+
+  const previousButton = document.getElementById('client-table-prev');
+  const nextButton = document.getElementById('client-table-next');
+  const totalHint = document.getElementById('client-table-total-hint');
+
+  if (previousButton) previousButton.disabled = clientTablePage === 0;
+  if (nextButton) nextButton.disabled = clientTablePage >= totalPages - 1;
+  if (totalHint) {
+    totalHint.textContent = totalTables > CLIENT_TABLES_PER_PAGE
+      ? `Total de tablas habilitadas: ${totalTables}. Presiona «Siguiente» para ver las demás.`
+      : `Total de tablas habilitadas: ${totalTables}.`;
+  }
+
   updateClientSelectionStatus();
+}
+
+function changeClientTablePage(direction) {
+  const totalTables = Math.max(0, publicTableEnd - publicTableStart + 1);
+  const totalPages = Math.max(1, Math.ceil(totalTables / CLIENT_TABLES_PER_PAGE));
+  const nextPage = clientTablePage + Number(direction || 0);
+
+  if (nextPage < 0 || nextPage >= totalPages) return;
+  clientTablePage = nextPage;
+  renderClientTableGrid();
 }
 
 function toggleClientTable(code) {
@@ -1002,7 +1242,13 @@ function updateClientSelectionStatus() {
   const message = document.getElementById('table-selection-message');
   const button = document.getElementById('submit-btn');
   if (counter) counter.textContent = `${count} de ${requestedTableCount}`;
-  if (count < requestedTableCount) {
+  if (requestedTableCount < 1) {
+    message.textContent = 'Selecciona primero la cantidad de tablas que vas a comprar.';
+    message.className = 'text-sm font-bold text-amber-800';
+    button.disabled = true;
+    button.textContent = 'Primero indica cuántas tablas vas a comprar';
+    button.className = 'w-full bg-slate-400 text-white font-black text-lg py-4 px-6 rounded-xl shadow-lg';
+  } else if (count < requestedTableCount) {
     const missing = requestedTableCount - count;
     message.textContent = `Te ${missing === 1 ? 'falta' : 'faltan'} ${missing} tabla(s) por seleccionar.`;
     message.className = 'text-sm font-bold text-amber-800';
@@ -1046,10 +1292,17 @@ async function handleFormSubmit(e) {
     document.getElementById('progress-bar').style.width = '55%';
     document.getElementById('progress-percent').textContent = '55%';
     const now = new Date();
+    let previousPurchasesForSuccess = {};
     await db.runTransaction(async transaction => {
       const configSnap = await transaction.get(tableConfigRef);
       const shardIds = [...new Set(selectedCodes.map(tableShardId))];
       const shardSnaps = await Promise.all(shardIds.map(id => transaction.get(tableShardRef(id))));
+      const consultorPhone = normalizeConsultorPhone(whatsapp);
+      if (consultorPhone.length < 10 || consultorPhone.length > 15) {
+        throw new Error('El número de WhatsApp no tiene un formato válido.');
+      }
+      const consultorRef = consultorCollection.doc(consultorPhone);
+      const consultorSnap = await transaction.get(consultorRef);
       const cfg = configSnap.exists ? configSnap.data() : {};
       const livePrice = Math.max(1, Number(cfg.pricePerTable) || PRICE_PER_TABLE);
       const liveStart = Math.max(1, Number(cfg.rangeStart) || 1);
@@ -1078,11 +1331,72 @@ async function handleFormSubmit(e) {
       };
       transaction.set(recordRef, record);
       shardIds.forEach(id => transaction.set(tableShardRef(id), { occupied: nextByShard[id], updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }));
+
+      // Índice del consultor: un documento por WhatsApp y una entrada por compra.
+      // El JSON de exportación contable no se modifica.
+      const previousConsultor = consultorSnap.exists ? consultorSnap.data() : {};
+      const previousPurchases = previousConsultor.compras && typeof previousConsultor.compras === 'object'
+        ? previousConsultor.compras
+        : {};
+      // Reutilizamos la lectura que ya hizo la transacción; no se agrega otra lectura de Firebase.
+      previousPurchasesForSuccess = previousPurchases;
+      const updatedPurchases = {
+        ...previousPurchases,
+        [recordRef.id]: {
+          nombre: name,
+          whatsapp: consultorPhone,
+          tablas: selectedCodes
+        }
+      };
+      transaction.set(consultorRef, {
+        whatsapp: consultorPhone,
+        nombre: name,
+        registroId: recordRef.id,
+        compras: updatedPurchases,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
     });
 
     document.getElementById('progress-bar').style.width = '100%';
     document.getElementById('progress-percent').textContent = '100%';
     hideModal('loading-modal');
+
+    document.getElementById('success-customer-name').textContent = name;
+    document.getElementById('success-customer-whatsapp').textContent = whatsapp;
+    document.getElementById('success-customer-tables').textContent = selectedCodes.join(', ');
+
+    const previousEntries = Object.entries(previousPurchasesForSuccess)
+      .filter(([, purchase]) => purchase && Array.isArray(purchase.tablas) && purchase.tablas.length);
+    const previousWrap = document.getElementById('success-previous-purchases-wrap');
+    const previousList = document.getElementById('success-previous-purchases');
+    const previousTotal = document.getElementById('success-total-tables');
+    if (previousWrap && previousList && previousTotal) {
+      previousList.innerHTML = '';
+      const allTableCodes = new Set(selectedCodes.map(normalizeTableCode).filter(Boolean));
+
+      previousEntries.forEach(([, purchase], index) => {
+        const codes = [...new Set(purchase.tablas.map(normalizeTableCode).filter(Boolean))]
+          .sort((a, b) => tableNumber(a) - tableNumber(b));
+        codes.forEach(code => allTableCodes.add(code));
+
+        const line = document.createElement('p');
+        line.className = 'text-sm leading-relaxed text-slate-800 break-words';
+        line.textContent = `Registro ${index + 1}: ${codes.join(', ')}`;
+        previousList.appendChild(line);
+      });
+
+      const allCodesSorted = [...allTableCodes]
+        .sort((a, b) => tableNumber(a) - tableNumber(b));
+      previousTotal.textContent = allCodesSorted.join(', ');
+
+      if (previousEntries.length) {
+        previousWrap.classList.remove('hidden');
+      } else {
+        previousTotal.textContent = '';
+        previousWrap.classList.add('hidden');
+      }
+    }
+
     pendingReceiptDataUrl = null;
     pendingReceiptFileName = '';
     document.getElementById('bingo-form').reset();
@@ -1395,7 +1709,9 @@ let currentAssignmentIndex = null;
 let selectedAssignmentTables = new Set();
 let tableRangeStart = 1;
 let tableRangeEnd = 200;
-let eventSettings = { date: '2026-10-25', time: '20:00', value: 3000, youtube: '' };
+let eventSettings = { date: '2026-10-25', time: '20:00', value: 3000, youtube: '', eventName: '' };
+let consultorBlocked = false;
+let consultorConfigReady = false;
 
 function normalizeTableCode(value) {
   const raw = String(value ?? '').trim().toUpperCase();
@@ -1405,6 +1721,50 @@ function normalizeTableCode(value) {
   return 'T' + String(parseInt(digits, 10)).padStart(3, '0');
 }
 function tableNumber(code) { const m = normalizeTableCode(code).match(/^T(\d+)$/); return m ? Number(m[1]) : 0; }
+
+function normalizeConsultorPhone(value) {
+  let digits = String(value ?? '').replace(/\D/g, '');
+  if (digits.length === 12 && digits.startsWith('57')) digits = digits.slice(2);
+  return digits;
+}
+function slugConsultorName(value) {
+  return String(value ?? '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+function extractConsultorVideoId(value) {
+  const raw = String(value ?? '').trim();
+  if (!raw) return '';
+  try {
+    const url = new URL(raw);
+    if (url.hostname.includes('youtu.be')) return url.pathname.split('/').filter(Boolean)[0] || '';
+    const v = url.searchParams.get('v');
+    if (v) return v;
+    const match = url.pathname.match(/\/(?:live|embed|shorts)\/([^/?]+)/i);
+    if (match) return match[1];
+  } catch (_) {}
+  const fallback = raw.match(/(?:v=|youtu\.be\/|\/live\/|\/embed\/)([A-Za-z0-9_-]{6,})/);
+  return fallback ? fallback[1] : '';
+}
+function compactConsultorDate(value) {
+  const raw = String(value ?? '').trim();
+  let match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (match) return `${match[1]}${match[2]}${match[3]}`;
+  match = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (match) return `${match[3]}${match[2]}${match[1]}`;
+  return '';
+}
+function buildConsultorLink(tableNumbers, name, bingoDate, youtubeUrl) {
+  const numbers = [...new Set((tableNumbers || []).map(Number).filter(n => Number.isInteger(n) && n > 0))]
+    .sort((a, b) => a - b);
+  const expiry = compactConsultorDate(bingoDate);
+  const slug = slugConsultorName(name);
+  const videoId = extractConsultorVideoId(youtubeUrl);
+  if (!numbers.length || !expiry || !slug) return '';
+  return `https://laterrazacalipodcast.top/tabla-digital/?tablas=${numbers.join(',')}&vence=${expiry}&nombre=${encodeURIComponent(slug)}&video=${encodeURIComponent(videoId)}`;
+}
+
 function getAssigned(record) { return Array.isArray(record?.tablesAssigned) ? [...new Set(record.tablesAssigned.map(normalizeTableCode).filter(Boolean))].sort((a,b)=>tableNumber(a)-tableNumber(b)) : []; }
 function getImportedTables(record) { return Array.isArray(record?.accountingImportedTables) ? [...new Set(record.accountingImportedTables.map(normalizeTableCode).filter(Boolean))] : []; }
 function getPendingExportTables(record) { return Array.isArray(record?.accountingPendingTables) ? [...new Set(record.accountingPendingTables.map(normalizeTableCode).filter(Boolean))] : []; }
@@ -1431,7 +1791,52 @@ function loadLocalSettings() {
   const time = document.getElementById('event-time'); if (time) time.value = eventSettings.time || '';
   const value = document.getElementById('event-value'); if (value) value.value = eventSettings.value ?? 3000;
   const youtube = document.getElementById('event-youtube'); if (youtube) youtube.value = eventSettings.youtube || '';
+  const eventName = document.getElementById('event-name'); if (eventName) eventName.value = eventSettings.eventName || '';
+  updateClientEventDisplay();
 }
+function updateConsultorAdminStatus() {
+  const description = document.getElementById('consultor-admin-status');
+  if (description) description.textContent = consultorBlocked
+    ? 'Estado: consultas bloqueadas.'
+    : 'Estado: consultas habilitadas (según fecha).';
+}
+
+async function setConsultorBlocked(blocked) {
+  const toggle = document.getElementById('consultor-blocked-toggle');
+  const accion = blocked ? 'BLOQUEAR' : 'DESBLOQUEAR';
+  const detalle = blocked
+    ? 'Ningún participante podrá consultar sus tablas.'
+    : 'El buscador quedará disponible para los participantes.';
+  if (!confirm(`¿Confirmas que deseas ${accion} el consultor de tablas?\\n\\n${detalle}`)) {
+    if (toggle) toggle.checked = consultorBlocked;
+    return;
+  }
+  if (!auth.currentUser) {
+    if (toggle) toggle.checked = consultorBlocked;
+    alert('Inicia sesión en Configuración para cambiar el estado del consultor.');
+    return;
+  }
+  if (toggle) toggle.disabled = true;
+  try {
+    await tableConfigRef.set({
+      consultorBlocked: Boolean(blocked),
+      consultorUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+    consultorBlocked = Boolean(blocked);
+    consultorConfigReady = true;
+    if (toggle) toggle.checked = consultorBlocked;
+    updateConsultorAdminStatus();
+    actualizarEstadoConsultor();
+    alert(consultorBlocked ? 'Consultor de tablas bloqueado correctamente.' : 'Consultor de tablas desbloqueado correctamente.');
+  } catch (error) {
+    console.error('No se pudo cambiar el estado del consultor:', error);
+    if (toggle) toggle.checked = consultorBlocked;
+    alert('No se pudo guardar el estado del consultor en Firebase. Revisa las reglas y vuelve a intentarlo.');
+  } finally {
+    if (toggle) toggle.disabled = false;
+  }
+}
+
 async function saveAllSettings() {
   const start = Number(document.getElementById('range-start').value);
   const end = Number(document.getElementById('range-end').value);
@@ -1439,6 +1844,7 @@ async function saveAllSettings() {
   const time = document.getElementById('event-time').value;
   const value = Number(document.getElementById('event-value').value);
   const youtube = document.getElementById('event-youtube').value.trim();
+  const eventName = document.getElementById('event-name').value.trim();
   if (!Number.isInteger(start) || !Number.isInteger(end) || start < 1 || end < start || end > 5000 || end-start > 4999) {
     alert('Ingresa un rango válido entre 1 y 5.000.'); return;
   }
@@ -1452,11 +1858,13 @@ async function saveAllSettings() {
   const outside = [...assigned.keys()].filter(code => tableNumber(code) < start || tableNumber(code) > end);
   if (outside.length && !confirm(`Hay ${outside.length} tabla(s) ya asignadas fuera del nuevo rango. Se conservarán sin cambios y no se usarán para nuevas asignaciones. ¿Deseas continuar?`)) return;
   tableRangeStart = start; tableRangeEnd = end;
-  eventSettings = { date, time, value, youtube };
+  eventSettings = { date, time, value, youtube, eventName };
   localStorage.setItem('terrazaEspecialTableRange', JSON.stringify({start, end}));
   localStorage.setItem('terrazaEspecialEventSettings', JSON.stringify(eventSettings));
-  try { await tableConfigRef.set({ rangeStart:start, rangeEnd:end, pricePerTable:value, date, time, youtube, updatedAt:firebase.firestore.FieldValue.serverTimestamp() }, { merge:true }); } catch(error) { console.error(error); alert('No se pudo publicar la configuración en Firebase. La página pública seguirá usando la configuración anterior.'); return; }
-  publicTableStart=start; publicTableEnd=end; PRICE_PER_TABLE=value; calculateTotal();
+  try { await tableConfigRef.set({ rangeStart:start, rangeEnd:end, pricePerTable:value, date, time, youtube, eventName, consultorBlocked, updatedAt:firebase.firestore.FieldValue.serverTimestamp() }, { merge:true }); } catch(error) { console.error(error); alert('No se pudo publicar la configuración en Firebase. La página pública seguirá usando la configuración anterior.'); return; }
+  publicTableStart=start; publicTableEnd=end; PRICE_PER_TABLE=value;
+  updateClientEventDisplay();
+  calculateTotal();
   updateAssignmentSummary();
   alert(`Configuración guardada y publicada. Rango: ${normalizeTableCode(start)} a ${normalizeTableCode(end)}.`);
 }
@@ -1481,11 +1889,12 @@ async function saveEventSettings() {
   const time = document.getElementById('event-time').value;
   const value = Number(document.getElementById('event-value').value);
   const youtube = document.getElementById('event-youtube').value.trim();
+  const eventName = document.getElementById('event-name').value.trim();
   if (!date || !time || !Number.isFinite(value) || value < 0) { alert('Completa fecha, hora y un valor válido por tabla.'); return; }
   if (youtube && !/^https:\/\/(www\.)?(youtube\.com|youtu\.be)\//i.test(youtube)) { alert('El enlace debe ser una URL válida de YouTube.'); return; }
-  eventSettings = { date, time, value, youtube };
+  eventSettings = { date, time, value, youtube, eventName };
   localStorage.setItem('terrazaEspecialEventSettings', JSON.stringify(eventSettings));
-  try { await tableConfigRef.set({date,time,pricePerTable:value,youtube,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true}); PRICE_PER_TABLE=value; calculateTotal(); alert('Datos del evento guardados y publicados en Firebase.'); } catch(error) { console.error(error); alert('No se pudo publicar la configuración en Firebase.'); }
+  try { await tableConfigRef.set({date,time,pricePerTable:value,youtube,eventName,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true}); PRICE_PER_TABLE=value; updateClientEventDisplay(); calculateTotal(); alert('Datos del evento guardados y publicados en Firebase.'); } catch(error) { console.error(error); alert('No se pudo publicar la configuración en Firebase.'); }
 }
 function updateAssignmentSummary() {
   updateCopyListsCount();
@@ -1573,7 +1982,152 @@ listenRegistrationStatus();
 loadPublicTableConfig();
 
 calculateTotal();
-    </script>
+    
+// El estado del consultor se muestra junto al título.
+// El interruptor administrativo es la única autoridad para habilitar o bloquear la consulta.
+function actualizarEstadoConsultor() {
+  const boton = document.getElementById('consultor-buscar-btn');
+  const estado = document.getElementById('consultor-estado');
+  if (!boton || !estado) return;
+
+  if (!consultorConfigReady) {
+    boton.disabled = true;
+    boton.classList.remove('bg-emerald-500', 'hover:bg-emerald-600');
+    boton.classList.add('bg-slate-400');
+    estado.textContent = '(VERIFICANDO)';
+    estado.className = 'inline-flex items-center rounded-full border border-white/30 bg-white/10 px-2.5 py-1 text-[11px] font-extrabold tracking-wide text-white';
+    return;
+  }
+
+  if (consultorBlocked) {
+    boton.disabled = true;
+    boton.classList.remove('bg-emerald-500', 'hover:bg-emerald-600');
+    boton.classList.add('bg-slate-400');
+    estado.textContent = '(BLOQUEADO)';
+    estado.className = 'inline-flex items-center rounded-full border border-slate-300 bg-slate-200 px-2.5 py-1 text-[11px] font-extrabold tracking-wide text-slate-700';
+  } else {
+    boton.disabled = false;
+    boton.classList.remove('bg-slate-400');
+    boton.classList.add('bg-emerald-500', 'hover:bg-emerald-600');
+    estado.textContent = '(HABILITADO)';
+    estado.className = 'inline-flex items-center rounded-full border border-emerald-200 bg-emerald-100 px-2.5 py-1 text-[11px] font-extrabold tracking-wide text-emerald-800';
+  }
+}
+
+function mostrarModalEnlaceConsultor(link, customerName, whatsapp, tableCodes) {
+  const modal = document.getElementById('consultor-link-modal');
+  const abrir = document.getElementById('consultor-link-open');
+  const nameField = document.getElementById('consultor-link-name');
+  const phoneField = document.getElementById('consultor-link-phone');
+  const tablesField = document.getElementById('consultor-link-tables');
+  if (!modal || !abrir || !nameField || !phoneField || !tablesField) {
+    throw new Error('No se pudo mostrar el resumen de tus tablas. Recarga la página e inténtalo nuevamente.');
+  }
+
+  abrir.href = link;
+  nameField.textContent = customerName || 'Nombre no disponible';
+  phoneField.textContent = whatsapp;
+  tablesField.textContent = tableCodes.join(', ');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+function cerrarModalEnlaceConsultor() {
+  const modal = document.getElementById('consultor-link-modal');
+  if (!modal) return;
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+}
+
+
+async function consultarMisTablas() {
+  const input = document.getElementById('consultor-whatsapp');
+  const boton = document.getElementById('consultor-buscar-btn');
+  const estado = document.getElementById('consultor-estado');
+
+  if (!consultorConfigReady || consultorBlocked) {
+    actualizarEstadoConsultor();
+    return;
+  }
+
+  const whatsapp = normalizeConsultorPhone(input?.value || '');
+  if (whatsapp.length < 10 || whatsapp.length > 15) {
+    estado.textContent = '(NÚMERO NO VÁLIDO)';
+    estado.className = 'inline-flex items-center rounded-full border border-rose-200 bg-rose-100 px-2.5 py-1 text-[11px] font-extrabold tracking-wide text-rose-800';
+    input?.focus();
+    return;
+  }
+
+  boton.disabled = true;
+  boton.textContent = 'BUSCANDO TUS TABLAS…';
+  estado.textContent = '(BUSCANDO…)';
+  estado.className = 'inline-flex items-center rounded-full border border-sky-200 bg-sky-100 px-2.5 py-1 text-[11px] font-extrabold tracking-wide text-sky-800';
+
+  try {
+    // Una sola lectura de un documento; no descarga registros ni escucha cambios en tiempo real.
+    const snapshot = await consultorCollection.doc(whatsapp).get();
+    if (!snapshot.exists) {
+      throw new Error('No encontramos tablas asociadas a ese número. Verifica el WhatsApp utilizado en tu compra.');
+    }
+
+    const result = snapshot.data() || {};
+    const purchases = result.compras && typeof result.compras === 'object'
+      ? Object.values(result.compras)
+      : [];
+    const allCodes = purchases.flatMap(purchase =>
+      Array.isArray(purchase.tablas) ? purchase.tablas : []
+    );
+    const tableCodes = [...new Set(allCodes.map(normalizeTableCode).filter(Boolean))]
+      .sort((a, b) => tableNumber(a) - tableNumber(b));
+    const tableNumbers = tableCodes.map(tableNumber);
+
+    if (!tableNumbers.length) {
+      throw new Error('Encontramos tu registro, pero todavía no tiene tablas asociadas.');
+    }
+    if (!eventSettings.date) {
+      throw new Error('No se pudo cargar la fecha del bingo. Recarga la página e inténtalo nuevamente.');
+    }
+
+    const link = buildConsultorLink(
+      tableNumbers,
+      result.nombre || purchases[purchases.length - 1]?.nombre || '',
+      eventSettings.date,
+      eventSettings.youtube || ''
+    );
+    if (!link) {
+      throw new Error('No fue posible preparar tu enlace. Verifica la configuración del evento.');
+    }
+
+    const parsedLink = new URL(link);
+    if (parsedLink.protocol !== 'https:' || parsedLink.hostname !== 'laterrazacalipodcast.top' || parsedLink.pathname !== '/tabla-digital/') {
+      throw new Error('El enlace generado no corresponde a la aplicación oficial de tablas.');
+    }
+
+    estado.textContent = `(ENLACE LISTO: ${tableNumbers.length} TABLAS)`;
+    estado.className = 'inline-flex items-center rounded-full border border-emerald-200 bg-emerald-100 px-2.5 py-1 text-[11px] font-extrabold tracking-wide text-emerald-800';
+    mostrarModalEnlaceConsultor(parsedLink.href, result.nombre || purchases[purchases.length - 1]?.nombre || '', whatsapp, tableCodes);
+  } catch (error) {
+    console.error('Error al consultar tablas:', error);
+    estado.textContent = error.code === 'permission-denied'
+      ? '(ERROR DE PERMISOS)'
+      : '(NO SE ENCONTRARON TABLAS)';
+    estado.title = error.message || 'Ocurrió un error al buscar tus tablas.';
+    estado.className = 'inline-flex items-center rounded-full border border-rose-200 bg-rose-100 px-2.5 py-1 text-[11px] font-extrabold tracking-wide text-rose-800';
+  } finally {
+    boton.textContent = 'PRESIONA AQUÍ PARA VER TUS TABLAS';
+    boton.disabled = !consultorConfigReady || consultorBlocked;
+    if (!consultorConfigReady || consultorBlocked) actualizarEstadoConsultor();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  actualizarEstadoConsultor();
+  const phoneInput = document.getElementById('consultor-whatsapp');
+  if (phoneInput) phoneInput.addEventListener('keydown', event => {
+    if (event.key === 'Enter') consultarMisTablas();
+  });
+});
+</script>
     <script>
     // Respaldo independiente para el botón de configuración.
     // Abre el modal aunque falle la inicialización de Firebase en el script principal.
