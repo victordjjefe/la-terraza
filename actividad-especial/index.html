@@ -248,7 +248,7 @@
                                 <strong id="final-total-display" class="text-xl text-indigo-800">$3.000</strong>
                             </div>
                             <button type="submit" id="submit-btn" disabled class="w-full bg-slate-400 text-white font-black text-lg py-4 px-6 rounded-xl shadow-lg">Selecciona tus tablas para continuar</button>
-                            <button type="button" onclick="backToProofStep()" class="w-full bg-slate-100 text-slate-700 font-bold py-3 rounded-xl">Volver a corregir la compra (se conserva el comprobante)</button>
+                            <button type="button" onclick="backToProofStep()" class="inline-flex items-center justify-center gap-2 self-start bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold text-sm px-4 py-2 rounded-lg shadow-sm"><span aria-hidden="true">←</span><span>Volver</span></button>
                         </form>
                     </div>
                 </div>
@@ -398,19 +398,33 @@
         </div>
     </div>
 
-    <!-- Modal de Agradecimiento y Éxito -->
+    <!-- Modal de Agradecimiento y Resumen del Registro -->
     <div id="success-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md hidden items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center space-y-6 border-2 border-emerald-300">
+        <div class="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 max-w-md w-full max-h-[90vh] overflow-y-auto text-center space-y-5 border-2 border-emerald-300">
             <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-4xl font-bold">🎉</div>
-            <div class="space-y-3">
-                <h3 class="text-3xl font-black text-slate-900">¡Registro Exitoso!</h3>
-                <p class="text-base text-slate-700 font-medium leading-relaxed">
-                    ¡Gracias por participar en <strong>La Terraza Bingo</strong>! ❤️
-                </p>
-                <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 text-indigo-950 font-semibold text-sm">
-                    🎟️ Tus tablas quedaron registradas. Próximamente podrás consultar aquí mismo tus números y el enlace del bingo.
+            <div class="space-y-2">
+                <h3 class="text-3xl font-black text-slate-900">¡Registro exitoso!</h3>
+                <p class="text-base text-slate-700 font-medium leading-relaxed">¡Gracias por participar en <strong>La Terraza Bingo</strong>! ❤️</p>
+            </div>
+            <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-left space-y-3">
+                <h4 class="text-sm font-black uppercase tracking-wide text-slate-800 text-center">Resumen de tu compra</h4>
+                <div>
+                    <p class="text-xs font-bold text-slate-500">Nombre</p>
+                    <p id="success-customer-name" class="text-base font-extrabold text-slate-900 break-words"></p>
+                </div>
+                <div>
+                    <p class="text-xs font-bold text-slate-500">WhatsApp</p>
+                    <p id="success-customer-whatsapp" class="text-base font-extrabold text-slate-900"></p>
+                </div>
+                <div>
+                    <p class="text-xs font-bold text-slate-500">Tablas que compraste</p>
+                    <p id="success-customer-tables" class="text-base font-extrabold text-indigo-800 leading-relaxed break-words"></p>
                 </div>
             </div>
+            <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 text-indigo-950 text-sm font-semibold leading-relaxed">
+                📅 A partir del <strong>3 de diciembre</strong> puedes consultar tus tablas en esta misma plataforma.
+            </div>
+            <p class="text-xs text-slate-500">Puedes tomar una captura de esta pantalla para guardar los datos de tu compra.</p>
             <button onclick="closeSuccessModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black text-lg py-3.5 px-6 rounded-xl transition shadow-lg cursor-pointer">
                 Aceptar
             </button>
@@ -1200,6 +1214,11 @@ async function handleFormSubmit(e) {
     document.getElementById('progress-bar').style.width = '100%';
     document.getElementById('progress-percent').textContent = '100%';
     hideModal('loading-modal');
+
+    document.getElementById('success-customer-name').textContent = name;
+    document.getElementById('success-customer-whatsapp').textContent = whatsapp;
+    document.getElementById('success-customer-tables').textContent = selectedCodes.join(', ');
+
     pendingReceiptDataUrl = null;
     pendingReceiptFileName = '';
     document.getElementById('bingo-form').reset();
