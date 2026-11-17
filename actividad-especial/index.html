@@ -114,6 +114,16 @@
                         <img id="bingo-cover" src="bingo.png" alt="La Terraza Bingo Cover" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='https://via.placeholder.com/600x400/1e1b4b/ffffff?text=La+Terraza+Bingo+(bingo.png)';">
                     </div>
 
+                    <!-- Estado público cuando no hay un bingo especial activo -->
+                    <section id="no-special-event-message" class="hidden mx-4 sm:mx-6 my-6 overflow-hidden rounded-3xl border border-amber-200 bg-gradient-to-br from-indigo-950 via-violet-900 to-fuchsia-900 p-7 text-center text-white shadow-2xl" role="status" aria-live="polite">
+                        <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white/15 text-4xl shadow-inner">🎉</div>
+                        <p class="mb-2 text-xs font-black uppercase tracking-[.25em] text-amber-200">La Terraza Bingo</p>
+                        <h2 class="text-2xl sm:text-3xl font-black leading-tight">No hay eventos especiales disponibles</h2>
+                        <p class="mx-auto mt-3 max-w-sm text-sm sm:text-base leading-relaxed text-indigo-100">En este momento no tenemos un bingo especial habilitado. ¡Pronto anunciaremos nuestro próximo evento!
+                        </p>
+                        <div class="mt-5 flex justify-center gap-2 text-2xl" aria-hidden="true"><span>✨</span><span>🎱</span><span>✨</span></div>
+                    </section>
+
                     <!-- Consultor público de tablas: visible debajo de la portada -->
                     <section id="consultor-tablas" class="mx-4 sm:mx-6 mt-4 rounded-2xl border-2 border-indigo-300 bg-gradient-to-br from-indigo-950 via-indigo-800 to-violet-700 p-5 sm:p-6 shadow-xl text-white">
                         <div class="text-center space-y-2">
@@ -874,6 +884,10 @@ async function confirmDeleteAll(e) {
       }
     }
 
+    // Publica que no hay evento activo; conserva fecha, hora, nombre y parámetros para preparar el siguiente.
+    await tableConfigRef.set({ eventAvailable: false, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    setSpecialEventAvailable(false);
+
     localRecords = [];
     cachedOccupiedTables = {};
     selectedClientTables = new Set();
@@ -1023,6 +1037,19 @@ async function loadOccupiedTableCache() {
   cachedOccupiedTables = occupied;
 }
 
+function setSpecialEventAvailable(isAvailable) {
+  const content = document.getElementById('client-registration-content');
+  const message = document.getElementById('no-special-event-message');
+  if (!content || !message) return;
+  // La portada (primer hijo) permanece visible; el resto de la compra se oculta si no hay evento.
+  const cover = content.firstElementChild;
+  [...content.children].forEach(child => {
+    if (child === cover || child === message) return;
+    child.classList.toggle('hidden', !isAvailable);
+  });
+  message.classList.toggle('hidden', isAvailable);
+}
+
 function updateClientEventDisplay() {
   const dateEl = document.getElementById('client-event-date');
   const timeEl = document.getElementById('client-event-time');
@@ -1063,6 +1090,7 @@ async function loadPublicTableConfig() {
   try {
     const snap = await tableConfigRef.get();
     const cfg = snap.exists ? (snap.data() || {}) : {};
+    setSpecialEventAvailable(cfg.eventAvailable !== false);
     consultorBlocked = cfg.consultorBlocked === true;
     consultorConfigReady = true;
     const consultorToggle = document.getElementById('consultor-blocked-toggle');
@@ -1902,7 +1930,7 @@ async function saveEventSettings() {
   if (youtube && !/^https:\/\/(www\.)?(youtube\.com|youtu\.be)\//i.test(youtube)) { alert('El enlace debe ser una URL válida de YouTube.'); return; }
   eventSettings = { date, time, value, youtube, eventName };
   localStorage.setItem('terrazaEspecialEventSettings', JSON.stringify(eventSettings));
-  try { await tableConfigRef.set({date,time,pricePerTable:value,youtube,eventName,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true}); PRICE_PER_TABLE=value; updateClientEventDisplay(); calculateTotal(); alert('Datos del evento guardados y publicados en Firebase.'); } catch(error) { console.error(error); alert('No se pudo publicar la configuración en Firebase.'); }
+  try { await tableConfigRef.set({date,time,pricePerTable:value,youtube,eventName,eventAvailable:true,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true}); PRICE_PER_TABLE=value; setSpecialEventAvailable(true); updateClientEventDisplay(); calculateTotal(); alert('Datos del evento guardados y publicados en Firebase. El evento quedó disponible para el público.'); } catch(error) { console.error(error); alert('No se pudo publicar la configuración en Firebase.'); }
 }
 function updateAssignmentSummary() {
   updateCopyListsCount();
