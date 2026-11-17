@@ -118,7 +118,7 @@
                         <div class="text-center space-y-2">
                             <span class="bg-indigo-100 text-indigo-900 text-sm font-extrabold px-4 py-1.5 rounded-full uppercase tracking-wider inline-block">Gran Evento Virtual</span>
                             <h2 class="text-3xl font-black text-slate-900 leading-tight">Gran Bingo Virtual Especial</h2>
-                            <p class="text-indigo-700 font-extrabold text-xl">📅 25 de octubre &nbsp;|&nbsp; ⏰ 8:00 p.m.</p>
+                            <p class="text-indigo-700 font-extrabold text-xl">📅 <span id="client-event-date">Fecha por confirmar</span> &nbsp;|&nbsp; ⏰ <span id="client-event-time">Hora por confirmar</span></p>
                             <div class="inline-block bg-amber-100 text-amber-900 font-black text-lg px-4 py-1 rounded-xl mt-1">
                                 💰 Valor por tabla: <span id="client-price-display">$3.000</span>
                             </div>
@@ -865,6 +865,36 @@ async function loadOccupiedTableCache() {
   cachedOccupiedTables = occupied;
 }
 
+function updateClientEventDisplay() {
+  const dateEl = document.getElementById('client-event-date');
+  const timeEl = document.getElementById('client-event-time');
+  const dateValue = eventSettings?.date || '';
+  const timeValue = eventSettings?.time || '';
+
+  if (dateEl) {
+    if (dateValue) {
+      const parts = dateValue.split('-').map(Number);
+      const date = parts.length === 3 ? new Date(parts[0], parts[1] - 1, parts[2]) : new Date(dateValue);
+      dateEl.textContent = Number.isNaN(date.getTime())
+        ? 'Fecha por confirmar'
+        : new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long' }).format(date);
+    } else {
+      dateEl.textContent = 'Fecha por confirmar';
+    }
+  }
+
+  if (timeEl) {
+    if (/^\\d{2}:\\d{2}$/.test(timeValue)) {
+      const [hours, minutes] = timeValue.split(':').map(Number);
+      const suffix = hours < 12 ? 'a. m.' : 'p. m.';
+      const displayHour = hours % 12 || 12;
+      timeEl.textContent = `${displayHour}:${String(minutes).padStart(2, '0')} ${suffix}`;
+    } else {
+      timeEl.textContent = 'Hora por confirmar';
+    }
+  }
+}
+
 async function loadPublicTableConfig() {
   try {
     const snap = await tableConfigRef.get();
@@ -883,6 +913,7 @@ async function loadPublicTableConfig() {
       tableRangeStart=publicTableStart; tableRangeEnd=publicTableEnd;
       eventSettings={...eventSettings,date:cfg.date||eventSettings.date,time:cfg.time||eventSettings.time,value:PRICE_PER_TABLE,youtube:cfg.youtube||eventSettings.youtube};
     }
+    updateClientEventDisplay();
     calculateTotal();
   } catch (error) {
     console.error('No se pudo cargar la configuración pública:', error);
@@ -1427,6 +1458,7 @@ function loadLocalSettings() {
   const time = document.getElementById('event-time'); if (time) time.value = eventSettings.time || '';
   const value = document.getElementById('event-value'); if (value) value.value = eventSettings.value ?? 3000;
   const youtube = document.getElementById('event-youtube'); if (youtube) youtube.value = eventSettings.youtube || '';
+  updateClientEventDisplay();
 }
 async function saveAllSettings() {
   const start = Number(document.getElementById('range-start').value);
@@ -1452,7 +1484,9 @@ async function saveAllSettings() {
   localStorage.setItem('terrazaEspecialTableRange', JSON.stringify({start, end}));
   localStorage.setItem('terrazaEspecialEventSettings', JSON.stringify(eventSettings));
   try { await tableConfigRef.set({ rangeStart:start, rangeEnd:end, pricePerTable:value, date, time, youtube, updatedAt:firebase.firestore.FieldValue.serverTimestamp() }, { merge:true }); } catch(error) { console.error(error); alert('No se pudo publicar la configuración en Firebase. La página pública seguirá usando la configuración anterior.'); return; }
-  publicTableStart=start; publicTableEnd=end; PRICE_PER_TABLE=value; calculateTotal();
+  publicTableStart=start; publicTableEnd=end; PRICE_PER_TABLE=value;
+  updateClientEventDisplay();
+  calculateTotal();
   updateAssignmentSummary();
   alert(`Configuración guardada y publicada. Rango: ${normalizeTableCode(start)} a ${normalizeTableCode(end)}.`);
 }
@@ -1481,7 +1515,7 @@ async function saveEventSettings() {
   if (youtube && !/^https:\/\/(www\.)?(youtube\.com|youtu\.be)\//i.test(youtube)) { alert('El enlace debe ser una URL válida de YouTube.'); return; }
   eventSettings = { date, time, value, youtube };
   localStorage.setItem('terrazaEspecialEventSettings', JSON.stringify(eventSettings));
-  try { await tableConfigRef.set({date,time,pricePerTable:value,youtube,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true}); PRICE_PER_TABLE=value; calculateTotal(); alert('Datos del evento guardados y publicados en Firebase.'); } catch(error) { console.error(error); alert('No se pudo publicar la configuración en Firebase.'); }
+  try { await tableConfigRef.set({date,time,pricePerTable:value,youtube,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true}); PRICE_PER_TABLE=value; updateClientEventDisplay(); calculateTotal(); alert('Datos del evento guardados y publicados en Firebase.'); } catch(error) { console.error(error); alert('No se pudo publicar la configuración en Firebase.'); }
 }
 function updateAssignmentSummary() {
   updateCopyListsCount();
