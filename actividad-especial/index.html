@@ -114,6 +114,26 @@
                         <img id="bingo-cover" src="bingo.png" alt="La Terraza Bingo Cover" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='https://via.placeholder.com/600x400/1e1b4b/ffffff?text=La+Terraza+Bingo+(bingo.png)';">
                     </div>
 
+                    <!-- Consultor público de tablas: visible debajo de la portada -->
+                    <section id="consultor-tablas" class="mx-4 sm:mx-6 mt-4 rounded-2xl border-2 border-indigo-300 bg-gradient-to-br from-indigo-950 via-indigo-800 to-violet-700 p-5 sm:p-6 shadow-xl text-white">
+                        <div class="text-center space-y-2">
+                            <div class="inline-flex items-center justify-center rounded-full bg-white/15 px-3 py-1 text-xs font-black tracking-widest uppercase">La Terraza Bingo</div>
+                            <h2 class="text-2xl sm:text-3xl font-black tracking-tight">🔎 CONSULTA TUS TABLAS</h2>
+                            <p class="text-sm sm:text-base text-indigo-100">Escribe el número de WhatsApp con el que realizaste tu compra.</p>
+                        </div>
+                        <div class="mt-5 space-y-3">
+                            <label for="consultor-whatsapp" class="block text-sm font-extrabold text-white">Número de WhatsApp</label>
+                            <input id="consultor-whatsapp" type="tel" inputmode="numeric" autocomplete="tel" maxlength="18" placeholder="Ej. 3001234567"
+                                class="w-full rounded-xl border-2 border-white/70 bg-white px-4 py-3.5 text-lg font-bold tracking-wide text-slate-900 placeholder:text-slate-400 focus:border-amber-300 focus:outline-none focus:ring-4 focus:ring-amber-300/30">
+                            <button id="consultor-buscar-btn" type="button" onclick="consultarMisTablas()"
+                                class="w-full rounded-xl bg-amber-400 px-4 py-4 text-base sm:text-lg font-black uppercase tracking-wide text-indigo-950 shadow-lg transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:bg-slate-400 disabled:text-slate-700 disabled:shadow-none"
+                                disabled>PRESIONA AQUÍ PARA VER TUS TABLAS</button>
+                            <div id="consultor-estado" role="status" aria-live="polite" class="rounded-xl border border-amber-200/60 bg-white/95 px-4 py-3 text-center text-sm font-bold text-indigo-950">
+                                🔒 Podrás consultar tus tablas a partir del 3 de diciembre de 2026.
+                            </div>
+                        </div>
+                    </section>
+
                     <div class="px-6 space-y-5">
                         <div class="text-center space-y-2">
                             <h2 class="text-3xl font-black text-slate-900 leading-tight">Gran Bingo Virtual Especial</h2>
@@ -1715,7 +1735,110 @@ listenRegistrationStatus();
 loadPublicTableConfig();
 
 calculateTotal();
-    </script>
+    
+// Consultor de tablas. Fechas expresadas en hora Colombia (UTC-5).
+const CONSULTOR_FECHA_APERTURA = new Date('2026-12-03T00:00:00-05:00');
+const CONSULTOR_FECHA_CIERRE_EXCLUSIVA = new Date('2026-12-07T00:00:00-05:00');
+// La ruta requiere un endpoint de servidor que aún debe configurarse en el hosting.
+const CONSULTOR_API_ENDPOINT = '/api/consultor-tablas';
+
+function obtenerEstadoVentanaConsultor() {
+  const ahora = new Date();
+  if (ahora < CONSULTOR_FECHA_APERTURA) return 'pendiente';
+  if (ahora >= CONSULTOR_FECHA_CIERRE_EXCLUSIVA) return 'cerrado';
+  return 'abierto';
+}
+
+function actualizarEstadoConsultor() {
+  const boton = document.getElementById('consultor-buscar-btn');
+  const estado = document.getElementById('consultor-estado');
+  if (!boton || !estado) return;
+  const ventana = obtenerEstadoVentanaConsultor();
+
+  if (ventana === 'pendiente') {
+    boton.disabled = true;
+    estado.textContent = '🔒 Podrás consultar tus tablas a partir del 3 de diciembre de 2026.';
+    estado.className = 'rounded-xl border border-amber-200/60 bg-white/95 px-4 py-3 text-center text-sm font-bold text-indigo-950';
+  } else if (ventana === 'cerrado') {
+    boton.disabled = true;
+    estado.textContent = '🔒 El período para consultar las tablas finalizó el 6 de diciembre de 2026 a las 11:59 p. m.';
+    estado.className = 'rounded-xl border border-slate-300 bg-slate-100 px-4 py-3 text-center text-sm font-bold text-slate-700';
+  } else {
+    boton.disabled = false;
+    estado.textContent = '✅ La consulta está habilitada. Ingresa tu WhatsApp y presiona el botón para abrir tus tablas.';
+    estado.className = 'rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center text-sm font-bold text-emerald-900';
+  }
+}
+
+async function consultarMisTablas() {
+  const input = document.getElementById('consultor-whatsapp');
+  const boton = document.getElementById('consultor-buscar-btn');
+  const estado = document.getElementById('consultor-estado');
+
+  if (obtenerEstadoVentanaConsultor() !== 'abierto') {
+    actualizarEstadoConsultor();
+    return;
+  }
+
+  const whatsapp = String(input?.value || '').replace(/\D/g, '');
+  if (whatsapp.length < 10 || whatsapp.length > 15) {
+    estado.textContent = 'Escribe un número de WhatsApp válido para continuar.';
+    estado.className = 'rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-center text-sm font-bold text-rose-800';
+    input?.focus();
+    return;
+  }
+
+  boton.disabled = true;
+  boton.textContent = 'BUSCANDO TUS TABLAS…';
+  estado.textContent = 'Estamos buscando tu enlace. Un momento, por favor.';
+  estado.className = 'rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-center text-sm font-bold text-indigo-900';
+
+  try {
+    const response = await fetch(CONSULTOR_API_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ whatsapp })
+    });
+    if (!response.ok) {
+      if (response.status === 404 || response.status === 501) {
+        throw new Error('El servicio de consulta todavía no está conectado.');
+      }
+      throw new Error('No fue posible consultar en este momento. Inténtalo nuevamente.');
+    }
+
+    const result = await response.json();
+    const link = String(result?.enlace || result?.url || '').trim();
+    if (!result?.ok || !link) {
+      throw new Error(result?.mensaje || 'No encontramos tablas asociadas a ese número. Verifica el WhatsApp utilizado en tu compra.');
+    }
+
+    const parsedLink = new URL(link);
+    if (parsedLink.protocol !== 'https:' || parsedLink.hostname !== 'laterrazacalipodcast.top' || !parsedLink.pathname.startsWith('/tabla-digital/')) {
+      throw new Error('El enlace recibido no corresponde a la aplicación oficial de tablas.');
+    }
+    window.location.assign(parsedLink.href);
+  } catch (error) {
+    estado.textContent = error.message || 'Ocurrió un error al buscar tus tablas.';
+    estado.className = 'rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-center text-sm font-bold text-rose-800';
+  } finally {
+    if (obtenerEstadoVentanaConsultor() === 'abierto') {
+      boton.disabled = false;
+      boton.textContent = 'PRESIONA AQUÍ PARA VER TUS TABLAS';
+    } else {
+      actualizarEstadoConsultor();
+    }
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  actualizarEstadoConsultor();
+  window.setInterval(actualizarEstadoConsultor, 60000);
+  const phoneInput = document.getElementById('consultor-whatsapp');
+  if (phoneInput) phoneInput.addEventListener('keydown', event => {
+    if (event.key === 'Enter') consultarMisTablas();
+  });
+});
+</script>
     <script>
     // Respaldo independiente para el botón de configuración.
     // Abre el modal aunque falle la inicialización de Firebase en el script principal.
