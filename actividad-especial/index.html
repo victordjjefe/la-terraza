@@ -278,46 +278,44 @@
         <!-- ================= VISTA ADMIN (CONFIGURACIÓN A TODO LO ANCHO) ================= -->
         <section id="view-admin" class="hidden w-full px-4 sm:px-8 space-y-6">
             <div class="bg-white rounded-3xl shadow-xl p-6 sm:p-8 border border-slate-200 w-full">
-                <div class="flex flex-col sm:flex-row justify-between items-center mb-6 border-b pb-4 gap-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 border-b pb-3 gap-3">
                     <div>
-                        <h3 class="text-2xl font-black text-slate-900">⚙️ Panel de Configuración</h3>
-                        <p class="text-base text-slate-500">Gestión completa de participantes, comprobantes y marcas de control.</p>
+                        <h3 class="text-xl font-black text-slate-900">⚙️ Panel de Configuración</h3>
+                        <p class="text-xs text-slate-500">Gestión de participantes, comprobantes y controles.</p>
                     </div>
-                    <div class="flex flex-wrap gap-3">
-                        <button type="button" onclick="promptDeleteAll()" class="bg-red-600 hover:bg-red-700 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition shadow cursor-pointer">🗑️ Eliminar Todos los Registros</button>
-                        <button type="button" onclick="handleLogout()" class="bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition shadow cursor-pointer">Cerrar Sesión</button>
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" onclick="promptDeleteAll()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-2 rounded-lg transition shadow cursor-pointer">🗑️ Eliminar registros</button>
+                        <button type="button" onclick="handleLogout()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-3 py-2 rounded-lg transition shadow cursor-pointer">Cerrar sesión</button>
                     </div>
                 </div>
 
-                <!-- Contador de dinero recaudado -->
-                <div class="mb-6 bg-emerald-50 border-2 border-emerald-300 rounded-3xl p-6 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4">
-                    <div>
-                        <h4 class="text-xl font-black text-emerald-950">💰 Total recaudado</h4>
-                        <p class="text-sm font-semibold text-emerald-800">Suma automática de todos los pagos registrados en Firebase</p>
+                <!-- Resumen y búsqueda: módulos compactos en una sola fila -->
+                <div class="mb-5 grid grid-cols-2 md:grid-cols-3 gap-3 items-stretch">
+                    <div class="rounded-2xl bg-emerald-50 border border-emerald-200 px-4 py-3 flex items-center justify-between gap-3 min-w-0">
+                        <div class="min-w-0">
+                            <h4 class="text-sm font-extrabold text-emerald-950">💰 Total recaudado</h4>
+                            <p class="text-xs text-emerald-800">Pagos registrados</p>
+                        </div>
+                        <div id="total-money-counter" class="text-2xl font-black text-emerald-700 shrink-0">$0</div>
                     </div>
-                    <div id="total-money-counter" class="text-3xl font-black text-emerald-700">$0</div>
-                </div>
-
-                <!-- Contador de tablas registradas -->
-                <div class="mb-6 bg-indigo-50 border-2 border-indigo-300 rounded-3xl p-6 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4">
-                    <div>
-                        <h4 class="text-xl font-black text-indigo-950">🎟️ Total de tablas registradas</h4>
-                        <p class="text-sm font-semibold text-indigo-800">Suma automática de las tablas de todos los participantes</p>
+                    <div class="rounded-2xl bg-indigo-50 border border-indigo-200 px-4 py-3 flex items-center justify-between gap-3 min-w-0">
+                        <div class="min-w-0">
+                            <h4 class="text-sm font-extrabold text-indigo-950">🎟️ Tablas registradas</h4>
+                            <p class="text-xs text-indigo-800">Total de tablas</p>
+                        </div>
+                        <div id="total-tables-counter" class="text-2xl font-black text-indigo-700 shrink-0">0</div>
                     </div>
-                    <div id="total-tables-counter" class="text-3xl font-black text-indigo-700">0</div>
-                </div>
-
-                <!-- Buscador de participantes -->
-                <div class="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-2">
-                    <label for="record-search" class="block text-base font-extrabold text-slate-800">🔎 Buscar participante</label>
-                    <div class="flex flex-col sm:flex-row gap-3">
-                        <input type="search" id="record-search" oninput="renderAdminTable()" autocomplete="off"
-                            class="w-full px-4 py-3 rounded-xl border-2 border-slate-300 text-base font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white"
-                            placeholder="Escribe nombre, apellido o parte del nombre..." aria-describedby="record-search-help">
-                        <button type="button" onclick="clearRecordSearch()" class="shrink-0 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-5 py-3 rounded-xl transition">Limpiar búsqueda</button>
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 flex flex-col justify-center gap-2 col-span-2 md:col-span-1">
+                        <label for="record-search" class="block text-sm font-extrabold text-slate-800">🔎 Buscar participante</label>
+                        <div class="flex gap-2">
+                            <input type="search" id="record-search" oninput="renderAdminTable()" autocomplete="off"
+                                class="min-w-0 w-full px-3 py-2 rounded-lg border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white"
+                                placeholder="Nombre o apellido..." aria-describedby="record-search-help">
+                            <button type="button" onclick="clearRecordSearch()" class="shrink-0 bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold px-3 py-2 rounded-lg transition">Limpiar</button>
+                        </div>
+                        <p id="record-search-count" class="text-xs font-bold text-indigo-800" aria-live="polite"></p>
+                        <p id="record-search-help" class="sr-only">La búsqueda no distingue mayúsculas, minúsculas ni tildes. Los totales generales no cambian al filtrar.</p>
                     </div>
-                    <p id="record-search-help" class="text-sm text-slate-500">La búsqueda no distingue mayúsculas, minúsculas ni tildes. Los totales generales no cambian al filtrar.</p>
-                    <p id="record-search-count" class="text-sm font-bold text-indigo-800" aria-live="polite"></p>
                 </div>
 
                 <!-- Configuración de selección pública y sincronización contable -->
@@ -341,9 +339,27 @@
                         <input id="event-name" type="text" maxlength="60" placeholder="Ej.: Navideño, Amor y Amistad, Reyes" class="w-full px-3 py-2 rounded-lg border-2 border-slate-300">
                         <p class="text-xs text-slate-500 mt-1">Este nombre aparecerá debajo del título principal del bingo.</p>
                     </div>
-                    <div class="rounded-xl border-2 border-amber-300 bg-amber-50 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                        <div><h4 class="font-black text-amber-950">🔒 Control de inscripciones</h4><p id="registration-status-description" class="text-sm text-amber-900">Estado: sincronizando...</p></div>
-                        <label class="inline-flex items-center gap-3 font-bold text-amber-950 cursor-pointer"><input id="registration-closed-toggle" type="checkbox" class="h-6 w-6 accent-red-600" onchange="setRegistrationClosed(this.checked)"><span>Bloquear inscripciones</span></label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div class="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2.5 flex items-center justify-between gap-3">
+                            <div class="min-w-0">
+                                <h4 class="text-sm font-extrabold text-amber-950">🔒 Control de inscripciones</h4>
+                                <p id="registration-status-description" class="text-xs text-amber-900">Estado: sincronizando...</p>
+                            </div>
+                            <label class="inline-flex items-center gap-2 text-xs font-bold text-amber-950 cursor-pointer shrink-0">
+                                <input id="registration-closed-toggle" type="checkbox" class="h-5 w-5 accent-red-600" onchange="setRegistrationClosed(this.checked)">
+                                <span>Bloquear</span>
+                            </label>
+                        </div>
+                        <div class="rounded-xl border border-violet-300 bg-violet-50 px-3 py-2.5 flex items-center justify-between gap-3">
+                            <div class="min-w-0">
+                                <h4 class="text-sm font-extrabold text-violet-950">🔎 Consultor de tablas</h4>
+                                <p id="consultor-admin-status" class="text-xs text-violet-900">Estado: sincronizando...</p>
+                            </div>
+                            <label class="inline-flex items-center gap-2 text-xs font-bold text-violet-950 cursor-pointer shrink-0">
+                                <input id="consultor-blocked-toggle" type="checkbox" class="h-5 w-5 accent-violet-700" onchange="setConsultorBlocked(this.checked)">
+                                <span>Bloquear</span>
+                            </label>
+                        </div>
                     </div>
                     <div class="flex flex-col sm:flex-row gap-3">
                         <button type="button" onclick="saveAllSettings()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2.5 rounded-lg">💾 Guardar configuración</button>
@@ -984,10 +1000,16 @@ async function loadPublicTableConfig() {
       if (cfg.youtube) { const y=document.getElementById('event-youtube'); if (y) y.value=cfg.youtube; }
       const eventNameInput = document.getElementById('event-name');
       if (eventNameInput) eventNameInput.value = cfg.eventName || '';
+      consultorBlocked = cfg.consultorBlocked === true;
+      const consultorToggle = document.getElementById('consultor-blocked-toggle');
+      if (consultorToggle) consultorToggle.checked = consultorBlocked;
+      updateConsultorAdminStatus();
       tableRangeStart=publicTableStart; tableRangeEnd=publicTableEnd;
       eventSettings={...eventSettings,date:cfg.date||eventSettings.date,time:cfg.time||eventSettings.time,value:PRICE_PER_TABLE,youtube:cfg.youtube||eventSettings.youtube,eventName:cfg.eventName||''};
     }
     updateClientEventDisplay();
+    updateConsultorAdminStatus();
+    actualizarEstadoConsultor();
     calculateTotal();
   } catch (error) {
     console.error('No se pudo cargar la configuración pública:', error);
@@ -1582,6 +1604,7 @@ let selectedAssignmentTables = new Set();
 let tableRangeStart = 1;
 let tableRangeEnd = 200;
 let eventSettings = { date: '2026-10-25', time: '20:00', value: 3000, youtube: '', eventName: '' };
+let consultorBlocked = false;
 
 function normalizeTableCode(value) {
   const raw = String(value ?? '').trim().toUpperCase();
@@ -1664,6 +1687,39 @@ function loadLocalSettings() {
   const eventName = document.getElementById('event-name'); if (eventName) eventName.value = eventSettings.eventName || '';
   updateClientEventDisplay();
 }
+function updateConsultorAdminStatus() {
+  const description = document.getElementById('consultor-admin-status');
+  if (description) description.textContent = consultorBlocked
+    ? 'Estado: consultas bloqueadas.'
+    : 'Estado: consultas habilitadas (según fecha).';
+}
+
+async function setConsultorBlocked(blocked) {
+  const toggle = document.getElementById('consultor-blocked-toggle');
+  if (!auth.currentUser) {
+    if (toggle) toggle.checked = consultorBlocked;
+    alert('Inicia sesión en Configuración para cambiar el estado del consultor.');
+    return;
+  }
+  if (toggle) toggle.disabled = true;
+  try {
+    await tableConfigRef.set({
+      consultorBlocked: Boolean(blocked),
+      consultorUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+    consultorBlocked = Boolean(blocked);
+    updateConsultorAdminStatus();
+    actualizarEstadoConsultor();
+    alert(consultorBlocked ? 'Consultor de tablas bloqueado.' : 'Consultor de tablas habilitado. La fecha de apertura sigue vigente.');
+  } catch (error) {
+    console.error('No se pudo cambiar el estado del consultor:', error);
+    if (toggle) toggle.checked = consultorBlocked;
+    alert('No se pudo guardar el estado del consultor en Firebase. Revisa las reglas y vuelve a intentarlo.');
+  } finally {
+    if (toggle) toggle.disabled = false;
+  }
+}
+
 async function saveAllSettings() {
   const start = Number(document.getElementById('range-start').value);
   const end = Number(document.getElementById('range-end').value);
@@ -1688,7 +1744,7 @@ async function saveAllSettings() {
   eventSettings = { date, time, value, youtube, eventName };
   localStorage.setItem('terrazaEspecialTableRange', JSON.stringify({start, end}));
   localStorage.setItem('terrazaEspecialEventSettings', JSON.stringify(eventSettings));
-  try { await tableConfigRef.set({ rangeStart:start, rangeEnd:end, pricePerTable:value, date, time, youtube, eventName, updatedAt:firebase.firestore.FieldValue.serverTimestamp() }, { merge:true }); } catch(error) { console.error(error); alert('No se pudo publicar la configuración en Firebase. La página pública seguirá usando la configuración anterior.'); return; }
+  try { await tableConfigRef.set({ rangeStart:start, rangeEnd:end, pricePerTable:value, date, time, youtube, eventName, consultorBlocked, updatedAt:firebase.firestore.FieldValue.serverTimestamp() }, { merge:true }); } catch(error) { console.error(error); alert('No se pudo publicar la configuración en Firebase. La página pública seguirá usando la configuración anterior.'); return; }
   publicTableStart=start; publicTableEnd=end; PRICE_PER_TABLE=value;
   updateClientEventDisplay();
   calculateTotal();
@@ -1826,7 +1882,11 @@ function actualizarEstadoConsultor() {
   if (!boton || !estado) return;
   const ventana = obtenerEstadoVentanaConsultor();
 
-  if (ventana === 'pendiente') {
+  if (consultorBlocked) {
+    boton.disabled = true;
+    estado.textContent = '🔒 La consulta de tablas está temporalmente deshabilitada por la organización.';
+    estado.className = 'rounded-xl border border-slate-300 bg-slate-100 px-4 py-3 text-center text-sm font-bold text-slate-700';
+  } else if (ventana === 'pendiente') {
     boton.disabled = true;
     estado.textContent = '🔒 Podrás consultar tus tablas a partir del 3 de diciembre de 2026.';
     estado.className = 'rounded-xl border border-amber-200/60 bg-white/95 px-4 py-3 text-center text-sm font-bold text-indigo-950';
@@ -1846,7 +1906,7 @@ async function consultarMisTablas() {
   const boton = document.getElementById('consultor-buscar-btn');
   const estado = document.getElementById('consultor-estado');
 
-  if (obtenerEstadoVentanaConsultor() !== 'abierto') {
+  if (consultorBlocked || obtenerEstadoVentanaConsultor() !== 'abierto') {
     actualizarEstadoConsultor();
     return;
   }
