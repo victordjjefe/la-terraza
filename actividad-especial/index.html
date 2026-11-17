@@ -862,20 +862,30 @@ async function confirmDeleteAll(e) {
   }
 
   try {
-    const snapshot = await recordsCollection.get();
-    // Firestore permite hasta 500 operaciones por lote.
-    for (let i = 0; i < snapshot.docs.length; i += 450) {
-      const batch = db.batch();
-      snapshot.docs.slice(i, i + 450).forEach(doc => batch.delete(doc.ref));
-      await batch.commit();
+    // Reinicio completo del evento: registros, disponibilidad por lotes e índice del consultor.
+    // Se conservan las configuraciones del evento y los parámetros de tablas.
+    const collectionsToClear = [recordsCollection, inventoryCollection, consultorCollection];
+    for (const collectionRef of collectionsToClear) {
+      const snapshot = await collectionRef.get();
+      for (let i = 0; i < snapshot.docs.length; i += 450) {
+        const batch = db.batch();
+        snapshot.docs.slice(i, i + 450).forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+      }
     }
+
     localRecords = [];
+    cachedOccupiedTables = {};
+    selectedClientTables = new Set();
     renderAdminTable();
+    updateMoneyCounter();
+    updateAssignmentSummary();
     closeDeleteAllModal();
-    alert("Se eliminaron los registros de Firestore.");
+    alert("Bingo reiniciado correctamente. Se eliminaron los registros y las reservas; todas las tablas quedaron libres para el próximo bingo.");
   } catch (error) {
-    console.error(error);
-    alert("No se pudieron eliminar los registros. Revisa las reglas de Firestore.");
+    console.error("Error reiniciando el bingo:", error);
+    alert("No se pudo completar el reinicio. Verifica las reglas de Firestore para permitir al administrador eliminar documentos de registros, disponibilidadTablas y consultorTablas.");
+    await loadRecords();
   }
 }
 
