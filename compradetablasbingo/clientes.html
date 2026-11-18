@@ -690,6 +690,25 @@
 .proof-required-upload{display:block;width:100%;padding:17px 12px;border:0;border-radius:12px;background:#d97706;color:#fff;font-size:1.06rem;font-weight:800;cursor:pointer;margin-bottom:12px}
 .proof-required-close{display:block;width:100%;padding:13px;border:1px solid #cbd5e1;border-radius:12px;background:#f8fafc;color:#334155;font-size:1rem;font-weight:700;cursor:pointer}
 </style>
+
+<style>
+/* Previsualización de cartones: agregado sin alterar los estilos de selección existentes. */
+.table-choice-item{min-width:0;display:flex;flex-direction:column;gap:0}
+.table-choice-item .btn-table{width:100%;border-bottom-left-radius:0;border-bottom-right-radius:0}
+.btn-table-preview{width:100%;min-height:30px;padding:5px 3px;border:2px solid #d4a017;border-top:0;border-radius:0 0 8px 8px;background:#d4a017;color:#24103f;font-size:.72rem;line-height:1.1;font-weight:900;cursor:pointer;text-align:center}
+.btn-table-preview:hover{background:#e7b52d}
+.btn-table-preview:focus-visible{outline:3px solid #fff;outline-offset:-4px}
+#table-preview-modal{position:fixed;inset:0;z-index:50000;display:none;align-items:center;justify-content:center;padding:12px;background:rgba(15,23,42,.78)}
+#table-preview-modal.active{display:flex}
+#table-preview-dialog{width:min(100%,380px);max-height:calc(100dvh - 24px);overflow-y:auto;background:#fff;border-radius:16px;padding:14px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+#table-preview-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;width:100%}
+.table-preview-cell{min-width:0;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;border:1px solid #cbd5e1;border-radius:5px;background:#f8fafc;color:#0f172a;font-size:clamp(12px,4vw,19px);font-weight:900;font-variant-numeric:tabular-nums;overflow:hidden}
+.table-preview-cell.header{background:#d4a017;border-color:#b8860b;color:#24103f}
+.table-preview-cell.center{background:#fff1bd;border:2px solid #d4a017;color:#78350f;font-size:clamp(9px,2.8vw,13px)}
+#table-preview-close{display:block;width:100%;min-height:46px;margin-top:12px;border:0;border-radius:10px;background:#263449;color:#fff;font-size:1rem;font-weight:900;cursor:pointer}
+@media(max-width:360px){#table-preview-dialog{padding:10px}#table-preview-grid{gap:3px}}
+</style>
+
 </head>
 <body>
 <div id="proof-required-modal" role="dialog" aria-modal="true" aria-labelledby="proof-required-title" aria-describedby="proof-required-description">
@@ -917,6 +936,24 @@
 </div>
 
 
+
+  <!-- Previsualización local de tablas: genera los números en el navegador, sin lecturas de Firebase -->
+  <div id="table-preview-modal" role="dialog" aria-modal="true" aria-labelledby="table-preview-title">
+    <div id="table-preview-dialog">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;">
+        <div><div style="font-size:.72rem;font-weight:800;letter-spacing:.08em;color:#64748b;text-transform:uppercase;">Previsualización</div>
+        <h3 id="table-preview-title" style="font-size:1.2rem;font-weight:900;color:#24103f;">Tabla T001</h3></div>
+        <span style="background:#fff1bd;color:#78350f;border-radius:999px;padding:5px 10px;font-size:.72rem;font-weight:900;">BINGO</span>
+      </div>
+      <div style="border:2px solid #d4a017;border-radius:10px;padding:8px;">
+        <div style="text-align:center;font-size:.82rem;font-weight:900;letter-spacing:.16em;color:#78350f;margin-bottom:7px;">BUENA SUERTE</div>
+        <div id="table-preview-grid" aria-label="Números de la tabla"></div>
+      </div>
+      <p style="margin-top:8px;text-align:center;font-size:.75rem;color:#64748b;">Esta vista es solo de consulta. No selecciona la tabla.</p>
+      <button type="button" id="table-preview-close" onclick="closeTablePreview()">CERRAR TABLA</button>
+    </div>
+  </div>
+
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
   import { 
@@ -1013,6 +1050,86 @@
     if (n < 1000) return 'T' + String(Math.trunc(n)).padStart(3, '0');
     return 'T' + String(Math.trunc(n));
   }
+
+
+  // Generador determinístico original: previsualización local T001–T5000.
+  // No realiza lecturas ni escrituras en Firebase.
+  const PREVIEW_MAX_TABLE_ID = 5000;
+  const previewTablesCache = [null];
+  let previewGeneratorSeed = 12345;
+
+  function previewRandom() {
+    previewGeneratorSeed = (previewGeneratorSeed * 9301 + 49297) % 233280;
+    return previewGeneratorSeed / 233280;
+  }
+
+  function previewRandomUnique(min, max, count) {
+    const numbers = [];
+    while (numbers.length < count) {
+      const number = Math.floor(previewRandom() * (max - min + 1)) + min;
+      if (!numbers.includes(number)) numbers.push(number);
+    }
+    return numbers;
+  }
+
+  function getPreviewTable(id) {
+    const target = Number(String(id).replace(/^T/i, ''));
+    if (!Number.isInteger(target) || target < 1 || target > PREVIEW_MAX_TABLE_ID) return null;
+    while (previewTablesCache.length <= target) {
+      const currentId = previewTablesCache.length;
+      const B = previewRandomUnique(1, 15, 5);
+      const I = previewRandomUnique(16, 30, 5);
+      const N = previewRandomUnique(31, 45, 5);
+      const G = previewRandomUnique(46, 60, 5);
+      const O = previewRandomUnique(61, 75, 5);
+      const table = [];
+      for (let row = 0; row < 5; row++) table[row] = [B[row], I[row], N[row], G[row], O[row]];
+      table[2][2] = 'T' + String(currentId).padStart(3, '0');
+      previewTablesCache.push(table);
+    }
+    return previewTablesCache[target];
+  }
+
+  function openTablePreview(code) {
+    const id = Number(String(code).replace(/\D/g, ''));
+    const table = getPreviewTable(id);
+    if (!table) { alert('No fue posible previsualizar esta tabla. Verifica su número.'); return; }
+    const modal = document.getElementById('table-preview-modal');
+    const grid = document.getElementById('table-preview-grid');
+    const title = document.getElementById('table-preview-title');
+    if (!modal || !grid || !title) return;
+    title.textContent = 'Tabla ' + formatTableCode(id);
+    grid.innerHTML = '';
+    ['B','I','N','G','O'].forEach(letter => {
+      const cell = document.createElement('div');
+      cell.className = 'table-preview-cell header';
+      cell.textContent = letter;
+      grid.appendChild(cell);
+    });
+    table.forEach((row, rowIndex) => row.forEach((value, colIndex) => {
+      const cell = document.createElement('div');
+      cell.className = 'table-preview-cell' + (rowIndex === 2 && colIndex === 2 ? ' center' : '');
+      cell.textContent = value;
+      grid.appendChild(cell);
+    }));
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeTablePreview() {
+    const modal = document.getElementById('table-preview-modal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  window.openTablePreview = openTablePreview;
+  window.closeTablePreview = closeTablePreview;
+  document.addEventListener('keydown', event => { if (event.key === 'Escape') closeTablePreview(); });
+  document.addEventListener('click', event => {
+    const modal = document.getElementById('table-preview-modal');
+    if (modal && event.target === modal) closeTablePreview();
+  });
 
   function cleanSearch(value){
     return String(value || '').toLowerCase().trim();
@@ -1798,14 +1915,30 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
 
       availableCount++;
 
+      const item = document.createElement('div');
+      item.className = 'table-choice-item';
+
       const btn = document.createElement('button');
+      btn.type = 'button';
       btn.className = 'btn-table';
       btn.textContent = t.code;
 
       if (isReservedByMe) btn.classList.add('selected');
-
       btn.onclick = () => toggleTableSelection(t.code);
-      container.appendChild(btn);
+
+      const previewBtn = document.createElement('button');
+      previewBtn.type = 'button';
+      previewBtn.className = 'btn-table-preview';
+      previewBtn.textContent = 'Ver tabla';
+      previewBtn.setAttribute('aria-label', 'Ver tabla ' + t.code);
+      previewBtn.onclick = (event) => {
+        event.stopPropagation();
+        openTablePreview(t.code);
+      };
+
+      item.appendChild(btn);
+      item.appendChild(previewBtn);
+      container.appendChild(item);
     });
 
     renderPagination(totalPages);
