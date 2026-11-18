@@ -1351,11 +1351,13 @@ function renderClientTableGrid() {
         ? 'bg-indigo-700 text-white border-indigo-900'
         : 'bg-white text-slate-800 border-slate-300 hover:bg-indigo-50 hover:border-indigo-500';
     const stateLabel = occupied ? 'Tabla ocupada' : selected ? 'Seleccionada' : 'Disponible';
-    return `<div class="min-w-0 rounded-lg border-2 ${cls} p-1.5 sm:p-2 text-center shadow-sm">
+    return `<div class="min-w-0 overflow-hidden rounded-lg border-2 ${cls} text-center shadow-sm">
       <button type="button" ${occupied ? 'disabled' : ''} onclick="toggleClientTable('${code}')"
-        class="block w-full rounded-md py-1.5 text-sm sm:text-base font-black ${occupied ? 'cursor-not-allowed' : 'cursor-pointer'}"
+        class="block w-full min-h-[42px] px-1 py-1 text-sm sm:text-base font-black ${occupied ? 'cursor-not-allowed' : 'cursor-pointer'}"
         title="${stateLabel}" aria-label="${stateLabel}: ${code}">${code}${occupied ? ' 🔒' : selected ? ' ✓' : ''}</button>
-      <button type="button" onclick="openTablePreview('${code}')" class="mt-1 block w-full rounded-md border border-current/20 bg-white/90 px-1 py-1.5 text-[10px] sm:text-xs font-extrabold leading-tight text-indigo-800 hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" aria-label="Ver tabla ${code}">Ver tabla</button>
+      <button type="button" onclick="openTablePreview('${code}')"
+        class="block w-full border-t-2 border-indigo-300 bg-indigo-700 px-1 py-1.5 text-[10px] sm:text-xs font-extrabold leading-tight text-white hover:bg-indigo-800 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-300"
+        aria-label="Ver tabla ${code}">Ver tabla</button>
     </div>`;
   }).join('');
 
