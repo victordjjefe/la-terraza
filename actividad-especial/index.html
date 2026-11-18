@@ -369,16 +369,6 @@
                                 <span>Bloquear</span>
                             </label>
                         </div>
-                        <div class="rounded-xl border border-violet-300 bg-violet-50 px-3 py-2.5 flex items-center justify-between gap-3">
-                            <div class="min-w-0">
-                                <h4 class="text-sm font-extrabold text-violet-950">🔎 Consultor de tablas</h4>
-                                <p id="consultor-admin-status" class="text-xs text-violet-900">Estado: sincronizando...</p>
-                            </div>
-                            <label class="inline-flex items-center gap-2 text-xs font-bold text-violet-950 cursor-pointer shrink-0">
-                                <input id="consultor-blocked-toggle" type="checkbox" class="h-5 w-5 accent-violet-700" onchange="setConsultorBlocked(this.checked)">
-                                <span>Bloquear</span>
-                            </label>
-                        </div>
                     </div>
                     <div class="flex flex-col sm:flex-row gap-3">
                         <button type="button" onclick="saveAllSettings()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2.5 rounded-lg">💾 Guardar configuración</button>
@@ -494,10 +484,15 @@
                     </div>
                 </div>
             </div>
-            <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 text-indigo-950 text-sm font-semibold leading-relaxed">
-                📅 A partir del <strong>3 de diciembre</strong> puedes consultar tus tablas en esta misma plataforma.
+            <div class="space-y-3">
+                <p class="text-sm text-slate-600">Tus tablas ya están disponibles. Puedes abrirlas ahora o regresar después a esta plataforma para consultarlas con tu número de WhatsApp.</p>
+                <a id="success-open-tables" href="#" target="_blank" rel="noopener noreferrer"
+                    onclick="window.open(this.href, '_blank', 'noopener,noreferrer'); return false;"
+                    class="flex w-full items-center justify-center rounded-xl bg-emerald-600 px-4 py-3.5 text-base font-black text-white shadow-md transition hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-300">
+                    ABRIR MIS TABLAS
+                </a>
             </div>
-            <p class="text-xs text-slate-500">Puedes tomar una captura de esta pantalla para guardar los datos de tu compra.</p>
+            <p class="text-xs text-slate-500">Si prefieres hacerlo después, regresa a esta plataforma y consulta tus tablas con el mismo número de WhatsApp de tu compra.</p>
             <button onclick="closeSuccessModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black text-lg py-3.5 px-6 rounded-xl transition shadow-lg cursor-pointer">
                 Aceptar
             </button>
@@ -885,8 +880,8 @@ async function confirmDeleteAll(e) {
     }
 
     // Reinicio total de la configuración del bingo: borrar rango, precio,
-    // transmisión, fecha, hora, temática y estado del consultor. El documento
-    // se recreará vacío cuando se configure el próximo evento.
+    // transmisión, fecha, hora y temática. El documento se recreará vacío
+    // cuando se configure el próximo evento.
     await tableConfigRef.delete();
     await registrationStatusRef.set({ closed: false, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
     localStorage.removeItem('terrazaEspecialTableRange');
@@ -895,10 +890,6 @@ async function confirmDeleteAll(e) {
     PRICE_PER_TABLE = 0;
     eventSettings = { date: '', time: '', value: '', youtube: '', eventName: '' };
     ['range-start','range-end','event-value','event-date','event-time','event-youtube','event-name'].forEach(id => { const el=document.getElementById(id); if (el) el.value=''; });
-    consultorBlocked = true;
-    consultorConfigReady = true;
-    const consultorToggle = document.getElementById('consultor-blocked-toggle');
-    if (consultorToggle) consultorToggle.checked = true;
     setSpecialEventAvailable(false);
 
     localRecords = [];
@@ -1116,24 +1107,6 @@ function updateClientEventDisplay() {
   }
 }
 
-// Escucha en tiempo real el documento de configuración para que el
-// consultor se bloquee o habilite inmediatamente en todas las páginas abiertas.
-function listenConsultorConfig() {
-  tableConfigRef.onSnapshot(snapshot => {
-    const cfg = snapshot.exists ? (snapshot.data() || {}) : {};
-    consultorBlocked = cfg.consultorBlocked !== false; // bloqueado por defecto si no existe configuración explícita
-    consultorConfigReady = true;
-    const toggle = document.getElementById('consultor-blocked-toggle');
-    if (toggle) toggle.checked = consultorBlocked;
-    updateConsultorAdminStatus();
-    actualizarEstadoConsultor();
-  }, error => {
-    console.error('No se pudo sincronizar en tiempo real el consultor:', error);
-    consultorConfigReady = false;
-    actualizarEstadoConsultor();
-  });
-}
-
 async function loadPublicTableConfig() {
   try {
     const snap = await tableConfigRef.get();
@@ -1151,11 +1124,6 @@ async function loadPublicTableConfig() {
       && Number(cfg.pricePerTable) >= 0;
     const eventIsAvailable = snap.exists && (cfg.eventAvailable === true || hasCompleteEventConfig);
     setSpecialEventAvailable(eventIsAvailable);
-    consultorBlocked = cfg.consultorBlocked === true;
-    consultorConfigReady = true;
-    const consultorToggle = document.getElementById('consultor-blocked-toggle');
-    if (consultorToggle) consultorToggle.checked = consultorBlocked;
-    updateConsultorAdminStatus();
     if (!snap.exists) {
       publicTableStart = 1; publicTableEnd = 0; tableRangeStart = 1; tableRangeEnd = 0;
       PRICE_PER_TABLE = 0;
@@ -1181,14 +1149,11 @@ async function loadPublicTableConfig() {
       eventSettings={...eventSettings,date:cfg.date||eventSettings.date,time:cfg.time||eventSettings.time,value:PRICE_PER_TABLE,youtube:cfg.youtube||eventSettings.youtube,eventName:cfg.eventName||''};
     }
     updateClientEventDisplay();
-    updateConsultorAdminStatus();
     actualizarEstadoConsultor();
     calculateTotal();
   } catch (error) {
-    consultorConfigReady = false;
     console.error('No se pudo cargar la configuración pública:', error);
     actualizarEstadoConsultor();
-    // Si no se puede leer el control remoto, el buscador permanece bloqueado por seguridad.
   }
 }
 
@@ -1468,6 +1433,22 @@ async function handleFormSubmit(e) {
     document.getElementById('success-customer-name').textContent = name;
     document.getElementById('success-customer-whatsapp').textContent = whatsapp;
     document.getElementById('success-customer-tables').textContent = selectedCodes.join(', ');
+
+    const allCodesForSuccess = [...new Set([
+      ...Object.values(previousPurchasesForSuccess).flatMap(purchase => Array.isArray(purchase?.tablas) ? purchase.tablas : []),
+      ...selectedCodes
+    ].map(normalizeTableCode).filter(Boolean))].sort((a, b) => tableNumber(a) - tableNumber(b));
+    const successLink = buildConsultorLink(
+      allCodesForSuccess.map(tableNumber),
+      name,
+      eventSettings.date,
+      eventSettings.youtube || ''
+    );
+    const successOpenButton = document.getElementById('success-open-tables');
+    if (!successLink || !successOpenButton) {
+      throw new Error('El registro se guardó, pero no fue posible preparar el botón para abrir tus tablas.');
+    }
+    successOpenButton.href = successLink;
 
     const previousEntries = Object.entries(previousPurchasesForSuccess)
       .filter(([, purchase]) => purchase && Array.isArray(purchase.tablas) && purchase.tablas.length);
@@ -1814,8 +1795,6 @@ let selectedAssignmentTables = new Set();
 let tableRangeStart = 1;
 let tableRangeEnd = 0;
 let eventSettings = { date: '', time: '', value: '', youtube: '', eventName: '' };
-let consultorBlocked = false;
-let consultorConfigReady = false;
 
 function normalizeTableCode(value) {
   const raw = String(value ?? '').trim().toUpperCase();
@@ -1898,49 +1877,6 @@ function loadLocalSettings() {
   const eventName = document.getElementById('event-name'); if (eventName) eventName.value = eventSettings.eventName || '';
   updateClientEventDisplay();
 }
-function updateConsultorAdminStatus() {
-  const description = document.getElementById('consultor-admin-status');
-  if (description) description.textContent = consultorBlocked
-    ? 'Estado: consultas bloqueadas.'
-    : 'Estado: consultas habilitadas (según fecha).';
-}
-
-async function setConsultorBlocked(blocked) {
-  const toggle = document.getElementById('consultor-blocked-toggle');
-  const accion = blocked ? 'BLOQUEAR' : 'DESBLOQUEAR';
-  const detalle = blocked
-    ? 'Ningún participante podrá consultar sus tablas.'
-    : 'El buscador quedará disponible para los participantes.';
-  if (!confirm(`¿Confirmas que deseas ${accion} el consultor de tablas?\\n\\n${detalle}`)) {
-    if (toggle) toggle.checked = consultorBlocked;
-    return;
-  }
-  if (!auth.currentUser) {
-    if (toggle) toggle.checked = consultorBlocked;
-    alert('Inicia sesión en Configuración para cambiar el estado del consultor.');
-    return;
-  }
-  if (toggle) toggle.disabled = true;
-  try {
-    await tableConfigRef.set({
-      consultorBlocked: Boolean(blocked),
-      consultorUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
-    consultorBlocked = Boolean(blocked);
-    consultorConfigReady = true;
-    if (toggle) toggle.checked = consultorBlocked;
-    updateConsultorAdminStatus();
-    actualizarEstadoConsultor();
-    alert(consultorBlocked ? 'Consultor de tablas bloqueado correctamente.' : 'Consultor de tablas desbloqueado correctamente.');
-  } catch (error) {
-    console.error('No se pudo cambiar el estado del consultor:', error);
-    if (toggle) toggle.checked = consultorBlocked;
-    alert('No se pudo guardar el estado del consultor en Firebase. Revisa las reglas y vuelve a intentarlo.');
-  } finally {
-    if (toggle) toggle.disabled = false;
-  }
-}
-
 async function saveAllSettings() {
   const start = Number(document.getElementById('range-start').value);
   const end = Number(document.getElementById('range-end').value);
@@ -1965,7 +1901,7 @@ async function saveAllSettings() {
   eventSettings = { date, time, value, youtube, eventName };
   localStorage.setItem('terrazaEspecialTableRange', JSON.stringify({start, end}));
   localStorage.setItem('terrazaEspecialEventSettings', JSON.stringify(eventSettings));
-  try { await tableConfigRef.set({ rangeStart:start, rangeEnd:end, pricePerTable:value, date, time, youtube, eventName, consultorBlocked, eventAvailable:true, updatedAt:firebase.firestore.FieldValue.serverTimestamp() }, { merge:true }); } catch(error) { console.error(error); alert('No se pudo publicar la configuración en Firebase. La página pública seguirá usando la configuración anterior.'); return; }
+  try { await tableConfigRef.set({ rangeStart:start, rangeEnd:end, pricePerTable:value, date, time, youtube, eventName, eventAvailable:true, updatedAt:firebase.firestore.FieldValue.serverTimestamp() }, { merge:true }); } catch(error) { console.error(error); alert('No se pudo publicar la configuración en Firebase. La página pública seguirá usando la configuración anterior.'); return; }
   publicTableStart=start; publicTableEnd=end; PRICE_PER_TABLE=value;
   setSpecialEventAvailable(true);
   updateClientEventDisplay();
@@ -2085,39 +2021,20 @@ renderAdminTable = function() {
 loadLocalSettings();
 listenRegistrationStatus();
 loadPublicTableConfig();
-listenConsultorConfig();
 
 calculateTotal();
     
-// El estado del consultor se muestra junto al título.
-// El interruptor administrativo es la única autoridad para habilitar o bloquear la consulta.
+// El consultor permanece habilitado: las personas pueden consultar sus tablas
+// desde que se registra la compra y también el día del bingo.
 function actualizarEstadoConsultor() {
   const boton = document.getElementById('consultor-buscar-btn');
   const estado = document.getElementById('consultor-estado');
   if (!boton || !estado) return;
-
-  if (!consultorConfigReady) {
-    boton.disabled = true;
-    boton.classList.remove('bg-emerald-500', 'hover:bg-emerald-600');
-    boton.classList.add('bg-slate-400');
-    estado.textContent = '(VERIFICANDO)';
-    estado.className = 'inline-flex items-center rounded-full border border-white/30 bg-white/10 px-2.5 py-1 text-[11px] font-extrabold tracking-wide text-white';
-    return;
-  }
-
-  if (consultorBlocked) {
-    boton.disabled = true;
-    boton.classList.remove('bg-emerald-500', 'hover:bg-emerald-600');
-    boton.classList.add('bg-slate-400');
-    estado.textContent = '(BLOQUEADO)';
-    estado.className = 'inline-flex items-center rounded-full border border-slate-300 bg-slate-200 px-2.5 py-1 text-[11px] font-extrabold tracking-wide text-slate-700';
-  } else {
-    boton.disabled = false;
-    boton.classList.remove('bg-slate-400');
-    boton.classList.add('bg-emerald-500', 'hover:bg-emerald-600');
-    estado.textContent = '(HABILITADO)';
-    estado.className = 'inline-flex items-center rounded-full border border-emerald-200 bg-emerald-100 px-2.5 py-1 text-[11px] font-extrabold tracking-wide text-emerald-800';
-  }
+  boton.disabled = false;
+  boton.classList.remove('bg-slate-400');
+  boton.classList.add('bg-emerald-500', 'hover:bg-emerald-600');
+  estado.textContent = '(HABILITADO)';
+  estado.className = 'inline-flex items-center rounded-full border border-emerald-200 bg-emerald-100 px-2.5 py-1 text-[11px] font-extrabold tracking-wide text-emerald-800';
 }
 
 function mostrarModalEnlaceConsultor(link, customerName, whatsapp, tableCodes) {
@@ -2150,11 +2067,6 @@ async function consultarMisTablas() {
   const input = document.getElementById('consultor-whatsapp');
   const boton = document.getElementById('consultor-buscar-btn');
   const estado = document.getElementById('consultor-estado');
-
-  if (!consultorConfigReady || consultorBlocked) {
-    actualizarEstadoConsultor();
-    return;
-  }
 
   const whatsapp = normalizeConsultorPhone(input?.value || '');
   if (whatsapp.length < 10 || whatsapp.length > 15) {
@@ -2221,8 +2133,7 @@ async function consultarMisTablas() {
     estado.className = 'inline-flex items-center rounded-full border border-rose-200 bg-rose-100 px-2.5 py-1 text-[11px] font-extrabold tracking-wide text-rose-800';
   } finally {
     boton.textContent = 'PRESIONA AQUÍ PARA VER TUS TABLAS';
-    boton.disabled = !consultorConfigReady || consultorBlocked;
-    if (!consultorConfigReady || consultorBlocked) actualizarEstadoConsultor();
+    boton.disabled = false;
   }
 }
 
