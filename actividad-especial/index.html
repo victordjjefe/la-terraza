@@ -237,7 +237,6 @@
                             <div id="receipt-upload-status" class="hidden rounded-xl p-3 text-sm font-semibold" role="status" aria-live="polite"></div>
                             <img id="receipt-temporary-preview" class="hidden max-h-48 mx-auto rounded-xl border border-slate-200" alt="Vista previa temporal del comprobante">
                         </div>
-                        <button type="button" id="continue-to-tables" onclick="continueToTables()" disabled class="w-full bg-slate-400 text-white font-black text-lg py-4 px-6 rounded-xl shadow-lg cursor-not-allowed">Primero sube tu comprobante</button>
                     </div>
 
                     <div id="purchase-step-details" class="hidden space-y-5">
@@ -772,16 +771,6 @@ function calculateTotal() {
   }
   if (priceEl) priceEl.textContent = '$' + PRICE_PER_TABLE.toLocaleString('es-CO');
 
-  const continueButton = document.getElementById('continue-to-tables');
-  if (continueButton && pendingReceiptDataUrl) {
-    continueButton.disabled = count === 0;
-    continueButton.textContent = count === 0
-      ? 'Selecciona primero la cantidad de tablas'
-      : 'Continuar para registrar mis tablas';
-    continueButton.className = count === 0
-      ? 'w-full bg-slate-400 text-white font-black text-lg py-4 px-6 rounded-xl shadow-lg cursor-not-allowed'
-      : 'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-lg py-4 px-6 rounded-xl shadow-lg';
-  }
 }
 
 function changeTableQuantity(delta) {
@@ -1168,24 +1157,19 @@ function setReceiptUploadStatus(message, ok=false) {
 
 document.getElementById('receipt-file').addEventListener('change', async function(event) {
   const file = event.target.files?.[0];
-  const continueButton = document.getElementById('continue-to-tables');
   pendingReceiptDataUrl = null;
   pendingReceiptFileName = '';
-  continueButton.disabled = true;
-  continueButton.textContent = 'Validando comprobante...';
-  continueButton.className = 'w-full bg-slate-400 text-white font-black text-lg py-4 px-6 rounded-xl shadow-lg cursor-not-allowed';
   document.getElementById('receipt-temporary-preview').classList.add('hidden');
   if (!file) {
     setReceiptUploadStatus('Selecciona una captura JPG o PNG.');
-    continueButton.textContent = 'Primero sube tu comprobante';
     return;
   }
   if (!['image/jpeg','image/png'].includes(file.type)) {
     event.target.value = '';
     setReceiptUploadStatus('Formato no permitido. Selecciona una imagen JPG o PNG.');
-    continueButton.textContent = 'Primero sube tu comprobante';
     return;
   }
+  setReceiptUploadStatus('Estamos preparando tu comprobante. Espera un momento…');
   try {
     const compressed = await compressReceipt(file);
     if (event.target.files?.[0] !== file) return;
@@ -1194,20 +1178,19 @@ document.getElementById('receipt-file').addEventListener('change', async functio
     preview.classList.remove('hidden');
     pendingReceiptDataUrl = compressed;
     pendingReceiptFileName = file.name || 'comprobante.jpg';
-    setReceiptUploadStatus('✅ Comprobante recibido y preparado correctamente. Aún no se ha guardado ningún registro.', true);
     const quantity = Number.parseInt(document.getElementById('tables-count').value, 10) || 0;
-    continueButton.disabled = quantity < 1;
-    continueButton.textContent = quantity < 1
-      ? 'Selecciona primero la cantidad de tablas'
-      : 'Continuar para registrar mis tablas';
-    continueButton.className = quantity < 1
-      ? 'w-full bg-slate-400 text-white font-black text-lg py-4 px-6 rounded-xl shadow-lg cursor-not-allowed'
-      : 'w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-lg py-4 px-6 rounded-xl shadow-lg';
+    if (quantity < 1) {
+      setReceiptUploadStatus('Comprobante preparado. Primero selecciona cuántas tablas vas a comprar para continuar.');
+      return;
+    }
+    setReceiptUploadStatus('✅ Comprobante cargado correctamente. Pasando a tus datos…', true);
+    await continueToTables();
   } catch (error) {
     console.error(error);
     event.target.value = '';
+    pendingReceiptDataUrl = null;
+    pendingReceiptFileName = '';
     setReceiptUploadStatus(error.message || 'No se pudo leer el comprobante. Intenta con otra captura.');
-    continueButton.textContent = 'Primero sube tu comprobante';
   }
 });
 
