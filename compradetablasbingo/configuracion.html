@@ -333,11 +333,11 @@
     .manual-table-btn.selected{border-color:#d97706;background:#fffbeb;color:#92400e}
     .manual-table-btn.unavailable{opacity:.42;cursor:not-allowed;background:#f1f5f9;text-decoration:line-through}
     .manual-selected-list{display:flex;flex-direction:column;gap:9px}
-    .manual-selected-row{display:grid;grid-template-columns:minmax(70px,.7fr) minmax(150px,1.3fr) auto;gap:8px;align-items:center;border:1px solid var(--border-color);border-radius:8px;padding:9px;background:#fff}
+    .manual-selected-row{display:grid;grid-template-columns:minmax(70px,.7fr) minmax(150px,1.3fr);gap:8px;align-items:center;border:1px solid var(--border-color);border-radius:8px;padding:9px;background:#fff}
     .manual-selected-row .form-control{padding:9px}
     .manual-pagination{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:12px}
     .manual-help{color:var(--text-muted);font-size:.82rem;line-height:1.45;margin:8px 0 12px}
-    @media(max-width:520px){.manual-selected-row{grid-template-columns:1fr 1.5fr auto}.manual-table-btn{padding:10px 3px}}
+    @media(max-width:520px){.manual-selected-row{grid-template-columns:1fr 1.5fr}.manual-table-btn{padding:10px 3px}}
 
     /* =========================================================
        PANEL ADMINISTRADOR RESPONSIVE
@@ -735,6 +735,7 @@
         <p id="manual-selection-summary" class="manual-help"></p>
         <div class="manual-action-buttons">
           <button type="button" class="btn btn-success btn-sm" id="btn-manual-register" disabled>Registrar tablas</button>
+          <button type="button" class="btn btn-success btn-sm" id="btn-manual-whatsapp" style="display:none;">Enviar enlace por WhatsApp</button>
           <button type="button" class="btn btn-dark btn-sm" id="btn-manual-clear">Limpiar selección</button>
         </div>
       </div>
@@ -2393,7 +2394,6 @@ function seleccionarFormaPago(order){
             <option value="EFECTIVO" ${item.destino === 'EFECTIVO' ? 'selected' : ''}>EFECTIVO</option>
             <option value="GRATIS" ${item.destino === 'GRATIS' ? 'selected' : ''}>GRATIS</option>
           </select>
-          <button type="button" class="btn btn-sm btn-danger" data-manual-remove="${code}" aria-label="Quitar ${code}">✕</button>
         </div>
       `).join('');
       container.querySelectorAll('[data-manual-destino]').forEach(select => {
@@ -2402,9 +2402,6 @@ function seleccionarFormaPago(order){
           if (item) item.destino = select.value;
         });
       });
-      container.querySelectorAll('[data-manual-remove]').forEach(button => {
-        button.addEventListener('click', () => manualToggleTable(button.dataset.manualRemove));
-      });
     }
     document.getElementById('manual-selection-summary').textContent =
       entries.length ? `${entries.length} tabla(s) seleccionada(s). Reserva activa durante ${MANUAL_RESERVATION_MINUTES} minutos.` : '';
@@ -2412,15 +2409,17 @@ function seleccionarFormaPago(order){
   }
 
   async function manualClearSelection() {
-    // Libera en Firebase todas las reservas de esta operación y limpia también
-    // los datos del formulario, para dejar el módulo listo desde cero.
+    // Libera las reservas y deja todo el módulo manual completamente vacío.
     for (const code of [...manualSelected.keys()]) {
       try { await manualReleaseTable(code); }
       catch (error) { console.error('Error liberando selección manual:', code, error); }
     }
+    manualSelected.clear();
     document.getElementById('form-manual-client').reset();
     document.getElementById('manual-client-country').value = '+57';
+    document.getElementById('btn-manual-whatsapp').style.display = 'none';
     manualRenderTables();
+    manualRenderSelected();
   }
 
   function iniciarModuloRegistroManual() {
@@ -2438,13 +2437,13 @@ function seleccionarFormaPago(order){
     if (manualCurrentPage < pages) { manualCurrentPage++; await manualLoadVisiblePage(); }
   });
   document.getElementById('btn-manual-clear').addEventListener('click', async () => {
-    if (!manualSelected.size) return;
-    if (!confirm('¿Deseas liberar todas las tablas seleccionadas?')) return;
+    if (manualSelected.size && !confirm('¿Deseas liberar las tablas seleccionadas y limpiar todos los datos del formulario?')) return;
     await manualClearSelection();
   });
 
   document.getElementById('btn-manual-register').addEventListener('click', async () => {
     const button = document.getElementById('btn-manual-register');
+    document.getElementById('btn-manual-whatsapp').style.display = 'none';
     const nombre = String(document.getElementById('manual-client-name').value || '').trim().replace(/\s+/g, ' ').toUpperCase();
     const referencia = String(document.getElementById('manual-client-reference').value || '').trim().replace(/\s+/g, ' ').toUpperCase();
     const telefono = manualPhoneValue();
@@ -2547,13 +2546,39 @@ function seleccionarFormaPago(order){
         return visibleId;
       });
 
+      const configActual = configEventoExportacion || {};
+      const linkDigitalEnviado = manualBuildDigitalLink(telefono, nombre, configActual.fecha, configActual.linkTransmision, configActual.idBingo || 'BINGO001');
+      const fechaMensaje = configActual.fecha || '';
+      const horaMensaje = configActual.hora || '';
+      const tablasMensaje = tablas.join(' | ');
+      const mensajeWhatsApp = `🎱✨ *LA TERRAZA BINGO* ✨🎱
+
+Hola ${nombre}! 👋
+
+🎟️ *Tablas:* ${tablasMensaje}
+
+📅 *Fecha del Bingo:* ${fechaMensaje}
+⏰ *Hora:* ${horaMensaje}
+
+⬇️ *Ingresa al siguiente enlace para acceder a tus tablas digitales y a la transmisión en vivo:*
+
+🔗 ${linkDigitalEnviado}`;
+      const numeroWhatsApp = telefono.replace(/\D/g, '');
+      const botonWhatsApp = document.getElementById('btn-manual-whatsapp');
+      botonWhatsApp.onclick = () => {
+        const destino = numeroWhatsApp ? 'https://wa.me/' + numeroWhatsApp : 'https://wa.me/';
+        window.location.href = destino + '?text=' + encodeURIComponent(mensajeWhatsApp);
+      };
+      botonWhatsApp.style.display = 'inline-flex';
+
       manualSelected.clear();
       manualInventoryPageCache.clear();
       manualReservationOwner = createManualReservationOwner();
       document.getElementById('form-manual-client').reset();
       document.getElementById('manual-client-country').value = '+57';
       await manualLoadVisiblePage();
-      alert(`Registro manual #${orderId} creado correctamente. Las tablas quedaron vendidas y ya no están disponibles para otros compradores.`);
+      manualRenderSelected();
+      alert(`Registro manual #${orderId} creado correctamente. Las tablas quedaron vendidas y ya no están disponibles para otros compradores. Ya puedes enviar el enlace por WhatsApp.`);
     } catch (error) {
       console.error('Error creando registro manual:', error);
       alert('No se pudo completar el registro: ' + error.message + '. Las tablas seleccionadas siguen reservadas hasta que las liberes o venza su tiempo.');
