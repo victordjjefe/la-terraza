@@ -2629,6 +2629,17 @@ function startReservationTimer() {
     clearInterval(timerInterval);
     reservationEndTime = null;
     selectedTables = [];
+    // Una compra nueva comienza sin reutilizar disponibilidad ni página anterior.
+    // La lectura fresca se hará cuando el usuario active la compra (gratis o comprobante).
+    inventarioCompraCargado = false;
+    inventarioCompraPromise = null;
+    paginaEstadosCargando = false;
+    currentTablesPage = 1;
+    pageAvailabilityCache.clear();
+    inventoryCache.clear();
+    ultimoRefrescoDisponibilidad = 0;
+    localStorage.removeItem('ltb_current_reservation');
+    if (history.state?.ltbPurchaseComplete) history.replaceState(null, '', location.href);
     proofFile = null;
     freeTableFlow = false;
     limpiarVistaPreviaComprobante();
@@ -3562,6 +3573,9 @@ function startReservationTimer() {
       // datos visibles del resultado están listos. Se revela la pantalla final
       // inmediatamente después, evitando el espacio en blanco entre ambas vistas.
       actualizarProgresoComprobante(100, 'Registro completado');
+      // Crea un punto de historial propio para que Atrás, desde el resultado,
+      // inicie una compra nueva en esta misma página en lugar de restaurar el estado anterior.
+      history.pushState({ ...(history.state || {}), ltbPurchaseComplete: true }, '', location.href);
       document.getElementById('reservation-timer-box').classList.add('hidden');
       document.getElementById('banner-section').classList.add('hidden');
       document.getElementById('main-flow-container').classList.add('hidden');
@@ -3731,6 +3745,14 @@ Gracias por tu compra.`;
   
   document.querySelectorAll('.btn-restart-action').forEach(btn => {
     btn.addEventListener('click', resetForm);
+  });
+
+  window.addEventListener('popstate', (event) => {
+    const successScreen = document.getElementById('success-exclusive-screen');
+    const compraFinalizadaVisible = successScreen && !successScreen.classList.contains('hidden');
+    if (orderCompleted || compraFinalizadaVisible || event.state?.ltbPurchaseComplete) {
+      resetForm();
+    }
   });
 
   listenConfig();
