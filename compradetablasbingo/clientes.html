@@ -1594,6 +1594,11 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
 
 
   const TABLES_PER_PAGE = 200;
+  // Caché local por página: evita volver a leer en Firestore cuando el cliente
+  // navega repetidamente entre páginas durante el mismo recorrido.
+  // La reserva transaccional sigue siendo la validación definitiva al seleccionar.
+  const PAGE_AVAILABILITY_CACHE_TTL_MS = 60000;
+  const pageAvailabilityCache = new Map();
   let currentTablesPage = 1;
   let paginaEstadosCargando = false;
 
@@ -1606,6 +1611,8 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
   }
 
   function construirTablasDesdeRango() {
+    // Si cambia el rango o la configuración del bingo, no reutilizamos estados anteriores.
+    pageAvailabilityCache.clear();
     const desde = Math.max(1, Number(config?.rangoDesde) || 1);
     const hasta = Math.max(0, Number(config?.tablasHabilitadas) || 0);
 
@@ -1653,6 +1660,18 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
 
   async function cargarEstadosPagina(pagina = currentTablesPage, { mostrar = true } = {}) {
     if (paginaEstadosCargando) return;
+
+    // Si esta página se consultó hace menos de 60 segundos, reutilizamos los
+    // estados que ya están en memoria y evitamos repetir las lecturas.
+    // Si alguien tomó una tabla entretanto, la transacción de selección lo detecta
+    // y refresca únicamente ese documento antes de permitir continuar.
+    const cachePagina = pageAvailabilityCache.get(pagina);
+    if (cachePagina && (Date.now() - cachePagina.timestamp) < PAGE_AVAILABILITY_CACHE_TTL_MS) {
+      ultimoRefrescoDisponibilidad = cachePagina.timestamp;
+      if (mostrar) renderTables();
+      return;
+    }
+
     paginaEstadosCargando = true;
 
     try {
@@ -1687,6 +1706,7 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
       });
 
       ultimoRefrescoDisponibilidad = Date.now();
+      pageAvailabilityCache.set(pagina, { timestamp: ultimoRefrescoDisponibilidad });
       if (mostrar) renderTables();
     } finally {
       paginaEstadosCargando = false;
