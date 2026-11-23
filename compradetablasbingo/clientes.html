@@ -266,7 +266,13 @@
         #digital-link-box a{
           margin-bottom:14px !important;
         }
-        </style>
+        
+/* Acciones de compra siempre visibles mientras se eligen tablas */
+#floating-purchase-actions{position:fixed;z-index:9998;right:18px;bottom:18px;display:none;gap:10px;align-items:center;padding:10px;background:rgba(255,255,255,.96);border:1px solid var(--border-color);border-radius:14px;box-shadow:0 8px 28px rgba(15,23,42,.22);backdrop-filter:blur(8px)}
+#floating-purchase-actions button{min-width:132px;box-shadow:0 2px 8px rgba(15,23,42,.12)}
+#floating-purchase-actions.visible{display:flex}
+@media(max-width:600px){#floating-purchase-actions{left:10px;right:10px;bottom:10px;justify-content:stretch;padding:8px;gap:8px}#floating-purchase-actions button{min-width:0;flex:1;padding:12px 8px;font-size:.9rem}body.has-floating-purchase-actions{padding-bottom:82px}}
+</style>
 
 <style>
 /* Uniformidad de botones de resultados */
@@ -882,6 +888,11 @@
       </div>
 
     </main>
+
+    <div id="floating-purchase-actions" aria-label="Acciones de compra">
+      <button type="button" class="btn btn-danger" id="btn-floating-cancel">Cancelar</button>
+      <button type="button" class="btn btn-success" id="btn-floating-finish">Registrar compra</button>
+    </div>
 
     <!-- MENSAJE DE ÉXITO EXCLUSIVO (OCULTA TODO LO DEMÁS AL REGISTRAR) -->
     <div id="success-exclusive-screen" class="main-content hidden" style="justify-content: center;">
@@ -1934,8 +1945,11 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
     const acciones = document.getElementById('action-buttons-container');
     if (pago) pago.classList.toggle('hidden', etapa !== 'payment' && etapa !== 'buyer' && etapa !== 'tables');
     if (comprador) comprador.classList.toggle('hidden', etapa === 'payment');
-    if (tablas) tablas.classList.toggle('hidden', etapa !== 'buyer' && etapa !== 'tables');
-    if (acciones) acciones.classList.toggle('hidden', etapa !== 'tables');
+    if (tablas) tablas.classList.toggle('hidden', etapa === 'payment');
+    if (acciones) acciones.classList.toggle('hidden', etapa === 'payment');
+    const floatingActions = document.getElementById('floating-purchase-actions');
+    if (floatingActions) floatingActions.classList.toggle('visible', etapa !== 'payment');
+    document.body.classList.toggle('has-floating-purchase-actions', etapa !== 'payment');
     if (etapa === 'buyer') comprador?.scrollIntoView({behavior:'smooth', block:'start'});
     if (etapa === 'tables') tablas?.scrollIntoView({behavior:'smooth', block:'start'});
   }
@@ -1985,11 +1999,14 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
     let availableCount = 0;
 
     pageTables.forEach(t => {
-      const isReservedByMe = selectedTables.includes(t.code);
+      const code = String(t.code);
+      const isReservedByMe = selectedTables.some(selected => String(selected) === code);
       const isExpired = t.status === 'RESERVADA' && (!t.reservedUntil || t.reservedUntil <= now);
 
-      if (t.status === 'VENDIDA') return;
-      if (t.status === 'RESERVADA' && t.reservedBy !== myClientId && !isExpired) return;
+      // Una tabla seleccionada por este comprador permanece visible y marcada
+      // durante la edición de sus datos; nunca se oculta por su propia reserva.
+      if (t.status === 'VENDIDA' && !isReservedByMe) return;
+      if (!isReservedByMe && t.status === 'RESERVADA' && t.reservedBy !== myClientId && !isExpired) return;
 
       availableCount++;
 
@@ -2040,10 +2057,6 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
       if (purchaseStage === 'payment') {
         document.getElementById('card-tables-section')?.classList.add('hidden');
         document.getElementById('card-buyer-section')?.classList.add('hidden');
-        document.getElementById('action-buttons-container')?.classList.add('hidden');
-      } else if (purchaseStage === 'buyer') {
-        document.getElementById('card-buyer-section')?.classList.remove('hidden');
-        document.getElementById('card-tables-section')?.classList.add('hidden');
         document.getElementById('action-buttons-container')?.classList.add('hidden');
       } else {
         document.getElementById('card-buyer-section')?.classList.remove('hidden');
@@ -3320,6 +3333,13 @@ Gracias por tu compra.`;
   document.getElementById('btn-accept-whatsapp').addEventListener('click', () => {
     document.getElementById('whatsapp-accept-overlay').classList.remove('active');
     enviarWhatsAppDigital();
+  });
+
+  document.getElementById('btn-floating-cancel').addEventListener('click', () => {
+    document.getElementById('btn-cancel-purchase').click();
+  });
+  document.getElementById('btn-floating-finish').addEventListener('click', () => {
+    document.getElementById('btn-finish-order').click();
   });
 
   document.getElementById('btn-finish-order').addEventListener('click', async () => {
