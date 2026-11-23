@@ -812,7 +812,7 @@
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
   import {  
     initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, setDoc, updateDoc, deleteDoc,
-    collection, getDocs, onSnapshot, writeBatch, runTransaction, query, where, documentId 
+    collection, getDocs, getDocsFromServer, onSnapshot, writeBatch, runTransaction, query, where, documentId 
   } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
   const firebaseConfig = {
@@ -846,6 +846,48 @@
   }
   function tableShardRef(code) { return doc(db, INVENTORY_COLLECTION, tableShardId(code)); }
   function getOccupied(snap, code) { return snap.exists() ? ((snap.data()?.occupied || {})[code] || null) : null; }
+
+  function normalizarCodigoInventario(code) {
+    const n = tableNumber(code);
+    return n > 0 && n < 1000 ? 'T' + String(n).padStart(3, '0') : 'T' + String(n);
+  }
+
+  // Repara el caso inverso de integridad: pedidos activos cuyas tablas no
+  // quedaron marcadas como VENDIDA en el inventario agrupado.
+  async function reconciliarInventarioConPedidos(pedidos = null) {
+    const fuente = pedidos || (await getDocsFromServer(collection(db, 'pedidos'))).docs.map(d => ({ firestoreId: d.id, ...d.data() }));
+    const idEvento = String(configEventoExportacion?.idBingo || document.getElementById('cfg-id-bingo')?.value || '');
+    const ventas = new Map();
+    fuente.forEach(pedido => {
+      if (String(pedido.estado || '').toUpperCase() === 'CANCELADO') return;
+      if (idEvento && pedido.idBingo && String(pedido.idBingo) !== idEvento) return;
+      if (!Array.isArray(pedido.tablas)) return;
+      pedido.tablas.forEach(valor => {
+        const code = normalizarCodigoInventario(valor);
+        if (tableNumber(code)) ventas.set(code, String(pedido.id || pedido.numeroPedido || pedido.firestoreId || ''));
+      });
+    });
+    if (!ventas.size) return;
+    const ids = [...new Set([...ventas.keys()].map(tableShardId))];
+    for (const id of ids) {
+      const ref = doc(db, INVENTORY_COLLECTION, id);
+      await runTransaction(db, async transaction => {
+        const snap = await transaction.get(ref);
+        const occupied = { ...(snap.exists() ? (snap.data()?.occupied || {}) : {}) };
+        let changed = false;
+        for (const [code, pedidoId] of ventas) {
+          if (tableShardId(code) !== id) continue;
+          const current = occupied[code];
+          if (!current || current.status !== 'VENDIDA') {
+            occupied[code] = { ...(current || {}), code, status: 'VENDIDA', reservedUntil: null, reservedBy: null, pedido: pedidoId };
+            changed = true;
+          }
+        }
+        if (changed) transaction.set(ref, { occupied, updatedAt: Date.now() }, { merge: true });
+      });
+    }
+    manualInventoryPageCache.clear();
+  }
 
   // Migración única del inventario legado (un documento por tabla) a lotes de 20.
   // Se ejecuta desde el panel antes de habilitar las operaciones administrativas.
@@ -954,8 +996,10 @@
     if (userVal === 'laterraza' && passVal === '189304') {
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('app-wrapper').style.display = 'flex';
-      loadInitialConfig();
-      inventoryReady = loadTablesOnce().catch(error => { console.error('Error preparando inventario agrupado:', error); alert('No se pudo preparar el inventario agrupado: ' + error.message); throw error; });
+      inventoryReady = (async () => {
+        await loadInitialConfig();
+        await loadTablesOnce();
+      })().catch(error => { console.error('Error preparando inventario agrupado:', error); alert('No se pudo preparar el inventario agrupado: ' + error.message); throw error; });
       inventoryReady.catch(() => {});
       listenOrders();
     } else {
@@ -1132,6 +1176,8 @@
 
   async function loadTablesOnce() {
     await migrateLegacyInventoryIfNeeded();
+    // Sincroniza los pedidos vigentes antes de permitir reservas o registros manuales.
+    await reconciliarInventarioConPedidos();
     // MODELO ESCALABLE:
     // El total de tablas sale del rango configurado. No necesitamos descargar
     // 200, 1.000 o 5.000 documentos al abrir el administrador.
@@ -1296,6 +1342,11 @@
       renderOrders();
       renderListado();
       loadMetrics();
+      if (pedidosSincronizados && configSincronizada) {
+        reconciliarInventarioConPedidos(allOrders).catch(error => {
+          console.error('No fue posible reconciliar pedidos e inventario:', error);
+        });
+      }
     });
   }
 
