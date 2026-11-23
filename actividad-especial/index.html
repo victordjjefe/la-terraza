@@ -194,7 +194,7 @@
                 </div>
 
                 <!-- Compra en dos pasos: comprobante primero, selección y registro después -->
-                <div class="px-6 space-y-5">
+                <div id="client-purchase-content" class="px-6 space-y-5">
                     <div id="purchase-step-proof" class="space-y-5">
                         <div class="border-t border-slate-200 pt-4 space-y-2">
                             <h3 class="text-2xl font-black text-slate-900">1. Prepara tu compra</h3>
@@ -667,13 +667,20 @@ const CLIENT_TABLES_PER_PAGE = 50;
 
 function applyRegistrationStatus() {
   const message = document.getElementById('registration-closed-message');
-  const content = document.getElementById('client-registration-content');
+  const purchaseContent = document.getElementById('client-purchase-content');
   const toggle = document.getElementById('registration-closed-toggle');
   const description = document.getElementById('registration-status-description');
+
+  // El bloqueo detiene únicamente las nuevas compras.
+  // El consultor público permanece visible para consultar las tablas.
   if (message) message.classList.toggle('hidden', !registrationClosed);
-  if (content) content.classList.toggle('hidden', registrationClosed);
+  if (purchaseContent) purchaseContent.classList.toggle('hidden', registrationClosed);
+
   if (toggle) toggle.checked = registrationClosed;
-  if (description) description.textContent = registrationClosed ? 'Estado: inscripciones BLOQUEADAS.' : 'Estado: inscripciones habilitadas.';
+  if (description) description.textContent = registrationClosed
+    ? 'Estado: inscripciones BLOQUEADAS. Consulta de tablas disponible.'
+    : 'Estado: inscripciones habilitadas.';
+
   const submit = document.getElementById('submit-btn');
   if (submit) submit.disabled = registrationClosed || isSubmitting;
 }
