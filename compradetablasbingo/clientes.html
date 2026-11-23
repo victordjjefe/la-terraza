@@ -266,13 +266,7 @@
         #digital-link-box a{
           margin-bottom:14px !important;
         }
-        
-/* Acciones de compra siempre visibles mientras se eligen tablas */
-#floating-purchase-actions{position:fixed;z-index:9998;right:18px;bottom:18px;display:none;gap:10px;align-items:center;padding:10px;background:rgba(255,255,255,.96);border:1px solid var(--border-color);border-radius:14px;box-shadow:0 8px 28px rgba(15,23,42,.22);backdrop-filter:blur(8px)}
-#floating-purchase-actions button{min-width:132px;box-shadow:0 2px 8px rgba(15,23,42,.12)}
-#floating-purchase-actions.visible{display:flex}
-@media(max-width:600px){#floating-purchase-actions{left:10px;right:10px;bottom:10px;justify-content:stretch;padding:8px;gap:8px}#floating-purchase-actions button{min-width:0;flex:1;padding:12px 8px;font-size:.9rem}body.has-floating-purchase-actions{padding-bottom:82px}}
-</style>
+        </style>
 
 <style>
 /* Uniformidad de botones de resultados */
@@ -808,9 +802,9 @@
         <div style="font-size:.95rem;font-weight:500;margin-top:6px;">Las tablas del bingo se agotaron. Puedes consultar tus tablas registradas en el buscador.</div>
       </div>
 
-      <div class="card hidden" id="card-tables-section">
+      <div class="card" id="card-tables-section">
         <div class="card-title" style="align-items:center;">
-          <span>Selecciona tus tablas (Máximo 15)</span>
+          <span>1. Selecciona tus tablas (Máximo 15)</span>
           <div id="reservation-timer-box" class="timer-banner hidden" style="margin:0; padding:8px 10px; font-size:.8rem;">
             <b>Reserva:</b> <span id="timer-display">03:00</span>
           </div>
@@ -834,8 +828,8 @@
         </div>
       </div>
 
-      <div class="card hidden" id="card-buyer-section">
-        <div class="card-title">Datos de Registro</div>
+      <div class="card" id="card-buyer-section">
+        <div class="card-title">2. Datos de Registro</div>
         <div class="form-group">
           <label>Nombre y Apellido</label>
           <input type="text" id="buyer-name" class="form-control" placeholder="Ej: Juan Pérez">
@@ -852,8 +846,12 @@
       </div>
 
       <div class="card" id="payment-section-card">
-        <div class="card-title">Pago y Comprobante</div>
+        <div class="card-title">3. Pago y Comprobante</div>
         
+        <div style="background: #eff6ff; border: 1px solid #3b82f6; border-radius: var(--radius-sm); padding: 18px 16px; margin-bottom: 16px; font-size: 1.08rem; color: #1e40af; line-height: 1.55; font-weight: 500;">
+          📸 <b>¡Importante!</b> Realiza tu pago y sube una <b>captura de pantalla del comprobante</b>. Si tu comprobante está en PDF, ábrelo y toma una captura de pantalla. Luego selecciona esa imagen desde tu galería.
+        </div>
+
         <div class="payment-box">
           <p style="font-size:0.95rem; color:var(--text-main); margin-bottom: 8px; line-height: 1.4;">
             Realiza el pago por <b>Nequi</b>, <b>Daviplata</b> o <b>Llave</b> a nombre de <b>Víctor Rosas</b>:
@@ -873,22 +871,16 @@
             <input type="file" id="proof-file" accept="image/jpeg,image/png,.jpg,.jpeg,.png" required aria-describedby="proof-file-status">
           </label>
           <div id="proof-file-status" role="status" aria-live="polite">⚠️ Todavía no has adjuntado tu comprobante. Solo se aceptan imágenes JPG o PNG.</div>
-          <div id="proof-preview-wrap" class="hidden" style="margin-top:12px;text-align:center;"><img id="proof-preview-image" alt="Vista previa temporal del comprobante" style="display:block;max-width:100%;max-height:260px;margin:0 auto;border-radius:12px;border:1px solid #cbd5e1;object-fit:contain;"><small style="display:block;margin-top:6px;color:#92400e;font-weight:600;">¡Comprobante recibido! Pago sujeto a verificación bancaria.</small></div>
         </div>
 
         <label class="cortesia-choice" for="declara-tabla-gratis"><input type="checkbox" id="declara-tabla-gratis"> <span>🎁 Me gané una tabla gratis</span></label>
-        <div class="hidden" style="display: none !important;" id="action-buttons-container" aria-hidden="true">
+        <div style="display: flex; gap: 10px; margin-top: 14px;" id="action-buttons-container">
           <button class="btn btn-danger" id="btn-cancel-purchase" style="flex: 1;">Cancelar</button>
           <button class="btn btn-success" id="btn-finish-order" style="flex: 2;" disabled>Registrar / Comprar</button>
         </div>
       </div>
 
     </main>
-
-    <div id="floating-purchase-actions" aria-label="Acciones de compra">
-      <button type="button" class="btn btn-danger" id="btn-floating-cancel">Cancelar</button>
-      <button type="button" class="btn btn-success" id="btn-floating-finish">Registrar compra</button>
-    </div>
 
     <!-- MENSAJE DE ÉXITO EXCLUSIVO (OCULTA TODO LO DEMÁS AL REGISTRAR) -->
     <div id="success-exclusive-screen" class="main-content hidden" style="justify-content: center;">
@@ -1018,9 +1010,6 @@
   let config = null;
   let selectedTables = [];
   let proofFile = null;
-  let proofPreviewUrl = null;
-  let purchaseStage = 'payment';
-  let freeTableFlow = false;
   let comprobanteValidadoFile = null;
   let comprobanteValidacionPromise = null;
   let tesseractLoaderPromise = null;
@@ -1933,52 +1922,6 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
     crearBoton('›', Math.min(totalPages, currentTablesPage + 1), currentTablesPage === totalPages);
   }
 
-  function actualizarEtapaCompra(etapa) {
-    purchaseStage = etapa;
-    const pago = document.getElementById('payment-section-card');
-    const comprador = document.getElementById('card-buyer-section');
-    const tablas = document.getElementById('card-tables-section');
-    const acciones = document.getElementById('action-buttons-container');
-    if (pago) pago.classList.toggle('hidden', etapa !== 'payment' && etapa !== 'buyer' && etapa !== 'tables');
-    if (comprador) comprador.classList.toggle('hidden', etapa === 'payment');
-    if (tablas) tablas.classList.toggle('hidden', etapa === 'payment');
-    if (acciones) acciones.classList.toggle('hidden', etapa === 'payment');
-    // Mostrar siempre el único par de acciones flotantes desde que se habilita
-    // el formulario del comprador, aunque todavía no haya tablas seleccionadas.
-    const mostrarAccionesFlotantes = etapa !== 'payment';
-    const floatingActions = document.getElementById('floating-purchase-actions');
-    if (floatingActions) floatingActions.classList.toggle('visible', mostrarAccionesFlotantes);
-    document.body.classList.toggle('has-floating-purchase-actions', mostrarAccionesFlotantes);
-    if (acciones) acciones.classList.add('hidden');
-    if (etapa === 'buyer') comprador?.scrollIntoView({behavior:'smooth', block:'start'});
-    if (etapa === 'tables') tablas?.scrollIntoView({behavior:'smooth', block:'start'});
-  }
-
-  function datosCompradorCompletos() {
-    const nombre = normalizeText(document.getElementById('buyer-name')?.value || '');
-    const referencia = normalizeText(document.getElementById('buyer-address')?.value || '');
-    const telefono = (document.getElementById('buyer-phone')?.value || '').replace(/\D/g,'');
-    return nombre.split(' ').filter(Boolean).length >= 2 && referencia.length > 0 && telefono.length >= 7;
-  }
-
-  function avanzarASeleccionSiDatosListos() {
-    if (purchaseStage === 'buyer' && datosCompradorCompletos()) actualizarEtapaCompra('tables');
-  }
-
-  // El orden del flujo es pago/comprobante, datos del comprador y selección de tablas.
-  document.addEventListener('DOMContentLoaded', () => {
-    const main = document.getElementById('main-flow-container');
-    const pago = document.getElementById('payment-section-card');
-    const comprador = document.getElementById('card-buyer-section');
-    const tablas = document.getElementById('card-tables-section');
-    if (main && pago && comprador && tablas) {
-      main.insertBefore(pago, main.firstChild);
-      main.insertBefore(comprador, pago.nextSibling);
-      main.insertBefore(tablas, comprador.nextSibling);
-    }
-    actualizarEtapaCompra('payment');
-  });
-
   function renderTables() {
     const container = document.getElementById('tables-container');
     const noTablesMessage = document.getElementById('no-tables-message');
@@ -1999,14 +1942,11 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
     let availableCount = 0;
 
     pageTables.forEach(t => {
-      const code = String(t.code);
-      const isReservedByMe = selectedTables.some(selected => String(selected) === code);
+      const isReservedByMe = selectedTables.includes(t.code);
       const isExpired = t.status === 'RESERVADA' && (!t.reservedUntil || t.reservedUntil <= now);
 
-      // Una tabla seleccionada por este comprador permanece visible y marcada
-      // durante la edición de sus datos; nunca se oculta por su propia reserva.
-      if (t.status === 'VENDIDA' && !isReservedByMe) return;
-      if (!isReservedByMe && t.status === 'RESERVADA' && t.reservedBy !== myClientId && !isExpired) return;
+      if (t.status === 'VENDIDA') return;
+      if (t.status === 'RESERVADA' && t.reservedBy !== myClientId && !isExpired) return;
 
       availableCount++;
 
@@ -2053,16 +1993,10 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
       });
     } else {
       noTablesMessage.classList.add('hidden');
-      // La interfaz se revela por etapas; renderTables no debe saltarse el flujo.
-      if (purchaseStage === 'payment') {
-        document.getElementById('card-tables-section')?.classList.add('hidden');
-        document.getElementById('card-buyer-section')?.classList.add('hidden');
-        document.getElementById('action-buttons-container')?.classList.add('hidden');
-      } else {
-        document.getElementById('card-buyer-section')?.classList.remove('hidden');
-        document.getElementById('card-tables-section')?.classList.remove('hidden');
-        document.getElementById('action-buttons-container')?.classList.remove('hidden');
-      }
+      sectionsToHide.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('hidden');
+      });
 
       // Una página puede quedar sin botones porque sus 200 tablas fueron vendidas.
       // Mostramos una indicación local sin bloquear las demás páginas.
@@ -2091,8 +2025,8 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
 
     try {
       if (index > -1) {
-        // Respuesta optimista: quitamos la marca de inmediato y después
-        // liberamos la reserva en Firebase, sin bloquear la interacción visual.
+        // Primero confirmamos la liberación en Firebase; luego cambiamos la interfaz.
+        await releaseTableIfOwned(code);
         selectedTables = selectedTables.filter(c => c !== code);
 
         if (selectedTables.length === 0) {
@@ -2106,34 +2040,6 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
         saveLocalReservation();
         updateSummary();
         renderTables();
-
-        try {
-          const liberada = await releaseTableIfOwned(code);
-          if (!liberada) {
-            // Si Firebase confirma que ya no era una reserva propia, sincronizamos
-            // solamente esta tabla para reflejar su estado real.
-            await refrescarTablaLocal(code);
-          }
-        } catch (releaseError) {
-          console.error('No fue posible liberar la tabla en Firebase:', code, releaseError);
-          // Si falla la red, restauramos la selección local para no ocultar
-          // una reserva que podría seguir activa en Firebase.
-          if (!selectedTables.includes(code)) selectedTables.push(code);
-          const tabla = allTablesData.find(t => String(t.code) === String(code));
-          if (tabla) {
-            tabla.status = 'RESERVADA';
-            tabla.reservedBy = myClientId;
-            tabla.reservedUntil = reservationDeadline || reservationEndTime || (Date.now() + HOLD_TIME_MINUTES * 60 * 1000);
-          }
-          if (!reservationEndTime) {
-            reservationEndTime = tabla?.reservedUntil || (Date.now() + HOLD_TIME_MINUTES * 60 * 1000);
-            startReservationTimer();
-            document.getElementById('reservation-timer-box').classList.remove('hidden');
-          }
-          saveLocalReservation();
-          updateSummary();
-          renderTables();
-        }
         return;
       }
 
@@ -2224,24 +2130,7 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
     document.getElementById('summary-qty').textContent = qty;
     document.getElementById('summary-total').textContent = `$${total.toLocaleString()}`;
 
-    document.getElementById('btn-finish-order').disabled = false;
-    const mostrarAcciones = purchaseStage !== 'payment';
-    const acciones = document.getElementById('action-buttons-container');
-    const flotantes = document.getElementById('floating-purchase-actions');
-    if (acciones) acciones.classList.add('hidden');
-    if (flotantes) flotantes.classList.toggle('visible', mostrarAcciones);
-    document.body.classList.toggle('has-floating-purchase-actions', mostrarAcciones);
-    const proofGroup = document.getElementById('proof-group-container');
-    const proofInput = document.getElementById('proof-file');
-    if (declaraCortesia()) {
-      const necesitaPagoAdicional = qty > 1;
-      if (proofGroup) proofGroup.classList.toggle('hidden', !necesitaPagoAdicional);
-      if (proofInput) proofInput.required = necesitaPagoAdicional;
-      if (necesitaPagoAdicional && !proofFile) {
-        const status = document.getElementById('proof-file-status');
-        if (status) status.textContent = '🎁 La cortesía cubre una tabla. Para las tablas adicionales, sube el comprobante de pago.';
-      }
-    }
+    document.getElementById('btn-finish-order').disabled = qty === 0;
   }
 
   
@@ -2392,11 +2281,7 @@ function startReservationTimer() {
     reservationEndTime = null;
     selectedTables = [];
     proofFile = null;
-    freeTableFlow = false;
-    limpiarVistaPreviaComprobante();
     document.getElementById('declara-tabla-gratis').checked = false;
-    document.getElementById('proof-group-container').classList.remove('hidden');
-    actualizarEtapaCompra('payment');
     orderCompleted = false;
 
     document.getElementById('buyer-name').value = '';
@@ -2544,20 +2429,8 @@ function startReservationTimer() {
   }
 
   document.getElementById('declara-tabla-gratis').addEventListener('change', () => {
-    const gratis = declaraCortesia();
-    freeTableFlow = gratis;
     document.getElementById('proof-file').required = exigeComprobante();
-    document.getElementById('proof-group-container').classList.toggle('hidden', gratis);
-    if (gratis) {
-      proofFile = null;
-      document.getElementById('proof-file').value = '';
-      limpiarVistaPreviaComprobante();
-      document.getElementById('proof-file-status').textContent = '🎁 Tabla gratis: no necesitas comprobante.';
-      actualizarEtapaCompra('buyer');
-    } else {
-      actualizarEtapaCompra('payment');
-      actualizarEstadoArchivoComprobante();
-    }
+    actualizarEstadoArchivoComprobante();
   });
   function actualizarEstadoArchivoComprobante(mensajeError = '') {
     const estado = document.getElementById('proof-file-status');
@@ -2575,7 +2448,8 @@ function startReservationTimer() {
   }
 
   const declaraCortesia = () => document.getElementById('declara-tabla-gratis').checked;
-  const exigeComprobante = () => !(declaraCortesia() && selectedTables.length === 1);
+  // Si el comprador marca tabla gratis, se omite por completo el comprobante.
+  const exigeComprobante = () => !declaraCortesia();
   function avisoComprobanteSegunCortesia() {
     const cortesiaConMasTablas = declaraCortesia() && selectedTables.length > 1;
     document.getElementById('proof-required-title').textContent = cortesiaConMasTablas ? '¡Tienes una tabla gratis!' : '¡Falta tu comprobante de pago!';
@@ -2678,22 +2552,6 @@ function startReservationTimer() {
     return resultado;
   }
 
-  function mostrarVistaPreviaComprobante(file) {
-    limpiarVistaPreviaComprobante();
-    if (!file) return;
-    proofPreviewUrl = URL.createObjectURL(file);
-    const img = document.getElementById('proof-preview-image');
-    const wrap = document.getElementById('proof-preview-wrap');
-    if (img && wrap) { img.src = proofPreviewUrl; wrap.classList.remove('hidden'); }
-  }
-  function limpiarVistaPreviaComprobante() {
-    const wrap = document.getElementById('proof-preview-wrap');
-    const img = document.getElementById('proof-preview-image');
-    if (img) img.removeAttribute('src');
-    if (wrap) wrap.classList.add('hidden');
-    if (proofPreviewUrl) { URL.revokeObjectURL(proofPreviewUrl); proofPreviewUrl = null; }
-  }
-
   const proofValidationModal = document.getElementById('proof-validation-modal');
   const proofValidationTitle = document.getElementById('proof-validation-title');
   const proofValidationMessage = document.getElementById('proof-validation-message');
@@ -2739,9 +2597,9 @@ function startReservationTimer() {
     proofValidationIcon.style.color = '#15803d';
     proofValidationBack.style.display = 'none';
     proofValidationRetry.style.display = 'none';
-    proofValidationRegister.style.display = 'none';
-    cerrarModalValidacionComprobante();
-    actualizarEtapaCompra('buyer');
+    proofValidationRegister.style.display = '';
+    abrirModalValidacionBase('is-valid');
+    proofValidationRegister.focus();
   }
   function cerrarModalValidacionComprobante() {
     proofValidationModal.classList.remove('active', 'is-loading', 'is-valid');
@@ -2780,17 +2638,15 @@ function startReservationTimer() {
       return;
     }
 
-    mostrarVistaPreviaComprobante(file);
     const estadoAnalisis = document.getElementById('proof-file-status');
     if (estadoAnalisis) { estadoAnalisis.classList.remove('ready', 'error'); estadoAnalisis.textContent = 'Validación automática en curso…'; }
-    // La vista previa permanece visible durante la validación; no se tapa con un modal.
+    mostrarModalValidandoComprobante();
     const resultado = await validarComprobantePorContenido(file);
     if (e.target.files[0] !== file) return;
     if (!resultado.valido) {
       e.target.value = '';
       proofFile = null;
       comprobanteValidadoFile = null;
-      limpiarVistaPreviaComprobante();
       const mensaje = resultado.mensaje || 'Comprobante inválido. Debes subir una captura auténtica y legible de un pago real.';
       actualizarEstadoArchivoComprobante('❌ Comprobante inválido. Debes subir el comprobante real del pago realizado.');
       mostrarModalValidacionComprobante(mensaje);
@@ -2802,7 +2658,7 @@ function startReservationTimer() {
     if (estadoComprobanteValido) {
       estadoComprobanteValido.classList.remove('error');
       estadoComprobanteValido.classList.add('ready');
-      estadoComprobanteValido.textContent = '✅ Comprobante válido. Ahora completa tus datos para continuar.';
+      estadoComprobanteValido.textContent = '✅ Comprobante válido: superó la validación automática. El pago aún debe verificarse.';
     }
     cerrarAvisoComprobante();
     mostrarModalComprobanteValido();
@@ -2818,13 +2674,11 @@ function startReservationTimer() {
 
   // Normaliza los datos al salir del campo, no mientras escribe.
   // Esto permite que el usuario pueda usar espacios normalmente entre nombre y apellido.
-  ['buyer-name', 'buyer-address', 'buyer-phone'].forEach(id => {
+  ['buyer-name', 'buyer-address'].forEach(id => {
     const input = document.getElementById(id);
     input.addEventListener('blur', () => {
-      if (id !== 'buyer-phone') input.value = normalizeText(input.value);
-      avanzarASeleccionSiDatosListos();
+      input.value = normalizeText(input.value);
     });
-    input.addEventListener('input', avanzarASeleccionSiDatosListos);
   });
 
   // La validación visual y limpieza de los tres campos se realizan en el controlador final.
@@ -2928,32 +2782,29 @@ function startReservationTimer() {
 
     const buyerName = normalizeText(buyerNameInput.value);
     const buyerAddress = normalizeText(buyerAddressInput.value);
-    const buyerPhoneRaw = (buyerPhoneInput.value || '').trim();
+    const buyerPhoneRaw = buyerPhoneInput.value.trim();
+    const buyerPhone = buyerPhoneRaw
+      ? normalizarWhatsAppColombia(buyerPhoneRaw, document.getElementById('buyer-country')?.value || '+57')
+      : '';
 
     buyerNameInput.value = buyerName;
     buyerAddressInput.value = buyerAddress;
 
-    // Informar en un solo mensaje exactamente cuáles datos faltan.
-    const datosFaltantes = [];
-    if (!buyerName) datosFaltantes.push('nombre');
-    if (!buyerAddress) datosFaltantes.push('referencia');
-    if (!buyerPhoneRaw) datosFaltantes.push('número de WhatsApp');
-    if (selectedTables.length === 0) datosFaltantes.push('marcar al menos una tabla');
-    if (datosFaltantes.length) {
-      const faltantesTexto = datosFaltantes.length === 1
-        ? datosFaltantes[0]
-        : datosFaltantes.length === 2
-          ? datosFaltantes.join(' y ')
-          : datosFaltantes.slice(0, -1).join(', ') + ' y ' + datosFaltantes[datosFaltantes.length - 1];
-      alert('Por favor complete lo siguiente: ' + faltantesTexto + '.');
-      if (!buyerName) buyerNameInput.focus();
-      else if (!buyerAddress) buyerAddressInput.focus();
-      else if (!buyerPhoneRaw) buyerPhoneInput.focus();
+    // Un solo mensaje reúne todos los datos y la selección que hacen falta.
+    const pendientes = [];
+    if (!buyerName) pendientes.push('nombre');
+    if (!buyerAddress) pendientes.push('referencia');
+    if (!buyerPhoneRaw) pendientes.push('número de WhatsApp');
+    if (selectedTables.length === 0) pendientes.push('marcar al menos una tabla');
+    if (pendientes.length) {
+      alert('Por favor ingrese: ' + pendientes.join(', ') + '.');
       return;
     }
-
-    const buyerPhone = validarCampoWhatsapp(buyerPhoneInput, document.getElementById('buyer-country'));
-    if (!buyerPhone) return;
+    if (!buyerPhone) {
+      alert('Por favor ingrese un número de WhatsApp válido.');
+      buyerPhoneInput.focus();
+      return;
+    }
 
     const nameParts = buyerName.split(' ').filter(part => part.length > 0);
     if (nameParts.length < 2) {
@@ -2961,23 +2812,16 @@ function startReservationTimer() {
       return;
     }
 
-    if (exigeComprobante() && (!proofFile || !['image/jpeg', 'image/png'].includes(proofFile.type))) {
-      avisoComprobanteSegunCortesia();
+    if (selectedTables.length === 0) {
+      alert('Selecciona al menos una tabla.');
       return;
     }
 
-    if (exigeComprobante()) {
-      const validacionContenido = await validarComprobantePorContenido(proofFile);
-      if (!validacionContenido.valido) {
-        proofFile = null;
-        comprobanteValidadoFile = null;
-        const inputComprobante = document.getElementById('proof-file');
-        if (inputComprobante) inputComprobante.value = '';
-        const mensaje = validacionContenido.mensaje || 'Comprobante inválido. Debes subir una captura auténtica y legible de un pago real.';
-        actualizarEstadoArchivoComprobante('Comprobante inválido. Sube una captura auténtica y legible de un pago real.');
-        mostrarModalValidacionComprobante(mensaje);
-        return;
-      }
+    // La validación OCR ocurre una sola vez al seleccionar el archivo.
+    // Al registrar únicamente comprobamos que ese mismo archivo ya haya sido validado.
+    if (exigeComprobante() && (!proofFile || comprobanteValidadoFile !== proofFile)) {
+      avisoComprobanteSegunCortesia();
+      return;
     }
 
     // Congelamos la selección exacta que se va a comprar para que toda la operación
@@ -3380,20 +3224,9 @@ Gracias por tu compra.`;
     enviarWhatsAppDigital();
   });
 
-  document.getElementById('btn-floating-cancel').addEventListener('click', () => {
-    document.getElementById('btn-cancel-purchase').click();
-  });
-  document.getElementById('btn-floating-finish').addEventListener('click', () => {
-    document.getElementById('btn-finish-order').click();
-  });
-
   document.getElementById('btn-finish-order').addEventListener('click', async () => {
-    // finishOrder valida todos los campos juntos y muestra únicamente los que faltan.
-    // La comprobación del comprobante se mantiene para compras pagadas; las cortesías siguen exentas.
-    if (exigeComprobante() && (!proofFile || !['image/jpeg', 'image/png'].includes(proofFile.type))) {
-      avisoComprobanteSegunCortesia();
-      return;
-    }
+    // finishOrder centraliza el mensaje de campos faltantes, tablas y comprobante.
+    // El comprobante ya validado al subirlo no se vuelve a procesar aquí.
     await finishOrder();
   });
   
