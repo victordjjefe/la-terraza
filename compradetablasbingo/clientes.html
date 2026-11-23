@@ -2195,6 +2195,25 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
     tableOperationsInFlight.add(code);
 
     const index = selectedTables.indexOf(code);
+
+    // Una cortesía cubre exactamente una tabla. Se bloquea cualquier intento
+    // de añadir una segunda tabla antes de crear una reserva en Firebase.
+    if (declaraCortesia() && selectedTables.length >= 1 && index === -1) {
+      const aviso = document.getElementById('tables-selection-error');
+      if (aviso) {
+        aviso.textContent = 'La tabla gratis permite seleccionar únicamente una tabla. Si deseas adquirir tablas adicionales, debes subir el comprobante de pago.';
+        aviso.classList.add('visible');
+      }
+      tableOperationsInFlight.delete(code);
+      return;
+    }
+
+    const avisoSeleccion = document.getElementById('tables-selection-error');
+    if (avisoSeleccion) {
+      avisoSeleccion.textContent = '';
+      avisoSeleccion.classList.remove('visible');
+    }
+
     let reservationDeadline = reservationEndTime;
 
     try {
@@ -3072,6 +3091,15 @@ function startReservationTimer() {
       return;
     }
 
+    // Segunda barrera: nunca registrar más de una tabla bajo modalidad gratis.
+    if (declaraCortesia() && selectedTables.length > 1) {
+      const avisoTablas = document.getElementById('tables-selection-error');
+      avisoTablas.textContent = 'La tabla gratis permite seleccionar únicamente una tabla. Si deseas adquirir tablas adicionales, debes subir el comprobante de pago.';
+      avisoTablas.classList.add('visible');
+      document.getElementById('card-tables-section')?.scrollIntoView({behavior:'smooth',block:'center'});
+      return;
+    }
+
     const buyerPhone = validarCampoWhatsapp(buyerPhoneInput, document.getElementById('buyer-country'));
     if (!buyerPhone) return;
 
@@ -3191,6 +3219,9 @@ function startReservationTimer() {
         // - Si el cliente marcó la cortesía, la tabla de menor número queda GRATIS.
         // Se ordena una copia para no alterar la selección original ni el enlace digital.
         const declaraGratis = declaraCortesia();
+        if (declaraGratis && tablesToBuy.length > 1) {
+          throw new Error('La tabla gratis permite seleccionar únicamente una tabla. Para registrar tablas adicionales debes subir el comprobante de pago.');
+        }
         const tablasOrdenadasParaPago = [...tablesToBuy].sort((a, b) => {
           const numeroA = parseInt(String(a).replace(/\D/g, ''), 10);
           const numeroB = parseInt(String(b).replace(/\D/g, ''), 10);
