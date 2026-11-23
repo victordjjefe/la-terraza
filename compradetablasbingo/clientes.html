@@ -911,9 +911,11 @@
         <div id="bingo-info-success" style="margin-bottom:12px; font-size:0.95rem; color:var(--text-main);"></div>
         <div id="consolidado-aviso"></div>
         <div id="digital-link-box" style="margin-bottom:0;"></div>
-        <button class="btn" id="btn-whatsapp-digital-link" style="background:#25D366;color:white;margin-bottom:10px;font-size:1.15rem;font-weight:800;">🟢 📲 Guardar mis tablas y transmisión en WhatsApp</button>
-        <p style="font-size:0.9rem;color:#475569;line-height:1.5;margin:0 0 14px;">🎱 Por seguridad, guarda este enlace en tu WhatsApp. Será tu acceso para jugar, ver tus tablas y disfrutar la transmisión en vivo del bingo.</p>
-        <button class="btn btn-success btn-restart-action" style="margin-top: 8px;">Hacer otra compra</button>
+        <div id="success-registration-list" style="text-align:left;margin:16px 0;"></div>
+        <p id="success-total-tables" style="font-size:1.05rem;font-weight:900;color:var(--text-main);margin:12px 0 18px;"></p>
+        <button class="btn" id="btn-whatsapp-digital-link" style="background:#25D366;color:white;margin-bottom:10px;font-size:1.05rem;font-weight:800;">🟢 Guardar tablas en WhatsApp</button>
+        <button class="btn btn-success" id="btn-open-my-tables" style="margin-bottom:10px;font-size:1.05rem;font-weight:800;">🎟️ Abrir mis tablas</button>
+        <button class="btn btn-success btn-restart-action" style="margin-top: 8px;">Realizar otra compra</button>
       </div>
     </div>
 
@@ -946,11 +948,7 @@
   </div>
 
 
-<div id="whatsapp-accept-overlay">
-  <div class="whatsapp-accept-card">
-    <button id="btn-accept-whatsapp">✅ CONTINUAR</button>
-  </div>
-</div>
+
 
 
 
@@ -1280,8 +1278,9 @@
     // Ahora Firestore devuelve únicamente los pedidos del WhatsApp solicitado.
     const telefono = normalizarWhatsAppColombia(telefonoActual);
     const documentos = await consultarPedidosPorTelefonoOptimizado(telefono);
-    const pedidos = documentos.map(docSnap => docSnap.data());
-    return consolidarTablasPorTelefono(pedidos, telefono, tablasNuevas, config?.idBingo || 'BINGO001');
+    const pedidos = documentos.map(docSnap => ({ ...docSnap.data(), _docId: docSnap.id }));
+    const tablas = consolidarTablasPorTelefono(pedidos, telefono, tablasNuevas, config?.idBingo || 'BINGO001');
+    return { tablas, pedidos };
   }
 
   // Mensaje de WhatsApp unificado: registro nuevo y consulta de tablas existentes.
@@ -3196,17 +3195,18 @@ function startReservationTimer() {
       // Una vez guardado el pedido actual, recuperamos todos los pedidos del mismo
       // WhatsApp y generamos UN SOLO enlace con todas sus tablas registradas.
       let tablasConsolidadas = [...tablesToBuy];
-      let tablasAnterioresCliente = [];
+      let pedidosCliente = [];
       let teniaRegistrosAnteriores = false;
 
       try {
-        tablasConsolidadas = await obtenerTodasLasTablasClienteRegistro(
-          buyerPhone,
-          tablesToBuy
+        const consolidado = await obtenerTodasLasTablasClienteRegistro(buyerPhone, tablesToBuy);
+        tablasConsolidadas = consolidado.tablas;
+        pedidosCliente = consolidado.pedidos.filter(p =>
+          String(p.idBingo || '') === String(config?.idBingo || 'BINGO001') &&
+          String(p.estado || '') !== 'CANCELADO' &&
+          Array.isArray(p.tablas) && p.tablas.length
         );
-
-        tablasAnterioresCliente = tablasConsolidadas.filter(tabla => !tablesToBuy.includes(tabla));
-        teniaRegistrosAnteriores = tablasAnterioresCliente.length > 0;
+        teniaRegistrosAnteriores = pedidosCliente.some(p => String(p.numeroPedido || p.id || '') !== String(orderId));
       } catch (consolidationError) {
         console.error('No fue posible consolidar compras anteriores:', consolidationError);
       }
@@ -3234,34 +3234,31 @@ function startReservationTimer() {
       );
 
       document.getElementById('success-exclusive-screen').classList.remove('hidden');
-      setTimeout(() => { document.getElementById('whatsapp-accept-overlay').classList.add('active'); }, 300);
       document.getElementById('order-number-display').textContent = `Registro #${orderId}`;
       document.getElementById('buyer-success-display').textContent = `Hola ${buyerName}, tu registro fue realizado exitosamente.`;
 
-      // Muestra primero únicamente lo que acaba de registrar el cliente
-      document.getElementById('assigned-tables-display').innerHTML = `
-        <div>
-          <b>🎟️ Nuevas tablas registradas:</b><br>
-          ${tablesToBuy.join(', ')}
-        </div>
-      `;
-
-      document.getElementById('consolidado-aviso').innerHTML = teniaRegistrosAnteriores ? `
-        <div class="consolidado-aviso">
-          🔄 <b>Encontramos registros anteriores</b><br><br>
-          Ya tenías tablas registradas anteriormente con este número de WhatsApp.
-          Estas tablas fueron unificadas automáticamente con tu nuevo registro.<br><br>
-          <b>🎟️ Tablas de registros anteriores:</b><br>
-          ${tablasAnterioresCliente.join(', ')}<br><br>
-          <b>🎯 Total de tablas asignadas:</b><br>
-          ${tablasConsolidadas.join(', ')}
-        </div>
-      ` : `
-        <div class="consolidado-aviso">
-          <b>🎯 Total de tablas asignadas:</b><br>
-          ${tablasConsolidadas.join(', ')}
-        </div>
-      `;
+      // Lista cada compra por separado usando los pedidos ya consultados.
+      const registrosOrdenados = [...pedidosCliente].sort((a,b) => {
+        const fa = Date.parse(a.fecha || '') || 0;
+        const fb = Date.parse(b.fecha || '') || 0;
+        return fa - fb;
+      });
+      if (!registrosOrdenados.some(p => String(p.numeroPedido || p.id || '') === String(orderId))) {
+        registrosOrdenados.push({ numeroPedido: orderId, id: orderId, tablas: tablesToBuy, fecha: new Date().toLocaleString() });
+      }
+      document.getElementById('assigned-tables-display').textContent = '';
+      document.getElementById('consolidado-aviso').innerHTML = '';
+      document.getElementById('success-registration-list').innerHTML = registrosOrdenados.map((pedido, i) => {
+        const numero = pedido.numeroPedido || pedido.id || (i + 1);
+        const tablas = Array.isArray(pedido.tablas) ? pedido.tablas : [];
+        const esNuevo = String(numero) === String(orderId);
+        return `<div style="border:1px solid #ddd6fe;background:#faf7ff;border-radius:12px;padding:12px;margin:9px 0;">
+          <b>Registro ${numero}${esNuevo ? ' · NUEVO' : ''}</b><br>
+          <span>Tablas: ${tablas.join(', ')}</span>
+        </div>`;
+      }).join('');
+      document.getElementById('success-total-tables').textContent =
+        `🎯 Total de tablas a jugar: ${tablasConsolidadas.length}`;
 
       ultimoMensajeDigital = construirMensajeWhatsAppBingo({
         nombre: buyerName,
@@ -3391,10 +3388,12 @@ Gracias por tu compra.`;
   }
 
   document.getElementById('btn-whatsapp-digital-link').addEventListener('click', enviarWhatsAppDigital);
-
-  document.getElementById('btn-accept-whatsapp').addEventListener('click', () => {
-    document.getElementById('whatsapp-accept-overlay').classList.remove('active');
-    enviarWhatsAppDigital();
+  document.getElementById('btn-open-my-tables')?.addEventListener('click', () => {
+    if (!ultimoEnlaceDigital) {
+      alert('Todavía no está disponible el enlace de tus tablas.');
+      return;
+    }
+    window.open(ultimoEnlaceDigital, '_blank', 'noopener');
   });
 
   document.getElementById('btn-floating-cancel').addEventListener('click', () => {
