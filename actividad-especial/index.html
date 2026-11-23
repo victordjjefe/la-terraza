@@ -101,11 +101,6 @@
 
         <!-- ================= VISTA CLIENTE (MARCO TIPO CELULAR) ================= -->
         <section id="view-client" class="w-full max-w-md px-3 sm:px-0">
-            <div id="registration-closed-message" class="hidden bg-white rounded-3xl shadow-2xl border-4 border-amber-300 p-8 text-center space-y-4" role="status" aria-live="polite">
-                <div class="text-5xl">⏰</div>
-                <h2 class="text-2xl font-black text-slate-900">El tiempo de registro pasó</h2>
-                <p class="text-slate-600 font-medium">En este momento no estamos recibiendo nuevos registros para el bingo.</p>
-            </div>
             <div id="client-registration-content" class="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border-4 border-slate-300 space-y-6 pb-8">
                 
                 <!-- Portada e Información del Evento -->
@@ -146,6 +141,14 @@
                         </div>
                     </section>
 
+                    <!-- Mensaje de cierre debajo del buscador público -->
+                    <div id="registration-closed-message" class="hidden mx-4 sm:mx-6 mt-4 bg-white rounded-2xl shadow border-2 border-amber-300 p-6 text-center space-y-3" role="status" aria-live="polite">
+                        <div class="text-4xl">⏰</div>
+                        <h2 class="text-xl font-black text-slate-900">El tiempo de registro pasó</h2>
+                        <p class="text-slate-600 font-medium">En este momento no estamos recibiendo nuevos registros para el bingo.</p>
+                    </div>
+
+                    <div id="client-closed-hidden-content">
                     <div class="px-6 space-y-5">
                         <div class="text-center space-y-2">
                             <h2 class="text-3xl font-black text-slate-900 leading-tight">Gran Bingo Virtual Especial</h2>
@@ -194,7 +197,7 @@
                 </div>
 
                 <!-- Compra en dos pasos: comprobante primero, selección y registro después -->
-                <div id="client-purchase-content" class="px-6 space-y-5">
+                <div class="px-6 space-y-5">
                     <div id="purchase-step-proof" class="space-y-5">
                         <div class="border-t border-slate-200 pt-4 space-y-2">
                             <h3 class="text-2xl font-black text-slate-900">1. Prepara tu compra</h3>
@@ -281,6 +284,7 @@
                             <button type="submit" id="submit-btn" disabled class="w-full bg-slate-400 text-white font-black text-lg py-4 px-6 rounded-xl shadow-lg">Selecciona tus tablas para continuar</button>
                             <button type="button" onclick="backToProofStep()" class="inline-flex items-center justify-center gap-2 self-start bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold text-sm px-4 py-2 rounded-lg shadow-sm"><span aria-hidden="true">←</span><span>Volver</span></button>
                         </form>
+                    </div>
                     </div>
                 </div>
             </div>
@@ -667,14 +671,13 @@ const CLIENT_TABLES_PER_PAGE = 50;
 
 function applyRegistrationStatus() {
   const message = document.getElementById('registration-closed-message');
-  const purchaseContent = document.getElementById('client-purchase-content');
+  const hiddenContent = document.getElementById('client-closed-hidden-content');
   const toggle = document.getElementById('registration-closed-toggle');
   const description = document.getElementById('registration-status-description');
 
-  // El bloqueo detiene únicamente las nuevas compras.
-  // El consultor público permanece visible para consultar las tablas.
+  // Al bloquear: conservar portada y consultor; ocultar evento, premios y todo el flujo de compra.
   if (message) message.classList.toggle('hidden', !registrationClosed);
-  if (purchaseContent) purchaseContent.classList.toggle('hidden', registrationClosed);
+  if (hiddenContent) hiddenContent.classList.toggle('hidden', registrationClosed);
 
   if (toggle) toggle.checked = registrationClosed;
   if (description) description.textContent = registrationClosed
