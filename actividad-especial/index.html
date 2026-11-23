@@ -675,9 +675,21 @@ function applyRegistrationStatus() {
   const toggle = document.getElementById('registration-closed-toggle');
   const description = document.getElementById('registration-status-description');
 
-  // Al bloquear: conservar portada y consultor; ocultar evento, premios y todo el flujo de compra.
-  if (message) message.classList.toggle('hidden', !registrationClosed);
-  if (hiddenContent) hiddenContent.classList.toggle('hidden', registrationClosed);
+  // Estado ABIERTO: ocultar el aviso y mostrar toda la información/compra.
+  // Estado BLOQUEADO: mostrar el aviso y ocultar evento, premios y compra.
+  if (message) {
+    message.classList.toggle('hidden', !registrationClosed);
+    message.hidden = !registrationClosed;
+    message.style.display = registrationClosed ? 'block' : 'none';
+    message.setAttribute('aria-hidden', registrationClosed ? 'false' : 'true');
+  }
+
+  if (hiddenContent) {
+    hiddenContent.classList.toggle('hidden', registrationClosed);
+    hiddenContent.hidden = registrationClosed;
+    hiddenContent.style.display = registrationClosed ? 'none' : '';
+    hiddenContent.setAttribute('aria-hidden', registrationClosed ? 'true' : 'false');
+  }
 
   if (toggle) toggle.checked = registrationClosed;
   if (description) description.textContent = registrationClosed
