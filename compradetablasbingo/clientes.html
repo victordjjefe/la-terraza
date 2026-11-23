@@ -842,9 +842,9 @@
         </div>
       </div>
 
+      <div id="purchase-validation-message" role="alert" aria-live="assertive" class="hidden" style="background:#fff7ed;border:1px solid #fdba74;color:#9a3412;padding:12px 14px;border-radius:10px;font-weight:700;margin:0 0 14px;"></div>
       <div class="card hidden" id="card-buyer-section">
         <div class="card-title">Datos de Registro</div>
-        <div id="purchase-validation-message" role="alert" aria-live="assertive" class="hidden" style="background:#fff7ed;border:1px solid #fdba74;color:#9a3412;padding:11px 13px;border-radius:10px;font-weight:700;margin:0 0 14px;"></div>
         <div class="form-group">
           <label>Nombre y Apellido</label>
           <input type="text" id="buyer-name" class="form-control" placeholder="Ej: Juan Pérez">
@@ -888,7 +888,7 @@
         <label class="cortesia-choice" for="declara-tabla-gratis"><input type="checkbox" id="declara-tabla-gratis"> <span>🎁 Me gané una tabla gratis</span></label>
         <div class="hidden" style="display: none !important;" id="action-buttons-container" aria-hidden="true">
           <button class="btn btn-danger" id="btn-cancel-purchase" style="flex: 1;">Cancelar</button>
-          <button class="btn btn-success" id="btn-finish-order" style="flex: 2;" disabled>Registrar / Comprar</button>
+          <button class="btn btn-success" type="button" id="btn-finish-order" style="flex: 2;" disabled>Registrar / Comprar</button>
         </div>
       </div>
 
@@ -2966,6 +2966,7 @@ function startReservationTimer() {
       if (validationMessage) {
         validationMessage.textContent = 'Por favor complete lo siguiente: ' + faltantesTexto + '.';
         validationMessage.classList.remove('hidden');
+        validationMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
       if (!buyerName) buyerNameInput.focus();
       else if (!buyerAddress) buyerAddressInput.focus();
@@ -3414,8 +3415,8 @@ Gracias por tu compra.`;
   document.getElementById('btn-floating-cancel').addEventListener('click', () => {
     document.getElementById('btn-cancel-purchase').click();
   });
-  document.getElementById('btn-floating-finish').addEventListener('click', () => {
-    document.getElementById('btn-finish-order').click();
+  document.getElementById('btn-floating-finish').addEventListener('click', async () => {
+    await finishOrder();
   });
 
   ['buyer-name','buyer-address','buyer-phone'].forEach(id => {
