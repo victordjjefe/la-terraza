@@ -1070,7 +1070,7 @@
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
   import { 
     getFirestore, doc, getDoc, setDoc, updateDoc, collection, documentId, 
-    onSnapshot, runTransaction, getDocs, query, where, limit, serverTimestamp 
+    onSnapshot, runTransaction, getDocs, getDocsFromServer, query, where, limit, serverTimestamp 
   } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
   const firebaseConfig = {
@@ -1111,6 +1111,54 @@
     return new Map(codes.map(code => [code, occupiedFromSnapshot(byId.get(tableShardId(code)), code)]));
   }
   function rememberShard(id, data) { inventoryCache.set(id, { data, timestamp: Date.now() }); }
+
+  function normalizarCodigoInventario(code) {
+    const n = tableNumber(code);
+    return n > 0 && n < 1000 ? 'T' + String(n).padStart(3, '0') : 'T' + String(n);
+  }
+
+  // Reconcilia el inventario con los pedidos vigentes del evento antes de
+  // mostrar disponibilidad. Un pedido activo siempre prevalece sobre un lote
+  // ausente o incompleto en disponibilidadTablas.
+  async function reconciliarInventarioConPedidos() {
+    const pedidosSnap = await getDocsFromServer(collection(db, 'pedidos'));
+    const idEvento = String(config?.idBingo || 'BINGO001');
+    const ventas = new Map();
+    pedidosSnap.forEach(docSnap => {
+      const pedido = docSnap.data() || {};
+      if (String(pedido.estado || '').toUpperCase() === 'CANCELADO') return;
+      if (pedido.idBingo && String(pedido.idBingo) !== idEvento) return;
+      if (!Array.isArray(pedido.tablas)) return;
+      pedido.tablas.forEach(valor => {
+        const code = normalizarCodigoInventario(valor);
+        if (!tableNumber(code)) return;
+        ventas.set(code, String(pedido.id || pedido.numeroPedido || docSnap.id));
+      });
+    });
+    if (!ventas.size) return;
+
+    const ids = [...new Set([...ventas.keys()].map(tableShardId))];
+    for (const id of ids) {
+      const ref = doc(db, INVENTORY_COLLECTION, id);
+      await runTransaction(db, async transaction => {
+        const snap = await transaction.get(ref);
+        const occupied = { ...(snap.exists() ? (snap.data()?.occupied || {}) : {}) };
+        let changed = false;
+        for (const [code, pedidoId] of ventas) {
+          if (tableShardId(code) !== id) continue;
+          const current = occupied[code];
+          if (!current || current.status !== 'VENDIDA') {
+            occupied[code] = { ...(current || {}), code, status: 'VENDIDA', reservedUntil: null, reservedBy: null, pedido: pedidoId };
+            changed = true;
+          }
+        }
+        if (changed) transaction.set(ref, { occupied, updatedAt: Date.now() }, { merge: true });
+      });
+      const fresh = await getDoc(ref);
+      rememberShard(id, fresh.exists() ? fresh.data() : { occupied: {} });
+    }
+    pageAvailabilityCache.clear();
+  }
 
   let myClientId = localStorage.getItem('ltb_client_id');
   if (!myClientId) {
@@ -1860,6 +1908,9 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
         throw new Error('El inventario está en proceso de migración. El administrador debe abrir el panel de configuración y esperar a que finalice la preparación de las tablas.');
       }
 
+      // No publicar tablas como disponibles hasta reconciliar el inventario
+      // contra los pedidos vigentes guardados en el servidor.
+      await reconciliarInventarioConPedidos();
       construirTablasDesdeRango();
       await cargarEstadosPagina(currentTablesPage, { mostrar: false });
       renderTables();
