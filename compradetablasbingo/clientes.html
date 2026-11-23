@@ -175,12 +175,18 @@
 
 
     .lookup-card {
-      background:#fff7ed;
-      border:2px solid var(--accent-gold);
+      background:linear-gradient(145deg,#f3e8ff 0%,#e9d5ff 100%);
+      border:2px solid #a855f7;
       border-radius:var(--radius-md);
-      padding:18px;
+      padding:20px 18px;
       text-align:center;
+      box-shadow:0 8px 22px rgba(126,34,206,.13);
     }
+    .lookup-card .card-title{color:#581c87!important;font-size:1.32rem!important;line-height:1.3;font-weight:900!important;letter-spacing:.2px}
+    .lookup-card p{color:#3b0764!important;font-size:1rem;line-height:1.55;font-weight:700!important}
+    .lookup-card .form-control{font-size:1.08rem;min-height:48px;border:2px solid #c084fc}
+    .lookup-card #btn-lookup,.lookup-card #btn-lookup-active{background:#7e22ce!important;color:#fff!important;border:2px solid #6b21a8;font-size:1.08rem;min-height:50px;font-weight:900;box-shadow:0 4px 10px rgba(88,28,135,.2)}
+    .lookup-card #btn-lookup:focus-visible,.lookup-card #btn-lookup-active:focus-visible,.lookup-card input:focus-visible{outline:3px solid #581c87;outline-offset:3px}
     .lookup-modal {
       position:fixed;
       inset:0;
@@ -1342,7 +1348,7 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
 🍀 ¡Mucha suerte! ¡Que pronto cantes BINGO! 🎉`;
   }
 
-  async function consultarTablas(countryId='lookup-country', inputId='lookup-input'){
+  async function consultarTablas(countryId='lookup-country', inputId='lookup-input', ventanaDestino=null){
     const campoIndicativo = document.getElementById(countryId);
     const campoNumero = document.getElementById(inputId);
     const valor = campoNumero?.value.trim() || '';
@@ -1397,6 +1403,7 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
     } catch(error){
       console.error('Error buscando tablas consolidadas:', error);
       alert('No fue posible consultar tus tablas. Intenta nuevamente.');
+      if(ventanaDestino && !ventanaDestino.closed) ventanaDestino.close();
       return;
     }
 
@@ -1413,6 +1420,7 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
     } catch (error) {
       console.error('Error validando tablas agrupadas:', error);
       alert('No fue posible validar el estado actual de tus tablas. Intenta nuevamente.');
+      if(ventanaDestino && !ventanaDestino.closed) ventanaDestino.close();
       return;
     }
     tablasEncontradas = tablasConfirmadas;
@@ -1465,11 +1473,16 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
       // generado con los mismos datos ya consultados, sin lecturas adicionales.
       ultimoLookupTelefono = cleanPhone(telefonoFinal);
       if (ultimoLookupEnlace) {
-        window.location.assign(ultimoLookupEnlace);
+        if (ventanaDestino && !ventanaDestino.closed) {
+          ventanaDestino.location.href = ultimoLookupEnlace;
+        } else {
+          window.open(ultimoLookupEnlace, '_blank', 'noopener');
+        }
         return;
       }
 
     }else{
+      if(ventanaDestino && !ventanaDestino.closed) ventanaDestino.close();
       document.getElementById('lookup-modal').classList.add('active');
 
       document.getElementById('lookup-title').textContent =
@@ -3314,11 +3327,13 @@ function startReservationTimer() {
 
 
   document.getElementById('btn-lookup').addEventListener('click', ()=>{
-    consultarTablas('lookup-country','lookup-input');
+    const ventana = window.open('about:blank', '_blank');
+    consultarTablas('lookup-country','lookup-input',ventana);
   });
 
   document.getElementById('btn-lookup-active').addEventListener('click',()=>{
-    consultarTablas('lookup-country-active','lookup-input-active');
+    const ventana = window.open('about:blank', '_blank');
+    consultarTablas('lookup-country-active','lookup-input-active',ventana);
   });
 
   document.getElementById('btn-close-lookup').addEventListener('click',()=>{
