@@ -2890,6 +2890,39 @@ function startReservationTimer() {
           config?.idBingo || 'BINGO001'
         );
 
+        // Clasificación automática del pago por tabla:
+        // - Por defecto, todas quedan como CONSIGNACIÓN.
+        // - Si el cliente marcó la cortesía, la tabla de menor número queda GRATIS.
+        // Se ordena una copia para no alterar la selección original ni el enlace digital.
+        const declaraGratis = declaraCortesia();
+        const tablasOrdenadasParaPago = [...tablesToBuy].sort((a, b) => {
+          const numeroA = parseInt(String(a).replace(/\D/g, ''), 10);
+          const numeroB = parseInt(String(b).replace(/\D/g, ''), 10);
+          if (Number.isFinite(numeroA) && Number.isFinite(numeroB) && numeroA !== numeroB) {
+            return numeroA - numeroB;
+          }
+          return String(a).localeCompare(String(b), 'es', { numeric: true });
+        });
+        const tablaGratis = declaraGratis && tablasOrdenadasParaPago.length
+          ? String(tablasOrdenadasParaPago[0])
+          : null;
+
+        const destinoPorTabla = Object.fromEntries(
+          tablesToBuy.map(tabla => [
+            String(tabla),
+            String(tabla) === tablaGratis ? 'GRATIS' : 'CONSIGNACIÓN'
+          ])
+        );
+
+        const destinosAsignados = Object.values(destinoPorTabla);
+        const destinoGeneral = destinosAsignados.length &&
+          destinosAsignados.every(destino => destino === destinosAsignados[0])
+            ? destinosAsignados[0]
+            : 'VARIOS';
+
+        const totalTablasCobro = destinosAsignados.filter(destino => destino !== 'GRATIS').length;
+        const totalPedido = totalTablasCobro * (config ? config.valor : 0);
+
         const newOrder = {
           id: candidateId,
           numeroPedido: candidateId,
@@ -2911,18 +2944,17 @@ function startReservationTimer() {
             config?.fecha || '',
             config?.linkTransmision || ''
           ),
-          total: tablesToBuy.length * (config ? config.valor : 0),
+          total: totalPedido,
           // Comprobante almacenado como imagen JPEG comprimida dentro de Firestore.
           // El panel administrador ya admite el campo "comprobante".
           comprobante: comprobanteImagen || null,
           comprobanteURL: null,
-          declaraTablaGratis: declaraCortesia(),
+          declaraTablaGratis: declaraGratis,
           fecha: new Date().toLocaleString(),
-          estado: 'PENDIENTE PAGO',
-          destino: 'DEBEN',
-          destinoPorTabla: Object.fromEntries(
-            tablesToBuy.map(tabla => [String(tabla), 'DEBEN'])
-          )
+          // Consignación y cortesía se registran como cubiertas desde la compra.
+          estado: 'PAGADO',
+          destino: destinoGeneral,
+          destinoPorTabla
         };
 
         // Pedido y tablas vendidas se guardan juntos: si algo falla, no se
