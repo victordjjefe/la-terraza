@@ -2233,14 +2233,12 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
     document.body.classList.toggle('has-floating-purchase-actions', mostrarAcciones);
     const proofGroup = document.getElementById('proof-group-container');
     const proofInput = document.getElementById('proof-file');
-    if (declaraCortesia()) {
-      const necesitaPagoAdicional = qty > 1;
-      if (proofGroup) proofGroup.classList.toggle('hidden', !necesitaPagoAdicional);
-      if (proofInput) proofInput.required = necesitaPagoAdicional;
-      if (necesitaPagoAdicional && !proofFile) {
-        const status = document.getElementById('proof-file-status');
-        if (status) status.textContent = '🎁 La cortesía cubre una tabla. Para las tablas adicionales, sube el comprobante de pago.';
-      }
+    const esCortesia = declaraCortesia();
+    if (proofGroup) proofGroup.classList.toggle('hidden', esCortesia);
+    if (proofInput) proofInput.required = !esCortesia;
+    if (esCortesia) {
+      const status = document.getElementById('proof-file-status');
+      if (status) status.textContent = '🎁 Tabla gratis: no necesitas comprobante.';
     }
   }
 
@@ -2575,7 +2573,7 @@ function startReservationTimer() {
   }
 
   const declaraCortesia = () => document.getElementById('declara-tabla-gratis').checked;
-  const exigeComprobante = () => !(declaraCortesia() && selectedTables.length === 1);
+  const exigeComprobante = () => !declaraCortesia();
   function avisoComprobanteSegunCortesia() {
     const cortesiaConMasTablas = declaraCortesia() && selectedTables.length > 1;
     document.getElementById('proof-required-title').textContent = cortesiaConMasTablas ? '¡Tienes una tabla gratis!' : '¡Falta tu comprobante de pago!';
@@ -2961,23 +2959,12 @@ function startReservationTimer() {
       return;
     }
 
-    if (exigeComprobante() && (!proofFile || !['image/jpeg', 'image/png'].includes(proofFile.type))) {
+    // El comprobante se valida una sola vez al cargarlo. Aquí solo comprobamos
+    // que siga siendo el mismo archivo que ya superó la validación automática.
+    // La opción de tabla gratis omite por completo el comprobante.
+    if (exigeComprobante() && (!proofFile || comprobanteValidadoFile !== proofFile)) {
       avisoComprobanteSegunCortesia();
       return;
-    }
-
-    if (exigeComprobante()) {
-      const validacionContenido = await validarComprobantePorContenido(proofFile);
-      if (!validacionContenido.valido) {
-        proofFile = null;
-        comprobanteValidadoFile = null;
-        const inputComprobante = document.getElementById('proof-file');
-        if (inputComprobante) inputComprobante.value = '';
-        const mensaje = validacionContenido.mensaje || 'Comprobante inválido. Debes subir una captura auténtica y legible de un pago real.';
-        actualizarEstadoArchivoComprobante('Comprobante inválido. Sube una captura auténtica y legible de un pago real.');
-        mostrarModalValidacionComprobante(mensaje);
-        return;
-      }
     }
 
     // Congelamos la selección exacta que se va a comprar para que toda la operación
