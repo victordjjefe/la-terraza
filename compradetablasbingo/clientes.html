@@ -859,7 +859,7 @@
 
       <div class="lookup-card" id="lookup-card-disabled">
         <div class="card-title" style="justify-content:center;font-size:1.18rem;font-weight:900;color:var(--accent-gold);text-align:center;">
-          🎟️ ABRE AQUÍ TUS TABLAS
+          🎟️ CONSULTA AQUÍ TUS TABLAS COMPRADAS
         </div>
         <p style="color:var(--text-muted); margin-bottom:12px;text-align:center;font-weight:600;">
           Escribe tu número de WhatsApp y entra directamente a tus tablas.
@@ -889,7 +889,7 @@
 
       <div class="lookup-card">
         <div class="card-title" style="justify-content:center;font-size:1.18rem;font-weight:900;color:var(--accent-gold);text-align:center;">
-          🎟️ ABRE AQUÍ TUS TABLAS
+          🎟️ CONSULTA AQUÍ TUS TABLAS COMPRADAS
         </div>
         <p style="color:var(--text-muted); margin-bottom:12px;text-align:center;font-weight:600;">
           Escribe tu número de WhatsApp y entra directamente a tus tablas.
@@ -918,6 +918,10 @@
         </div>
         <small id="tables-selection-error" class="field-validation-message tables-validation-message" role="alert" aria-live="polite"></small>
         <div class="tables-grid" id="tables-container"></div>
+        <div id="tables-loading-status" role="status" aria-live="polite" style="display:none;grid-column:1/-1;text-align:center;padding:16px 14px;margin-top:10px;border:1px solid #cbd5e1;border-radius:12px;background:#f8fafc;color:#475569;font-weight:700;">
+          <span id="tables-loading-text">Cargando tablas disponibles...</span>
+          <button type="button" id="tables-loading-retry" style="display:none;margin:10px auto 0;padding:8px 14px;border:0;border-radius:8px;background:#334155;color:#fff;font-weight:700;">Reintentar</button>
+        </div>
         <div id="tables-pagination" class="tables-pagination hidden" aria-label="Páginas de tablas"></div>
         
         <div class="summary-box" style="margin-top: 14px;">
@@ -1069,7 +1073,7 @@
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
   import { 
-    getFirestore, doc, getDoc, setDoc, updateDoc, collection, documentId, 
+    getFirestore, doc, getDoc, getDocFromServer, setDoc, updateDoc, collection, documentId, 
     onSnapshot, runTransaction, getDocs, getDocsFromServer, query, where, limit, serverTimestamp 
   } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
@@ -1695,10 +1699,10 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
           Number(configAnterior.tablasHabilitadas) !== Number(config.tablasHabilitadas)
       )) {
         construirTablasDesdeRango();
-        cargarEstadosPagina(currentTablesPage).catch(error => {
-          console.error('Error actualizando el nuevo rango:', error);
-          renderTables();
-        });
+        inventarioCompraCargado = false;
+        inventarioCompraPromise = null;
+        pageAvailabilityCache.clear();
+        inventoryCache.clear();
       }
 
       const convertirFecha = (f,h) => f && h ? new Date(`${f.split('/').reverse().join('-')}T${h}`) : null;
@@ -1790,6 +1794,10 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
   const pageAvailabilityCache = new Map();
   let currentTablesPage = 1;
   let paginaEstadosCargando = false;
+  // El inventario solo se consulta cuando el cliente inicia una compra:
+  // al marcar tabla gratis o después de validar el comprobante.
+  let inventarioCompraCargado = false;
+  let inventarioCompraPromise = null;
 
   async function esperarConfiguracion(maxMs = 8000) {
     const inicio = Date.now();
@@ -1828,14 +1836,18 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
     return allTablesData.slice(inicio, inicio + TABLES_PER_PAGE);
   }
 
-  async function obtenerDocumentosPagina(tablasPagina) {
+  async function obtenerDocumentosPagina(tablasPagina, { forzarServidor = false } = {}) {
     const ids = [...new Set(tablasPagina.map(t => tableShardId(t.code)))];
     const now = Date.now();
-    const missing = ids.filter(id => {
+    const missing = forzarServidor ? ids : ids.filter(id => {
       const cached = inventoryCache.get(id);
       return !cached || now - cached.timestamp >= PAGE_AVAILABILITY_CACHE_TTL_MS;
     });
-    const fetched = await Promise.all(missing.map(id => getDoc(doc(db, INVENTORY_COLLECTION, id))));
+    const fetched = await Promise.all(missing.map(id =>
+      forzarServidor
+        ? getDocFromServer(doc(db, INVENTORY_COLLECTION, id))
+        : getDoc(doc(db, INVENTORY_COLLECTION, id))
+    ));
     fetched.forEach(snap => rememberShard(snap.id, snap.exists() ? snap.data() : { occupied: {} }));
     return ids.map(id => {
       const cached = inventoryCache.get(id);
@@ -1843,15 +1855,14 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
     });
   }
 
-  async function cargarEstadosPagina(pagina = currentTablesPage, { mostrar = true } = {}) {
+  async function cargarEstadosPagina(pagina = currentTablesPage, { mostrar = true, forzarServidor = false } = {}) {
     if (paginaEstadosCargando) return;
 
-    // Si esta página se consultó hace menos de 60 segundos, reutilizamos los
-    // estados que ya están en memoria y evitamos repetir las lecturas.
-    // Si alguien tomó una tabla entretanto, la transacción de selección lo detecta
-    // y refresca únicamente ese documento antes de permitir continuar.
+    // En navegación normal se conserva la caché para ahorrar lecturas.
+    // Al volver a una página de compra ya abierta se fuerza una lectura de servidor
+    // únicamente para los lotes de la página visible.
     const cachePagina = pageAvailabilityCache.get(pagina);
-    if (cachePagina && (Date.now() - cachePagina.timestamp) < PAGE_AVAILABILITY_CACHE_TTL_MS) {
+    if (!forzarServidor && cachePagina && (Date.now() - cachePagina.timestamp) < PAGE_AVAILABILITY_CACHE_TTL_MS) {
       ultimoRefrescoDisponibilidad = cachePagina.timestamp;
       if (mostrar) renderTables();
       return;
@@ -1872,7 +1883,7 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
         tabla.pedido = null;
       });
 
-      const shardSnaps = await obtenerDocumentosPagina(tablasPagina);
+      const shardSnaps = await obtenerDocumentosPagina(tablasPagina, { forzarServidor });
       const shardData = new Map(shardSnaps.map(snap => [snap.id, snap.exists() ? (snap.data()?.occupied || {}) : {}]));
       tablasPagina.forEach(tabla => {
         const data = shardData.get(tableShardId(tabla.code))?.[tabla.code];
@@ -1889,72 +1900,117 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
     }
   }
 
-  async function listenTables() {
-    const loader = document.getElementById('initial-loader');
-    const action = document.getElementById('loader-action');
-    const heading = document.getElementById('loader-heading');
-    if (loader) {
-      loader.style.display = 'none';
-      loader.classList.remove('error', 'is-hiding');
-    }
-    if (heading) heading.textContent = 'Cargando tablas...';
-    if (action) action.disabled = true;
+  function mostrarEstadoCargaTablas(tipo, mensaje) {
+    const box = document.getElementById('tables-loading-status');
+    const texto = document.getElementById('tables-loading-text');
+    const retry = document.getElementById('tables-loading-retry');
+    if (!box || !texto || !retry) return;
+    box.style.display = 'block';
+    box.style.borderColor = tipo === 'error' ? '#fecaca' : '#cbd5e1';
+    box.style.background = tipo === 'error' ? '#fef2f2' : '#f8fafc';
+    box.style.color = tipo === 'error' ? '#991b1b' : '#475569';
+    texto.textContent = mensaje;
+    retry.style.display = tipo === 'error' ? 'block' : 'none';
+  }
 
+  async function cargarInventarioParaCompra() {
+    if (inventarioCompraCargado) return true;
+    if (inventarioCompraPromise) return inventarioCompraPromise;
+
+    inventarioCompraPromise = (async () => {
+      mostrarEstadoCargaTablas('loading', '⏳ Cargando tablas disponibles. Esto puede tardar unos segundos...');
+      const retry = document.getElementById('tables-loading-retry');
+      if (retry) retry.style.display = 'none';
+      try {
+        const cfg = await esperarConfiguracion();
+        if (!cfg) throw new Error('No fue posible cargar la configuración del bingo.');
+        const inventoryMeta = await getDoc(doc(db, 'configuracion', 'estadoInventario'));
+        if (!inventoryMeta.exists() || Number(inventoryMeta.data()?.schemaVersion) !== 2 || Number(inventoryMeta.data()?.tablesPerShard) !== 20) {
+          throw new Error('El inventario todavía no está preparado. Intenta nuevamente en unos segundos.');
+        }
+
+        // Solo se consulta la página que el cliente va a utilizar. No se descargan
+        // pedidos completos ni se hace una reconciliación masiva al entrar.
+        construirTablasDesdeRango();
+        await cargarEstadosPagina(currentTablesPage, { mostrar: false });
+        inventarioCompraCargado = true;
+        mostrarEstadoCargaTablas('success', '✓ Tablas disponibles. Ya puedes seleccionar.');
+        const box = document.getElementById('tables-loading-status');
+        if (box) box.style.display = 'none';
+        renderTables();
+        return true;
+      } catch (error) {
+        console.error('Error cargando tablas para la compra:', error);
+        mostrarEstadoCargaTablas('error', 'No fue posible cargar las tablas. Verifica tu conexión e inténtalo nuevamente.');
+        return false;
+      } finally {
+        inventarioCompraPromise = null;
+      }
+    })();
+    return inventarioCompraPromise;
+  }
+
+  async function listenTables() {
+    // La entrada a la plataforma y las consultas de tablas existentes no cargan
+    // el inventario de compra. Solo preparamos el rango local sin leer Firebase.
     try {
       const cfg = await esperarConfiguracion();
-      if (!cfg) throw new Error('No fue posible cargar la configuración del bingo.');
-      const inventoryMeta = await getDoc(doc(db, 'configuracion', 'estadoInventario'));
-      if (!inventoryMeta.exists() || Number(inventoryMeta.data()?.schemaVersion) !== 2 || Number(inventoryMeta.data()?.tablesPerShard) !== 20) {
-        throw new Error('El inventario está en proceso de migración. El administrador debe abrir el panel de configuración y esperar a que finalice la preparación de las tablas.');
-      }
-
-      // No publicar tablas como disponibles hasta reconciliar el inventario
-      // contra los pedidos vigentes guardados en el servidor.
-      await reconciliarInventarioConPedidos();
+      if (!cfg) return;
       construirTablasDesdeRango();
-      await cargarEstadosPagina(currentTablesPage, { mostrar: false });
-      renderTables();
-      // La página ya está visible: el inventario se cargó en segundo plano.
-      if (loader) { loader.style.display = 'none'; loader.classList.remove('error'); }
+      const loader = document.getElementById('initial-loader');
+      if (loader) { loader.style.display = 'none'; loader.classList.remove('error', 'is-hiding'); }
 
-      // La recuperación de una reserva previa ya no bloquea la pantalla inicial.
-      // Evita consultar las reservas de cada visitante nuevo que nunca seleccionó tablas.
-      // Conserva la recuperación normal si hay una reserva guardada de este navegador.
+      // Solo se consulta la reserva previa si este navegador realmente tenía
+      // una selección guardada; los visitantes que solo consultan no generan lecturas.
       let hayReservaLocal = false;
       try {
         const guardada = JSON.parse(localStorage.getItem('ltb_current_reservation') || 'null');
         hayReservaLocal = Boolean(guardada && guardada.clientId === myClientId &&
           Array.isArray(guardada.tables) && guardada.tables.length > 0);
-      } catch (e) { /* Un dato local inválido no impide comprar. */ }
+      } catch (e) { /* Un dato local inválido no impide consultar ni comprar. */ }
       if (hayReservaLocal) {
         recuperarTiempoReservaPropia().catch(e => {
           console.error('No fue posible recuperar la reserva previa:', e);
         });
       }
     } catch (error) {
-      console.error('Error inicializando las tablas:', error);
-
-      if (config) {
-        construirTablasDesdeRango();
-        renderTables();
-      } else {
-        const enabled = document.getElementById('enabled-screen');
-        const disabled = document.getElementById('disabled-screen');
-        if (enabled) enabled.classList.add('hidden');
-        if (disabled) disabled.classList.remove('hidden');
-        const title = document.getElementById('disabled-message-title');
-        const body = document.getElementById('disabled-message-body');
-        if (title) title.textContent = 'NO FUE POSIBLE CARGAR EL BINGO';
-        if (body) body.textContent = 'Verifica tu conexión e intenta ingresar nuevamente.';
-      }
-      if (loader) { loader.classList.add('error'); loader.style.display = 'flex'; }
-      if (heading) heading.textContent = 'No fue posible cargar las tablas. Verifica tu conexión e inténtalo de nuevo.';
-      if (action) {
-        action.textContent = 'REINTENTAR CARGA';
-        action.disabled = false;
-      }
+      console.error('No fue posible preparar el rango de tablas:', error);
     }
   }
+
+  document.getElementById('tables-loading-retry')?.addEventListener('click', () => {
+    cargarInventarioParaCompra();
+  });
+
+  // Al regresar a la página (Atrás/Adelante o volver a la pestaña), actualiza
+  // solo los lotes de la página visible desde el servidor. No se ejecuta al entrar
+  // por primera vez ni para visitantes que únicamente consultan sus compras.
+  let ultimaActualizacionAlRegresar = 0;
+  async function actualizarInventarioAlRegresar() {
+    if (!inventarioCompraCargado || purchaseStage === 'payment' || paginaEstadosCargando) return;
+    const ahora = Date.now();
+    if (ahora - ultimaActualizacionAlRegresar < 1200) return;
+    ultimaActualizacionAlRegresar = ahora;
+    const box = document.getElementById('tables-loading-status');
+    if (box) {
+      mostrarEstadoCargaTablas('loading', '⏳ Actualizando disponibilidad de las tablas...');
+    }
+    try {
+      await cargarEstadosPagina(currentTablesPage, { mostrar: true, forzarServidor: true });
+      const estado = document.getElementById('tables-loading-status');
+      if (estado) estado.style.display = 'none';
+    } catch (error) {
+      console.error('No fue posible actualizar la disponibilidad al regresar:', error);
+      mostrarEstadoCargaTablas('error', 'No fue posible actualizar las tablas. Puedes reintentar.');
+    }
+  }
+
+  window.addEventListener('pageshow', event => {
+    if (event.persisted) actualizarInventarioAlRegresar();
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') actualizarInventarioAlRegresar();
+  });
 
   const loaderAction = document.getElementById('loader-action');
   if (loaderAction) loaderAction.addEventListener('click', () => {
@@ -1999,6 +2055,7 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
 
   async function refrescarDisponibilidadAlVolver() {
     const ahora = Date.now();
+    if (!inventarioCompraCargado) return;
     if (refrescoDisponibilidadEnCurso) return;
     if (ahora - ultimoRefrescoDisponibilidad < 60000) return;
     if (document.visibilityState && document.visibilityState !== 'visible') return;
@@ -2027,6 +2084,10 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
     if (destino === currentTablesPage && !paginaEstadosCargando) return;
 
     currentTablesPage = destino;
+    if (!inventarioCompraCargado) {
+      mostrarEstadoCargaTablas('loading', 'Activa la compra para cargar las tablas disponibles.');
+      return;
+    }
     const container = document.getElementById('tables-container');
     if (container) {
       container.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:18px;font-weight:800;color:#64748b;">Actualizando disponibilidad…</div>';
@@ -2145,6 +2206,10 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
     const now = Date.now();
 
     container.innerHTML = '';
+    if (!inventarioCompraCargado) {
+      if (noTablesMessage) noTablesMessage.classList.add('hidden');
+      return;
+    }
 
     allTablesData.sort((a,b) => a.code.localeCompare(b.code, undefined, {numeric: true, sensitivity: 'base'}));
 
@@ -2719,12 +2784,13 @@ function startReservationTimer() {
     return resultado;
   }
 
-  document.getElementById('declara-tabla-gratis').addEventListener('change', () => {
+  document.getElementById('declara-tabla-gratis').addEventListener('change', async () => {
     const gratis = declaraCortesia();
     freeTableFlow = gratis;
     document.getElementById('proof-file').required = exigeComprobante();
     if (gratis) {
       actualizarEtapaCompra('buyer');
+      await cargarInventarioParaCompra();
     } else {
       actualizarEtapaCompra('payment');
       actualizarEstadoArchivoComprobante();
@@ -2986,6 +3052,8 @@ function startReservationTimer() {
     }
 
     proofFile = file;
+    // La carga del inventario comienza solo después de validar el comprobante.
+    await cargarInventarioParaCompra();
     const estadoComprobanteValido = document.getElementById('proof-file-status');
     if (estadoComprobanteValido) {
       estadoComprobanteValido.classList.remove('error');
@@ -3703,7 +3771,7 @@ document.addEventListener('DOMContentLoaded', () => {
     campoNumero.setAttribute('aria-invalid', valor.length > 0 && !correcto ? 'true' : 'false');
     campoNumero.style.borderColor = valor.length > 0 ? (correcto ? '#10b981' : '#ef4444') : '';
     if (aviso) {
-      aviso.textContent = !valor ? 'Escribe tu WhatsApp para consultar o registrar tus tablas.' : correcto ? '✓ Número listo para continuar' : esColombia(campoIndicativo) ? '⚠ Debe tener 10 dígitos y comenzar por 3. Revisa el número.' : '⚠ Revisa el número y el indicativo internacional.';
+      aviso.textContent = !valor ? '' : correcto ? '✓ Número listo para continuar' : esColombia(campoIndicativo) ? '⚠ Debe tener 10 dígitos y comenzar por 3. Revisa el número.' : '⚠ Revisa el número y el indicativo internacional.';
       aviso.style.color = correcto ? '#047857' : valor ? '#b91c1c' : '#64748b';
     }
   }
