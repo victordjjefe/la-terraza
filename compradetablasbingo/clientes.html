@@ -2484,14 +2484,34 @@ function startReservationTimer() {
   }
 
   function textoPareceComprobantePago(textoOCR) {
-    const texto = String(textoOCR || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-    const palabrasPago = /comprobante|transferencia|transaccion|pago|pagaste|recibiste|enviaste|enviado|recibido|operacion exitosa|transaccion exitosa|pago exitoso|aprobada|aprobado|movimiento|numero de aprobacion|detalle del pago|detalle de transaccion/.test(texto);
-    const entidadFinanciera = /nequi|daviplata|bancolombia|davivienda|bbva|banco de bogota|banco popular|banco de occidente|av villas|scotiabank|colpatria|transfiya|pse|dale|movii|nu bank|banco caja social|finandina|itau|bold|mercado pago|mercadopago/.test(texto);
+    const texto = String(textoOCR || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    // Señales habituales de comprobantes de bancos y billeteras colombianas.
+    // Se incluyen variantes de texto que suelen aparecer en capturas comprimidas.
+    const palabrasPago = /comprobante|transferencia|transaccion|pago|pagaste|recibiste|enviaste|enviado|recibido|operacion exitosa|transaccion exitosa|pago exitoso|envio exitoso|transferencia exitosa|aprobada|aprobado|movimiento|numero de aprobacion|detalle del pago|detalle de transaccion|completada|exitosamente/.test(texto);
+    const entidadFinanciera = /nequi|daviplata|bancolombia|davivienda|bbva|banco de bogota|banco popular|banco de occidente|av villas|scotiabank|colpatria|transfiya|pse|dale|movii|nu bank|nubank|banco caja social|finandina|itau|bold|mercado pago|mercadopago/.test(texto);
     const camposTransaccion = /valor|monto|total|fecha|hora|referencia|destino|destinatario|origen|cuenta|numero|id de transaccion|id transaccion|cop|pesos|saldo/.test(texto);
     const contieneImporteONumero = /(?:\$\s?\d[\d.,]*|\b\d[\d.,]{2,}\b)/.test(texto);
-    // Se exigen varias señales independientes para no aceptar una foto o un logo con una sola palabra.
+
+    // Antes se exigían 3 de 4 grupos. Eso rechazaba capturas reales cuando
+    // WhatsApp comprimía la imagen o el OCR omitía una parte del texto.
+    // Ahora bastan 2 señales independientes, pero deben incluir contexto
+    // de pago/banco y además algún dato de transacción o importe.
     const grupos = [palabrasPago, entidadFinanciera, camposTransaccion, contieneImporteONumero].filter(Boolean).length;
-    return { valido: grupos >= 3 && (palabrasPago || entidadFinanciera) && (camposTransaccion || contieneImporteONumero), texto, grupos };
+    const tieneContextoPago = palabrasPago || entidadFinanciera;
+    const tieneDatoTransaccion = camposTransaccion || contieneImporteONumero;
+    const textoSuficiente = texto.length >= 10;
+
+    return {
+      valido: textoSuficiente && grupos >= 2 && tieneContextoPago && tieneDatoTransaccion,
+      texto,
+      grupos
+    };
   }
 
   async function validarComprobantePorContenido(file) {
