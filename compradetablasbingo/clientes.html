@@ -2047,7 +2047,7 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
     const comprador = document.getElementById('card-buyer-section');
     const tablas = document.getElementById('card-tables-section');
     const acciones = document.getElementById('action-buttons-container');
-    if (pago) pago.classList.toggle('hidden', etapa !== 'payment' && etapa !== 'buyer' && etapa !== 'tables');
+    if (pago) pago.classList.toggle('hidden', etapa !== 'payment');
     if (comprador) comprador.classList.toggle('hidden', etapa === 'payment');
     if (tablas) tablas.classList.toggle('hidden', etapa === 'payment');
     if (acciones) acciones.classList.toggle('hidden', etapa === 'payment');
@@ -2358,15 +2358,8 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
     if (acciones) acciones.classList.add('hidden');
     if (flotantes) flotantes.classList.toggle('visible', mostrarAcciones);
     document.body.classList.toggle('has-floating-purchase-actions', mostrarAcciones);
-    const proofGroup = document.getElementById('proof-group-container');
     const proofInput = document.getElementById('proof-file');
-    const esCortesia = declaraCortesia();
-    if (proofGroup) proofGroup.classList.toggle('hidden', esCortesia);
-    if (proofInput) proofInput.required = !esCortesia;
-    if (esCortesia) {
-      const status = document.getElementById('proof-file-status');
-      if (status) status.textContent = '🎁 Tabla gratis: no necesitas comprobante.';
-    }
+    if (proofInput) proofInput.required = exigeComprobante();
   }
 
   
@@ -2675,12 +2668,7 @@ function startReservationTimer() {
     const gratis = declaraCortesia();
     freeTableFlow = gratis;
     document.getElementById('proof-file').required = exigeComprobante();
-    document.getElementById('proof-group-container').classList.toggle('hidden', gratis);
     if (gratis) {
-      proofFile = null;
-      document.getElementById('proof-file').value = '';
-      limpiarVistaPreviaComprobante();
-      document.getElementById('proof-file-status').textContent = '🎁 Tabla gratis: no necesitas comprobante.';
       actualizarEtapaCompra('buyer');
     } else {
       actualizarEtapaCompra('payment');
