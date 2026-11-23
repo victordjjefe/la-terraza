@@ -854,10 +854,6 @@
       <div class="card" id="payment-section-card">
         <div class="card-title">Pago y Comprobante</div>
         
-        <div style="background: #eff6ff; border: 1px solid #3b82f6; border-radius: var(--radius-sm); padding: 18px 16px; margin-bottom: 16px; font-size: 1.08rem; color: #1e40af; line-height: 1.55; font-weight: 500;">
-          📸 <b>¡Importante!</b> Realiza tu pago y sube una <b>captura de pantalla del comprobante</b>. Si tu comprobante está en PDF, ábrelo y toma una captura de pantalla. Luego selecciona esa imagen desde tu galería.
-        </div>
-
         <div class="payment-box">
           <p style="font-size:0.95rem; color:var(--text-main); margin-bottom: 8px; line-height: 1.4;">
             Realiza el pago por <b>Nequi</b>, <b>Daviplata</b> o <b>Llave</b> a nombre de <b>Víctor Rosas</b>:
@@ -881,7 +877,7 @@
         </div>
 
         <label class="cortesia-choice" for="declara-tabla-gratis"><input type="checkbox" id="declara-tabla-gratis"> <span>🎁 Me gané una tabla gratis</span></label>
-        <div class="hidden" style="display: flex; gap: 10px; margin-top: 14px;" id="action-buttons-container">
+        <div class="hidden" style="display: none !important;" id="action-buttons-container" aria-hidden="true">
           <button class="btn btn-danger" id="btn-cancel-purchase" style="flex: 1;">Cancelar</button>
           <button class="btn btn-success" id="btn-finish-order" style="flex: 2;" disabled>Registrar / Comprar</button>
         </div>
@@ -1947,13 +1943,13 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
     if (comprador) comprador.classList.toggle('hidden', etapa === 'payment');
     if (tablas) tablas.classList.toggle('hidden', etapa === 'payment');
     if (acciones) acciones.classList.toggle('hidden', etapa === 'payment');
-    // Las acciones de compra solo aparecen cuando ya existe al menos una
-    // tabla seleccionada. updateSummary mantiene sincronizada esta visibilidad.
-    const hayTablasSeleccionadas = selectedTables.length > 0;
+    // Mostrar siempre el único par de acciones flotantes desde que se habilita
+    // el formulario del comprador, aunque todavía no haya tablas seleccionadas.
+    const mostrarAccionesFlotantes = etapa !== 'payment';
     const floatingActions = document.getElementById('floating-purchase-actions');
-    if (floatingActions) floatingActions.classList.toggle('visible', etapa !== 'payment' && hayTablasSeleccionadas);
-    document.body.classList.toggle('has-floating-purchase-actions', etapa !== 'payment' && hayTablasSeleccionadas);
-    if (acciones) acciones.classList.toggle('hidden', etapa === 'payment' || !hayTablasSeleccionadas);
+    if (floatingActions) floatingActions.classList.toggle('visible', mostrarAccionesFlotantes);
+    document.body.classList.toggle('has-floating-purchase-actions', mostrarAccionesFlotantes);
+    if (acciones) acciones.classList.add('hidden');
     if (etapa === 'buyer') comprador?.scrollIntoView({behavior:'smooth', block:'start'});
     if (etapa === 'tables') tablas?.scrollIntoView({behavior:'smooth', block:'start'});
   }
@@ -2095,8 +2091,8 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
 
     try {
       if (index > -1) {
-        // Primero confirmamos la liberación en Firebase; luego cambiamos la interfaz.
-        await releaseTableIfOwned(code);
+        // Respuesta optimista: quitamos la marca de inmediato y después
+        // liberamos la reserva en Firebase, sin bloquear la interacción visual.
         selectedTables = selectedTables.filter(c => c !== code);
 
         if (selectedTables.length === 0) {
@@ -2110,6 +2106,34 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
         saveLocalReservation();
         updateSummary();
         renderTables();
+
+        try {
+          const liberada = await releaseTableIfOwned(code);
+          if (!liberada) {
+            // Si Firebase confirma que ya no era una reserva propia, sincronizamos
+            // solamente esta tabla para reflejar su estado real.
+            await refrescarTablaLocal(code);
+          }
+        } catch (releaseError) {
+          console.error('No fue posible liberar la tabla en Firebase:', code, releaseError);
+          // Si falla la red, restauramos la selección local para no ocultar
+          // una reserva que podría seguir activa en Firebase.
+          if (!selectedTables.includes(code)) selectedTables.push(code);
+          const tabla = allTablesData.find(t => String(t.code) === String(code));
+          if (tabla) {
+            tabla.status = 'RESERVADA';
+            tabla.reservedBy = myClientId;
+            tabla.reservedUntil = reservationDeadline || reservationEndTime || (Date.now() + HOLD_TIME_MINUTES * 60 * 1000);
+          }
+          if (!reservationEndTime) {
+            reservationEndTime = tabla?.reservedUntil || (Date.now() + HOLD_TIME_MINUTES * 60 * 1000);
+            startReservationTimer();
+            document.getElementById('reservation-timer-box').classList.remove('hidden');
+          }
+          saveLocalReservation();
+          updateSummary();
+          renderTables();
+        }
         return;
       }
 
@@ -2200,11 +2224,11 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
     document.getElementById('summary-qty').textContent = qty;
     document.getElementById('summary-total').textContent = `$${total.toLocaleString()}`;
 
-    document.getElementById('btn-finish-order').disabled = qty === 0;
-    const mostrarAcciones = qty > 0 && purchaseStage !== 'payment';
+    document.getElementById('btn-finish-order').disabled = false;
+    const mostrarAcciones = purchaseStage !== 'payment';
     const acciones = document.getElementById('action-buttons-container');
     const flotantes = document.getElementById('floating-purchase-actions');
-    if (acciones) acciones.classList.toggle('hidden', !mostrarAcciones);
+    if (acciones) acciones.classList.add('hidden');
     if (flotantes) flotantes.classList.toggle('visible', mostrarAcciones);
     document.body.classList.toggle('has-floating-purchase-actions', mostrarAcciones);
     const proofGroup = document.getElementById('proof-group-container');
