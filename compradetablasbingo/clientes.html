@@ -112,6 +112,9 @@
       margin-top: 4px;
     }
 
+    .field-validation-message{display:none;color:#b42318;background:#fff5f4;border:1px solid #fecdca;border-radius:8px;padding:7px 10px;margin-top:7px;font-size:.88rem;font-weight:700;line-height:1.35}
+    .field-validation-message.visible{display:block}
+    .tables-validation-message{margin:0 0 10px}
     .tables-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
@@ -823,6 +826,7 @@
             <b>Reserva:</b> <span id="timer-display">03:00</span>
           </div>
         </div>
+        <small id="tables-selection-error" class="field-validation-message tables-validation-message" role="alert" aria-live="polite"></small>
         <div class="tables-grid" id="tables-container"></div>
         <div id="tables-pagination" class="tables-pagination hidden" aria-label="Páginas de tablas"></div>
         
@@ -842,21 +846,23 @@
         </div>
       </div>
 
-      <div id="purchase-validation-message" role="alert" aria-live="assertive" class="hidden" style="background:#fff7ed;border:1px solid #fdba74;color:#9a3412;padding:12px 14px;border-radius:10px;font-weight:700;margin:0 0 14px;"></div>
       <div class="card hidden" id="card-buyer-section">
         <div class="card-title">Datos de Registro</div>
         <div class="form-group">
           <label>Nombre y Apellido</label>
-          <input type="text" id="buyer-name" class="form-control" placeholder="Ej: Juan Pérez">
+          <input type="text" id="buyer-name" class="form-control" placeholder="Ej: Juan Pérez" aria-describedby="buyer-name-error">
+          <small id="buyer-name-error" class="field-validation-message" role="alert" aria-live="polite"></small>
         </div>
         <div class="form-group">
           <label>Referencia, Ciudad, Barrio</label>
-          <input type="text" id="buyer-address" class="form-control" placeholder="Ej: Cali - El Limonar - Casa 12">
+          <input type="text" id="buyer-address" class="form-control" placeholder="Ej: Cali - El Limonar - Casa 12" aria-describedby="buyer-address-error">
+          <small id="buyer-address-error" class="field-validation-message" role="alert" aria-live="polite"></small>
         </div>
         <div class="form-group">
           <label>Número de WhatsApp</label>
-          <div class="phone-row"><div class="country-code-wrap"><input id="buyer-country" class="form-control country-code" value="+57" readonly autocomplete="off" aria-haspopup="listbox" aria-expanded="false"><div class="country-code-menu" role="listbox"><div class="country-code-option" data-value="+57" role="option">+57 Colombia</div><div class="country-code-option" data-value="INTERNACIONAL" role="option">Digitar código internacional</div></div></div><input type="tel" id="buyer-phone" class="form-control" placeholder="Ej: 3001234567">
+          <div class="phone-row"><div class="country-code-wrap"><input id="buyer-country" class="form-control country-code" value="+57" readonly autocomplete="off" aria-haspopup="listbox" aria-expanded="false"><div class="country-code-menu" role="listbox"><div class="country-code-option" data-value="+57" role="option">+57 Colombia</div><div class="country-code-option" data-value="INTERNACIONAL" role="option">Digitar código internacional</div></div></div><input type="tel" id="buyer-phone" class="form-control" placeholder="Ej: 3001234567" aria-describedby="buyer-phone-error">
 </div>
+          <small id="buyer-phone-error" class="field-validation-message" role="alert" aria-live="polite"></small>
         </div>
       </div>
 
@@ -2950,27 +2956,31 @@ function startReservationTimer() {
     buyerNameInput.value = buyerName;
     buyerAddressInput.value = buyerAddress;
 
-    // Informar en un solo mensaje exactamente cuáles datos faltan.
-    const datosFaltantes = [];
-    if (!buyerName) datosFaltantes.push('nombre');
-    if (!buyerAddress) datosFaltantes.push('referencia');
-    if (!buyerPhoneRaw) datosFaltantes.push('número de WhatsApp');
-    if (selectedTables.length === 0) datosFaltantes.push('marcar al menos una tabla');
-    if (datosFaltantes.length) {
-      const faltantesTexto = datosFaltantes.length === 1
-        ? datosFaltantes[0]
-        : datosFaltantes.length === 2
-          ? datosFaltantes.join(' y ')
-          : datosFaltantes.slice(0, -1).join(', ') + ' y ' + datosFaltantes[datosFaltantes.length - 1];
-      const validationMessage = document.getElementById('purchase-validation-message');
-      if (validationMessage) {
-        validationMessage.textContent = 'Por favor complete lo siguiente: ' + faltantesTexto + '.';
-        validationMessage.classList.remove('hidden');
-        validationMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-      if (!buyerName) buyerNameInput.focus();
-      else if (!buyerAddress) buyerAddressInput.focus();
-      else if (!buyerPhoneRaw) buyerPhoneInput.focus();
+    // Validación progresiva: un solo requisito por intento, junto al campo correspondiente.
+    const mensajesValidacion = [
+      ['buyer-name-error', buyerNameInput, !buyerName, 'Por favor, ingresa tu nombre y apellido.'],
+      ['buyer-address-error', buyerAddressInput, !buyerAddress, 'Por favor, ingresa tu referencia o ciudad.'],
+      ['buyer-phone-error', buyerPhoneInput, !buyerPhoneRaw, 'Por favor, ingresa tu número de WhatsApp.']
+    ];
+    ['buyer-name-error','buyer-address-error','buyer-phone-error','tables-selection-error'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.textContent = ''; el.classList.remove('visible'); }
+    });
+    const primerCampoPendiente = mensajesValidacion.find(item => item[2]);
+    if (primerCampoPendiente) {
+      const [mensajeId, input, , texto] = primerCampoPendiente;
+      const aviso = document.getElementById(mensajeId);
+      aviso.textContent = texto;
+      aviso.classList.add('visible');
+      input.scrollIntoView({behavior:'smooth',block:'center'});
+      setTimeout(() => input.focus({preventScroll:true}), 250);
+      return;
+    }
+    if (selectedTables.length === 0) {
+      const avisoTablas = document.getElementById('tables-selection-error');
+      avisoTablas.textContent = 'Por favor, marca al menos una tabla.';
+      avisoTablas.classList.add('visible');
+      document.getElementById('card-tables-section')?.scrollIntoView({behavior:'smooth',block:'center'});
       return;
     }
 
@@ -3338,6 +3348,16 @@ function startReservationTimer() {
     }
   }
 
+
+
+  // Oculta cada aviso en cuanto el comprador empieza a corregir ese campo.
+  [['buyer-name','buyer-name-error'],['buyer-address','buyer-address-error'],['buyer-phone','buyer-phone-error']].forEach(([inputId,errorId]) => {
+    const input = document.getElementById(inputId);
+    input?.addEventListener('input', () => {
+      const aviso = document.getElementById(errorId);
+      if (aviso) { aviso.textContent = ''; aviso.classList.remove('visible'); }
+    });
+  });
 
   document.getElementById('btn-lookup').addEventListener('click', ()=>{
     const ventana = window.open('about:blank', '_blank');
