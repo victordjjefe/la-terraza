@@ -324,6 +324,9 @@
 
 
 
+    .manual-action-buttons{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin-top:14px}
+    .manual-action-buttons .btn{width:auto;min-width:0;padding:8px 13px;font-size:.82rem;line-height:1.2}
+    .manual-action-buttons .btn:disabled{opacity:.55;cursor:not-allowed}
     .manual-tables-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(66px,1fr));gap:8px;max-height:56vh;overflow-y:auto;padding:2px}
     .manual-table-btn{border:1px solid var(--border-color);background:#fff;color:var(--text-main);border-radius:8px;padding:11px 5px;font-weight:800;cursor:pointer;min-height:44px}
     .manual-table-btn.available{border-color:#86efac;background:#f0fdf4;color:#166534}
@@ -730,8 +733,10 @@
           <p class="manual-help">Todavía no has seleccionado tablas.</p>
         </div>
         <p id="manual-selection-summary" class="manual-help"></p>
-        <button type="button" class="btn btn-success" id="btn-manual-register" style="margin-top:14px;" disabled>Registrar tablas</button>
-        <button type="button" class="btn btn-dark" id="btn-manual-clear" style="margin-top:8px;">Limpiar selección</button>
+        <div class="manual-action-buttons">
+          <button type="button" class="btn btn-success btn-sm" id="btn-manual-register" disabled>Registrar tablas</button>
+          <button type="button" class="btn btn-dark btn-sm" id="btn-manual-clear">Limpiar selección</button>
+        </div>
       </div>
     </div>
   </main>
@@ -756,8 +761,11 @@
       <button class="btn btn-sm btn-dark" id="btn-close-release-modal">✕</button>
     </div>
     <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 12px;">
-      Selecciona la tabla que deseas liberar de este registro:
+      Puedes liberar una tabla individual o liberar todas las tablas de este registro:
     </p>
+    <div style="display:flex;justify-content:flex-start;margin-bottom:12px;">
+      <button type="button" class="btn btn-sm btn-danger" id="btn-release-all-tables">Liberar todas las tablas</button>
+    </div>
     <div id="release-tables-buttons-container" style="display: flex; flex-direction: column; gap: 8px; max-height: 50vh; overflow-y: auto;">
       <!-- Botones dinámicos de las tablas del pedido -->
     </div>
@@ -1250,14 +1258,82 @@
     }
 
     const container = document.getElementById('release-tables-buttons-container');
+    const bulkButton = document.getElementById('btn-release-all-tables');
     container.innerHTML = '';
+
+    // Liberación masiva: elimina todas las tablas del pedido y deja el registro
+    // cancelado en una sola escritura agrupada de Firestore.
+    bulkButton.disabled = false;
+    bulkButton.textContent = `Liberar todas las tablas (${order.tablas.length})`;
+    bulkButton.onclick = async () => {
+      const tablesToRelease = [...(order.tablas || [])];
+      if (!tablesToRelease.length) {
+        alert('Este registro ya no tiene tablas para liberar.');
+        return;
+      }
+
+      const confirmar = confirm(
+        `¿Confirmas liberar TODAS las ${tablesToRelease.length} tabla(s) del Registro #${order.id}? Todas quedarán disponibles nuevamente y el registro pasará a CANCELADO.`
+      );
+      if (!confirmar) return;
+
+      try {
+        bulkButton.disabled = true;
+        bulkButton.textContent = 'Liberando todas...';
+        container.querySelectorAll('button').forEach(button => button.disabled = true);
+
+        const batch = writeBatch(db);
+        tablesToRelease.forEach(tableCode => {
+          batch.delete(doc(db, 'tablas', tableCode));
+        });
+
+        batch.update(doc(db, 'pedidos', order.firestoreId), {
+          tablas: [],
+          total: 0,
+          estado: 'CANCELADO',
+          comprobanteURL: null,
+          comprobante: null
+        });
+
+        // Se conserva el registro de integridad utilizado por la liberación individual.
+        // Se agrega un evento por cada tabla liberada.
+        tablesToRelease.forEach(tableCode => {
+          const auditRef = doc(collection(db, 'integridad_tablas'));
+          batch.set(auditRef, {
+            tabla: tableCode,
+            accion: 'LIBERACION_MANUAL',
+            motivo: 'Liberación masiva de todas las tablas del pedido',
+            pedido: order.id || '',
+            fecha: new Date().toISOString()
+          });
+        });
+
+        await batch.commit();
+
+        order.tablas = [];
+        order.total = 0;
+        order.estado = 'CANCELADO';
+        renderOrders();
+        document.getElementById('modal-release-table').style.display = 'none';
+
+        alert(
+          `Se liberaron correctamente ${tablesToRelease.length} tabla(s). Todas están disponibles nuevamente y el Registro #${order.id} quedó CANCELADO.`
+        );
+      } catch (err) {
+        console.error('Error al liberar todas las tablas:', err);
+        alert('No fue posible liberar todas las tablas: ' + err.message);
+        bulkButton.disabled = false;
+        bulkButton.textContent = `Liberar todas las tablas (${(order.tablas || []).length})`;
+        container.querySelectorAll('button').forEach(button => button.disabled = false);
+      }
+    };
 
     order.tablas.forEach(tableCode => {
       const btn = document.createElement('button');
       btn.className = 'btn btn-sm btn-danger';
       btn.textContent = `Liberar tabla ${tableCode}`;
       btn.style.width = '100%';
-      
+
       btn.addEventListener('click', async () => {
         const confirmar = confirm(`¿Estás seguro de liberar la tabla ${tableCode} del Registro #${order.id}? Quedará disponible nuevamente.`);
         if (!confirmar) return;
@@ -1270,12 +1346,9 @@
           const updatedTablas = order.tablas.filter(t => t !== tableCode);
           const orderRef = doc(db, 'pedidos', order.firestoreId);
           const newTotal = updatedTablas.length * (configValor() || 0);
-
-          // Una sola escritura agrupada para evitar esperas y bloqueos en celular.
           const batch = writeBatch(db);
 
-          // En el modelo escalable, un documento inexistente significa DISPONIBLE.
-          // Al liberar se elimina el documento para mantener la colección liviana.
+          // Un documento de tabla inexistente equivale a DISPONIBLE.
           batch.delete(tableRef);
 
           if (updatedTablas.length === 0) {
@@ -1303,10 +1376,9 @@
             fecha: new Date().toISOString()
           });
 
-          // Actualización inmediata de pantalla.
           order.tablas = updatedTablas;
           order.total = newTotal;
-          if(updatedTablas.length === 0) order.estado = 'CANCELADO';
+          if (updatedTablas.length === 0) order.estado = 'CANCELADO';
           renderOrders();
 
           const modalConfirm = document.createElement('div');
@@ -1322,11 +1394,17 @@
 
           modalConfirm.querySelector('#btn-confirm-release-success').onclick = () => {
             modalConfirm.remove();
-            document.getElementById('modal-release-table').style.display = 'none';
+            if (updatedTablas.length === 0) {
+              document.getElementById('modal-release-table').style.display = 'none';
+            } else {
+              openReleaseModal(order.firestoreId);
+            }
           };
         } catch (err) {
           console.error("Error al liberar la tabla individual:", err);
           alert("Error al liberar la tabla: " + err.message);
+          btn.disabled = false;
+          btn.textContent = `Liberar tabla ${tableCode}`;
         }
       });
 
@@ -2255,10 +2333,14 @@ function seleccionarFormaPago(order){
   }
 
   async function manualClearSelection() {
+    // Libera en Firebase todas las reservas de esta operación y limpia también
+    // los datos del formulario, para dejar el módulo listo desde cero.
     for (const code of [...manualSelected.keys()]) {
       try { await manualReleaseTable(code); }
       catch (error) { console.error('Error liberando selección manual:', code, error); }
     }
+    document.getElementById('form-manual-client').reset();
+    document.getElementById('manual-client-country').value = '+57';
     manualRenderTables();
   }
 
