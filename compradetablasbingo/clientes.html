@@ -982,6 +982,7 @@
             <input type="file" id="proof-file" accept="image/jpeg,image/png,.jpg,.jpeg,.png" required aria-describedby="proof-file-status">
           </label>
           <div id="proof-file-status" role="status" aria-live="polite">⚠️ Todavía no has adjuntado tu comprobante. Solo se aceptan imágenes JPG o PNG.</div>
+          <button type="button" id="btn-remove-proof-free" class="btn btn-danger hidden" style="width:100%;margin-top:10px;">Eliminar comprobante y registrar solo mi tabla gratis</button>
           <div id="proof-preview-wrap" class="hidden" style="margin-top:12px;text-align:center;"><img id="proof-preview-image" alt="Vista previa temporal del comprobante" style="display:block;max-width:100%;max-height:260px;margin:0 auto;border-radius:12px;border:1px solid #cbd5e1;object-fit:contain;"><small style="display:block;margin-top:6px;color:#92400e;font-weight:600;">¡Comprobante recibido! Pago sujeto a verificación bancaria.</small></div>
         </div>
 
@@ -2641,6 +2642,7 @@ function startReservationTimer() {
     localStorage.removeItem('ltb_current_reservation');
     if (history.state?.ltbPurchaseComplete) history.replaceState(null, '', location.href);
     proofFile = null;
+    document.getElementById('btn-remove-proof-free')?.classList.add('hidden');
     freeTableFlow = false;
     limpiarVistaPreviaComprobante();
     document.getElementById('declara-tabla-gratis').checked = false;
@@ -3028,10 +3030,25 @@ function startReservationTimer() {
     if (e.key === 'Escape' && proofValidationModal.classList.contains('active') && !proofValidationModal.classList.contains('is-loading')) cerrarModalValidacionComprobante();
   });
 
+  document.getElementById('btn-remove-proof-free')?.addEventListener('click', () => {
+    proofFile = null;
+    comprobanteValidadoFile = null;
+    comprobanteParaTablasAdicionales = false;
+    comprobanteValidacionPromise = null;
+    const input = document.getElementById('proof-file');
+    if (input) input.value = '';
+    limpiarVistaPreviaComprobante();
+    actualizarEstadoArchivoComprobante('🎁 Comprobante eliminado. Se registrará únicamente tu tabla gratis.');
+    document.getElementById('btn-remove-proof-free')?.classList.add('hidden');
+    const aviso = document.getElementById('tables-selection-error');
+    if (aviso) { aviso.textContent = ''; aviso.classList.remove('visible'); }
+  });
+
   document.getElementById('proof-file').addEventListener('change', async function(e) {
     const file = e.target.files[0];
     proofFile = null;
     comprobanteValidadoFile = null;
+    document.getElementById('btn-remove-proof-free')?.classList.add('hidden');
     if (!file) {
       actualizarEstadoArchivoComprobante();
       return;
@@ -3270,6 +3287,20 @@ function startReservationTimer() {
     const nameParts = buyerName.split(' ').filter(part => part.length > 0);
     if (nameParts.length < 2) {
       alert('Por favor escriba su nombre completo con nombre y apellido. Ejemplo: MARIO VALLEZ');
+      return;
+    }
+
+    // Si el cliente marcó tabla gratis, adjuntó un comprobante válido,
+    // pero solo seleccionó la tabla gratuita, no se guarda un pedido con pago
+    // y comprobante sin tablas adicionales. Debe quitarlo explícitamente.
+    if (declaraCortesia() && selectedTables.length === 1 &&
+        proofFile && comprobanteValidadoFile === proofFile) {
+      const avisoTablas = document.getElementById('tables-selection-error');
+      avisoTablas.textContent = 'Adjuntaste un comprobante, pero solo seleccionaste tu tabla gratis. Agrega las tablas pagadas que corresponden o elimina el comprobante para registrar únicamente la tabla gratis.';
+      avisoTablas.classList.add('visible');
+      avisoTablas.scrollIntoView({behavior:'smooth',block:'center'});
+      const quitar = document.getElementById('btn-remove-proof-free');
+      if (quitar) quitar.classList.remove('hidden');
       return;
     }
 
