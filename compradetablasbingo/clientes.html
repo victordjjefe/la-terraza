@@ -827,6 +827,12 @@
 @media(prefers-reduced-motion:reduce){#purchase-processing-backdrop.active{animation:none}}
 </style>
 
+<style>
+#proof-file-status.proof-processing{display:flex;align-items:center;gap:9px;color:#1d4ed8;font-weight:750}
+#proof-file-status .proof-inline-spinner{width:17px;height:17px;flex:0 0 17px;border:2px solid #bfdbfe;border-top-color:#2563eb;border-radius:50%;animation:proofSpin .7s linear infinite}
+@keyframes proofSpin{to{transform:rotate(360deg)}}
+#btn-remove-proof-free:disabled{opacity:.65;cursor:wait}
+</style>
 </head>
 <body>
 <div id="proof-required-modal" role="dialog" aria-modal="true" aria-labelledby="proof-required-title" aria-describedby="proof-required-description">
@@ -2829,6 +2835,23 @@ function startReservationTimer() {
       actualizarEstadoArchivoComprobante();
     }
   });
+  function establecerEstadoProcesoComprobante(activo, mensaje = '') {
+    const estado = document.getElementById('proof-file-status');
+    const botonEliminar = document.getElementById('btn-remove-proof-free');
+    const registrar = document.getElementById('btn-finish-order');
+    const registrarFlotante = document.getElementById('btn-floating-finish');
+    if (estado) {
+      estado.classList.toggle('proof-processing', Boolean(activo));
+      estado.classList.remove('ready', 'error');
+      estado.innerHTML = activo
+        ? `<span class="proof-inline-spinner" aria-hidden="true"></span><span>${mensaje}</span>`
+        : '';
+    }
+    if (botonEliminar) botonEliminar.disabled = Boolean(activo);
+    if (registrar) registrar.disabled = Boolean(activo);
+    if (registrarFlotante) registrarFlotante.disabled = Boolean(activo);
+  }
+
   function actualizarEstadoArchivoComprobante(mensajeError = '') {
     const estado = document.getElementById('proof-file-status');
     if (!estado) return;
@@ -3050,7 +3073,15 @@ function startReservationTimer() {
     if (e.key === 'Escape' && proofValidationModal.classList.contains('active') && !proofValidationModal.classList.contains('is-loading')) cerrarModalValidacionComprobante();
   });
 
-  document.getElementById('btn-remove-proof-free')?.addEventListener('click', () => {
+  document.getElementById('btn-remove-proof-free')?.addEventListener('click', async () => {
+    const boton = document.getElementById('btn-remove-proof-free');
+    if (!proofFile || boton?.disabled) return;
+    establecerEstadoProcesoComprobante(true, 'Eliminando comprobante...');
+    if (boton) boton.disabled = true;
+
+    // El archivo todavía está en el navegador: solo se adjunta a Firebase
+    // al confirmar la compra. Se limpia el estado local antes de habilitar registro.
+    await new Promise(resolve => requestAnimationFrame(resolve));
     proofFile = null;
     comprobanteValidadoFile = null;
     comprobanteParaTablasAdicionales = false;
@@ -3058,10 +3089,11 @@ function startReservationTimer() {
     const input = document.getElementById('proof-file');
     if (input) input.value = '';
     limpiarVistaPreviaComprobante();
-    actualizarEstadoArchivoComprobante('🎁 Comprobante eliminado. Se registrará únicamente tu tabla gratis.');
     document.getElementById('btn-remove-proof-free')?.classList.add('hidden');
     const aviso = document.getElementById('tables-selection-error');
     if (aviso) { aviso.textContent = ''; aviso.classList.remove('visible'); }
+    establecerEstadoProcesoComprobante(false);
+    actualizarEstadoArchivoComprobante('🎁 Comprobante eliminado. Ya puedes registrar únicamente tu tabla gratis.');
   });
 
   document.getElementById('proof-file').addEventListener('change', async function(e) {
@@ -3083,12 +3115,16 @@ function startReservationTimer() {
     }
 
     mostrarVistaPreviaComprobante(file);
-    const estadoAnalisis = document.getElementById('proof-file-status');
-    if (estadoAnalisis) { estadoAnalisis.classList.remove('ready', 'error'); estadoAnalisis.textContent = 'Validación automática en curso…'; }
-    // La vista previa permanece visible durante la validación; no se tapa con un modal.
-    const resultado = await validarComprobantePorContenido(file);
-    if (e.target.files[0] !== file) return;
-    if (!resultado.valido) {
+    establecerEstadoProcesoComprobante(true, 'Validando comprobante, por favor espera...');
+    try {
+      // La persona ve el estado de validación mientras se analiza la imagen.
+      const resultado = await validarComprobantePorContenido(file);
+      if (e.target.files[0] !== file) {
+        establecerEstadoProcesoComprobante(false);
+        return;
+      }
+      if (!resultado.valido) {
+        establecerEstadoProcesoComprobante(false);
       e.target.value = '';
       proofFile = null;
       comprobanteValidadoFile = null;
@@ -3102,6 +3138,7 @@ function startReservationTimer() {
     proofFile = file;
     // La carga del inventario comienza solo después de validar el comprobante.
     await cargarInventarioParaCompra();
+    establecerEstadoProcesoComprobante(false);
     const estadoComprobanteValido = document.getElementById('proof-file-status');
     if (estadoComprobanteValido) {
       estadoComprobanteValido.classList.remove('error');
@@ -3132,6 +3169,16 @@ function startReservationTimer() {
       return;
     }
     mostrarModalComprobanteValido();
+      establecerEstadoProcesoComprobante(false);
+    } catch (error) {
+      console.error('Error durante la validación del comprobante:', error);
+      establecerEstadoProcesoComprobante(false);
+      proofFile = null;
+      comprobanteValidadoFile = null;
+      const input = document.getElementById('proof-file');
+      if (input) input.value = '';
+      actualizarEstadoArchivoComprobante('No fue posible validar el comprobante. Intenta subirlo nuevamente.');
+    }
   });
 
 
