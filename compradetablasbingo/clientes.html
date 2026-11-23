@@ -759,15 +759,15 @@
       </p>
 
       <div class="lookup-card" id="lookup-card-disabled">
-        <div class="card-title" style="justify-content:center;">
-          🔎 BUSCAR MIS TABLAS REGISTRADAS
+        <div class="card-title" style="justify-content:center;font-size:1.18rem;font-weight:900;color:var(--accent-gold);text-align:center;">
+          🎟️ ABRE AQUÍ TUS TABLAS
         </div>
-        <p style="color:var(--text-muted); margin-bottom:12px;">
-          Ingresa tu WhatsApp.
+        <p style="color:var(--text-muted); margin-bottom:12px;text-align:center;font-weight:600;">
+          Escribe tu número de WhatsApp y entra directamente a tus tablas.
         </p>
         <div class="phone-row"><div class="country-code-wrap"><input id="lookup-country" class="form-control country-code" value="+57" readonly autocomplete="off" aria-haspopup="listbox" aria-expanded="false"><div class="country-code-menu" role="listbox"><div class="country-code-option" data-value="+57" role="option">+57 Colombia</div><div class="country-code-option" data-value="INTERNACIONAL" role="option">Digitar código internacional</div></div></div><input id="lookup-input" class="form-control" type="tel" inputmode="numeric" placeholder="Ej: 3001234567"></div>
-        <button class="btn btn-success" id="btn-lookup" style="margin-top:12px;">
-          🔎 Buscar mis tablas
+        <button class="btn btn-success" id="btn-lookup" style="margin-top:12px;font-weight:800;">
+          🎟️ Abrir mis tablas
         </button>
       </div>
     </div>
@@ -789,15 +789,15 @@
       </div>
 
       <div class="lookup-card">
-        <div class="card-title" style="justify-content:center;">
-          🔎 BUSCAR MIS TABLAS REGISTRADAS
+        <div class="card-title" style="justify-content:center;font-size:1.18rem;font-weight:900;color:var(--accent-gold);text-align:center;">
+          🎟️ ABRE AQUÍ TUS TABLAS
         </div>
-        <p style="color:var(--text-muted); margin-bottom:12px;">
-          Ingresa tu WhatsApp.
+        <p style="color:var(--text-muted); margin-bottom:12px;text-align:center;font-weight:600;">
+          Escribe tu número de WhatsApp y entra directamente a tus tablas.
         </p>
         <div class="phone-row"><div class="country-code-wrap"><input id="lookup-country-active" class="form-control country-code" value="+57" readonly autocomplete="off" aria-haspopup="listbox" aria-expanded="false"><div class="country-code-menu" role="listbox"><div class="country-code-option" data-value="+57" role="option">+57 Colombia</div><div class="country-code-option" data-value="INTERNACIONAL" role="option">Digitar código internacional</div></div></div><input id="lookup-input-active" class="form-control" type="tel" inputmode="numeric" placeholder="Ej: 3001234567"></div>
-        <button class="btn btn-success" id="btn-lookup-active" style="margin-top:12px;">
-          🔎 Buscar mis tablas
+        <button class="btn btn-success" id="btn-lookup-active" style="margin-top:12px;font-weight:800;">
+          🎟️ Abrir mis tablas
         </button>
       </div>
     </div>
@@ -1417,8 +1417,6 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
     }
     tablasEncontradas = tablasConfirmadas;
 
-    document.getElementById('lookup-modal').classList.add('active');
-
     document.getElementById('btn-copy-lookup-link')?.style.setProperty('display','none','important');
     document.getElementById('btn-whatsapp-lookup-link').style.setProperty('display','none','important');
     document.getElementById('lookup-security-message').style.setProperty('display','none','important');
@@ -1462,16 +1460,17 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
         enlace: ultimoLookupEnlace
       });
 
-      document.getElementById('lookup-link-box').innerHTML =
-        ``;
-
-      document.getElementById('btn-copy-lookup-link')?.style.setProperty('display','none','important');
-      document.getElementById('btn-whatsapp-lookup-link').style.display='block';
-      document.getElementById('lookup-security-message').style.display='block';
-
+      // La búsqueda abre directamente el enlace digital. No se muestra el
+      // cuadro intermedio ni se redirige a WhatsApp; se reutiliza el enlace
+      // generado con los mismos datos ya consultados, sin lecturas adicionales.
       ultimoLookupTelefono = cleanPhone(telefonoFinal);
+      if (ultimoLookupEnlace) {
+        window.location.assign(ultimoLookupEnlace);
+        return;
+      }
 
     }else{
+      document.getElementById('lookup-modal').classList.add('active');
 
       document.getElementById('lookup-title').textContent =
         'AÚN NO TIENES TABLAS REGISTRADAS 🎱';
