@@ -2782,27 +2782,14 @@ function startReservationTimer() {
 
     const buyerName = normalizeText(buyerNameInput.value);
     const buyerAddress = normalizeText(buyerAddressInput.value);
-    const buyerPhoneRaw = buyerPhoneInput.value.trim();
-    const buyerPhone = buyerPhoneRaw
-      ? normalizarWhatsAppColombia(buyerPhoneRaw, document.getElementById('buyer-country')?.value || '+57')
-      : '';
+    const buyerPhone = validarCampoWhatsapp(buyerPhoneInput, document.getElementById('buyer-country'));
+    if (!buyerPhone) return;
 
     buyerNameInput.value = buyerName;
     buyerAddressInput.value = buyerAddress;
 
-    // Un solo mensaje reúne todos los datos y la selección que hacen falta.
-    const pendientes = [];
-    if (!buyerName) pendientes.push('nombre');
-    if (!buyerAddress) pendientes.push('referencia');
-    if (!buyerPhoneRaw) pendientes.push('número de WhatsApp');
-    if (selectedTables.length === 0) pendientes.push('marcar al menos una tabla');
-    if (pendientes.length) {
-      alert('Por favor ingrese: ' + pendientes.join(', ') + '.');
-      return;
-    }
-    if (!buyerPhone) {
-      alert('Por favor ingrese un número de WhatsApp válido.');
-      buyerPhoneInput.focus();
+    if (!buyerName || !buyerAddress || !buyerPhone) {
+      alert('Por favor complete su nombre y apellido, referencia/ciudad/barrio y número de WhatsApp.');
       return;
     }
 
@@ -3225,10 +3212,23 @@ Gracias por tu compra.`;
   });
 
   document.getElementById('btn-finish-order').addEventListener('click', async () => {
-    // finishOrder centraliza el mensaje de campos faltantes, tablas y comprobante.
-    // El comprobante ya validado al subirlo no se vuelve a procesar aquí.
+    const phoneInput = document.getElementById('buyer-phone');
+    const countryInput = document.getElementById('buyer-country');
+    const phone = validarCampoWhatsapp(phoneInput, countryInput);
+
+    if (!phone) {
+      alert('Por favor ingrese un número de WhatsApp.');
+      return;
+    }
+
+    if (exigeComprobante() && (!proofFile || comprobanteValidadoFile !== proofFile)) {
+      avisoComprobanteSegunCortesia();
+      return;
+    }
+
+    // Se conserva la validación del WhatsApp, pero se elimina la confirmación visual adicional.
     await finishOrder();
-  });
+});
   
   document.querySelectorAll('.btn-restart-action').forEach(btn => {
     btn.addEventListener('click', resetForm);
