@@ -832,6 +832,52 @@
     localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
   });
 
+  // Inventario compartido con clientes: 20 tablas por documento lote_NNN.
+  const INVENTORY_COLLECTION = 'disponibilidadTablas';
+  const TABLES_PER_SHARD = 20;
+  const inventoryMetaRef = doc(db, 'configuracion', 'estadoInventario');
+  let inventoryReady = Promise.resolve();
+  const manualInventoryPageCache = new Map();
+  function tableNumber(code) { return Number(String(code || '').replace(/^T/i, '').replace(/\D/g, '')) || 0; }
+  function tableShardId(code) {
+    const n = tableNumber(code);
+    if (!n) throw new Error('Código de tabla inválido: ' + code);
+    return 'lote_' + String(Math.floor((n - 1) / TABLES_PER_SHARD)).padStart(3, '0');
+  }
+  function tableShardRef(code) { return doc(db, INVENTORY_COLLECTION, tableShardId(code)); }
+  function getOccupied(snap, code) { return snap.exists() ? ((snap.data()?.occupied || {})[code] || null) : null; }
+
+  // Migración única del inventario legado (un documento por tabla) a lotes de 20.
+  // Se ejecuta desde el panel antes de habilitar las operaciones administrativas.
+  async function migrateLegacyInventoryIfNeeded() {
+    const meta = await getDoc(inventoryMetaRef);
+    if (meta.exists() && Number(meta.data()?.schemaVersion) === 2 && Number(meta.data()?.tablesPerShard) === 20) return;
+    const legacy = await getDocs(collection(db, 'tablas'));
+    const grouped = new Map();
+    legacy.forEach(d => {
+      const data = d.data() || {};
+      const code = String(data.code || d.id);
+      const id = tableShardId(code);
+      if (!grouped.has(id)) grouped.set(id, {});
+      grouped.get(id)[code] = { ...data, code };
+    });
+    for (const [id, occupied] of grouped) {
+      const ref = doc(db, INVENTORY_COLLECTION, id);
+      const existing = await getDoc(ref);
+      const merged = { ...(existing.exists() ? (existing.data()?.occupied || {}) : {}), ...occupied };
+      await setDoc(ref, { occupied: merged, updatedAt: Date.now() }, { merge: true });
+    }
+    // Solo después de verificar que los lotes contienen la información, elimina legado.
+    for (let i = 0; i < legacy.docs.length; i += 400) {
+      const batch = writeBatch(db);
+      legacy.docs.slice(i, i + 400).forEach(d => batch.delete(d.ref));
+      await batch.commit();
+    }
+    await setDoc(inventoryMetaRef, { schemaVersion: 2, tablesPerShard: 20, migratedAt: new Date().toISOString() }, { merge: true });
+  }
+  async function readAllInventoryShards() { return await getDocs(collection(db, INVENTORY_COLLECTION)); }
+  function occupiedEntriesFromSnapshot(snap) { return snap.docs.flatMap(d => Object.entries(d.data()?.occupied || {}).map(([code, data]) => ({ code, data, shardId: d.id }))); }
+
   function formatoTelefono(v){
     let n=String(v||'').replace(/\D/g,'');
     if(n.startsWith('57') && n.length===12) return '+'+n;
@@ -909,7 +955,8 @@
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('app-wrapper').style.display = 'flex';
       loadInitialConfig();
-      loadTablesOnce();
+      inventoryReady = loadTablesOnce().catch(error => { console.error('Error preparando inventario agrupado:', error); alert('No se pudo preparar el inventario agrupado: ' + error.message); throw error; });
+      inventoryReady.catch(() => {});
       listenOrders();
     } else {
       errorMsg.style.display = 'block';
@@ -1084,6 +1131,7 @@
   }
 
   async function loadTablesOnce() {
+    await migrateLegacyInventoryIfNeeded();
     // MODELO ESCALABLE:
     // El total de tablas sale del rango configurado. No necesitamos descargar
     // 200, 1.000 o 5.000 documentos al abrir el administrador.
@@ -1201,6 +1249,8 @@
         ventaHastaHora: ventaHastaHora
       };
       await setDoc(doc(db, 'configuracion', 'evento'), configGuardada, { merge: true });
+      // Tras un cierre de evento, restablece el marcador de la estructura agrupada.
+      await setDoc(inventoryMetaRef, { schemaVersion: 2, tablesPerShard: 20, initializedAt: new Date().toISOString() }, { merge: true });
       configEventoExportacion = { ...(configEventoExportacion || {}), ...configGuardada };
       configSincronizada = true;
 
@@ -1278,37 +1328,24 @@
       if (!confirmar) return;
 
       try {
+        await inventoryReady;
         bulkButton.disabled = true;
         bulkButton.textContent = 'Liberando todas...';
         container.querySelectorAll('button').forEach(button => button.disabled = true);
 
-        const batch = writeBatch(db);
-        tablesToRelease.forEach(tableCode => {
-          batch.delete(doc(db, 'tablas', tableCode));
+        await runTransaction(db, async transaction => {
+          const ids = [...new Set(tablesToRelease.map(tableShardId))];
+          const refs = ids.map(id => doc(db, INVENTORY_COLLECTION, id));
+          const snaps = [];
+          for (const ref of refs) snaps.push(await transaction.get(ref));
+          const maps = new Map(snaps.map((snap, i) => [ids[i], snap.exists() ? { ...(snap.data()?.occupied || {}) } : {}]));
+          tablesToRelease.forEach(code => { const map = maps.get(tableShardId(code)); if (map) delete map[code]; });
+          refs.forEach((ref, i) => transaction.set(ref, { occupied: maps.get(ids[i]), updatedAt: Date.now() }, { merge: true }));
+          transaction.update(doc(db, 'pedidos', order.firestoreId), { tablas: [], total: 0, estado: 'CANCELADO', comprobanteURL: null, comprobante: null });
+          tablesToRelease.forEach(tableCode => transaction.set(doc(collection(db, 'integridad_tablas')), {
+            tabla: tableCode, accion: 'LIBERACION_MANUAL', motivo: 'Liberación masiva de todas las tablas del pedido', pedido: order.id || '', fecha: new Date().toISOString()
+          }));
         });
-
-        batch.update(doc(db, 'pedidos', order.firestoreId), {
-          tablas: [],
-          total: 0,
-          estado: 'CANCELADO',
-          comprobanteURL: null,
-          comprobante: null
-        });
-
-        // Se conserva el registro de integridad utilizado por la liberación individual.
-        // Se agrega un evento por cada tabla liberada.
-        tablesToRelease.forEach(tableCode => {
-          const auditRef = doc(collection(db, 'integridad_tablas'));
-          batch.set(auditRef, {
-            tabla: tableCode,
-            accion: 'LIBERACION_MANUAL',
-            motivo: 'Liberación masiva de todas las tablas del pedido',
-            pedido: order.id || '',
-            fecha: new Date().toISOString()
-          });
-        });
-
-        await batch.commit();
 
         order.tablas = [];
         order.total = 0;
@@ -1339,34 +1376,22 @@
         if (!confirmar) return;
 
         try {
+          await inventoryReady;
           btn.disabled = true;
           btn.textContent = 'Liberando...';
 
-          const tableRef = doc(db, 'tablas', tableCode);
           const updatedTablas = order.tablas.filter(t => t !== tableCode);
           const orderRef = doc(db, 'pedidos', order.firestoreId);
           const newTotal = updatedTablas.length * (configValor() || 0);
-          const batch = writeBatch(db);
-
-          // Un documento de tabla inexistente equivale a DISPONIBLE.
-          batch.delete(tableRef);
-
-          if (updatedTablas.length === 0) {
-            batch.update(orderRef, {
-              tablas: [],
-              total: 0,
-              estado: 'CANCELADO',
-              comprobanteURL: null,
-              comprobante: null
-            });
-          } else {
-            batch.update(orderRef, {
-              tablas: updatedTablas,
-              total: newTotal
-            });
-          }
-
-          await batch.commit();
+          await runTransaction(db, async transaction => {
+            const shardRef = tableShardRef(tableCode);
+            const shardSnap = await transaction.get(shardRef);
+            const occupied = shardSnap.exists() ? { ...(shardSnap.data()?.occupied || {}) } : {};
+            delete occupied[tableCode];
+            transaction.set(shardRef, { occupied, updatedAt: Date.now() }, { merge: true });
+            if (updatedTablas.length === 0) transaction.update(orderRef, { tablas: [], total: 0, estado: 'CANCELADO', comprobanteURL: null, comprobante: null });
+            else transaction.update(orderRef, { tablas: updatedTablas, total: newTotal });
+          });
 
           await setDoc(doc(collection(db, 'integridad_tablas')), {
             tabla: tableCode,
@@ -2009,6 +2034,7 @@ function seleccionarFormaPago(order){
   });
 
   async function cerrarBingo() {
+    await inventoryReady;
     const confirmacion = confirm("¿Desea borrar todos los datos del evento, tablas y pedidos?");
     if (!confirmacion) return;
 
@@ -2032,7 +2058,7 @@ function seleccionarFormaPago(order){
       }
 
       // Primero se eliminan todas las tablas y todos los pedidos.
-      const tablasSnap = await getDocs(collection(db, 'tablas'));
+      const tablasSnap = await getDocs(collection(db, INVENTORY_COLLECTION));
       await borrarSnapshotEnBloques(tablasSnap);
 
       const pedidosSnap = await getDocs(collection(db, 'pedidos'));
@@ -2063,11 +2089,12 @@ function seleccionarFormaPago(order){
 
       // La configuración se borra al final. Así el evento solo se considera
       // cerrado cuando las tablas y los pedidos ya terminaron de eliminarse.
+      await deleteDoc(inventoryMetaRef);
       await deleteDoc(doc(db, 'configuracion', 'evento'));
 
       // Verificación final: no mostramos éxito hasta confirmar que todo quedó vacío.
       const [verificacionTablas, verificacionPedidos, verificacionClientes, verificacionConfig] = await Promise.all([
-        getDocs(collection(db, 'tablas')),
+        getDocs(collection(db, INVENTORY_COLLECTION)),
         getDocs(collection(db, 'pedidos')),
         getDocs(collection(db, 'clientes')),
         getDoc(doc(db, 'configuracion', 'evento'))
@@ -2156,6 +2183,7 @@ function seleccionarFormaPago(order){
 
   async function manualLoadVisiblePage() {
     if (manualLoading) return;
+    await inventoryReady;
     manualLoading = true;
     const grid = document.getElementById('manual-tables-grid');
     grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#64748b;">Consultando disponibilidad...</p>';
@@ -2163,16 +2191,18 @@ function seleccionarFormaPago(order){
       manualBuildRangeIfNeeded();
       const start = (manualCurrentPage - 1) * MANUAL_TABLES_PER_PAGE;
       const page = manualTables.slice(start, start + MANUAL_TABLES_PER_PAGE);
-      const codes = page.map(t => t.code);
-      const groups = [];
-      for (let i = 0; i < codes.length; i += 30) groups.push(codes.slice(i, i + 30));
-
-      // No descarga toda la colección: solo consulta los IDs de la página abierta.
-      const snapshots = await Promise.all(groups.map(group => getDocs(query(
-        collection(db, 'tablas'), where(documentId(), 'in', group)
-      ))));
-      const byCode = new Map();
-      snapshots.forEach(snapshot => snapshot.forEach(docSnap => byCode.set(docSnap.id, docSnap.data())));
+      const cacheKey = `${manualRangeKey}:${manualCurrentPage}`;
+      let byCode;
+      const cachedPage = manualInventoryPageCache.get(cacheKey);
+      if (cachedPage && Date.now() - cachedPage.timestamp < 60000) {
+        byCode = new Map(cachedPage.entries);
+      } else {
+        const shardIds = [...new Set(page.map(t => tableShardId(t.code)))];
+        const snapshots = await Promise.all(shardIds.map(id => getDoc(doc(db, INVENTORY_COLLECTION, id))));
+        byCode = new Map();
+        snapshots.forEach(snapshot => Object.entries(snapshot.exists() ? (snapshot.data()?.occupied || {}) : {}).forEach(([code, data]) => byCode.set(code, data)));
+        manualInventoryPageCache.set(cacheKey, { timestamp: Date.now(), entries: [...byCode.entries()] });
+      }
       const now = Date.now();
 
       page.forEach(table => {
@@ -2226,37 +2256,34 @@ function seleccionarFormaPago(order){
   }
 
   async function manualReserveTable(code) {
-    const tableRef = doc(db, 'tablas', code);
+    await inventoryReady;
+    const shardRef = tableShardRef(code);
     const until = Date.now() + MANUAL_RESERVATION_MINUTES * 60 * 1000;
     return runTransaction(db, async transaction => {
-      const snap = await transaction.get(tableRef);
+      const snap = await transaction.get(shardRef);
+      const occupied = snap.exists() ? { ...(snap.data()?.occupied || {}) } : {};
+      const data = occupied[code] || null;
       const now = Date.now();
-      if (!snap.exists()) {
-        transaction.set(tableRef, {
-          code, status: 'RESERVADA', reservedUntil: until,
-          reservedBy: manualReservationOwner, pedido: null
-        });
-        return until;
-      }
-      const data = snap.data();
-      const expired = data.status === 'RESERVADA' && (!data.reservedUntil || data.reservedUntil <= now);
-      if (data.status === 'VENDIDA' ||
-          (data.status === 'RESERVADA' && data.reservedBy !== manualReservationOwner && !expired)) return false;
-      transaction.set(tableRef, {
-        code, status: 'RESERVADA', reservedUntil: until,
-        reservedBy: manualReservationOwner, pedido: data.pedido || null
-      }, { merge: true });
+      const expired = data?.status === 'RESERVADA' && (!data.reservedUntil || data.reservedUntil <= now);
+      if (data?.status === 'VENDIDA' || (data?.status === 'RESERVADA' && data.reservedBy !== manualReservationOwner && !expired)) return false;
+      occupied[code] = { code, status: 'RESERVADA', reservedUntil: until, reservedBy: manualReservationOwner, pedido: data?.pedido || null };
+      transaction.set(shardRef, { occupied, updatedAt: Date.now() }, { merge: true });
       return until;
     });
   }
 
   async function manualReleaseTable(code) {
-    const tableRef = doc(db, 'tablas', code);
+    await inventoryReady;
+    const shardRef = tableShardRef(code);
     await runTransaction(db, async transaction => {
-      const snap = await transaction.get(tableRef);
+      const snap = await transaction.get(shardRef);
       if (!snap.exists()) return;
-      const data = snap.data();
-      if (data.status === 'RESERVADA' && data.reservedBy === manualReservationOwner) transaction.delete(tableRef);
+      const occupied = { ...(snap.data()?.occupied || {}) };
+      const data = occupied[code];
+      if (data?.status === 'RESERVADA' && data.reservedBy === manualReservationOwner) {
+        delete occupied[code];
+        transaction.set(shardRef, { occupied, updatedAt: Date.now() }, { merge: true });
+      }
     });
     manualSelected.delete(code);
     const table = manualTables.find(item => item.code === code);
@@ -2284,6 +2311,7 @@ function seleccionarFormaPago(order){
         return;
       }
       manualSelected.set(code, { destino: 'CONSIGNACIÓN', reservedUntil: until });
+      manualInventoryPageCache.clear();
       const table = manualTables.find(item => item.code === code);
       if (table) Object.assign(table, { status: 'RESERVADA', reservedBy: manualReservationOwner, reservedUntil: until });
       manualRenderTables();
@@ -2386,6 +2414,7 @@ function seleccionarFormaPago(order){
     button.disabled = true;
     button.textContent = 'Registrando...';
     try {
+      await inventoryReady;
       const counterRef = doc(db, 'sistema', 'contadorPedidos');
       const candidateRef = doc(collection(db, 'pedidos'));
       const clientIndexRef = doc(db, 'clientes', telefono);
@@ -2393,19 +2422,19 @@ function seleccionarFormaPago(order){
       const orderId = await runTransaction(db, async transaction => {
         const counterSnap = await transaction.get(counterRef);
         const clientSnap = await transaction.get(clientIndexRef);
-        const tableRefs = tablas.map(code => doc(db, 'tablas', code));
-        const tableSnaps = [];
-        for (const tableRef of tableRefs) tableSnaps.push(await transaction.get(tableRef));
+        const shardIds = [...new Set(tablas.map(tableShardId))];
+        const shardRefs = shardIds.map(id => doc(db, INVENTORY_COLLECTION, id));
+        const shardSnaps = [];
+        for (const shardRef of shardRefs) shardSnaps.push(await transaction.get(shardRef));
+        const occupiedByShard = new Map(shardSnaps.map((snap, i) => [shardIds[i], snap.exists() ? { ...(snap.data()?.occupied || {}) } : {}]));
 
         const nextNumber = counterSnap.exists() ? Number(counterSnap.data().ultimo || 0) + 1 : 1;
         const visibleId = String(nextNumber).padStart(5, '0');
         const now = Date.now();
 
-        for (let i = 0; i < tableSnaps.length; i++) {
-          const snap = tableSnaps[i];
-          const code = tablas[i];
-          if (!snap.exists()) throw new Error(`La reserva de la tabla ${code} se perdió. Selecciónala nuevamente.`);
-          const data = snap.data();
+        for (const code of tablas) {
+          const data = occupiedByShard.get(tableShardId(code))?.[code];
+          if (!data) throw new Error(`La reserva de la tabla ${code} se perdió. Selecciónala nuevamente.`);
           if (data.status !== 'RESERVADA' || data.reservedBy !== manualReservationOwner ||
               !data.reservedUntil || data.reservedUntil <= now) {
             throw new Error(`La tabla ${code} ya no está reservada por este registro. Actualiza la selección.`);
@@ -2459,15 +2488,16 @@ function seleccionarFormaPago(order){
         }, { merge: true });
         transaction.set(counterRef, { ultimo: nextNumber }, { merge: true });
 
-        tableRefs.forEach((tableRef, index) => {
-          transaction.update(tableRef, {
-            status: 'VENDIDA', reservedUntil: null, reservedBy: null, pedido: visibleId
-          });
+        tablas.forEach(code => {
+          const map = occupiedByShard.get(tableShardId(code));
+          map[code] = { ...map[code], code, status: 'VENDIDA', reservedUntil: null, reservedBy: null, pedido: visibleId };
         });
+        shardRefs.forEach((ref, index) => transaction.set(ref, { occupied: occupiedByShard.get(shardIds[index]), updatedAt: Date.now() }, { merge: true }));
         return visibleId;
       });
 
       manualSelected.clear();
+      manualInventoryPageCache.clear();
       manualReservationOwner = createManualReservationOwner();
       document.getElementById('form-manual-client').reset();
       document.getElementById('manual-client-country').value = '+57';
@@ -2560,38 +2590,41 @@ function seleccionarFormaPago(order){
   let tablasPerdidasActuales = [];
 
   async function limpiarReservasVencidasAdministrador() {
-    const tablasSnap = await getDocs(collection(db, 'tablas'));
+    await inventoryReady;
+    const tablasSnap = await readAllInventoryShards();
     const batch = writeBatch(db);
     let cambios = 0;
     const ahora = Date.now();
 
     tablasSnap.forEach(docSnap => {
-      const tabla = docSnap.data();
+      const occupied = { ...(docSnap.data()?.occupied || {}) };
+      let changed = false;
+      Object.entries(occupied).forEach(([code, tabla]) => {
 
       if (
         tabla.status === 'RESERVADA' &&
         tabla.reservedUntil &&
         tabla.reservedUntil <= ahora
       ) {
-        batch.delete(docSnap.ref);
-        cambios++;
+        delete occupied[code]; changed = true; cambios++;
       }
+      });
+      if (changed) batch.set(docSnap.ref, { occupied, updatedAt: Date.now() }, { merge: true });
     });
 
-    if (cambios > 0) {
-      await batch.commit();
-    }
+    if (cambios > 0) await batch.commit();
   }
 
   window.verificarIntegridadTablas = async function() {
     try {
+      await inventoryReady;
       await limpiarReservasVencidasAdministrador();
 
       if (!pedidosSincronizados) {
         alert('Espera a que los pedidos terminen de actualizarse antes de verificar las tablas.');
         return;
       }
-      const tablasSnap = await getDocs(collection(db, 'tablas'));
+      const tablasSnap = await readAllInventoryShards();
 
       const tablasConPedido = new Set();
       allOrders.forEach(pedido => {
@@ -2602,22 +2635,11 @@ function seleccionarFormaPago(order){
 
       tablasPerdidasActuales = [];
 
-      tablasSnap.forEach(docSnap => {
-        const tabla = docSnap.data();
-        const codigo = String(docSnap.id);
+      occupiedEntriesFromSnapshot(tablasSnap).forEach(({ code: codigo, data: tabla }) => {
         const estado = String(tabla.status || '').toUpperCase();
-
-        const reservaVencida =
-          estado === 'RESERVADA' &&
-          tabla.reservedUntil &&
-          tabla.reservedUntil <= Date.now();
-
+        const reservaVencida = estado === 'RESERVADA' && tabla.reservedUntil && tabla.reservedUntil <= Date.now();
         if (estado !== 'DISPONIBLE' && !reservaVencida && !tablasConPedido.has(codigo)) {
-          tablasPerdidasActuales.push({
-            codigo,
-            estado,
-            motivo: tabla.reservedBy ? 'Cliente inició compra y quedó reservada sin pedido asociado' : 'Tabla ocupada sin relación con pedido. Posible fallo de liberación o sincronización'
-          });
+          tablasPerdidasActuales.push({ codigo, estado, motivo: tabla.reservedBy ? 'Cliente inició compra y quedó reservada sin pedido asociado' : 'Tabla ocupada sin relación con pedido. Posible fallo de liberación o sincronización' });
         }
       });
 
@@ -2656,8 +2678,15 @@ function seleccionarFormaPago(order){
   }
 
   window.liberarTablaPerdida = async function(codigo){
-    const ref = doc(db,'tablas',codigo);
-    await deleteDoc(ref);
+    await inventoryReady;
+    const shardRef = tableShardRef(codigo);
+    await runTransaction(db, async transaction => {
+      const snap = await transaction.get(shardRef);
+      if (!snap.exists()) return;
+      const occupied = { ...(snap.data()?.occupied || {}) };
+      delete occupied[codigo];
+      transaction.set(shardRef, { occupied, updatedAt: Date.now() }, { merge: true });
+    });
     await setDoc(doc(collection(db, 'integridad_tablas')), {
       tabla: codigo,
       accion: 'LIBERACION_INTEGRIDAD',
@@ -2669,12 +2698,16 @@ function seleccionarFormaPago(order){
   };
 
   window.liberarTodasTablasPerdidas = async function(){
-    const batch = writeBatch(db);
-    tablasPerdidasActuales.forEach(item=>{
-      const codigo=item.codigo;
-      batch.delete(doc(db,'tablas',codigo));
+    await inventoryReady;
+    await runTransaction(db, async transaction => {
+      const ids = [...new Set(tablasPerdidasActuales.map(item => tableShardId(item.codigo)))];
+      const refs = ids.map(id => doc(db, INVENTORY_COLLECTION, id));
+      const snaps = [];
+      for (const ref of refs) snaps.push(await transaction.get(ref));
+      const maps = new Map(snaps.map((snap, i) => [ids[i], snap.exists() ? { ...(snap.data()?.occupied || {}) } : {}]));
+      tablasPerdidasActuales.forEach(item => { const map = maps.get(tableShardId(item.codigo)); if (map) delete map[item.codigo]; });
+      refs.forEach((ref, i) => transaction.set(ref, { occupied: maps.get(ids[i]), updatedAt: Date.now() }, { merge: true }));
     });
-    await batch.commit();
     for (const item of tablasPerdidasActuales) {
       await setDoc(doc(collection(db, 'integridad_tablas')), {
         tabla:item.codigo,
