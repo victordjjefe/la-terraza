@@ -975,6 +975,32 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
+  // Inventario compacto compartido con el panel administrativo: 20 tablas por documento.
+  const INVENTORY_COLLECTION = 'disponibilidadTablas';
+  const TABLES_PER_SHARD = 20;
+  const inventoryCache = new Map();
+  function tableNumber(code) { return Number(String(code || '').replace(/^T/i, '').replace(/\D/g, '')) || 0; }
+  function tableShardId(code) {
+    const n = tableNumber(code);
+    if (!n) throw new Error('Código de tabla inválido: ' + code);
+    return 'lote_' + String(Math.floor((n - 1) / TABLES_PER_SHARD)).padStart(3, '0');
+  }
+  function tableShardRef(code) { return doc(db, INVENTORY_COLLECTION, tableShardId(code)); }
+  function occupiedFromSnapshot(snap, code) {
+    return snap.exists() ? ((snap.data()?.occupied || {})[code] || null) : null;
+  }
+  async function getGroupedTable(code) {
+    const snap = await getDoc(tableShardRef(code));
+    return occupiedFromSnapshot(snap, code);
+  }
+  async function getGroupedTables(codes) {
+    const ids = [...new Set(codes.map(tableShardId))];
+    const snaps = await Promise.all(ids.map(id => getDoc(doc(db, INVENTORY_COLLECTION, id))));
+    const byId = new Map(snaps.map(x => [x.id, x]));
+    return new Map(codes.map(code => [code, occupiedFromSnapshot(byId.get(tableShardId(code)), code)]));
+  }
+  function rememberShard(id, data) { inventoryCache.set(id, { data, timestamp: Date.now() }); }
+
   let myClientId = localStorage.getItem('ltb_client_id');
   if (!myClientId) {
     myClientId = 'cli_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
@@ -1365,24 +1391,16 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
     // hubiera sido liberada posteriormente. Ahora se valida contra la colección
     // actual de tablas. Solo permanecen visibles las tablas que siguen vendidas.
     const tablasConfirmadas = [];
-
-    for (const codigoTabla of [...new Set(tablasEncontradas)]) {
-      try {
-        const tablaRef = doc(db, 'tablas', codigoTabla);
-        const tablaSnap = await getDoc(tablaRef);
-
-        if (tablaSnap.exists()) {
-          const estadoTabla = tablaSnap.data()?.status;
-
-          if (estadoTabla === 'VENDIDA') {
-            tablasConfirmadas.push(codigoTabla);
-          }
-        }
-      } catch (error) {
-        console.error('Error validando tabla:', codigoTabla, error);
-      }
+    try {
+      const groupedTables = await getGroupedTables([...new Set(tablasEncontradas)]);
+      groupedTables.forEach((tablaData, codigoTabla) => {
+        if (tablaData?.status === 'VENDIDA') tablasConfirmadas.push(codigoTabla);
+      });
+    } catch (error) {
+      console.error('Error validando tablas agrupadas:', error);
+      alert('No fue posible validar el estado actual de tus tablas. Intenta nuevamente.');
+      return;
     }
-
     tablasEncontradas = tablasConfirmadas;
 
     document.getElementById('lookup-modal').classList.add('active');
@@ -1640,22 +1658,18 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
   }
 
   async function obtenerDocumentosPagina(tablasPagina) {
-    // Firestore permite hasta 30 valores en una consulta IN. Se consulta solamente
-    // la página visible (máximo 200 códigos), nunca todo el rango del bingo.
-    const codigos = tablasPagina.map(t => String(t.code)).filter(Boolean);
-    const grupos = [];
-    for (let i = 0; i < codigos.length; i += 30) grupos.push(codigos.slice(i, i + 30));
-
-    const snaps = await Promise.all(
-      grupos.map(grupo => getDocs(query(
-        collection(db, 'tablas'),
-        where(documentId(), 'in', grupo)
-      )))
-    );
-
-    const docs = [];
-    snaps.forEach(snap => snap.forEach(d => docs.push(d)));
-    return docs;
+    const ids = [...new Set(tablasPagina.map(t => tableShardId(t.code)))];
+    const now = Date.now();
+    const missing = ids.filter(id => {
+      const cached = inventoryCache.get(id);
+      return !cached || now - cached.timestamp >= PAGE_AVAILABILITY_CACHE_TTL_MS;
+    });
+    const fetched = await Promise.all(missing.map(id => getDoc(doc(db, INVENTORY_COLLECTION, id))));
+    fetched.forEach(snap => rememberShard(snap.id, snap.exists() ? snap.data() : { occupied: {} }));
+    return ids.map(id => {
+      const cached = inventoryCache.get(id);
+      return { id, exists: () => Boolean(cached?.data), data: () => cached?.data || { occupied: {} } };
+    });
   }
 
   async function cargarEstadosPagina(pagina = currentTablesPage, { mostrar = true } = {}) {
@@ -1687,22 +1701,13 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
         tabla.pedido = null;
       });
 
-      const docsPagina = await obtenerDocumentosPagina(tablasPagina);
-      const porCodigo = new Map(tablasPagina.map(t => [String(t.code), t]));
-
-      docsPagina.forEach(docSnap => {
-        const data = docSnap.data() || {};
-        const code = String(data.code || docSnap.id);
-        const tabla = porCodigo.get(code);
-        if (!tabla) return;
-
-        // Las reservas vencidas se consideran disponibles visualmente. La
-        // transacción de selección sigue siendo la autoridad final.
+      const shardSnaps = await obtenerDocumentosPagina(tablasPagina);
+      const shardData = new Map(shardSnaps.map(snap => [snap.id, snap.exists() ? (snap.data()?.occupied || {}) : {}]));
+      tablasPagina.forEach(tabla => {
+        const data = shardData.get(tableShardId(tabla.code))?.[tabla.code];
+        if (!data) return;
         if (data.status === 'RESERVADA' && (!data.reservedUntil || data.reservedUntil <= now)) return;
-
-        if (data.status === 'RESERVADA' || data.status === 'VENDIDA') {
-          Object.assign(tabla, data, { code });
-        }
+        if (data.status === 'RESERVADA' || data.status === 'VENDIDA') Object.assign(tabla, data, { code: tabla.code });
       });
 
       ultimoRefrescoDisponibilidad = Date.now();
@@ -1727,6 +1732,10 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
     try {
       const cfg = await esperarConfiguracion();
       if (!cfg) throw new Error('No fue posible cargar la configuración del bingo.');
+      const inventoryMeta = await getDoc(doc(db, 'configuracion', 'estadoInventario'));
+      if (!inventoryMeta.exists() || Number(inventoryMeta.data()?.schemaVersion) !== 2 || Number(inventoryMeta.data()?.tablesPerShard) !== 20) {
+        throw new Error('El inventario está en proceso de migración. El administrador debe abrir el panel de configuración y esperar a que finalice la preparación de las tablas.');
+      }
 
       construirTablasDesdeRango();
       await cargarEstadosPagina(currentTablesPage, { mostrar: false });
@@ -1789,8 +1798,8 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
 
   async function refrescarTablaLocal(code) {
     try {
-      const snap = await getDoc(doc(db, 'tablas', code));
-      if (!snap.exists()) {
+      const data = await getGroupedTable(code);
+      if (!data) {
         actualizarTablaLocal(code, {
           status: 'DISPONIBLE', reservedUntil: null, reservedBy: null, pedido: null
         });
@@ -1798,7 +1807,6 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
         return;
       }
 
-      const data = snap.data() || {};
       const now = Date.now();
       if (data.status === 'RESERVADA' && (!data.reservedUntil || data.reservedUntil <= now)) {
         actualizarTablaLocal(code, {
@@ -2055,25 +2063,16 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
       renderTables();
 
       const success = await runTransaction(db, async (transaction) => {
-        const tRef = doc(db, 'tablas', code);
-        const tDoc = await transaction.get(tRef);
-
+        const shardRef = tableShardRef(code);
+        const shardSnap = await transaction.get(shardRef);
+        const occupied = shardSnap.exists() ? { ...(shardSnap.data()?.occupied || {}) } : {};
+        const tData = occupied[code] || null;
         const now = Date.now();
-
-        // En el modelo escalable una tabla DISPONIBLE puede no tener documento.
-        // Si no existe, la reserva crea únicamente ese documento.
-        if (!tDoc.exists()) {
-          transaction.set(tRef, {
-            code: code,
-            status: 'RESERVADA',
-            reservedUntil: reservationDeadline,
-            reservedBy: myClientId,
-            pedido: null
-          });
+        if (!tData) {
+          occupied[code] = { code, status: 'RESERVADA', reservedUntil: reservationDeadline, reservedBy: myClientId, pedido: null };
+          transaction.set(shardRef, { occupied, updatedAt: Date.now() }, { merge: true });
           return true;
         }
-
-        const tData = tDoc.data();
         const isExpired = tData.status === 'RESERVADA' &&
           (!tData.reservedUntil || tData.reservedUntil <= now);
 
@@ -2082,13 +2081,8 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
           return false;
         }
 
-        transaction.set(tRef, {
-          code: code,
-          status: 'RESERVADA',
-          reservedUntil: reservationDeadline,
-          reservedBy: myClientId,
-          pedido: tData.pedido || null
-        }, { merge: true });
+        occupied[code] = { code, status: 'RESERVADA', reservedUntil: reservationDeadline, reservedBy: myClientId, pedido: tData.pedido || null };
+        transaction.set(shardRef, { occupied, updatedAt: Date.now() }, { merge: true });
         return true;
       });
 
@@ -2144,22 +2138,17 @@ async function recuperarTiempoReservaPropia() {
   try {
     const propias = [];
 
-    const snap = await getDocs(query(
-      collection(db, 'tablas'),
-      where('reservedBy', '==', myClientId),
-      where('status', '==', 'RESERVADA')
-    ));
-
+    const desde = Math.max(1, Number(config?.rangoDesde) || 1);
+    const hasta = Math.max(desde, Number(config?.tablasHabilitadas) || 1);
+    const ids = new Set();
+    for (let n = desde; n <= hasta; n += TABLES_PER_SHARD) ids.add(tableShardId('T' + String(n).padStart(3, '0')));
+    const snaps = await Promise.all([...ids].map(id => getDoc(doc(db, INVENTORY_COLLECTION, id))));
     let limite = 0;
-
-    snap.forEach(docSnap => {
-      const data = docSnap.data();
-
-      if (data.reservedUntil && data.reservedUntil > Date.now()) {
-        propias.push(data.code);
-        limite = Math.max(limite, data.reservedUntil);
+    snaps.forEach(shard => Object.values(shard.exists() ? (shard.data()?.occupied || {}) : {}).forEach(data => {
+      if (data.reservedBy === myClientId && data.status === 'RESERVADA' && data.reservedUntil > Date.now()) {
+        propias.push(data.code); limite = Math.max(limite, data.reservedUntil);
       }
-    });
+    }));
 
     if (propias.length > 0) {
       selectedTables = propias;
@@ -2225,13 +2214,13 @@ function startReservationTimer() {
   }
 
   async function releaseTableIfOwned(code) {
-    const tRef = doc(db, 'tablas', code);
-
+    const shardRef = tableShardRef(code);
     const liberada = await runTransaction(db, async (transaction) => {
-      const tDoc = await transaction.get(tRef);
-      if (!tDoc.exists()) return false;
-
-      const tData = tDoc.data();
+      const shardSnap = await transaction.get(shardRef);
+      if (!shardSnap.exists()) return false;
+      const occupied = { ...(shardSnap.data()?.occupied || {}) };
+      const tData = occupied[code];
+      if (!tData) return false;
 
       // Protección principal contra tablas repetidas:
       // una tabla VENDIDA, disponible o reservada por otra persona jamás
@@ -2243,8 +2232,8 @@ function startReservationTimer() {
       // En el modelo escalable, ausencia de documento = tabla disponible.
       // Al liberar una reserva propia eliminamos el documento para no acumular
       // miles de registros DISPONIBLE que luego tendrían que ser leídos.
-      transaction.delete(tRef);
-
+      delete occupied[code];
+      transaction.set(shardRef, { occupied, updatedAt: Date.now() }, { merge: true });
       return true;
     });
 
@@ -2897,23 +2886,15 @@ function startReservationTimer() {
 
         // Verificar dentro de la misma transacción que todas las tablas siguen
         // reservadas por este comprador y que la reserva no ha vencido.
-        const tableRefs = tablesToBuy.map(code => doc(db, 'tablas', code));
-        const tableDocs = [];
-
-        for (const tRef of tableRefs) {
-          tableDocs.push(await transaction.get(tRef));
-        }
-
+        const shardIds = [...new Set(tablesToBuy.map(tableShardId))];
+        const shardRefs = shardIds.map(id => doc(db, INVENTORY_COLLECTION, id));
+        const shardSnaps = [];
+        for (const ref of shardRefs) shardSnaps.push(await transaction.get(ref));
+        const occupiedByShard = new Map(shardSnaps.map((snap, i) => [shardIds[i], snap.exists() ? { ...(snap.data()?.occupied || {}) } : {}]));
         const now = Date.now();
-        for (let i = 0; i < tableDocs.length; i++) {
-          const tDoc = tableDocs[i];
-          const code = tablesToBuy[i];
-
-          if (!tDoc.exists()) {
-            throw new Error(`La tabla ${code} ya no existe.`);
-          }
-
-          const tData = tDoc.data();
+        for (const code of tablesToBuy) {
+          const tData = occupiedByShard.get(tableShardId(code))?.[code];
+          if (!tData) throw new Error(`La tabla ${code} ya no existe o su reserva no está disponible.`);
           const isExpired = tData.status === 'RESERVADA' && (!tData.reservedUntil || tData.reservedUntil <= now);
 
           if (tData.status !== 'RESERVADA' || tData.reservedBy !== myClientId || isExpired) {
@@ -3016,14 +2997,13 @@ function startReservationTimer() {
         // Guarda únicamente el último consecutivo utilizado.
         transaction.set(counterRef, { ultimo: nextNumber }, { merge: true });
 
-        for (let i = 0; i < tableRefs.length; i++) {
-          const tRef = tableRefs[i];
-          transaction.update(tRef, {
-            status: 'VENDIDA',
-            reservedUntil: null,
-            reservedBy: null,
-            pedido: candidateId
-          });
+        for (const code of tablesToBuy) {
+          const shardId = tableShardId(code);
+          const occupied = occupiedByShard.get(shardId);
+          occupied[code] = { ...occupied[code], code, status: 'VENDIDA', reservedUntil: null, reservedBy: null, pedido: candidateId };
+        }
+        for (let i = 0; i < shardRefs.length; i++) {
+          transaction.set(shardRefs[i], { occupied: occupiedByShard.get(shardIds[i]), updatedAt: Date.now() }, { merge: true });
         }
 
         return candidateId;
