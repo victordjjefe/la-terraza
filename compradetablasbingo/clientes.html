@@ -1125,6 +1125,7 @@
   let purchaseStage = 'payment';
   let freeTableFlow = false;
   let comprobanteValidadoFile = null;
+  let comprobanteParaTablasAdicionales = false;
   let comprobanteValidacionPromise = null;
   let tesseractLoaderPromise = null;
   let allTablesData = [];
@@ -2198,12 +2199,15 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
 
     // Una cortesía cubre exactamente una tabla. Se bloquea cualquier intento
     // de añadir una segunda tabla antes de crear una reserva en Firebase.
-    if (declaraCortesia() && selectedTables.length >= 1 && index === -1) {
+    if (declaraCortesia() && selectedTables.length >= 1 && index === -1 && !(proofFile && comprobanteValidadoFile === proofFile)) {
       const aviso = document.getElementById('tables-selection-error');
       if (aviso) {
         aviso.textContent = 'La tabla gratis permite seleccionar únicamente una tabla. Si deseas adquirir tablas adicionales, debes subir el comprobante de pago.';
         aviso.classList.add('visible');
       }
+      document.getElementById('card-tables-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      comprobanteParaTablasAdicionales = true;
+      avisoComprobanteSegunCortesia();
       tableOperationsInFlight.delete(code);
       return;
     }
@@ -2698,7 +2702,8 @@ function startReservationTimer() {
     document.getElementById('proof-required-description').textContent = cortesiaConMasTablas
       ? 'Tu premio cubre solo una tabla. Para registrar las demás, debes subir el comprobante de pago.'
       : 'Para registrar tus tablas, selecciona una captura de pantalla o foto de tu pago en formato JPG o PNG.';
-    actualizarEstadoArchivoComprobante(cortesiaConMasTablas ? 'Sube el comprobante de las tablas adicionales.' : 'Debes subir tu comprobante de pago para continuar.');
+    const botonSubir = document.getElementById('proof-required-upload');
+    if (botonSubir) botonSubir.textContent = cortesiaConMasTablas ? '📤 SUBIR COMPROBANTE PARA TABLAS ADICIONALES' : '📤 SUBIR COMPROBANTE';
     mostrarAvisoComprobante();
   }
   const proofRequiredModal = document.getElementById('proof-required-modal');
@@ -2715,7 +2720,23 @@ function startReservationTimer() {
   proofRequiredClose.addEventListener('click', cerrarAvisoComprobante);
   proofRequiredModal.addEventListener('click', (e) => { if (e.target === proofRequiredModal) cerrarAvisoComprobante(); });
   document.getElementById('proof-required-upload').addEventListener('click', () => {
-    document.getElementById('proof-file').click();
+    const input = document.getElementById('proof-file');
+    if (!input) return;
+    const parentOriginal = input.parentNode;
+    const siguienteOriginal = input.nextSibling;
+    const restaurarInput = () => {
+      if (parentOriginal && input.parentNode !== parentOriginal) {
+        parentOriginal.insertBefore(input, siguienteOriginal && siguienteOriginal.parentNode === parentOriginal ? siguienteOriginal : null);
+      }
+      input.style.cssText = '';
+    };
+    // El selector de pago está oculto durante la selección de tablas.
+    // Se mueve temporalmente el mismo input al aviso visible para abrir la galería.
+    input.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;left:0;bottom:0;z-index:60001;';
+    proofRequiredModal.appendChild(input);
+    input.addEventListener('change', restaurarInput, { once: true });
+    window.addEventListener('focus', () => setTimeout(restaurarInput, 300), { once: true });
+    input.click();
   });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && proofRequiredModal.classList.contains('active')) cerrarAvisoComprobante(); });
 
@@ -2921,6 +2942,28 @@ function startReservationTimer() {
       estadoComprobanteValido.textContent = '✅ Comprobante válido. Ahora completa tus datos para continuar.';
     }
     cerrarAvisoComprobante();
+    if (comprobanteParaTablasAdicionales) {
+      comprobanteParaTablasAdicionales = false;
+      proofValidationTitle.textContent = '¡Comprobante válido!';
+      proofValidationMessage.textContent = 'El comprobante fue validado correctamente. Ya puedes seleccionar tus tablas adicionales.';
+      proofValidationIcon.textContent = '✓';
+      proofValidationIcon.style.background = '#dcfce7';
+      proofValidationIcon.style.color = '#15803d';
+      proofValidationBack.style.display = 'none';
+      proofValidationRetry.style.display = 'none';
+      proofValidationRegister.style.display = 'none';
+      abrirModalValidacionBase('');
+      setTimeout(() => {
+        cerrarModalValidacionComprobante();
+        const aviso = document.getElementById('tables-selection-error');
+        if (aviso) {
+          aviso.textContent = '';
+          aviso.classList.remove('visible');
+        }
+        document.getElementById('card-tables-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 1300);
+      return;
+    }
     mostrarModalComprobanteValido();
   });
 
