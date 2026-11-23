@@ -2938,7 +2938,7 @@ function startReservationTimer() {
     if (!buyerName) datosFaltantes.push('nombre');
     if (!buyerAddress) datosFaltantes.push('referencia');
     if (!buyerPhoneRaw) datosFaltantes.push('número de WhatsApp');
-    if (selectedTables.length === 0) datosFaltantes.push('seleccionar al menos una tabla');
+    if (selectedTables.length === 0) datosFaltantes.push('marcar al menos una tabla');
     if (datosFaltantes.length) {
       const faltantesTexto = datosFaltantes.length === 1
         ? datosFaltantes[0]
