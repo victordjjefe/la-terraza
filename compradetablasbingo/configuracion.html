@@ -323,6 +323,19 @@
     }
 
 
+
+    .manual-tables-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(66px,1fr));gap:8px;max-height:56vh;overflow-y:auto;padding:2px}
+    .manual-table-btn{border:1px solid var(--border-color);background:#fff;color:var(--text-main);border-radius:8px;padding:11px 5px;font-weight:800;cursor:pointer;min-height:44px}
+    .manual-table-btn.available{border-color:#86efac;background:#f0fdf4;color:#166534}
+    .manual-table-btn.selected{border-color:#d97706;background:#fffbeb;color:#92400e}
+    .manual-table-btn.unavailable{opacity:.42;cursor:not-allowed;background:#f1f5f9;text-decoration:line-through}
+    .manual-selected-list{display:flex;flex-direction:column;gap:9px}
+    .manual-selected-row{display:grid;grid-template-columns:minmax(70px,.7fr) minmax(150px,1.3fr) auto;gap:8px;align-items:center;border:1px solid var(--border-color);border-radius:8px;padding:9px;background:#fff}
+    .manual-selected-row .form-control{padding:9px}
+    .manual-pagination{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:12px}
+    .manual-help{color:var(--text-muted);font-size:.82rem;line-height:1.45;margin:8px 0 12px}
+    @media(max-width:520px){.manual-selected-row{grid-template-columns:1fr 1.5fr auto}.manual-table-btn{padding:10px 3px}}
+
     /* =========================================================
        PANEL ADMINISTRADOR RESPONSIVE
        - Móvil conserva el diseño actual
@@ -526,6 +539,7 @@
       <div class="tab-item active" id="tab-btn-config">Configuración</div>
       <div class="tab-item" id="tab-btn-pedidos">Pedidos</div>
       <div class="tab-item" id="tab-btn-listado">Listado</div>
+      <div class="tab-item" id="tab-btn-manual">Registrar tablas manuales</div>
     </div>
 
     <!-- SECCIÓN CONFIGURACIÓN -->
@@ -678,6 +692,48 @@
         </div>
       </div>
     </div>
+
+    <!-- SECCIÓN REGISTRO MANUAL -->
+    <div id="tab-manual" style="display:none;">
+      <div class="card">
+        <div class="card-title">Registrar tablas manualmente</div>
+        <p class="manual-help">Asigna tablas directamente a una persona. No se solicita comprobante. Las tablas se reservan en Firebase al seleccionarlas para que no puedan ser tomadas por otro comprador.</p>
+        <form id="form-manual-client">
+          <div class="form-group">
+            <label for="manual-client-name">Nombre y apellido</label>
+            <input type="text" id="manual-client-name" class="form-control" placeholder="Nombre completo" required autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="manual-client-reference">Ciudad / referencia / barrio</label>
+            <input type="text" id="manual-client-reference" class="form-control" placeholder="Ciudad o barrio" required autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label>WhatsApp</label>
+            <div class="form-row">
+              <input type="tel" id="manual-client-country" class="form-control" value="+57" style="max-width:105px;" aria-label="Indicativo" autocomplete="off">
+              <input type="tel" id="manual-client-phone" class="form-control" placeholder="Número de teléfono" required inputmode="tel" autocomplete="off">
+            </div>
+          </div>
+        </form>
+        <div class="card-title" style="margin-top:18px;">Tablas disponibles</div>
+        <p class="manual-help" id="manual-tables-help">Selecciona una tabla. Al reservarla, podrás indicar su destino contable.</p>
+        <div id="manual-tables-grid" class="manual-tables-grid">
+          <p style="grid-column:1/-1;text-align:center;color:#64748b;">Abre este módulo para cargar las tablas disponibles.</p>
+        </div>
+        <div class="manual-pagination" id="manual-pagination" style="display:none;">
+          <button type="button" class="btn btn-sm btn-dark" id="manual-page-prev">Anterior</button>
+          <span id="manual-page-info" style="font-size:.85rem;color:#64748b;"></span>
+          <button type="button" class="btn btn-sm btn-dark" id="manual-page-next">Siguiente</button>
+        </div>
+        <div class="card-title" style="margin-top:20px;">Tablas seleccionadas</div>
+        <div id="manual-selected-list" class="manual-selected-list">
+          <p class="manual-help">Todavía no has seleccionado tablas.</p>
+        </div>
+        <p id="manual-selection-summary" class="manual-help"></p>
+        <button type="button" class="btn btn-success" id="btn-manual-register" style="margin-top:14px;" disabled>Registrar tablas</button>
+        <button type="button" class="btn btn-dark" id="btn-manual-clear" style="margin-top:8px;">Limpiar selección</button>
+      </div>
+    </div>
   </main>
 </div>
 
@@ -747,8 +803,8 @@
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
   import {  
-    initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, setDoc, updateDoc, deleteDoc,  
-    collection, getDocs, onSnapshot, writeBatch  
+    initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, setDoc, updateDoc, deleteDoc,
+    collection, getDocs, onSnapshot, writeBatch, runTransaction, query, where, documentId 
   } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
   const firebaseConfig = {
@@ -867,33 +923,35 @@
   }
 
   function switchTab(tab) {
-    if (tab !== 'pedidos') {
-      limpiarBuscadorPedidos();
-    }
+    if (tab !== 'pedidos') limpiarBuscadorPedidos();
     document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
-    document.getElementById('tab-config').style.display = 'none';
-    document.getElementById('tab-pedidos').style.display = 'none';
-    document.getElementById('tab-listado').style.display = 'none';
-    
+    ['config','pedidos','listado','manual'].forEach(name => {
+      const section = document.getElementById('tab-' + name);
+      if (section) section.style.display = 'none';
+    });
+
     if (tab === 'config') {
       document.getElementById('tab-btn-config').classList.add('active');
-      // Deja que el CSS responsive decida si Configuración se muestra como bloque o grid.
-      // Evita que al volver desde otra pestaña quede forzado en display:block.
       document.getElementById('tab-config').style.display = '';
     } else if (tab === 'pedidos') {
       document.getElementById('tab-btn-pedidos').classList.add('active');
       document.getElementById('tab-pedidos').style.display = 'block';
       renderOrders();
-    } else {
+    } else if (tab === 'listado') {
       document.getElementById('tab-btn-listado').classList.add('active');
       document.getElementById('tab-listado').style.display = 'block';
       renderListado();
+    } else if (tab === 'manual') {
+      document.getElementById('tab-btn-manual').classList.add('active');
+      document.getElementById('tab-manual').style.display = 'block';
+      iniciarModuloRegistroManual();
     }
   }
 
   document.getElementById('tab-btn-config').addEventListener('click', () => switchTab('config'));
   document.getElementById('tab-btn-pedidos').addEventListener('click', () => switchTab('pedidos'));
   document.getElementById('tab-btn-listado').addEventListener('click', () => switchTab('listado'));
+  document.getElementById('tab-btn-manual').addEventListener('click', () => switchTab('manual'));
 
   function firestoreDateToInput(value) {
     if (!value) return '';
@@ -1972,6 +2030,397 @@ function seleccionarFormaPago(order){
   }
 
   document.getElementById('btn-cerrar-bingo').addEventListener('click', cerrarBingo);
+
+
+
+  // =========================================================
+  // REGISTRO MANUAL DE TABLAS
+  // Carga solo la página visible y consulta sus estados con consultas IN.
+  // Cada selección se reserva mediante transacción, igual que en Clientes.
+  // El registro final confirma pedido, contador, índice del cliente y tablas
+  // vendidas dentro de una sola transacción.
+  // =========================================================
+  const MANUAL_TABLES_PER_PAGE = 200;
+  const MANUAL_RESERVATION_MINUTES = 15;
+  const manualSelected = new Map();
+  let manualCurrentPage = 1;
+  let manualTables = [];
+  let manualRangeKey = '';
+  let manualReservationOwner = createManualReservationOwner();
+  let manualLoading = false;
+
+  function createManualReservationOwner() {
+    return 'ADMIN_MANUAL_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
+  }
+
+  function manualPhoneValue() {
+    return normalizarTelefonoInternacional(
+      document.getElementById('manual-client-phone').value,
+      document.getElementById('manual-client-country').value || '+57'
+    );
+  }
+
+  function manualGetRange() {
+    const desde = Math.max(1, Number(document.getElementById('cfg-desde')?.value) || 1);
+    const hasta = Math.max(0, Number(document.getElementById('cfg-hasta')?.value) || 0);
+    return { desde, hasta };
+  }
+
+  function manualBuildRangeIfNeeded() {
+    const { desde, hasta } = manualGetRange();
+    const key = `${desde}-${hasta}`;
+    if (key === manualRangeKey) return;
+    manualRangeKey = key;
+    manualTables = [];
+    for (let n = desde; n <= hasta; n++) manualTables.push({ code: formatTableCode(n), status: 'DISPONIBLE' });
+    manualCurrentPage = 1;
+  }
+
+  async function manualLoadVisiblePage() {
+    if (manualLoading) return;
+    manualLoading = true;
+    const grid = document.getElementById('manual-tables-grid');
+    grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#64748b;">Consultando disponibilidad...</p>';
+    try {
+      manualBuildRangeIfNeeded();
+      const start = (manualCurrentPage - 1) * MANUAL_TABLES_PER_PAGE;
+      const page = manualTables.slice(start, start + MANUAL_TABLES_PER_PAGE);
+      const codes = page.map(t => t.code);
+      const groups = [];
+      for (let i = 0; i < codes.length; i += 30) groups.push(codes.slice(i, i + 30));
+
+      // No descarga toda la colección: solo consulta los IDs de la página abierta.
+      const snapshots = await Promise.all(groups.map(group => getDocs(query(
+        collection(db, 'tablas'), where(documentId(), 'in', group)
+      ))));
+      const byCode = new Map();
+      snapshots.forEach(snapshot => snapshot.forEach(docSnap => byCode.set(docSnap.id, docSnap.data())));
+      const now = Date.now();
+
+      page.forEach(table => {
+        const data = byCode.get(table.code);
+        Object.assign(table, { status: 'DISPONIBLE', reservedUntil: null, reservedBy: null });
+        if (!data) return;
+        const expired = data.status === 'RESERVADA' && (!data.reservedUntil || data.reservedUntil <= now);
+        if (!expired && (data.status === 'VENDIDA' || data.status === 'RESERVADA')) {
+          Object.assign(table, data, { code: table.code });
+        }
+      });
+    } catch (error) {
+      console.error('Error consultando disponibilidad para registro manual:', error);
+      grid.innerHTML = '<p style="grid-column:1/-1;color:#b91c1c;">No fue posible consultar las tablas. Intenta nuevamente.</p>';
+    } finally {
+      manualLoading = false;
+      if (!grid.querySelector('p[style*="color:#b91c1c"]')) manualRenderTables();
+    }
+  }
+
+  function manualRenderTables() {
+    const grid = document.getElementById('manual-tables-grid');
+    const now = Date.now();
+    grid.innerHTML = '';
+    const start = (manualCurrentPage - 1) * MANUAL_TABLES_PER_PAGE;
+    const page = manualTables.slice(start, start + MANUAL_TABLES_PER_PAGE);
+
+    page.forEach(table => {
+      const selected = manualSelected.has(table.code);
+      const expired = table.status === 'RESERVADA' && (!table.reservedUntil || table.reservedUntil <= now);
+      const available = table.status !== 'VENDIDA' &&
+        (table.status !== 'RESERVADA' || table.reservedBy === manualReservationOwner || expired);
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'manual-table-btn ' + (selected ? 'selected' : (available ? 'available' : 'unavailable'));
+      button.textContent = table.code;
+      button.disabled = !available || manualLoading;
+      button.title = selected ? 'Seleccionada' : (available ? 'Disponible: seleccionar' : 'No disponible');
+      button.addEventListener('click', () => manualToggleTable(table.code));
+      grid.appendChild(button);
+    });
+
+    const totalPages = Math.max(1, Math.ceil(manualTables.length / MANUAL_TABLES_PER_PAGE));
+    document.getElementById('manual-pagination').style.display = totalPages > 1 ? 'flex' : 'none';
+    document.getElementById('manual-page-info').textContent = `Página ${manualCurrentPage} de ${totalPages}`;
+    document.getElementById('manual-page-prev').disabled = manualCurrentPage <= 1;
+    document.getElementById('manual-page-next').disabled = manualCurrentPage >= totalPages;
+    document.getElementById('manual-tables-help').textContent =
+      `Mostrando ${page.length} tablas. Las ocupadas o reservadas por otros compradores no se pueden seleccionar.`;
+    manualRenderSelected();
+  }
+
+  async function manualReserveTable(code) {
+    const tableRef = doc(db, 'tablas', code);
+    const until = Date.now() + MANUAL_RESERVATION_MINUTES * 60 * 1000;
+    return runTransaction(db, async transaction => {
+      const snap = await transaction.get(tableRef);
+      const now = Date.now();
+      if (!snap.exists()) {
+        transaction.set(tableRef, {
+          code, status: 'RESERVADA', reservedUntil: until,
+          reservedBy: manualReservationOwner, pedido: null
+        });
+        return until;
+      }
+      const data = snap.data();
+      const expired = data.status === 'RESERVADA' && (!data.reservedUntil || data.reservedUntil <= now);
+      if (data.status === 'VENDIDA' ||
+          (data.status === 'RESERVADA' && data.reservedBy !== manualReservationOwner && !expired)) return false;
+      transaction.set(tableRef, {
+        code, status: 'RESERVADA', reservedUntil: until,
+        reservedBy: manualReservationOwner, pedido: data.pedido || null
+      }, { merge: true });
+      return until;
+    });
+  }
+
+  async function manualReleaseTable(code) {
+    const tableRef = doc(db, 'tablas', code);
+    await runTransaction(db, async transaction => {
+      const snap = await transaction.get(tableRef);
+      if (!snap.exists()) return;
+      const data = snap.data();
+      if (data.status === 'RESERVADA' && data.reservedBy === manualReservationOwner) transaction.delete(tableRef);
+    });
+    manualSelected.delete(code);
+    const table = manualTables.find(item => item.code === code);
+    if (table) Object.assign(table, { status: 'DISPONIBLE', reservedBy: null, reservedUntil: null });
+  }
+
+  async function manualToggleTable(code) {
+    if (manualSelected.has(code)) {
+      try {
+        await manualReleaseTable(code);
+        manualRenderTables();
+      } catch (error) {
+        console.error('No se pudo liberar la tabla manual:', error);
+        alert('No se pudo quitar la tabla ' + code + ': ' + error.message);
+      }
+      return;
+    }
+    try {
+      const until = await manualReserveTable(code);
+      if (!until) {
+        const table = manualTables.find(item => item.code === code);
+        if (table) Object.assign(table, { status: 'VENDIDA', reservedBy: null });
+        manualRenderTables();
+        alert(`La tabla ${code} acaba de ser reservada o comprada por otra persona. Actualicé su disponibilidad.`);
+        return;
+      }
+      manualSelected.set(code, { destino: 'CONSIGNACIÓN', reservedUntil: until });
+      const table = manualTables.find(item => item.code === code);
+      if (table) Object.assign(table, { status: 'RESERVADA', reservedBy: manualReservationOwner, reservedUntil: until });
+      manualRenderTables();
+      const selector = document.querySelector(`[data-manual-destino="${code}"]`);
+      if (selector) {
+        selector.focus();
+        selector.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    } catch (error) {
+      console.error('Error reservando tabla para registro manual:', error);
+      alert('No fue posible reservar la tabla ' + code + ': ' + error.message);
+    }
+  }
+
+  function manualRenderSelected() {
+    const container = document.getElementById('manual-selected-list');
+    const entries = [...manualSelected.entries()].sort((a, b) =>
+      (parseInt(a[0].replace(/\D/g, ''), 10) || 0) - (parseInt(b[0].replace(/\D/g, ''), 10) || 0)
+    );
+    if (!entries.length) {
+      container.innerHTML = '<p class="manual-help">Todavía no has seleccionado tablas.</p>';
+    } else {
+      container.innerHTML = entries.map(([code, item]) => `
+        <div class="manual-selected-row">
+          <strong>${code}</strong>
+          <select class="form-control" data-manual-destino="${code}" aria-label="Destino de ${code}">
+            <option value="CONSIGNACIÓN" ${item.destino === 'CONSIGNACIÓN' ? 'selected' : ''}>CONSIGNACIÓN</option>
+            <option value="EFECTIVO" ${item.destino === 'EFECTIVO' ? 'selected' : ''}>EFECTIVO</option>
+            <option value="GRATIS" ${item.destino === 'GRATIS' ? 'selected' : ''}>GRATIS</option>
+          </select>
+          <button type="button" class="btn btn-sm btn-danger" data-manual-remove="${code}" aria-label="Quitar ${code}">✕</button>
+        </div>
+      `).join('');
+      container.querySelectorAll('[data-manual-destino]').forEach(select => {
+        select.addEventListener('change', () => {
+          const item = manualSelected.get(select.dataset.manualDestino);
+          if (item) item.destino = select.value;
+        });
+      });
+      container.querySelectorAll('[data-manual-remove]').forEach(button => {
+        button.addEventListener('click', () => manualToggleTable(button.dataset.manualRemove));
+      });
+    }
+    document.getElementById('manual-selection-summary').textContent =
+      entries.length ? `${entries.length} tabla(s) seleccionada(s). Reserva activa durante ${MANUAL_RESERVATION_MINUTES} minutos.` : '';
+    document.getElementById('btn-manual-register').disabled = entries.length === 0;
+  }
+
+  async function manualClearSelection() {
+    for (const code of [...manualSelected.keys()]) {
+      try { await manualReleaseTable(code); }
+      catch (error) { console.error('Error liberando selección manual:', code, error); }
+    }
+    manualRenderTables();
+  }
+
+  function iniciarModuloRegistroManual() {
+    manualBuildRangeIfNeeded();
+    // Refresca únicamente la página visible cada vez que se abre el módulo,
+    // para reflejar compras y reservas recientes sin escuchar toda la colección.
+    manualLoadVisiblePage();
+  }
+
+  document.getElementById('manual-page-prev').addEventListener('click', async () => {
+    if (manualCurrentPage > 1) { manualCurrentPage--; await manualLoadVisiblePage(); }
+  });
+  document.getElementById('manual-page-next').addEventListener('click', async () => {
+    const pages = Math.max(1, Math.ceil(manualTables.length / MANUAL_TABLES_PER_PAGE));
+    if (manualCurrentPage < pages) { manualCurrentPage++; await manualLoadVisiblePage(); }
+  });
+  document.getElementById('btn-manual-clear').addEventListener('click', async () => {
+    if (!manualSelected.size) return;
+    if (!confirm('¿Deseas liberar todas las tablas seleccionadas?')) return;
+    await manualClearSelection();
+  });
+
+  document.getElementById('btn-manual-register').addEventListener('click', async () => {
+    const button = document.getElementById('btn-manual-register');
+    const nombre = String(document.getElementById('manual-client-name').value || '').trim().replace(/\s+/g, ' ').toUpperCase();
+    const referencia = String(document.getElementById('manual-client-reference').value || '').trim().replace(/\s+/g, ' ').toUpperCase();
+    const telefono = manualPhoneValue();
+    const tablas = [...manualSelected.keys()].sort((a, b) =>
+      (parseInt(a.replace(/\D/g, ''), 10) || 0) - (parseInt(b.replace(/\D/g, ''), 10) || 0)
+    );
+
+    if (nombre.split(' ').filter(Boolean).length < 2) return alert('Escribe el nombre y apellido de la persona.');
+    if (!referencia) return alert('Escribe la ciudad o referencia del cliente.');
+    if (!telefono || telefono.replace(/\D/g, '').length < 7) return alert('Escribe un número de WhatsApp válido.');
+    if (!tablas.length) return alert('Selecciona al menos una tabla.');
+
+    const destinos = Object.fromEntries(tablas.map(code => [code, manualSelected.get(code).destino]));
+    const destinoValores = Object.values(destinos);
+    const destinoGeneral = destinoValores.every(v => v === destinoValores[0]) ? destinoValores[0] : 'VARIOS';
+    const total = tablas.length * (Number(currentTableValue) || 0);
+
+    button.disabled = true;
+    button.textContent = 'Registrando...';
+    try {
+      const counterRef = doc(db, 'sistema', 'contadorPedidos');
+      const candidateRef = doc(collection(db, 'pedidos'));
+      const clientIndexRef = doc(db, 'clientes', telefono);
+
+      const orderId = await runTransaction(db, async transaction => {
+        const counterSnap = await transaction.get(counterRef);
+        const clientSnap = await transaction.get(clientIndexRef);
+        const tableRefs = tablas.map(code => doc(db, 'tablas', code));
+        const tableSnaps = [];
+        for (const tableRef of tableRefs) tableSnaps.push(await transaction.get(tableRef));
+
+        const nextNumber = counterSnap.exists() ? Number(counterSnap.data().ultimo || 0) + 1 : 1;
+        const visibleId = String(nextNumber).padStart(5, '0');
+        const now = Date.now();
+
+        for (let i = 0; i < tableSnaps.length; i++) {
+          const snap = tableSnaps[i];
+          const code = tablas[i];
+          if (!snap.exists()) throw new Error(`La reserva de la tabla ${code} se perdió. Selecciónala nuevamente.`);
+          const data = snap.data();
+          if (data.status !== 'RESERVADA' || data.reservedBy !== manualReservationOwner ||
+              !data.reservedUntil || data.reservedUntil <= now) {
+            throw new Error(`La tabla ${code} ya no está reservada por este registro. Actualiza la selección.`);
+          }
+        }
+
+        const configActual = configEventoExportacion || {};
+        const linkDigital = manualBuildDigitalLink(telefono, nombre, configActual.fecha, configActual.linkTransmision, configActual.idBingo || 'BINGO001');
+        const existingClient = clientSnap.exists() ? clientSnap.data() : {};
+        const tablasCliente = [...new Set([...(Array.isArray(existingClient.tablas) ? existingClient.tablas : []), ...tablas])];
+
+        const newOrder = {
+          id: visibleId,
+          numeroPedido: visibleId,
+          documentoId: candidateRef.id,
+          cliente: nombre,
+          telefono,
+          idBingo: configActual.idBingo || 'BINGO001',
+          referencia,
+          tablas,
+          linkDigital,
+          clienteId: 'CLI_' + telefono.replace(/\D/g, ''),
+          eventoId: 'BINGO_' + String(configActual.fecha || '').replace(/\D/g, ''),
+          registroContable: {
+            cliente: nombre, telefono, referencia, tablas,
+            fechaBingo: configActual.fecha || '',
+            linkTransmision: configActual.linkTransmision || '',
+            fechaRegistro: new Date().toLocaleString()
+          },
+          total,
+          comprobante: null,
+          comprobanteURL: null,
+          declaraTablaGratis: tablas.some(code => destinos[code] === 'GRATIS'),
+          fecha: new Date().toLocaleString(),
+          estado: 'PAGADO',
+          destino: destinoGeneral,
+          destinoPorTabla: destinos,
+          origenRegistro: 'ADMIN_MANUAL'
+        };
+
+        transaction.set(candidateRef, newOrder);
+        transaction.set(clientIndexRef, {
+          cliente: nombre,
+          telefono,
+          fechaBingo: configActual.fecha || '',
+          linkTransmision: configActual.linkTransmision || '',
+          pedidoId: visibleId,
+          idBingo: configActual.idBingo || 'BINGO001',
+          tablas: tablasCliente,
+          linkDigital
+        }, { merge: true });
+        transaction.set(counterRef, { ultimo: nextNumber }, { merge: true });
+
+        tableRefs.forEach((tableRef, index) => {
+          transaction.update(tableRef, {
+            status: 'VENDIDA', reservedUntil: null, reservedBy: null, pedido: visibleId
+          });
+        });
+        return visibleId;
+      });
+
+      manualSelected.clear();
+      manualReservationOwner = createManualReservationOwner();
+      document.getElementById('form-manual-client').reset();
+      document.getElementById('manual-client-country').value = '+57';
+      await manualLoadVisiblePage();
+      alert(`Registro manual #${orderId} creado correctamente. Las tablas quedaron vendidas y ya no están disponibles para otros compradores.`);
+    } catch (error) {
+      console.error('Error creando registro manual:', error);
+      alert('No se pudo completar el registro: ' + error.message + '. Las tablas seleccionadas siguen reservadas hasta que las liberes o venza su tiempo.');
+    } finally {
+      button.disabled = manualSelected.size === 0;
+      button.textContent = 'Registrar tablas';
+    }
+  });
+
+  function manualBuildDigitalLink(telefono, nombre, fecha, linkTransmision, idBingo) {
+    const base = 'https://laterrazacalipodcast.top/tabla-digital/';
+    let vence = '';
+    if (fecha) {
+      const raw = String(fecha).trim();
+      let parts = raw.split('-');
+      if (parts.length === 3 && parts[0].length === 4) vence = parts.join('');
+      else {
+        parts = raw.split('/');
+        if (parts.length === 3 && parts[2].length === 4) {
+          vence = parts[2] + String(parts[1]).padStart(2, '0') + String(parts[0]).padStart(2, '0');
+        }
+      }
+    }
+    let video = '';
+    if (linkTransmision) {
+      const match = String(linkTransmision).match(/(?:v=|youtu\.be\/|live\/)([^&?\/]+)/);
+      video = match ? match[1] : String(linkTransmision);
+    }
+    return `${base}?cliente=${encodeURIComponent(telefono)}&bingo=${encodeURIComponent(idBingo || 'BINGO001')}&vence=${encodeURIComponent(vence)}&nombre=${encodeURIComponent(String(nombre || '').toLowerCase().replace(/\s+/g, '-'))}&video=${encodeURIComponent(video)}`;
+  }
 
 
   // Exportación administrativa para el sistema contable local
