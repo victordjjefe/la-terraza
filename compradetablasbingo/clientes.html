@@ -817,6 +817,16 @@
   box-shadow: 0 2px 0 #075e3d, 0 5px 10px rgba(0,0,0,.25) !important;
 }
 </style>
+
+<style>
+/* Fondo atenuado durante el registro; los botones flotantes permanecen visibles al frente. */
+#purchase-processing-backdrop{position:fixed;inset:0;z-index:9996;display:none;background:rgba(15,23,42,.48);-webkit-backdrop-filter:blur(2.5px);backdrop-filter:blur(2.5px);pointer-events:auto}
+#purchase-processing-backdrop.active{display:block;animation:purchaseBackdropIn .18s ease-out}
+#floating-purchase-actions{z-index:9998!important}
+@keyframes purchaseBackdropIn{from{opacity:0}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){#purchase-processing-backdrop.active{animation:none}}
+</style>
+
 </head>
 <body>
 <div id="proof-required-modal" role="dialog" aria-modal="true" aria-labelledby="proof-required-title" aria-describedby="proof-required-description">
@@ -996,6 +1006,7 @@
 
     </main>
 
+    <div id="purchase-processing-backdrop" aria-hidden="true"></div>
     <div id="floating-purchase-actions" aria-label="Acciones de compra">
       <button type="button" class="btn btn-danger" id="btn-floating-cancel">Cancelar</button>
       <button type="button" class="btn btn-success" id="btn-floating-finish">Registrar compra</button>
@@ -2628,6 +2639,7 @@ function startReservationTimer() {
   // Firebase controla el vencimiento mediante reservedUntil (3 minutos).
 
   function resetForm() {
+    mostrarFondoProcesamiento(false);
     clearInterval(timerInterval);
     reservationEndTime = null;
     selectedTables = [];
@@ -2683,6 +2695,13 @@ function startReservationTimer() {
   }
 
   document.getElementById('btn-copy-number').addEventListener('click', copiarNumero);
+
+  function mostrarFondoProcesamiento(activo) {
+    const fondo = document.getElementById('purchase-processing-backdrop');
+    if (!fondo) return;
+    fondo.classList.toggle('active', Boolean(activo));
+    fondo.setAttribute('aria-hidden', activo ? 'false' : 'true');
+  }
 
   function actualizarProgresoComprobante(porcentaje, texto = 'Procesando comprobante') {
     const valor = Math.max(0, Math.min(100, Math.round(porcentaje)));
@@ -3326,6 +3345,7 @@ function startReservationTimer() {
     btnFlotante.disabled = true;
     btn.setAttribute('aria-busy', 'true');
     btnFlotante.setAttribute('aria-busy', 'true');
+    mostrarFondoProcesamiento(true);
     let progresoGuardadoInterval = null;
 
     try {
@@ -3605,6 +3625,7 @@ function startReservationTimer() {
       // datos visibles del resultado están listos. Se revela la pantalla final
       // inmediatamente después, evitando el espacio en blanco entre ambas vistas.
       actualizarProgresoComprobante(100, 'Registro completado');
+      mostrarFondoProcesamiento(false);
       // Crea un punto de historial propio para que Atrás, desde el resultado,
       // inicie una compra nueva en esta misma página en lugar de restaurar el estado anterior.
       history.pushState({ ...(history.state || {}), ltbPurchaseComplete: true }, '', location.href);
@@ -3616,6 +3637,7 @@ function startReservationTimer() {
       document.getElementById('success-exclusive-screen').classList.remove('hidden');
 
     } catch (err) {
+      mostrarFondoProcesamiento(false);
       console.error("Error al finalizar pedido:", err);
 
       const falloCargaComprobante = proofFile && !orderCompleted;
@@ -3652,6 +3674,7 @@ function startReservationTimer() {
         document.getElementById('reservation-timer-box').classList.remove('hidden');
       }
     } finally {
+      if (!orderCompleted) mostrarFondoProcesamiento(false);
       if (progresoGuardadoInterval) {
         clearInterval(progresoGuardadoInterval);
         progresoGuardadoInterval = null;
