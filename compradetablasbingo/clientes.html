@@ -3041,6 +3041,19 @@ function startReservationTimer() {
     abrirModalValidacionBase('');
     proofValidationRetry.focus();
   }
+  function mostrarModalComprobanteEliminado() {
+    proofValidationTitle.textContent = '¡Comprobante eliminado!';
+    proofValidationMessage.textContent = 'El comprobante se eliminó correctamente. Ya puedes continuar y registrar únicamente tu tabla gratis.';
+    proofValidationIcon.textContent = '✓';
+    proofValidationIcon.style.background = '#dcfce7';
+    proofValidationIcon.style.color = '#15803d';
+    proofValidationBack.style.display = 'none';
+    proofValidationRetry.style.display = 'none';
+    proofValidationRegister.style.display = 'none';
+    abrirModalValidacionBase('is-valid');
+    setTimeout(() => cerrarModalValidacionComprobante(), 1500);
+  }
+
   function mostrarModalComprobanteValido() {
     proofValidationTitle.textContent = '¡Comprobante válido!';
     proofValidationMessage.textContent = 'El comprobante superó la validación automática. El sistema verificará que el pago haya ingresado. Si el pago no se confirma, el registro podrá anularse y las tablas liberarse.';
@@ -3078,10 +3091,21 @@ function startReservationTimer() {
     if (!proofFile || boton?.disabled) return;
     establecerEstadoProcesoComprobante(true, 'Eliminando comprobante...');
     if (boton) boton.disabled = true;
+    proofValidationTitle.textContent = 'Eliminando comprobante…';
+    proofValidationMessage.textContent = 'Estamos retirando el archivo seleccionado y actualizando el registro. Por favor, espera.';
+    proofValidationIcon.textContent = '⟳';
+    proofValidationIcon.style.background = '';
+    proofValidationIcon.style.color = '';
+    proofValidationBack.style.display = 'none';
+    proofValidationRetry.style.display = 'none';
+    proofValidationRegister.style.display = 'none';
+    abrirModalValidacionBase('is-loading');
 
     // El archivo todavía está en el navegador: solo se adjunta a Firebase
     // al confirmar la compra. Se limpia el estado local antes de habilitar registro.
-    await new Promise(resolve => requestAnimationFrame(resolve));
+    // Mantiene visible el estado de eliminación el tiempo suficiente para
+    // que el usuario perciba el proceso, incluso cuando la limpieza es local.
+    await new Promise(resolve => setTimeout(resolve, 450));
     proofFile = null;
     comprobanteValidadoFile = null;
     comprobanteParaTablasAdicionales = false;
@@ -3092,8 +3116,10 @@ function startReservationTimer() {
     document.getElementById('btn-remove-proof-free')?.classList.add('hidden');
     const aviso = document.getElementById('tables-selection-error');
     if (aviso) { aviso.textContent = ''; aviso.classList.remove('visible'); }
+    comprobanteParaTablasAdicionales = false;
     establecerEstadoProcesoComprobante(false);
     actualizarEstadoArchivoComprobante('🎁 Comprobante eliminado. Ya puedes registrar únicamente tu tabla gratis.');
+    mostrarModalComprobanteEliminado();
   });
 
   document.getElementById('proof-file').addEventListener('change', async function(e) {
@@ -3116,11 +3142,18 @@ function startReservationTimer() {
 
     mostrarVistaPreviaComprobante(file);
     establecerEstadoProcesoComprobante(true, 'Validando comprobante, por favor espera...');
+    // Cuando la persona ya marcó su tabla gratis y adjunta un comprobante
+    // para agregar tablas pagadas, la sección de pago puede estar oculta.
+    // En ese flujo mostramos el modal central con el indicador circular.
+    if (comprobanteParaTablasAdicionales) {
+      mostrarModalValidandoComprobante();
+    }
     try {
       // La persona ve el estado de validación mientras se analiza la imagen.
       const resultado = await validarComprobantePorContenido(file);
       if (e.target.files[0] !== file) {
         establecerEstadoProcesoComprobante(false);
+        if (comprobanteParaTablasAdicionales) cerrarModalValidacionComprobante();
         return;
       }
       if (!resultado.valido) {
@@ -3173,6 +3206,8 @@ function startReservationTimer() {
     } catch (error) {
       console.error('Error durante la validación del comprobante:', error);
       establecerEstadoProcesoComprobante(false);
+      cerrarModalValidacionComprobante();
+      comprobanteParaTablasAdicionales = false;
       proofFile = null;
       comprobanteValidadoFile = null;
       const input = document.getElementById('proof-file');
