@@ -210,7 +210,7 @@
 
     /* Pantalla de carga inicial: se oculta automáticamente al terminar Firebase. */
     .initial-loader{
-      position:fixed;inset:0;z-index:10000;display:flex;
+      position:fixed;inset:0;z-index:10000;display:none;
       align-items:center;justify-content:center;
       background:linear-gradient(155deg,#f8fafc 0%,#fff8ed 100%);
       padding:18px;color:#172033;font-family:inherit;
@@ -1737,7 +1737,7 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
     const action = document.getElementById('loader-action');
     const heading = document.getElementById('loader-heading');
     if (loader) {
-      loader.style.display = 'flex';
+      loader.style.display = 'none';
       loader.classList.remove('error', 'is-hiding');
     }
     if (heading) heading.textContent = 'Cargando tablas...';
@@ -1754,11 +1754,8 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
       construirTablasDesdeRango();
       await cargarEstadosPagina(currentTablesPage, { mostrar: false });
       renderTables();
-      // La carga terminó: mostramos directamente la página de compra.
-      if (loader) {
-        loader.classList.add('is-hiding');
-        setTimeout(() => { loader.style.display = 'none'; }, 260);
-      }
+      // La página ya está visible: el inventario se cargó en segundo plano.
+      if (loader) { loader.style.display = 'none'; loader.classList.remove('error'); }
 
       // La recuperación de una reserva previa ya no bloquea la pantalla inicial.
       // Evita consultar las reservas de cada visitante nuevo que nunca seleccionó tablas.
@@ -1790,7 +1787,7 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
         if (title) title.textContent = 'NO FUE POSIBLE CARGAR EL BINGO';
         if (body) body.textContent = 'Verifica tu conexión e intenta ingresar nuevamente.';
       }
-      if (loader) loader.classList.add('error');
+      if (loader) { loader.classList.add('error'); loader.style.display = 'flex'; }
       if (heading) heading.textContent = 'No fue posible cargar las tablas. Verifica tu conexión e inténtalo de nuevo.';
       if (action) {
         action.textContent = 'REINTENTAR CARGA';
