@@ -917,6 +917,7 @@
           </div>
         </div>
         <small id="tables-selection-error" class="field-validation-message tables-validation-message" role="alert" aria-live="polite"></small>
+        <button type="button" id="btn-remove-proof-free" class="btn btn-danger hidden" style="width:100%;margin:8px 0 12px;">Eliminar comprobante y registrar únicamente mi tabla gratis</button>
         <div class="tables-grid" id="tables-container"></div>
         <div id="tables-loading-status" role="status" aria-live="polite" style="display:none;grid-column:1/-1;text-align:center;padding:16px 14px;margin-top:10px;border:1px solid #cbd5e1;border-radius:12px;background:#f8fafc;color:#475569;font-weight:700;">
           <span id="tables-loading-text">Cargando tablas disponibles...</span>
@@ -982,7 +983,7 @@
             <input type="file" id="proof-file" accept="image/jpeg,image/png,.jpg,.jpeg,.png" required aria-describedby="proof-file-status">
           </label>
           <div id="proof-file-status" role="status" aria-live="polite">⚠️ Todavía no has adjuntado tu comprobante. Solo se aceptan imágenes JPG o PNG.</div>
-          <button type="button" id="btn-remove-proof-free" class="btn btn-danger hidden" style="width:100%;margin-top:10px;">Eliminar comprobante y registrar solo mi tabla gratis</button>
+
           <div id="proof-preview-wrap" class="hidden" style="margin-top:12px;text-align:center;"><img id="proof-preview-image" alt="Vista previa temporal del comprobante" style="display:block;max-width:100%;max-height:260px;margin:0 auto;border-radius:12px;border:1px solid #cbd5e1;object-fit:contain;"><small style="display:block;margin-top:6px;color:#92400e;font-weight:600;">¡Comprobante recibido! Pago sujeto a verificación bancaria.</small></div>
         </div>
 
