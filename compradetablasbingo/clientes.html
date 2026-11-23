@@ -2321,7 +2321,7 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
         aviso.textContent = 'La tabla gratis permite seleccionar únicamente una tabla. Si deseas adquirir tablas adicionales, debes subir el comprobante de pago.';
         aviso.classList.add('visible');
       }
-      document.getElementById('card-tables-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      aviso?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       comprobanteParaTablasAdicionales = true;
       avisoComprobanteSegunCortesia();
       tableOperationsInFlight.delete(code);
@@ -3237,16 +3237,19 @@ function startReservationTimer() {
       const avisoTablas = document.getElementById('tables-selection-error');
       avisoTablas.textContent = 'Por favor, marca al menos una tabla.';
       avisoTablas.classList.add('visible');
-      document.getElementById('card-tables-section')?.scrollIntoView({behavior:'smooth',block:'center'});
+      avisoTablas.scrollIntoView({behavior:'smooth',block:'center'});
       return;
     }
 
-    // Segunda barrera: nunca registrar más de una tabla bajo modalidad gratis.
-    if (declaraCortesia() && selectedTables.length > 1) {
+    // Con tabla gratis se permite una tabla sin comprobante.
+    // Si selecciona tablas adicionales, exige un comprobante ya validado.
+    if (declaraCortesia() && selectedTables.length > 1 &&
+        (!proofFile || comprobanteValidadoFile !== proofFile)) {
       const avisoTablas = document.getElementById('tables-selection-error');
-      avisoTablas.textContent = 'La tabla gratis permite seleccionar únicamente una tabla. Si deseas adquirir tablas adicionales, debes subir el comprobante de pago.';
+      avisoTablas.textContent = 'La tabla gratis cubre una sola tabla. Para registrar tablas adicionales, sube y valida el comprobante de pago.';
       avisoTablas.classList.add('visible');
-      document.getElementById('card-tables-section')?.scrollIntoView({behavior:'smooth',block:'center'});
+      avisoTablas.scrollIntoView({behavior:'smooth',block:'center'});
+      avisoComprobanteSegunCortesia();
       return;
     }
 
@@ -3369,8 +3372,9 @@ function startReservationTimer() {
         // - Si el cliente marcó la cortesía, la tabla de menor número queda GRATIS.
         // Se ordena una copia para no alterar la selección original ni el enlace digital.
         const declaraGratis = declaraCortesia();
-        if (declaraGratis && tablesToBuy.length > 1) {
-          throw new Error('La tabla gratis permite seleccionar únicamente una tabla. Para registrar tablas adicionales debes subir el comprobante de pago.');
+        if (declaraGratis && tablesToBuy.length > 1 &&
+            (!proofFile || comprobanteValidadoFile !== proofFile)) {
+          throw new Error('La tabla gratis cubre una sola tabla. Para registrar tablas adicionales debes subir y validar el comprobante de pago.');
         }
         const tablasOrdenadasParaPago = [...tablesToBuy].sort((a, b) => {
           const numeroA = parseInt(String(a).replace(/\D/g, ''), 10);
@@ -3468,7 +3472,6 @@ function startReservationTimer() {
       if (progresoGuardadoInterval) {
         clearInterval(progresoGuardadoInterval);
         progresoGuardadoInterval = null;
-        actualizarProgresoComprobante(100, 'Comprobante guardado');
       }
 
       // Desde este punto Firebase ya confirmó pedido + tablas VENDIDAS.
@@ -3476,10 +3479,6 @@ function startReservationTimer() {
       // posterior nunca intente liberar estas tablas, incluso si falla la UI.
       selectedTables = [];
       reservationEndTime = null;
-
-      document.getElementById('reservation-timer-box').classList.add('hidden');
-      document.getElementById('banner-section').classList.add('hidden');
-      document.getElementById('main-flow-container').classList.add('hidden');
 
       // Una vez guardado el pedido actual, recuperamos todos los pedidos del mismo
       // WhatsApp y generamos UN SOLO enlace con todas sus tablas registradas.
@@ -3522,9 +3521,6 @@ function startReservationTimer() {
         config?.idBingo || 'BINGO001'
       );
 
-      document.getElementById('floating-purchase-actions')?.classList.remove('visible');
-      document.body.classList.remove('has-floating-purchase-actions');
-      document.getElementById('success-exclusive-screen').classList.remove('hidden');
       document.getElementById('buyer-success-display').textContent = `Hola ${buyerName}`;
       document.getElementById('order-number-display').textContent = `Registro #${orderId} · Tus tablas: ${tablesToBuy.join(', ')}`;
 
@@ -3561,6 +3557,17 @@ function startReservationTimer() {
 
       document.getElementById('bingo-info-success').innerHTML = `📅 <b>Fecha del Bingo:</b> ${config?.fecha || '--'}<br>⏰ <b>Hora:</b> ${config?.hora || '--'}`;
       document.getElementById('digital-link-box').innerHTML = '';
+
+      // El 100% solo se muestra cuando el pedido, la consolidación y todos los
+      // datos visibles del resultado están listos. Se revela la pantalla final
+      // inmediatamente después, evitando el espacio en blanco entre ambas vistas.
+      actualizarProgresoComprobante(100, 'Registro completado');
+      document.getElementById('reservation-timer-box').classList.add('hidden');
+      document.getElementById('banner-section').classList.add('hidden');
+      document.getElementById('main-flow-container').classList.add('hidden');
+      document.getElementById('floating-purchase-actions')?.classList.remove('visible');
+      document.body.classList.remove('has-floating-purchase-actions');
+      document.getElementById('success-exclusive-screen').classList.remove('hidden');
 
     } catch (err) {
       console.error("Error al finalizar pedido:", err);
