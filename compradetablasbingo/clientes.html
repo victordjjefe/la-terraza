@@ -1090,6 +1090,9 @@
   </div>
 
 <script type="module">
+  // Cada entrada normal a la página comienza arriba; evitamos que el navegador
+  // restaure una posición antigua y dispare accidentalmente la carga diferida.
+  try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch (e) {}
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
   import { 
     getFirestore, doc, getDoc, getDocFromServer, setDoc, updateDoc, collection, documentId, 
@@ -1198,6 +1201,20 @@
   // Esta bandera evita ocultarlas de nuevo cuando el cliente vuelve al comprobante.
   let seccionesCompraActivadas = false;
   let observadorCargaDiferida = null;
+  // La carga diferida requiere una acción real del visitante hacia abajo.
+  // Evita que una restauración automática de scroll active lecturas al entrar.
+  let usuarioInicioDesplazamiento = false;
+  window.addEventListener('wheel', (event) => {
+    if (event.deltaY > 0) usuarioInicioDesplazamiento = true;
+  }, { passive: true });
+  window.addEventListener('touchmove', () => {
+    usuarioInicioDesplazamiento = true;
+  }, { passive: true });
+  window.addEventListener('keydown', (event) => {
+    if (['ArrowDown', 'PageDown', 'End', ' '].includes(event.key)) {
+      usuarioInicioDesplazamiento = true;
+    }
+  });
   let freeTableFlow = false;
   let comprobanteValidadoFile = null;
   let comprobanteParaTablasAdicionales = false;
@@ -2029,7 +2046,28 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
   }
 
   window.addEventListener('pageshow', event => {
-    if (event.persisted) actualizarInventarioAlRegresar();
+    // Tanto una entrada nueva como una restauración desde BFCache comienzan arriba.
+    // Este desplazamiento programático nunca habilita la carga diferida.
+    usuarioInicioDesplazamiento = false;
+    window.scrollTo(0, 0);
+
+    if (event.persisted) {
+      // Al volver con Atrás/Adelante, ocultamos de nuevo el bloque de compra y
+      // dejamos la lectura del inventario pendiente hasta alcanzar el final real.
+      // Se conservan los datos escritos, el comprobante validado y las reservas propias.
+      seccionesCompraActivadas = false;
+      inventarioCompraCargado = false;
+      inventarioCompraPromise = null;
+      paginaEstadosCargando = false;
+      currentTablesPage = 1;
+      pageAvailabilityCache.clear();
+      inventoryCache.clear();
+      ultimoRefrescoDisponibilidad = 0;
+      document.getElementById('card-buyer-section')?.classList.add('hidden');
+      document.getElementById('card-tables-section')?.classList.add('hidden');
+      renderTables();
+      configurarCargaDiferidaTablas();
+    }
   });
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') actualizarInventarioAlRegresar();
@@ -2078,7 +2116,9 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
 
   async function refrescarDisponibilidadAlVolver() {
     const ahora = Date.now();
-    if (!inventarioCompraCargado) return;
+    // No consultar Firebase al recuperar el foco si el visitante no ha llegado
+    // a la sección final de inventario durante esta visita.
+    if (!seccionesCompraActivadas || !inventarioCompraCargado) return;
     if (refrescoDisponibilidadEnCurso) return;
     if (ahora - ultimoRefrescoDisponibilidad < 60000) return;
     if (document.visibilityState && document.visibilityState !== 'visible') return;
@@ -2198,31 +2238,44 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
 
   function configurarCargaDiferidaTablas() {
     if (observadorCargaDiferida) observadorCargaDiferida.disconnect();
-    const pago = document.getElementById('payment-section-card');
     const comprador = document.getElementById('card-buyer-section');
-    if (!pago || !comprador || seccionesCompraActivadas) return;
+    const tablas = document.getElementById('card-tables-section');
+    if (!comprador || !tablas || seccionesCompraActivadas) return;
 
-    // Punto de observación invisible: no añade controles ni altera el diseño.
+    // El punto de activación se coloca al FINAL REAL del contenido de la página,
+    // no antes del formulario. Así las secciones ocultas no acercan artificialmente
+    // el disparador al inicio ni permiten que cargue al entrar o al bajar un poco.
     let sentinel = document.getElementById('purchase-lazy-sentinel');
     if (!sentinel) {
       sentinel = document.createElement('span');
       sentinel.id = 'purchase-lazy-sentinel';
       sentinel.setAttribute('aria-hidden', 'true');
       sentinel.style.cssText = 'display:block;width:1px;height:1px;overflow:hidden;pointer-events:none;';
-      comprador.parentNode.insertBefore(sentinel, comprador);
+    }
+    const contenedorPrincipal = document.querySelector('.app-container') || document.body;
+    if (sentinel.parentNode !== contenedorPrincipal || sentinel !== contenedorPrincipal.lastElementChild) {
+      contenedorPrincipal.appendChild(sentinel);
     }
 
-    // IMPORTANTE: no usamos IntersectionObserver aquí porque puede dispararse
-    // inmediatamente al abrir la página si el sentinel queda dentro del viewport
-    // (o de su margen de anticipación). La primera lectura solo se habilita después
-    // de que el visitante haya desplazado manualmente la página hacia abajo.
+    // La carga solo puede iniciarse tras un gesto real de desplazamiento del usuario
+    // Y cuando el scroll haya llegado prácticamente al final físico del documento.
     const revisarDesplazamiento = () => {
       if (seccionesCompraActivadas) {
         window.removeEventListener('scroll', revisarDesplazamiento);
         return;
       }
-      const distancia = sentinel.getBoundingClientRect().top - window.innerHeight;
-      if (distancia <= 220) {
+      if (!usuarioInicioDesplazamiento) return;
+
+      const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
+      const altoDocumento = Math.max(
+        document.documentElement.scrollHeight,
+        document.body ? document.body.scrollHeight : 0
+      );
+      const bordeInferiorVisible = scrollTop + window.innerHeight;
+      const distanciaAlFinal = altoDocumento - bordeInferiorVisible;
+
+      // Umbral mínimo: 2 px. No se usa margen anticipado ni IntersectionObserver.
+      if (distanciaAlFinal <= 2) {
         window.removeEventListener('scroll', revisarDesplazamiento);
         activarSeccionesCompra();
         cargarInventarioParaCompra();
@@ -2231,8 +2284,7 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
 
     window.removeEventListener('scroll', revisarDesplazamiento);
     window.addEventListener('scroll', revisarDesplazamiento, { passive: true });
-    // No llamar revisarDesplazamiento() al inicializar: entrar a la página,
-    // por sí solo, nunca debe disparar la lectura del inventario de compra.
+    // No evaluar al inicializar: entrar, esperar o restaurar el scroll nunca carga inventario.
   }
 
   function actualizarEtapaCompra(etapa) {
@@ -2286,6 +2338,8 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
       main.insertBefore(tablas, comprador.nextSibling);
     }
     seccionesCompraActivadas = false;
+    usuarioInicioDesplazamiento = false;
+    window.scrollTo(0, 0);
     actualizarEtapaCompra('payment');
     configurarCargaDiferidaTablas();
   });
@@ -2409,16 +2463,20 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
     // debe existir un comprobante validado. Se permite quitar una selección propia
     // y se conserva el flujo de cortesía sin comprobante.
     if (index === -1 && !declaraCortesia() && !(proofFile && comprobanteValidadoFile === proofFile)) {
-      const mensaje = 'Para seleccionar una tabla, primero debes subir y validar tu comprobante de pago o marcar la opción de tabla gratis.';
-      const aviso = document.getElementById('tables-selection-error');
-      if (aviso) {
-        aviso.textContent = mensaje;
-        aviso.classList.add('visible');
+      // La consulta es libre, pero no se permite reservar sin comprobante validado.
+      // El aviso se muestra en el propio bloque del comprobante (siempre visible),
+      // no dentro de la sección de tablas, que puede quedar fuera de pantalla.
+      const estadoComprobante = document.getElementById('proof-file-status');
+      const grupoComprobante = document.getElementById('proof-group-container');
+      if (estadoComprobante) {
+        estadoComprobante.classList.remove('ready', 'proof-processing');
+        estadoComprobante.classList.add('error');
+        estadoComprobante.textContent = proofFile
+          ? '⚠️ Tu comprobante todavía se está validando. Espera a que sea aceptado antes de seleccionar una tabla.'
+          : '⚠️ Primero debes subir tu comprobante de pago y esperar a que sea validado. Después podrás seleccionar tus tablas.';
       }
-      alert(mensaje);
-      const pago = document.getElementById('payment-section-card');
-      pago?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       tableOperationsInFlight.delete(code);
+      grupoComprobante?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
 
@@ -2744,6 +2802,7 @@ function startReservationTimer() {
     inventarioCompraCargado = false;
     inventarioCompraPromise = null;
     seccionesCompraActivadas = false;
+    usuarioInicioDesplazamiento = false;
     if (observadorCargaDiferida) {
       observadorCargaDiferida.disconnect();
       observadorCargaDiferida = null;
@@ -2782,6 +2841,8 @@ function startReservationTimer() {
 
     updateSummary();
     renderTables();
+    usuarioInicioDesplazamiento = false;
+    window.scrollTo(0, 0);
     configurarCargaDiferidaTablas();
   }
 
