@@ -2386,9 +2386,11 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
       btn.type = 'button';
       btn.className = 'btn-table';
       btn.textContent = t.code;
-      // En modo exploración se puede consultar y previsualizar, pero no reservar.
-      // La selección se habilita al validar el comprobante o activar tabla gratis.
-      btn.disabled = purchaseStage === 'payment';
+      // El botón permanece interactivo para que toggleTableSelection pueda
+      // explicar el requisito cuando el cliente intenta seleccionar sin autorización.
+      // La función bloquea la reserva hasta validar comprobante o activar tabla gratis.
+      btn.disabled = false;
+      btn.setAttribute('aria-disabled', 'false');
 
       if (isReservedByMe) btn.classList.add('selected');
       btn.onclick = () => toggleTableSelection(t.code);
