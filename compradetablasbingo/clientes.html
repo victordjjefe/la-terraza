@@ -1194,6 +1194,10 @@
   let proofFile = null;
   let proofPreviewUrl = null;
   let purchaseStage = 'payment';
+  // Las secciones de registro y tablas se activan al acercarse a ellas o al iniciar una compra.
+  // Esta bandera evita ocultarlas de nuevo cuando el cliente vuelve al comprobante.
+  let seccionesCompraActivadas = false;
+  let observadorCargaDiferida = null;
   let freeTableFlow = false;
   let comprobanteValidadoFile = null;
   let comprobanteParaTablasAdicionales = false;
@@ -2173,25 +2177,94 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
     crearBoton('›', Math.min(totalPages, currentTablesPage + 1), currentTablesPage === totalPages);
   }
 
+  function activarSeccionesCompra({ desplazarAlNombre = false } = {}) {
+    seccionesCompraActivadas = true;
+    const comprador = document.getElementById('card-buyer-section');
+    const tablas = document.getElementById('card-tables-section');
+    comprador?.classList.remove('hidden');
+    tablas?.classList.remove('hidden');
+    if (observadorCargaDiferida) {
+      observadorCargaDiferida.disconnect();
+      observadorCargaDiferida = null;
+    }
+    if (desplazarAlNombre) {
+      const nombre = document.getElementById('buyer-name');
+      requestAnimationFrame(() => {
+        nombre?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        nombre?.focus({ preventScroll: true });
+      });
+    }
+  }
+
+  function configurarCargaDiferidaTablas() {
+    if (observadorCargaDiferida) observadorCargaDiferida.disconnect();
+    const pago = document.getElementById('payment-section-card');
+    const comprador = document.getElementById('card-buyer-section');
+    if (!pago || !comprador || seccionesCompraActivadas) return;
+
+    // Punto de observación invisible: no añade controles ni altera el diseño.
+    let sentinel = document.getElementById('purchase-lazy-sentinel');
+    if (!sentinel) {
+      sentinel = document.createElement('span');
+      sentinel.id = 'purchase-lazy-sentinel';
+      sentinel.setAttribute('aria-hidden', 'true');
+      sentinel.style.cssText = 'display:block;width:1px;height:1px;overflow:hidden;pointer-events:none;';
+      comprador.parentNode.insertBefore(sentinel, comprador);
+    }
+
+    const activar = () => {
+      if (seccionesCompraActivadas) return;
+      activarSeccionesCompra();
+      cargarInventarioParaCompra();
+    };
+
+    if ('IntersectionObserver' in window) {
+      observadorCargaDiferida = new IntersectionObserver(entries => {
+        if (entries.some(entry => entry.isIntersecting)) activar();
+      }, { root: null, rootMargin: '0px 0px 220px 0px', threshold: 0 });
+      observadorCargaDiferida.observe(sentinel);
+    } else {
+      const revisarDesplazamiento = () => {
+        if (seccionesCompraActivadas) {
+          window.removeEventListener('scroll', revisarDesplazamiento);
+          return;
+        }
+        const distancia = sentinel.getBoundingClientRect().top - window.innerHeight;
+        if (distancia <= 220) {
+          window.removeEventListener('scroll', revisarDesplazamiento);
+          activar();
+        }
+      };
+      window.addEventListener('scroll', revisarDesplazamiento, { passive: true });
+      revisarDesplazamiento();
+    }
+  }
+
   function actualizarEtapaCompra(etapa) {
     purchaseStage = etapa;
     const pago = document.getElementById('payment-section-card');
     const comprador = document.getElementById('card-buyer-section');
     const tablas = document.getElementById('card-tables-section');
     const acciones = document.getElementById('action-buttons-container');
-    if (pago) pago.classList.toggle('hidden', etapa !== 'payment');
-    if (comprador) comprador.classList.toggle('hidden', etapa === 'payment');
-    if (tablas) tablas.classList.toggle('hidden', etapa === 'payment');
-    if (acciones) acciones.classList.toggle('hidden', etapa === 'payment');
-    // Mostrar siempre el único par de acciones flotantes desde que se habilita
-    // el formulario del comprador, aunque todavía no haya tablas seleccionadas.
+
+    // La información de pago y el comprobante permanecen visibles en todo momento.
+    pago?.classList.remove('hidden');
+
+    if (etapa === 'buyer' || etapa === 'tables') {
+      activarSeccionesCompra({ desplazarAlNombre: etapa === 'buyer' });
+    } else if (!seccionesCompraActivadas) {
+      comprador?.classList.add('hidden');
+      tablas?.classList.add('hidden');
+    }
+
+    if (acciones) acciones.classList.add('hidden');
+    // Al autorizar la compra, actualizamos los botones ya renderizados sin releer Firebase.
+    if (inventarioCompraCargado) renderTables();
+    // Las acciones flotantes conservan su comportamiento original durante la compra.
     const mostrarAccionesFlotantes = etapa !== 'payment';
     const floatingActions = document.getElementById('floating-purchase-actions');
     if (floatingActions) floatingActions.classList.toggle('visible', mostrarAccionesFlotantes);
     document.body.classList.toggle('has-floating-purchase-actions', mostrarAccionesFlotantes);
-    if (acciones) acciones.classList.add('hidden');
-    if (etapa === 'buyer') comprador?.scrollIntoView({behavior:'smooth', block:'start'});
-    if (etapa === 'tables') tablas?.scrollIntoView({behavior:'smooth', block:'start'});
   }
 
   function datosCompradorCompletos() {
@@ -2205,7 +2278,8 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
     if (purchaseStage === 'buyer' && datosCompradorCompletos()) actualizarEtapaCompra('tables');
   }
 
-  // El orden del flujo es pago/comprobante, datos del comprador y selección de tablas.
+  // El orden visual se conserva: pago, datos del comprador y tablas.
+  // El formulario y las tablas se activan al acercarse el usuario a esa zona.
   document.addEventListener('DOMContentLoaded', () => {
     const main = document.getElementById('main-flow-container');
     const pago = document.getElementById('payment-section-card');
@@ -2216,7 +2290,9 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
       main.insertBefore(comprador, pago.nextSibling);
       main.insertBefore(tablas, comprador.nextSibling);
     }
+    seccionesCompraActivadas = false;
     actualizarEtapaCompra('payment');
+    configurarCargaDiferidaTablas();
   });
 
   function renderTables() {
@@ -2261,6 +2337,9 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
       btn.type = 'button';
       btn.className = 'btn-table';
       btn.textContent = t.code;
+      // En modo exploración se puede consultar y previsualizar, pero no reservar.
+      // La selección se habilita al validar el comprobante o activar tabla gratis.
+      btn.disabled = purchaseStage === 'payment';
 
       if (isReservedByMe) btn.classList.add('selected');
       btn.onclick = () => toggleTableSelection(t.code);
@@ -2284,8 +2363,7 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
 
     const sectionsToHide = [
       'card-tables-section',
-      'card-buyer-section',
-      'payment-section-card'
+      'card-buyer-section'
     ];
 
     // Solo ocultamos la compra completa si no existe ninguna tabla en el rango.
@@ -2297,16 +2375,16 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
       });
     } else {
       noTablesMessage.classList.add('hidden');
-      // La interfaz se revela por etapas; renderTables no debe saltarse el flujo.
-      if (purchaseStage === 'payment') {
-        document.getElementById('card-tables-section')?.classList.add('hidden');
-        document.getElementById('card-buyer-section')?.classList.add('hidden');
-        document.getElementById('action-buttons-container')?.classList.add('hidden');
-      } else {
+      // El formulario y las tablas solo se muestran tras activar la sección.
+      // La carga diferida y la compra usan la misma bandera para no duplicar lecturas.
+      if (seccionesCompraActivadas) {
         document.getElementById('card-buyer-section')?.classList.remove('hidden');
         document.getElementById('card-tables-section')?.classList.remove('hidden');
-        document.getElementById('action-buttons-container')?.classList.remove('hidden');
+      } else {
+        document.getElementById('card-buyer-section')?.classList.add('hidden');
+        document.getElementById('card-tables-section')?.classList.add('hidden');
       }
+      document.getElementById('action-buttons-container')?.classList.add('hidden');
 
       // Una página puede quedar sin botones porque sus 200 tablas fueron vendidas.
       // Mostramos una indicación local sin bloquear las demás páginas.
@@ -2653,6 +2731,11 @@ function startReservationTimer() {
     // La lectura fresca se hará cuando el usuario active la compra (gratis o comprobante).
     inventarioCompraCargado = false;
     inventarioCompraPromise = null;
+    seccionesCompraActivadas = false;
+    if (observadorCargaDiferida) {
+      observadorCargaDiferida.disconnect();
+      observadorCargaDiferida = null;
+    }
     paginaEstadosCargando = false;
     currentTablesPage = 1;
     pageAvailabilityCache.clear();
@@ -2687,6 +2770,7 @@ function startReservationTimer() {
 
     updateSummary();
     renderTables();
+    configurarCargaDiferidaTablas();
   }
 
   function copiarNumero() {
