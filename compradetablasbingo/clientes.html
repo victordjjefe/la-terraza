@@ -2212,32 +2212,27 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
       comprador.parentNode.insertBefore(sentinel, comprador);
     }
 
-    const activar = () => {
-      if (seccionesCompraActivadas) return;
-      activarSeccionesCompra();
-      cargarInventarioParaCompra();
+    // IMPORTANTE: no usamos IntersectionObserver aquí porque puede dispararse
+    // inmediatamente al abrir la página si el sentinel queda dentro del viewport
+    // (o de su margen de anticipación). La primera lectura solo se habilita después
+    // de que el visitante haya desplazado manualmente la página hacia abajo.
+    const revisarDesplazamiento = () => {
+      if (seccionesCompraActivadas) {
+        window.removeEventListener('scroll', revisarDesplazamiento);
+        return;
+      }
+      const distancia = sentinel.getBoundingClientRect().top - window.innerHeight;
+      if (distancia <= 220) {
+        window.removeEventListener('scroll', revisarDesplazamiento);
+        activarSeccionesCompra();
+        cargarInventarioParaCompra();
+      }
     };
 
-    if ('IntersectionObserver' in window) {
-      observadorCargaDiferida = new IntersectionObserver(entries => {
-        if (entries.some(entry => entry.isIntersecting)) activar();
-      }, { root: null, rootMargin: '0px 0px 220px 0px', threshold: 0 });
-      observadorCargaDiferida.observe(sentinel);
-    } else {
-      const revisarDesplazamiento = () => {
-        if (seccionesCompraActivadas) {
-          window.removeEventListener('scroll', revisarDesplazamiento);
-          return;
-        }
-        const distancia = sentinel.getBoundingClientRect().top - window.innerHeight;
-        if (distancia <= 220) {
-          window.removeEventListener('scroll', revisarDesplazamiento);
-          activar();
-        }
-      };
-      window.addEventListener('scroll', revisarDesplazamiento, { passive: true });
-      revisarDesplazamiento();
-    }
+    window.removeEventListener('scroll', revisarDesplazamiento);
+    window.addEventListener('scroll', revisarDesplazamiento, { passive: true });
+    // No llamar revisarDesplazamiento() al inicializar: entrar a la página,
+    // por sí solo, nunca debe disparar la lectura del inventario de compra.
   }
 
   function actualizarEtapaCompra(etapa) {
@@ -2409,6 +2404,23 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
     tableOperationsInFlight.add(code);
 
     const index = selectedTables.indexOf(code);
+
+    // Consultar las tablas es libre, pero para reservar una tabla pagada primero
+    // debe existir un comprobante validado. Se permite quitar una selección propia
+    // y se conserva el flujo de cortesía sin comprobante.
+    if (index === -1 && !declaraCortesia() && !(proofFile && comprobanteValidadoFile === proofFile)) {
+      const mensaje = 'Para seleccionar una tabla, primero debes subir y validar tu comprobante de pago o marcar la opción de tabla gratis.';
+      const aviso = document.getElementById('tables-selection-error');
+      if (aviso) {
+        aviso.textContent = mensaje;
+        aviso.classList.add('visible');
+      }
+      alert(mensaje);
+      const pago = document.getElementById('payment-section-card');
+      pago?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      tableOperationsInFlight.delete(code);
+      return;
+    }
 
     // Una cortesía cubre exactamente una tabla. Se bloquea cualquier intento
     // de añadir una segunda tabla antes de crear una reserva en Firebase.
