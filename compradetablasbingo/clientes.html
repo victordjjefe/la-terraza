@@ -1830,7 +1830,7 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
   // Caché local por página: evita volver a leer en Firestore cuando el cliente
   // navega repetidamente entre páginas durante el mismo recorrido.
   // La reserva transaccional sigue siendo la validación definitiva al seleccionar.
-  const PAGE_AVAILABILITY_CACHE_TTL_MS = 60000;
+  const PAGE_AVAILABILITY_CACHE_TTL_MS = 15000;
   const pageAvailabilityCache = new Map();
   let currentTablesPage = 1;
   let paginaEstadosCargando = false;
@@ -1895,6 +1895,29 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
     });
   }
 
+  async function limpiarReservasVencidasDePagina(tablasPagina) {
+    const ids = [...new Set(tablasPagina.map(t => tableShardId(t.code)))];
+    const ahora = Date.now();
+    for (const id of ids) {
+      const ref = doc(db, INVENTORY_COLLECTION, id);
+      await runTransaction(db, async transaction => {
+        const snap = await transaction.get(ref);
+        if (!snap.exists()) return;
+        const occupied = { ...(snap.data()?.occupied || {}) };
+        let changed = false;
+        Object.entries(occupied).forEach(([code, data]) => {
+          if (String(data?.status || '').toUpperCase() !== 'RESERVADA') return;
+          const deadline = Number(data?.reservedUntil || 0);
+          if (!deadline || deadline <= ahora) {
+            delete occupied[code];
+            changed = true;
+          }
+        });
+        if (changed) transaction.set(ref, { occupied, updatedAt: Date.now() }, { merge: true });
+      });
+    }
+  }
+
   async function cargarEstadosPagina(pagina = currentTablesPage, { mostrar = true, forzarServidor = false } = {}) {
     if (paginaEstadosCargando) return;
 
@@ -1912,6 +1935,9 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
 
     try {
       const tablasPagina = obtenerTablasPagina(pagina);
+      // Al consultar una página, limpiar en Firebase las reservas vencidas
+      // de sus lotes antes de mostrar la disponibilidad real.
+      await limpiarReservasVencidasDePagina(tablasPagina);
       const now = Date.now();
 
       // Siempre partimos de disponible. Si un documento fue eliminado al liberar
@@ -1972,7 +1998,7 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
         // Solo se consulta la página que el cliente va a utilizar. No se descargan
         // pedidos completos ni se hace una reconciliación masiva al entrar.
         construirTablasDesdeRango();
-        await cargarEstadosPagina(currentTablesPage, { mostrar: false });
+        await cargarEstadosPagina(currentTablesPage, { mostrar: false, forzarServidor: true });
         inventarioCompraCargado = true;
         mostrarEstadoCargaTablas('success', '✓ Tablas disponibles. Ya puedes seleccionar.');
         const box = document.getElementById('tables-loading-status');
