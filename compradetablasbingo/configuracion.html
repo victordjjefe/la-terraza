@@ -918,7 +918,7 @@
     }
     await setDoc(inventoryMetaRef, { schemaVersion: 2, tablesPerShard: 20, migratedAt: new Date().toISOString() }, { merge: true });
   }
-  async function readAllInventoryShards() { return await getDocsFromServer(collection(db, INVENTORY_COLLECTION)); }
+  async function readAllInventoryShards() { return await getDocs(collection(db, INVENTORY_COLLECTION)); }
   function occupiedEntriesFromSnapshot(snap) { return snap.docs.flatMap(d => Object.entries(d.data()?.occupied || {}).map(([code, data]) => ({ code, data, shardId: d.id }))); }
 
   function formatoTelefono(v){
@@ -1002,11 +1002,6 @@
         await loadTablesOnce();
       })().catch(error => { console.error('Error preparando inventario agrupado:', error); alert('No se pudo preparar el inventario agrupado: ' + error.message); throw error; });
       inventoryReady.catch(() => {});
-      inventoryReady.then(async () => {
-        try { await limpiarReservasVencidasAdministrador(); }
-        catch (error) { console.error('No se pudo ejecutar la limpieza inicial:', error); }
-        iniciarLimpiezaAutomaticaReservas();
-      });
       listenOrders();
     } else {
       errorMsg.style.display = 'block';
@@ -1348,10 +1343,11 @@
       renderOrders();
       renderListado();
       loadMetrics();
-      // La reconciliación se ejecuta una sola vez al iniciar, consultando pedidos
-      // directamente al servidor. No se repite con snapshots en tiempo real:
-      // una operación anterior podría terminar tarde y volver a ocupar una tabla
-      // que acaba de ser liberada.
+      if (pedidosSincronizados && configSincronizada) {
+        reconciliarInventarioConPedidos(allOrders).catch(error => {
+          console.error('No fue posible reconciliar pedidos e inventario:', error);
+        });
+      }
     });
   }
 
@@ -2662,18 +2658,7 @@ Hola ${nombre}! 👋
     },null,2)],{type:'application/json'});
     const a=document.createElement('a');
     a.href=URL.createObjectURL(blob);
-    // Nombre del archivo: usa la fecha configurada para el sorteo,
-    // sin modificar el contenido JSON que consume el sistema contable.
-    const fechaNombre = String(cfgEvento.fecha || '').trim();
-    let fechaArchivo = 'sin-fecha';
-    let partesFecha = fechaNombre.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (partesFecha) {
-      fechaArchivo = `${partesFecha[3]}-${partesFecha[2]}-${partesFecha[1]}`;
-    } else {
-      partesFecha = fechaNombre.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-      if (partesFecha) fechaArchivo = `${partesFecha[1]}-${partesFecha[2]}-${partesFecha[3]}`;
-    }
-    a.download=`Mi Bingo - ${fechaArchivo}.json`;
+    a.download='ventas_bingo_actualizacion.json';
     a.click();
     URL.revokeObjectURL(a.href);
   });
@@ -2683,60 +2668,27 @@ Hola ${nombre}! 👋
   async function limpiarReservasVencidasAdministrador() {
     await inventoryReady;
     const tablasSnap = await readAllInventoryShards();
-    const ahora = Date.now();
+    const batch = writeBatch(db);
     let cambios = 0;
+    const ahora = Date.now();
 
-    // Cada lote se limpia mediante transacción para no sobrescribir una reserva
-    // nueva que un comprador haya creado mientras se ejecuta la limpieza.
-    for (const docSnap of tablasSnap.docs) {
-      const ref = doc(db, INVENTORY_COLLECTION, docSnap.id);
-      const eliminadas = await runTransaction(db, async transaction => {
-        const fresh = await transaction.get(ref);
-        if (!fresh.exists()) return 0;
-        const occupied = { ...(fresh.data()?.occupied || {}) };
-        let removed = 0;
-        Object.entries(occupied).forEach(([code, tabla]) => {
-          if (String(tabla?.status || '').toUpperCase() !== 'RESERVADA') return;
-          const deadline = Number(tabla?.reservedUntil || 0);
-          // Una reserva sin fecha límite también es inválida: no puede quedar
-          // bloqueando una tabla indefinidamente.
-          if (!deadline || deadline <= ahora) {
-            delete occupied[code];
-            removed++;
-          }
-        });
-        if (removed) transaction.set(ref, { occupied, updatedAt: Date.now() }, { merge: true });
-        return removed;
-      });
-      cambios += eliminadas;
-    }
+    tablasSnap.forEach(docSnap => {
+      const occupied = { ...(docSnap.data()?.occupied || {}) };
+      let changed = false;
+      Object.entries(occupied).forEach(([code, tabla]) => {
 
-    if (cambios) manualInventoryPageCache.clear();
-    return cambios;
-  }
-
-  let automaticCleanupTimer = null;
-  let automaticCleanupRunning = false;
-
-  function iniciarLimpiezaAutomaticaReservas() {
-    if (automaticCleanupTimer) clearInterval(automaticCleanupTimer);
-    automaticCleanupTimer = setInterval(async () => {
-      if (automaticCleanupRunning || document.visibilityState === 'hidden') return;
-      automaticCleanupRunning = true;
-      try {
-        const removed = await limpiarReservasVencidasAdministrador();
-        // Si el modal de integridad está abierto, refrescarlo para retirar
-        // automáticamente las reservas que acaban de vencer.
-        const modal = document.getElementById('modal-integridad-tablas');
-        if (removed && modal && modal.style.display === 'flex' && pedidosSincronizados) {
-          await window.verificarIntegridadTablas();
-        }
-      } catch (error) {
-        console.error('Error en limpieza automática de reservas:', error);
-      } finally {
-        automaticCleanupRunning = false;
+      if (
+        tabla.status === 'RESERVADA' &&
+        tabla.reservedUntil &&
+        tabla.reservedUntil <= ahora
+      ) {
+        delete occupied[code]; changed = true; cambios++;
       }
-    }, 15000);
+      });
+      if (changed) batch.set(docSnap.ref, { occupied, updatedAt: Date.now() }, { merge: true });
+    });
+
+    if (cambios > 0) await batch.commit();
   }
 
   window.verificarIntegridadTablas = async function() {
@@ -2803,100 +2755,47 @@ Hola ${nombre}! 👋
 
   window.liberarTablaPerdida = async function(codigo){
     await inventoryReady;
-    const code = normalizarCodigoInventario(codigo);
-
-    // Consultar pedidos en servidor, no la lista local que puede estar desactualizada.
-    const pedidosSnap = await getDocsFromServer(collection(db, 'pedidos'));
-    const idEvento = String(configEventoExportacion?.idBingo || document.getElementById('cfg-id-bingo')?.value || '');
-    const pedidoActivo = pedidosSnap.docs.find(d => {
-      const pedido = d.data() || {};
-      if (String(pedido.estado || '').toUpperCase() === 'CANCELADO') return false;
-      if (idEvento && pedido.idBingo && String(pedido.idBingo) !== idEvento) return false;
-      return Array.isArray(pedido.tablas) && pedido.tablas.some(t => normalizarCodigoInventario(t) === code);
-    });
-    if (pedidoActivo) {
-      alert(`No se liberó ${code}: todavía aparece asociada a un pedido vigente. Actualiza los pedidos y verifica nuevamente.`);
-      return;
-    }
-
-    const shardRef = tableShardRef(code);
+    const shardRef = tableShardRef(codigo);
     await runTransaction(db, async transaction => {
       const snap = await transaction.get(shardRef);
       if (!snap.exists()) return;
       const occupied = { ...(snap.data()?.occupied || {}) };
-      const current = occupied[code];
-      // Protección contra una compra que se confirme mientras se revisa integridad.
-      if (current?.status === 'VENDIDA' && current?.pedido) {
-        throw new Error(`${code} acaba de quedar asociada a una venta. No se modificó.`);
-      }
-      delete occupied[code];
+      delete occupied[codigo];
       transaction.set(shardRef, { occupied, updatedAt: Date.now() }, { merge: true });
     });
     await setDoc(doc(collection(db, 'integridad_tablas')), {
-      tabla: code,
+      tabla: codigo,
       accion: 'LIBERACION_INTEGRIDAD',
-      motivo: 'Tabla huérfana recuperada manualmente desde integridad',
+      motivo: 'Tabla recuperada manualmente desde integridad',
       fecha: new Date().toISOString()
     });
-    manualInventoryPageCache.clear();
-    tablasPerdidasActuales = tablasPerdidasActuales.filter(t=>t.codigo!==code);
+    tablasPerdidasActuales = tablasPerdidasActuales.filter(t=>t.codigo!==codigo);
     mostrarTablasPerdidas();
   };
 
   window.liberarTodasTablasPerdidas = async function(){
     await inventoryReady;
-    const pendientes = [...tablasPerdidasActuales];
-    if (!pendientes.length) return;
-
-    const pedidosSnap = await getDocsFromServer(collection(db, 'pedidos'));
-    const idEvento = String(configEventoExportacion?.idBingo || document.getElementById('cfg-id-bingo')?.value || '');
-    const codigosConPedido = new Set();
-    pedidosSnap.forEach(d => {
-      const pedido = d.data() || {};
-      if (String(pedido.estado || '').toUpperCase() === 'CANCELADO') return;
-      if (idEvento && pedido.idBingo && String(pedido.idBingo) !== idEvento) return;
-      (Array.isArray(pedido.tablas) ? pedido.tablas : []).forEach(t => codigosConPedido.add(normalizarCodigoInventario(t)));
-    });
-
-    const liberables = pendientes.filter(item => !codigosConPedido.has(normalizarCodigoInventario(item.codigo)));
-    if (!liberables.length) {
-      alert('No se liberó ninguna tabla: todas aparecen asociadas a pedidos vigentes.');
-      return;
-    }
-
     await runTransaction(db, async transaction => {
-      const ids = [...new Set(liberables.map(item => tableShardId(item.codigo)))];
+      const ids = [...new Set(tablasPerdidasActuales.map(item => tableShardId(item.codigo)))];
       const refs = ids.map(id => doc(db, INVENTORY_COLLECTION, id));
       const snaps = [];
       for (const ref of refs) snaps.push(await transaction.get(ref));
       const maps = new Map(snaps.map((snap, i) => [ids[i], snap.exists() ? { ...(snap.data()?.occupied || {}) } : {}]));
-      liberables.forEach(item => {
-        const code = normalizarCodigoInventario(item.codigo);
-        const map = maps.get(tableShardId(code));
-        const current = map?.[code];
-        if (current?.status === 'VENDIDA' && current?.pedido) {
-          throw new Error(`${code} quedó asociada a una venta durante la operación. No se liberó el lote.`);
-        }
-        if (map) delete map[code];
-      });
+      tablasPerdidasActuales.forEach(item => { const map = maps.get(tableShardId(item.codigo)); if (map) delete map[item.codigo]; });
       refs.forEach((ref, i) => transaction.set(ref, { occupied: maps.get(ids[i]), updatedAt: Date.now() }, { merge: true }));
     });
-
-    for (const item of liberables) {
+    for (const item of tablasPerdidasActuales) {
       await setDoc(doc(collection(db, 'integridad_tablas')), {
-        tabla: normalizarCodigoInventario(item.codigo),
+        tabla:item.codigo,
         accion:'LIBERACION_MASIVA_INTEGRIDAD',
-        motivo:'Tabla huérfana recuperada desde integridad',
+        motivo:'Tabla recuperada desde integridad',
         fecha:new Date().toISOString()
       });
     }
-    manualInventoryPageCache.clear();
-    const liberadas = new Set(liberables.map(item => normalizarCodigoInventario(item.codigo)));
-    tablasPerdidasActuales = tablasPerdidasActuales.filter(item => !liberadas.has(normalizarCodigoInventario(item.codigo)));
+    tablasPerdidasActuales=[];
     mostrarTablasPerdidas();
-    alert(`Se liberaron ${liberables.length} tabla(s) sin pedido asociado.`);
+    alert('Tablas recuperadas correctamente.');
   };
-
 
 </script>
 </body>
