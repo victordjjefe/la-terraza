@@ -2662,7 +2662,18 @@ Hola ${nombre}! 👋
     },null,2)],{type:'application/json'});
     const a=document.createElement('a');
     a.href=URL.createObjectURL(blob);
-    a.download='ventas_bingo_actualizacion.json';
+    // Nombre del archivo: usa la fecha configurada para el sorteo,
+    // sin modificar el contenido JSON que consume el sistema contable.
+    const fechaNombre = String(cfgEvento.fecha || '').trim();
+    let fechaArchivo = 'sin-fecha';
+    let partesFecha = fechaNombre.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (partesFecha) {
+      fechaArchivo = `${partesFecha[3]}-${partesFecha[2]}-${partesFecha[1]}`;
+    } else {
+      partesFecha = fechaNombre.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      if (partesFecha) fechaArchivo = `${partesFecha[1]}-${partesFecha[2]}-${partesFecha[3]}`;
+    }
+    a.download=`Mi Bingo - ${fechaArchivo}.json`;
     a.click();
     URL.revokeObjectURL(a.href);
   });
