@@ -2718,14 +2718,16 @@ Hola ${nombre}! 👋
     const cfgEvento = configEventoExportacion || {};
     // Identifica cada exportación con el nombre solicitado y la fecha
     // configurada para la realización del bingo, sin alterar los datos de ventas.
-    const fechaBingoArchivo = String(
-      document.getElementById('cfg-fecha')?.value || firestoreDateToInput(cfgEvento.fecha) || 'sin-fecha'
-    ).trim();
+    // Usa exclusivamente la fecha guardada del evento del bingo.
+    // No utiliza las fechas de apertura/cierre de ventas ni un valor del
+    // formulario que todavía no se haya guardado en Firebase.
+    const fechaBingoConfigurada = firestoreDateToInput(cfgEvento.fecha) || String(cfgEvento.fecha || '').trim();
+    const fechaBingoArchivo = fechaBingoConfigurada || 'sin-fecha';
     const nombreArchivo = `Mi Bingo - ${fechaBingoArchivo}.json`;
     const blob=new Blob([JSON.stringify({
       version:'tablas_bingo_v2',
       nombreBingo: 'Mi Bingo',
-      fechaBingo: cfgEvento.fecha || fechaBingoArchivo,
+      fechaBingo: fechaBingoConfigurada || '',
       horaBingo: cfgEvento.hora || '',
       linkTransmision: cfgEvento.linkTransmision || '',
       valorTabla: Number(cfgEvento.valor || 0),
