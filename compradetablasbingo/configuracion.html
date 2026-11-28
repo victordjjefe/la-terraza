@@ -339,71 +339,6 @@
     .manual-help{color:var(--text-muted);font-size:.82rem;line-height:1.45;margin:8px 0 12px}
     @media(max-width:520px){.manual-selected-row{grid-template-columns:1fr 1.5fr}.manual-table-btn{padding:10px 3px}}
 
-    /* Pedidos en tabla: una fila por registro y columnas estables. */
-    .orders-scroll-container {
-      display: block;
-      width: 100%;
-      max-height: none;
-      overflow-x: auto;
-      overflow-y: visible;
-      border: 1px solid var(--border-color);
-      border-radius: 10px;
-      background: #fff;
-    }
-    .orders-table {
-      width: 100%;
-      min-width: 1450px;
-      table-layout: fixed;
-      border-collapse: separate;
-      border-spacing: 0;
-      font-size: .78rem;
-    }
-    .orders-table th {
-      position: sticky;
-      top: 0;
-      z-index: 1;
-      padding: 11px 8px;
-      background: #f1f5f9;
-      color: #0f172a;
-      border-bottom: 2px solid #cbd5e1;
-      text-align: center;
-      text-transform: uppercase;
-      font-size: .67rem;
-      line-height: 1.25;
-      font-weight: 800;
-      white-space: normal;
-    }
-    .orders-table td {
-      padding: 11px 8px;
-      border-bottom: 1px solid #dbe3ee;
-      text-align: center;
-      vertical-align: middle;
-      line-height: 1.35;
-      overflow-wrap: anywhere;
-      word-break: normal;
-      background: #fff;
-    }
-    .orders-table tbody tr:hover td { background: #f8fafc; }
-    .orders-table tbody tr:last-child td { border-bottom: 0; }
-    .orders-table .order-number { font-weight: 800; white-space: nowrap; }
-    .orders-table .order-name { text-align: left; font-weight: 800; font-size: .88rem; }
-    .orders-table .order-reference { text-align: left; }
-    .orders-table .order-date { white-space: normal; }
-    .orders-table .order-phone { font-weight: 800; color: #047857; white-space: normal; }
-    .orders-table .order-count { font-weight: 800; color: #4f46e5; font-size: .95rem; }
-    .orders-table .order-total { font-weight: 800; color: #047857; white-space: nowrap; }
-    .orders-table .order-status-cell { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-    .orders-table .order-status-cell .payment-status-btn { max-width: 100%; white-space: normal; font-size: .68rem; padding: 6px 8px; }
-    .orders-table .order-status-badge { display: inline-block; border-radius: 999px; padding: 5px 9px; font-size: .68rem; font-weight: 800; line-height: 1.2; }
-    .orders-table .order-table-chips { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 5px; }
-    .orders-table .order-table-chip { display: inline-block; padding: 4px 8px; border-radius: 7px; background: #d1fae5; color: #047857; border: 1px solid #a7f3d0; font-size: .7rem; font-weight: 800; white-space: nowrap; }
-    .orders-table .order-proof-btn { width: 100%; max-width: 130px; white-space: normal; line-height: 1.25; padding: 8px 9px; font-size: .72rem; }
-    .orders-table .order-actions-cell { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 5px; }
-    .orders-table .order-actions-cell .btn,
-    .orders-table .order-actions-cell .table-release-btn { width: auto; min-width: 0; max-width: 100%; padding: 7px 9px; font-size: .68rem; white-space: normal; line-height: 1.2; }
-    .orders-table .related-orders-alert { text-align: left; font-size: .7rem; padding: 7px; }
-    .orders-empty { padding: 24px !important; text-align: center !important; color: var(--text-muted); }
-
     /* =========================================================
        PANEL ADMINISTRADOR RESPONSIVE
        - Móvil conserva el diseño actual
@@ -452,19 +387,42 @@
         margin-bottom: 0 !important;
       }
 
-      /* Pedidos: filtros arriba y tabla única a todo el ancho disponible. */
+      /* Pedidos: buscador y filtro arriba, tarjetas debajo. */
       #tab-pedidos > .card {
-        display: block;
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(230px, .8fr);
+        column-gap: 14px;
+        align-items: end;
       }
+
+      #tab-pedidos > .card > .card-title,
+      #tab-pedidos > .card > .orders-scroll-container {
+        grid-column: 1 / -1;
+      }
+
       #tab-pedidos .search-box,
       #tab-pedidos > .card > .form-group {
         margin-bottom: 14px;
       }
+
       .orders-scroll-container {
-        display: block;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
         max-height: none;
-        overflow-x: auto;
-        overflow-y: visible;
+        overflow: visible;
+      }
+
+      .order-item {
+        margin-bottom: 0;
+        min-width: 0;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .order-info {
+        overflow-wrap: anywhere;
       }
 
       .order-actions {
@@ -515,6 +473,18 @@
       }
     }
 
+    /* Escritorio amplio: tres pedidos por fila. */
+    @media (min-width: 1180px) {
+      .orders-scroll-container {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: clamp(14px, 1.3vw, 24px);
+      }
+
+      .order-item {
+        padding: clamp(14px, 1vw, 20px);
+      }
+    }
+
     /* Monitores grandes: más aire sin crear una cuarta columna. */
     @media (min-width: 1700px) {
       .app-container {
@@ -531,7 +501,38 @@
         gap: 24px;
       }
 
+      .orders-scroll-container {
+        gap: 24px;
+      }
     }
+    .orders-scroll-container { display:block !important; width:100%; max-height:none; overflow-x:auto; overflow-y:visible; }
+    .orders-table { width:100%; min-width:1450px; table-layout:fixed; border-collapse:separate; border-spacing:0; background:#fff; }
+    .orders-table th { background:#f1f5f9; color:#172033; font-size:.68rem; font-weight:800; text-transform:uppercase; letter-spacing:.02em; padding:11px 7px; text-align:center; border-bottom:2px solid #cbd5e1; white-space:normal; }
+    .orders-table td { padding:12px 7px; border-bottom:1px solid #dbe3ed; text-align:center; vertical-align:top; font-size:.78rem; line-height:1.35; overflow-wrap:anywhere; }
+    .orders-table tbody tr:hover { background:#f8fafc; }
+    .orders-table .order-name { text-align:left; font-weight:700; }
+    .orders-client-name { font-weight:800; color:#172033; overflow-wrap:anywhere; }
+    .orders-related-inline { margin-top:5px; display:flex; flex-direction:column; gap:2px; font-size:.68rem; font-weight:500; color:#64748b; }
+    .orders-related-label { color:#92400e; font-weight:800; }
+    .orders-related-entry { overflow-wrap:anywhere; }
+    .orders-payment-breakdown { display:flex; flex-direction:column; align-items:flex-start; gap:3px; font-size:.68rem; text-align:left; }
+    .payment-count { display:block; white-space:normal; }
+    .payment-count b { font-weight:800; }
+    .payment-count.consignacion { color:#0369a1; }
+    .payment-count.efectivo { color:#047857; }
+    .payment-count.gratis { color:#a16207; }
+    .payment-count.deben { color:#b45309; }
+    .orders-free-note { color:#92400e; font-weight:700; }
+    .orders-muted { color:#94a3b8; font-size:.7rem; }
+    .orders-table .order-status-cell { display:flex; flex-direction:column; align-items:center; gap:6px; }
+    .orders-table .order-status-badge { white-space:normal; }
+    .orders-table .payment-status-btn { padding:6px 7px; font-size:.65rem; white-space:normal; }
+    .orders-table .order-table-chips { display:flex; flex-wrap:wrap; justify-content:center; gap:4px; }
+    .orders-table .order-table-chip { display:inline-block; padding:5px 8px; border-radius:7px; background:#d1fae5; border:1px solid #6ee7b7; color:#065f46; font-size:.68rem; font-weight:800; white-space:nowrap; }
+    .orders-table .order-proof-btn { width:100%; max-width:125px; white-space:normal; line-height:1.2; padding:7px 6px; font-size:.68rem; }
+    .orders-table .order-actions-cell { display:flex; flex-direction:column; align-items:stretch; gap:5px; }
+    .orders-table .order-actions-cell .btn, .orders-table .order-actions-cell .table-release-btn { width:100%; min-width:0; padding:7px 6px; font-size:.67rem; white-space:normal; line-height:1.2; }
+    .orders-empty { padding:24px !important; text-align:center !important; color:var(--text-muted); }
   </style>
 </head>
 <body>
@@ -697,6 +698,7 @@
             <option value="TODOS">Todos los estados</option>
             <option value="PENDIENTE PAGO">PENDIENTE PAGO</option>
             <option value="PAGADO">PAGADO</option>
+            <option value="PAGO PARCIAL">PAGO PARCIAL</option>
             <option value="CANCELADO">CANCELADO</option>
           </select>
         </div>
@@ -1723,7 +1725,10 @@
   function getEffectiveOrderStatus(order) {
     const tables = order.tablas || [];
     if (tables.length === 0) return 'CANCELADO';
-    return order.estado === 'PAGADO' ? 'PAGADO' : 'PENDIENTE PAGO';
+    const estado = String(order.estado || '').toUpperCase();
+    if (estado === 'PAGADO') return 'PAGADO';
+    if (estado === 'PAGO PARCIAL') return 'PAGO PARCIAL';
+    return 'PENDIENTE PAGO';
   }
 
   function normalizeWhatsapp(value) {
@@ -1759,12 +1764,6 @@
       .sort((a, b) => (parseInt(a.id) || 0) - (parseInt(b.id) || 0));
   }
 
-  function escapeOrderHtml(value) {
-    return String(value ?? '').replace(/[&<>"']/g, character => ({
-      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-    }[character]));
-  }
-
   function filterOrders() {
     const queryStr = normalizeSearchText(document.getElementById('search-input').value);
     const statusFilter = document.getElementById('filter-status').value;
@@ -1790,22 +1789,23 @@
       return;
     }
 
-    filtered.sort((a,b) => (parseInt(a.id) || 0) - (parseInt(b.id) || 0));
+    // El consecutivo más reciente siempre aparece primero.
+    filtered.sort((a, b) => (parseInt(b.id) || 0) - (parseInt(a.id) || 0));
 
     const table = document.createElement('table');
     table.className = 'orders-table';
     table.innerHTML = `
       <colgroup>
-        <col style="width:4%"><col style="width:9%"><col style="width:10%">
-        <col style="width:12%"><col style="width:10%"><col style="width:9%">
-        <col style="width:5%"><col style="width:13%"><col style="width:7%">
-        <col style="width:8%"><col style="width:13%">
+        <col style="width:4%"><col style="width:9%"><col style="width:9%">
+        <col style="width:13%"><col style="width:9%"><col style="width:9%">
+        <col style="width:5%"><col style="width:12%"><col style="width:10%">
+        <col style="width:7%"><col style="width:6%"><col style="width:7%">
       </colgroup>
       <thead><tr>
         <th>N.º de<br>registro</th><th>Estado<br>contable</th><th>Fecha</th>
-        <th>Nombre</th><th>Barrio / ciudad</th><th>WhatsApp</th>
-        <th>Solicitadas</th><th>Tablas asignadas</th><th>Total a pagar</th>
-        <th>Comprobante</th><th>Acciones</th>
+        <th>Nombre / registros adicionales</th><th>Barrio / ciudad</th><th>WhatsApp</th>
+        <th>Solicitadas</th><th>Tablas asignadas</th><th>Forma de pago</th>
+        <th>Total a pagar</th><th>Comprobante</th><th>Acciones</th>
       </tr></thead><tbody></tbody>`;
     const tbody = table.querySelector('tbody');
 
@@ -1817,61 +1817,70 @@
         (parseInt(String(a).replace(/\D/g, '')) || 0) - (parseInt(String(b).replace(/\D/g, '')) || 0)
       );
       const clientName = typeof o.cliente === 'string' ? o.cliente : (o.cliente?.name || 'Cliente');
-      const phone = o.telefono || o.cliente?.whatsapp || '';
-      const reference = o.referencia || o.direccion || 'N/A';
-      const relatedOrders = getRelatedOrders(o);
+      const phone = o.telefono || o.cliente?.whatsapp || '—';
+      const reference = o.referencia || o.direccion || '—';
+
+      // Los registros adicionales se muestran discretamente debajo del nombre,
+      // dentro de la misma celda y sin tarjetas que alteren la alineación.
+      const relatedOrders = getRelatedOrders(o).sort((a, b) =>
+        (parseInt(b.id) || 0) - (parseInt(a.id) || 0)
+      );
       const relatedOrdersHTML = relatedOrders.length ? `
-        <div class="related-orders-alert">
-          <div class="related-orders-title">⚠️ ${relatedOrders.length === 1 ? 'REGISTRO ADICIONAL' : 'REGISTROS ADICIONALES'}</div>
+        <div class="orders-related-inline">
+          <span class="orders-related-label">${relatedOrders.length === 1 ? 'Registro adicional:' : 'Registros adicionales:'}</span>
           ${relatedOrders.map(related => {
-            const relatedTables = [...(related.tablas || [])].sort((a,b) =>
-              (parseInt(String(a).replace(/\D/g,'')) || 0) - (parseInt(String(b).replace(/\D/g,'')) || 0)
+            const relatedTables = [...(related.tablas || [])].sort((a, b) =>
+              (parseInt(String(a).replace(/\D/g, '')) || 0) - (parseInt(String(b).replace(/\D/g, '')) || 0)
             );
-            return `<div class="related-order-row"><b>Registro #${escapeOrderHtml(related.id || related.firestoreId)}:</b> <span>${escapeOrderHtml(relatedTables.join(', '))}</span></div>`;
+            return `<span class="orders-related-entry">#${escapeOrderHtml(related.id || related.firestoreId)} · ${escapeOrderHtml(relatedTables.join(', '))}</span>`;
           }).join('')}
         </div>` : '';
 
-      const porTablaEstado = Object.values(o.destinoPorTabla || {}).map(v => String(v || 'DEBEN').toUpperCase());
-      const totalTablasPedido = tableList.length;
-      const totalPagadas = porTablaEstado.filter(v => ['EFECTIVO','CONSIGNACIÓN','GRATIS'].includes(v)).length;
-      const totalPendientes = porTablaEstado.filter(v => v === 'DEBEN').length ||
-        (!porTablaEstado.length && String(o.estado || '').toUpperCase() !== 'PAGADO' ? totalTablasPedido : 0);
-      let paymentButtonClass = 'payment-status-btn pending';
-      let paymentButtonText = 'Pendiente';
-      if (totalPagadas > 0 && totalPendientes > 0) {
-        paymentButtonClass = 'payment-status-btn partial';
-        paymentButtonText = 'Pago parcial';
-      } else if (totalTablasPedido > 0 && totalPagadas === totalTablasPedido) {
-        paymentButtonClass = 'payment-status-btn paid';
-        paymentButtonText = 'Pago completo';
-      }
+      // Distribución real de tablas por forma de pago. Cada tabla se cuenta una vez.
+      const pagosPorTabla = o.destinoPorTabla || {};
+      const conteoPago = { 'CONSIGNACIÓN': 0, 'EFECTIVO': 0, 'GRATIS': 0, 'DEBEN': 0 };
+      tableList.forEach(tabla => {
+        const valorDirecto = pagosPorTabla[tabla];
+        const claveAlterna = Object.keys(pagosPorTabla).find(k =>
+          String(k).trim().toUpperCase() === String(tabla).trim().toUpperCase()
+        );
+        let forma = String(valorDirecto ?? (claveAlterna ? pagosPorTabla[claveAlterna] : (o.destino || 'DEBEN'))).trim().toUpperCase();
+        if (forma === 'CONSIGNACION') forma = 'CONSIGNACIÓN';
+        if (!Object.prototype.hasOwnProperty.call(conteoPago, forma)) forma = 'DEBEN';
+        conteoPago[forma]++;
+      });
+      const paymentSummaryHTML = tableList.length ? `
+        <div class="orders-payment-breakdown">
+          ${conteoPago['CONSIGNACIÓN'] ? `<span class="payment-count consignacion">Consignación: <b>${conteoPago['CONSIGNACIÓN']}</b></span>` : ''}
+          ${conteoPago.EFECTIVO ? `<span class="payment-count efectivo">Efectivo: <b>${conteoPago.EFECTIVO}</b></span>` : ''}
+          ${conteoPago.GRATIS ? `<span class="payment-count gratis">Gratis: <b>${conteoPago.GRATIS}</b></span>` : ''}
+          ${conteoPago.DEBEN ? `<span class="payment-count deben">Deben: <b>${conteoPago.DEBEN}</b></span>` : ''}
+          ${o.declaraTablaGratis === true ? '<span class="orders-free-note">Declara 1 tabla gratis</span>' : ''}
+        </div>` : '<span class="orders-muted">—</span>';
 
       const proofHTML = (o.comprobanteURL || o.comprobante)
         ? `<button class="btn btn-sm btn-dark btn-view-proof order-proof-btn" data-order="${escapeOrderHtml(o.firestoreId)}">Ver comprobante</button>`
-        : '<span style="color:#94a3b8">Sin comprobante</span>';
+        : '<span class="orders-muted">Sin comprobante</span>';
 
-      let actionsHTML = '';
-      if (tableList.length > 0) {
-        actionsHTML = `
-          <button class="table-release-btn btn-release-order" data-order="${escapeOrderHtml(o.firestoreId)}">Liberar</button>
-          <button class="btn btn-sm btn-warning btn-edit-client" data-order="${escapeOrderHtml(o.firestoreId)}">Editar</button>`;
-      } else {
-        actionsHTML = '<span style="font-size:.7rem;color:#64748b;font-style:italic">Sin tablas</span>';
-      }
+      const actionsHTML = tableList.length ? `
+        <button class="table-release-btn btn-release-order" data-order="${escapeOrderHtml(o.firestoreId)}">Liberar tablas</button>
+        <button class="btn btn-sm btn-warning btn-edit-client" data-order="${escapeOrderHtml(o.firestoreId)}">Editar</button>`
+        : '<span class="orders-muted">Sin tablas</span>';
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td class="order-number">${escapeOrderHtml(o.id || '')}</td>
-        <td><div class="order-status-cell">
+        <td class="order-status-cell">
           <span class="order-status-badge badge ${badgeClass}">${escapeOrderHtml(currentStatus)}</span>
-          ${tableList.length ? `<button class="${paymentButtonClass} btn-payment-status" data-order="${escapeOrderHtml(o.firestoreId)}" data-status="${escapeOrderHtml(currentStatus)}">${paymentButtonText}</button>` : ''}
-        </div></td>
+          ${tableList.length ? `<button class="payment-status-btn ${conteoPago.DEBEN === tableList.length ? 'pending' : (conteoPago.DEBEN ? 'partial' : 'paid')} btn-payment-status" data-order="${escapeOrderHtml(o.firestoreId)}" data-status="${escapeOrderHtml(currentStatus)}">Editar pagos</button>` : ''}
+        </td>
         <td class="order-date">${escapeOrderHtml(o.fecha || '—')}</td>
-        <td class="order-name">${escapeOrderHtml(clientName)}${o.declaraTablaGratis === true ? '<div style="color:#92400e;font-size:.68rem">🎁 Declara 1 tabla gratis</div>' : ''}${tableList.length ? relatedOrdersHTML : ''}</td>
+        <td class="order-name"><div class="orders-client-name">${escapeOrderHtml(clientName)}</div>${relatedOrdersHTML}</td>
         <td class="order-reference">${escapeOrderHtml(reference)}</td>
         <td class="order-phone">${escapeOrderHtml(phone)}</td>
         <td class="order-count">${tableList.length}</td>
-        <td>${tableList.length ? `<div class="order-table-chips">${tableList.map(tabla => `<span class="order-table-chip">${escapeOrderHtml(tabla)}</span>`).join('')}</div>` : '<span style="color:#94a3b8">—</span>'}</td>
+        <td>${tableList.length ? `<div class="order-table-chips">${tableList.map(tabla => `<span class="order-table-chip">${escapeOrderHtml(tabla)}</span>`).join('')}</div>` : '<span class="orders-muted">—</span>'}</td>
+        <td>${paymentSummaryHTML}</td>
         <td class="order-total">${escapeOrderHtml('$' + calcularTotalCobroPedido(o).toLocaleString('es-CO'))}</td>
         <td>${proofHTML}</td>
         <td><div class="order-actions-cell">${actionsHTML}</div></td>`;
@@ -1886,9 +1895,9 @@
           const formaPago = await seleccionarFormaPago(order);
           if (!formaPago) return;
           const valores = Object.values(formaPago.porTabla || {});
-          const nuevoEstado = valores.length && valores.every(v => ['EFECTIVO','CONSIGNACIÓN','GRATIS'].includes(v))
+          const nuevoEstado = valores.length && valores.every(v => ['EFECTIVO','CONSIGNACIÓN','GRATIS'].includes(String(v).toUpperCase()))
             ? 'PAGADO'
-            : (valores.some(v => ['EFECTIVO','CONSIGNACIÓN','GRATIS'].includes(v)) ? 'PAGO PARCIAL' : 'PENDIENTE PAGO');
+            : (valores.some(v => ['EFECTIVO','CONSIGNACIÓN','GRATIS'].includes(String(v).toUpperCase())) ? 'PAGO PARCIAL' : 'PENDIENTE PAGO');
           await updateOrderStatus(btn.dataset.order, nuevoEstado, formaPago.destino, formaPago.porTabla);
         });
       });
