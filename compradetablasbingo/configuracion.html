@@ -812,7 +812,7 @@
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
   import {  
-    initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, setDoc, updateDoc, deleteDoc,
+    initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, getDocFromServer, setDoc, updateDoc, deleteDoc,
     collection, getDocs, getDocsFromServer, onSnapshot, writeBatch, runTransaction, query, where, documentId 
   } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
@@ -853,6 +853,20 @@
     return n > 0 && n < 1000 ? 'T' + String(n).padStart(3, '0') : 'T' + String(n);
   }
 
+  // El inventario histórico puede contener la misma tabla con claves como
+  // T001, 001 o 1. Siempre se eliminan todas las variantes equivalentes.
+  function eliminarOcupacionPorCodigo(occupied, codigo) {
+    const canonico = normalizarCodigoInventario(codigo);
+    let eliminado = false;
+    Object.keys(occupied || {}).forEach(clave => {
+      if (normalizarCodigoInventario(clave) === canonico) {
+        delete occupied[clave];
+        eliminado = true;
+      }
+    });
+    return eliminado;
+  }
+
   // Repara el caso inverso de integridad: pedidos activos cuyas tablas no
   // quedaron marcadas como VENDIDA en el inventario agrupado.
   async function reconciliarInventarioConPedidos(pedidos = null) {
@@ -878,8 +892,13 @@
         let changed = false;
         for (const [code, pedidoId] of ventas) {
           if (tableShardId(code) !== id) continue;
-          const current = occupied[code];
-          if (!current || current.status !== 'VENDIDA') {
+          const matchingKey = Object.keys(occupied).find(key => normalizarCodigoInventario(key) === code);
+          const current = matchingKey ? occupied[matchingKey] : null;
+          if (matchingKey && matchingKey !== code) {
+            delete occupied[matchingKey];
+            changed = true;
+          }
+          if (!current || current.status !== 'VENDIDA' || matchingKey !== code) {
             occupied[code] = { ...(current || {}), code, status: 'VENDIDA', reservedUntil: null, reservedBy: null, pedido: pedidoId };
             changed = true;
           }
@@ -926,9 +945,10 @@
     const desde = Math.max(1, Number(document.getElementById('cfg-desde')?.value) || 1);
     const hasta = Math.max(desde, Number(document.getElementById('cfg-hasta')?.value) || desde);
     const ids = [];
-    for (let n = desde; n <= hasta; n += TABLES_PER_SHARD) {
-      const id = tableShardId('T' + n);
-      if (!ids.includes(id)) ids.push(id);
+    const primerLote = Math.floor((desde - 1) / TABLES_PER_SHARD);
+    const ultimoLote = Math.floor((hasta - 1) / TABLES_PER_SHARD);
+    for (let lote = primerLote; lote <= ultimoLote; lote++) {
+      ids.push('lote_' + String(lote).padStart(3, '0'));
     }
     if (!ids.length) return await readAllInventoryShards();
 
@@ -1417,9 +1437,7 @@
           codigosCanonicos.forEach(codigo => {
             const map = maps.get(tableShardId(codigo));
             if (!map) return;
-            Object.keys(map).forEach(clave => {
-              if (normalizarCodigoInventario(clave) === codigo) delete map[clave];
-            });
+            eliminarOcupacionPorCodigo(map, codigo);
           });
           refs.forEach((ref, i) => transaction.set(ref, { occupied: maps.get(ids[i]), updatedAt: Date.now() }, { merge: true }));
           transaction.update(doc(db, 'pedidos', order.firestoreId), { tablas: [], total: 0, estado: 'CANCELADO', comprobanteURL: null, comprobante: null });
@@ -1469,9 +1487,7 @@
             const shardRef = tableShardRef(codigoCanonico);
             const shardSnap = await transaction.get(shardRef);
             const occupied = shardSnap.exists() ? { ...(shardSnap.data()?.occupied || {}) } : {};
-            Object.keys(occupied).forEach(clave => {
-              if (normalizarCodigoInventario(clave) === codigoCanonico) delete occupied[clave];
-            });
+            eliminarOcupacionPorCodigo(occupied, codigoCanonico);
             transaction.set(shardRef, { occupied, updatedAt: Date.now() }, { merge: true });
             if (updatedTablas.length === 0) transaction.update(orderRef, { tablas: [], total: 0, estado: 'CANCELADO', comprobanteURL: null, comprobante: null });
             else transaction.update(orderRef, { tablas: updatedTablas, total: newTotal });
@@ -2363,9 +2379,11 @@ function seleccionarFormaPago(order){
       const snap = await transaction.get(shardRef);
       if (!snap.exists()) return;
       const occupied = { ...(snap.data()?.occupied || {}) };
-      const data = occupied[code];
+      const canonico = normalizarCodigoInventario(code);
+      const claveExistente = Object.keys(occupied).find(key => normalizarCodigoInventario(key) === canonico);
+      const data = claveExistente ? occupied[claveExistente] : null;
       if (data?.status === 'RESERVADA' && data.reservedBy === manualReservationOwner) {
-        delete occupied[code];
+        eliminarOcupacionPorCodigo(occupied, canonico);
         transaction.set(shardRef, { occupied, updatedAt: Date.now() }, { merge: true });
       }
     });
@@ -2740,38 +2758,34 @@ Hola ${nombre}! 👋
     const ids = [...new Set(codigosCanonicos.map(tableShardId))];
     const shardRefs = ids.map(id => doc(db, INVENTORY_COLLECTION, id));
 
-    const pedidosARevisar = allOrders.filter(pedido =>
-      String(pedido.estado || '').toUpperCase() !== 'CANCELADO' &&
-      pedidoPerteneceAlEventoActual(pedido) &&
-      Array.isArray(pedido.tablas) &&
-      pedido.tablas.some(tabla => conjunto.has(normalizarCodigoInventario(tabla)))
-    );
-    const pedidoRefs = pedidosARevisar
-      .filter(pedido => pedido.firestoreId)
-      .map(pedido => doc(db, 'pedidos', pedido.firestoreId));
-
-    const logs = codigosCanonicos.map(codigo => ({
-      ref: doc(collection(db, 'integridad_tablas')),
-      codigo
-    }));
+    // Consultar pedidos directamente al servidor evita depender de allOrders,
+    // que puede conservar momentáneamente una copia anterior del pedido.
+    const pedidosServidor = await getDocsFromServer(collection(db, 'pedidos'));
+    const pedidosARevisar = pedidosServidor.docs
+      .map(snap => ({ firestoreId: snap.id, ...snap.data() }))
+      .filter(pedido =>
+        String(pedido.estado || '').toUpperCase() !== 'CANCELADO' &&
+        pedidoPerteneceAlEventoActual(pedido) &&
+        Array.isArray(pedido.tablas) &&
+        pedido.tablas.some(tabla => conjunto.has(normalizarCodigoInventario(tabla)))
+      );
+    const pedidoRefs = pedidosARevisar.map(pedido => doc(db, 'pedidos', pedido.firestoreId));
+    const logs = codigosCanonicos.map(codigo => ({ ref: doc(collection(db, 'integridad_tablas')), codigo }));
 
     await runTransaction(db, async transaction => {
       const shardSnaps = [];
       for (const ref of shardRefs) shardSnaps.push(await transaction.get(ref));
-
       const pedidoSnaps = [];
       for (const ref of pedidoRefs) pedidoSnaps.push(await transaction.get(ref));
 
       const occupiedByShard = new Map(shardSnaps.map((snap, index) => [
-        ids[index],
-        snap.exists() ? { ...(snap.data()?.occupied || {}) } : {}
+        ids[index], snap.exists() ? { ...(snap.data()?.occupied || {}) } : {}
       ]));
 
       codigosCanonicos.forEach(codigo => {
         const occupied = occupiedByShard.get(tableShardId(codigo));
-        if (occupied) delete occupied[codigo];
+        if (occupied) eliminarOcupacionPorCodigo(occupied, codigo);
       });
-
       shardRefs.forEach((ref, index) => {
         transaction.set(ref, { occupied: occupiedByShard.get(ids[index]) || {}, updatedAt: Date.now() }, { merge: true });
       });
@@ -2779,22 +2793,21 @@ Hola ${nombre}! 👋
       pedidoSnaps.forEach((snap, index) => {
         if (!snap.exists()) return;
         const pedido = snap.data() || {};
-        const tablasActualizadas = (Array.isArray(pedido.tablas) ? pedido.tablas : [])
-          .filter(tabla => !conjunto.has(normalizarCodigoInventario(tabla)));
-        if (tablasActualizadas.length === (Array.isArray(pedido.tablas) ? pedido.tablas.length : 0)) return;
+        const tablasOriginales = Array.isArray(pedido.tablas) ? pedido.tablas : [];
+        const tablasActualizadas = tablasOriginales.filter(tabla => !conjunto.has(normalizarCodigoInventario(tabla)));
+        if (tablasActualizadas.length === tablasOriginales.length) return;
 
         const destinoPorTabla = { ...(pedido.destinoPorTabla || {}) };
         Object.keys(destinoPorTabla).forEach(clave => {
           if (conjunto.has(normalizarCodigoInventario(clave))) delete destinoPorTabla[clave];
         });
-
         const pedidoActualizado = { ...pedido, tablas: tablasActualizadas, destinoPorTabla };
         const cambiosPedido = {
           tablas: tablasActualizadas,
           destinoPorTabla,
           total: calcularTotalCobroPedido(pedidoActualizado)
         };
-        if (tablasActualizadas.length === 0) {
+        if (!tablasActualizadas.length) {
           cambiosPedido.estado = 'CANCELADO';
           cambiosPedido.comprobanteURL = null;
           cambiosPedido.comprobante = null;
@@ -2803,14 +2816,24 @@ Hola ${nombre}! 👋
       });
 
       logs.forEach(({ ref, codigo }) => transaction.set(ref, {
-        tabla: codigo,
-        accion,
-        motivo,
-        fecha: new Date().toISOString()
+        tabla: codigo, accion, motivo, fecha: new Date().toISOString()
       }));
     });
 
-    // Refleja los cambios sin esperar el siguiente ciclo del listener.
+    // Leer nuevamente desde servidor y confirmar que no quedó ninguna clave
+    // equivalente ocupada antes de retirar la tabla de la lista de Integridad.
+    const verificados = await Promise.all(shardRefs.map(ref => getDocFromServer(ref)));
+    const ocupacionesRestantes = [];
+    verificados.forEach(snap => {
+      if (!snap.exists()) return;
+      Object.keys(snap.data()?.occupied || {}).forEach(clave => {
+        if (conjunto.has(normalizarCodigoInventario(clave))) ocupacionesRestantes.push(clave);
+      });
+    });
+    if (ocupacionesRestantes.length) {
+      throw new Error('Firebase todavía devuelve ocupaciones para: ' + ocupacionesRestantes.join(', '));
+    }
+
     allOrders.forEach(pedido => {
       if (!pedidoPerteneceAlEventoActual(pedido) || !Array.isArray(pedido.tablas)) return;
       const restantes = pedido.tablas.filter(tabla => !conjunto.has(normalizarCodigoInventario(tabla)));
@@ -2828,6 +2851,7 @@ Hola ${nombre}! 👋
     renderListado();
     loadMetrics();
   }
+
 
   window.verificarIntegridadTablas = async function() {
     const boton = document.querySelector('#tab-pedidos .card-title button');
