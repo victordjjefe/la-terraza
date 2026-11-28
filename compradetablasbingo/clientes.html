@@ -1124,7 +1124,7 @@
   }
   function tableShardRef(code) { return doc(db, INVENTORY_COLLECTION, tableShardId(code)); }
   function occupiedFromSnapshot(snap, code) {
-    return snap.exists() ? ((snap.data()?.occupied || {})[code] || null) : null;
+    return snap.exists() ? (obtenerOcupacionPorCodigo(snap.data()?.occupied || {}, code) || null) : null;
   }
   async function getGroupedTable(code) {
     const snap = await getDoc(tableShardRef(code));
@@ -1141,6 +1141,19 @@
   function normalizarCodigoInventario(code) {
     const n = tableNumber(code);
     return n > 0 && n < 1000 ? 'T' + String(n).padStart(3, '0') : 'T' + String(n);
+  }
+
+  function obtenerOcupacionPorCodigo(occupied, code) {
+    const canonico = normalizarCodigoInventario(code);
+    const clave = Object.keys(occupied || {}).find(key => normalizarCodigoInventario(key) === canonico);
+    return clave ? occupied[clave] : null;
+  }
+
+  function eliminarOcupacionPorCodigo(occupied, code) {
+    const canonico = normalizarCodigoInventario(code);
+    Object.keys(occupied || {}).forEach(key => {
+      if (normalizarCodigoInventario(key) === canonico) delete occupied[key];
+    });
   }
 
   // Reconcilia el inventario con los pedidos vigentes del evento antes de
@@ -1172,13 +1185,21 @@
         let changed = false;
         for (const [code, pedidoId] of ventas) {
           if (tableShardId(code) !== id) continue;
-          const current = occupied[code];
-          if (!current || current.status !== 'VENDIDA') {
+          const matchingKey = Object.keys(occupied).find(key => normalizarCodigoInventario(key) === code);
+          const current = matchingKey ? occupied[matchingKey] : null;
+          if (matchingKey && matchingKey !== code) {
+            delete occupied[matchingKey];
+            changed = true;
+          }
+          if (!current || current.status !== 'VENDIDA' || matchingKey !== code) {
             occupied[code] = { ...(current || {}), code, status: 'VENDIDA', reservedUntil: null, reservedBy: null, pedido: pedidoId };
             changed = true;
           }
         }
-        if (changed) transaction.set(ref, { occupied, updatedAt: Date.now() }, { merge: true });
+        if (changed) {
+          if (snap.exists()) transaction.update(ref, { occupied, updatedAt: Date.now() });
+          else transaction.set(ref, { occupied, updatedAt: Date.now() });
+        }
       });
       const fresh = await getDoc(ref);
       rememberShard(id, fresh.exists() ? fresh.data() : { occupied: {} });
@@ -2576,11 +2597,12 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
         const shardRef = tableShardRef(code);
         const shardSnap = await transaction.get(shardRef);
         const occupied = shardSnap.exists() ? { ...(shardSnap.data()?.occupied || {}) } : {};
-        const tData = occupied[code] || null;
+        const tData = obtenerOcupacionPorCodigo(occupied, code);
         const now = Date.now();
         if (!tData) {
           occupied[code] = { code, status: 'RESERVADA', reservedUntil: reservationDeadline, reservedBy: myClientId, pedido: null };
-          transaction.set(shardRef, { occupied, updatedAt: Date.now() }, { merge: true });
+          if (shardSnap.exists()) transaction.update(shardRef, { occupied, updatedAt: Date.now() });
+          else transaction.set(shardRef, { occupied, updatedAt: Date.now() });
           return true;
         }
         const isExpired = tData.status === 'RESERVADA' &&
@@ -2591,8 +2613,10 @@ ${LINK_GRUPO_WHATSAPP_BINGO}
           return false;
         }
 
+        eliminarOcupacionPorCodigo(occupied, code);
         occupied[code] = { code, status: 'RESERVADA', reservedUntil: reservationDeadline, reservedBy: myClientId, pedido: tData.pedido || null };
-        transaction.set(shardRef, { occupied, updatedAt: Date.now() }, { merge: true });
+        if (shardSnap.exists()) transaction.update(shardRef, { occupied, updatedAt: Date.now() });
+        else transaction.set(shardRef, { occupied, updatedAt: Date.now() });
         return true;
       });
 
@@ -2737,7 +2761,7 @@ function startReservationTimer() {
       const shardSnap = await transaction.get(shardRef);
       if (!shardSnap.exists()) return false;
       const occupied = { ...(shardSnap.data()?.occupied || {}) };
-      const tData = occupied[code];
+      const tData = obtenerOcupacionPorCodigo(occupied, code);
       if (!tData) return false;
 
       // Protección principal contra tablas repetidas:
@@ -2750,8 +2774,8 @@ function startReservationTimer() {
       // En el modelo escalable, ausencia de documento = tabla disponible.
       // Al liberar una reserva propia eliminamos el documento para no acumular
       // miles de registros DISPONIBLE que luego tendrían que ser leídos.
-      delete occupied[code];
-      transaction.set(shardRef, { occupied, updatedAt: Date.now() }, { merge: true });
+      eliminarOcupacionPorCodigo(occupied, code);
+      transaction.update(shardRef, { occupied, updatedAt: Date.now() });
       return true;
     });
 
