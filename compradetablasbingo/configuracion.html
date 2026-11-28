@@ -505,34 +505,6 @@
         gap: 24px;
       }
     }
-    .orders-scroll-container { display:block !important; width:100%; max-height:none; overflow-x:auto; overflow-y:visible; }
-    .orders-table { width:100%; min-width:1450px; table-layout:fixed; border-collapse:separate; border-spacing:0; background:#fff; }
-    .orders-table th { background:#f1f5f9; color:#172033; font-size:.68rem; font-weight:800; text-transform:uppercase; letter-spacing:.02em; padding:11px 7px; text-align:center; border-bottom:2px solid #cbd5e1; white-space:normal; }
-    .orders-table td { padding:12px 7px; border-bottom:1px solid #dbe3ed; text-align:center; vertical-align:top; font-size:.78rem; line-height:1.35; overflow-wrap:anywhere; }
-    .orders-table tbody tr:hover { background:#f8fafc; }
-    .orders-table .order-name { text-align:left; font-weight:700; }
-    .orders-client-name { font-weight:800; color:#172033; overflow-wrap:anywhere; }
-    .orders-related-inline { margin-top:5px; display:flex; flex-direction:column; gap:2px; font-size:.68rem; font-weight:500; color:#64748b; }
-    .orders-related-label { color:#92400e; font-weight:800; }
-    .orders-related-entry { overflow-wrap:anywhere; }
-    .orders-payment-breakdown { display:flex; flex-direction:column; align-items:flex-start; gap:3px; font-size:.68rem; text-align:left; }
-    .payment-count { display:block; white-space:normal; }
-    .payment-count b { font-weight:800; }
-    .payment-count.consignacion { color:#0369a1; }
-    .payment-count.efectivo { color:#047857; }
-    .payment-count.gratis { color:#a16207; }
-    .payment-count.deben { color:#b45309; }
-    .orders-free-note { color:#92400e; font-weight:700; }
-    .orders-muted { color:#94a3b8; font-size:.7rem; }
-    .orders-table .order-status-cell { display:flex; flex-direction:column; align-items:center; gap:6px; }
-    .orders-table .order-status-badge { white-space:normal; }
-    .orders-table .payment-status-btn { padding:6px 7px; font-size:.65rem; white-space:normal; }
-    .orders-table .order-table-chips { display:flex; flex-wrap:wrap; justify-content:center; gap:4px; }
-    .orders-table .order-table-chip { display:inline-block; padding:5px 8px; border-radius:7px; background:#d1fae5; border:1px solid #6ee7b7; color:#065f46; font-size:.68rem; font-weight:800; white-space:nowrap; }
-    .orders-table .order-proof-btn { width:100%; max-width:125px; white-space:normal; line-height:1.2; padding:7px 6px; font-size:.68rem; }
-    .orders-table .order-actions-cell { display:flex; flex-direction:column; align-items:stretch; gap:5px; }
-    .orders-table .order-actions-cell .btn, .orders-table .order-actions-cell .table-release-btn { width:100%; min-width:0; padding:7px 6px; font-size:.67rem; white-space:normal; line-height:1.2; }
-    .orders-empty { padding:24px !important; text-align:center !important; color:var(--text-muted); }
   </style>
 </head>
 <body>
@@ -698,7 +670,6 @@
             <option value="TODOS">Todos los estados</option>
             <option value="PENDIENTE PAGO">PENDIENTE PAGO</option>
             <option value="PAGADO">PAGADO</option>
-            <option value="PAGO PARCIAL">PAGO PARCIAL</option>
             <option value="CANCELADO">CANCELADO</option>
           </select>
         </div>
@@ -1725,10 +1696,7 @@
   function getEffectiveOrderStatus(order) {
     const tables = order.tablas || [];
     if (tables.length === 0) return 'CANCELADO';
-    const estado = String(order.estado || '').toUpperCase();
-    if (estado === 'PAGADO') return 'PAGADO';
-    if (estado === 'PAGO PARCIAL') return 'PAGO PARCIAL';
-    return 'PENDIENTE PAGO';
+    return order.estado === 'PAGADO' ? 'PAGADO' : 'PENDIENTE PAGO';
   }
 
   function normalizeWhatsapp(value) {
@@ -1764,19 +1732,6 @@
       .sort((a, b) => (parseInt(a.id) || 0) - (parseInt(b.id) || 0));
   }
 
-  // Escapa texto procedente de Firebase antes de insertarlo en la tabla HTML.
-  // Esta función es utilizada por las celdas del listado y evita que el renderizado
-  // se interrumpa cuando existen pedidos para mostrar.
-  function escapeOrderHtml(value) {
-    return String(value ?? '').replace(/[&<>"']/g, character => ({
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#39;'
-    })[character]);
-  }
-
   function filterOrders() {
     const queryStr = normalizeSearchText(document.getElementById('search-input').value);
     const statusFilter = document.getElementById('filter-status').value;
@@ -1786,144 +1741,146 @@
     const filtered = allOrders.filter(o => {
       const clientName = typeof o.cliente === 'string' ? o.cliente : (o.cliente?.name || '');
       const clientPhone = o.telefono || o.cliente?.whatsapp || '';
-      const reference = o.referencia || o.direccion || '';
+      const reference = o.referencia || '';
       const tablesStr = (o.tablas || []).join(', ');
       const matchQuery = normalizeSearchText(String(o.id || '')).includes(queryStr) ||
                          normalizeSearchText(clientName).includes(queryStr) ||
                          normalizeSearchText(String(clientPhone)).includes(queryStr) ||
                          normalizeSearchText(reference).includes(queryStr) ||
                          normalizeSearchText(tablesStr).includes(queryStr);
-      const matchStatus = statusFilter === 'TODOS' || getEffectiveOrderStatus(o) === statusFilter;
+      let matchStatus;
+      matchStatus = statusFilter === 'TODOS' || getEffectiveOrderStatus(o) === statusFilter;
       return matchQuery && matchStatus;
     });
 
     if (filtered.length === 0) {
-      container.innerHTML = '<div class="orders-empty">No se encontraron registros.</div>';
+      container.innerHTML = '<p style="font-size:0.9rem; color:var(--text-muted); text-align:center;">No se encontraron registros.</p>';
       return;
     }
 
-    // El consecutivo más reciente siempre aparece primero.
-    filtered.sort((a, b) => (parseInt(b.id) || 0) - (parseInt(a.id) || 0));
-
-    const table = document.createElement('table');
-    table.className = 'orders-table';
-    table.innerHTML = `
-      <colgroup>
-        <col style="width:4%"><col style="width:9%"><col style="width:9%">
-        <col style="width:13%"><col style="width:9%"><col style="width:9%">
-        <col style="width:5%"><col style="width:12%"><col style="width:10%">
-        <col style="width:7%"><col style="width:6%"><col style="width:7%">
-      </colgroup>
-      <thead><tr>
-        <th>N.º de<br>registro</th><th>Estado<br>contable</th><th>Fecha</th>
-        <th>Nombre / registros adicionales</th><th>Barrio / ciudad</th><th>WhatsApp</th>
-        <th>Solicitadas</th><th>Tablas asignadas</th><th>Forma de pago</th>
-        <th>Total a pagar</th><th>Comprobante</th><th>Acciones</th>
-      </tr></thead><tbody></tbody>`;
-    const tbody = table.querySelector('tbody');
+    filtered.sort((a,b) => (parseInt(a.id) || 0) - (parseInt(b.id) || 0));
 
     filtered.forEach(o => {
       const currentStatus = getEffectiveOrderStatus(o);
-      const badgeClass = currentStatus === 'PAGADO' ? 'badge-pagado' :
-        (currentStatus === 'CANCELADO' ? 'badge-cancelled' : 'badge-pending');
-      const tableList = [...(o.tablas || [])].sort((a, b) =>
-        (parseInt(String(a).replace(/\D/g, '')) || 0) - (parseInt(String(b).replace(/\D/g, '')) || 0)
-      );
-      const clientName = typeof o.cliente === 'string' ? o.cliente : (o.cliente?.name || 'Cliente');
-      const phone = o.telefono || o.cliente?.whatsapp || '—';
-      const reference = o.referencia || o.direccion || '—';
+      let badgeClass = 'badge-pending';
+      if (currentStatus === 'PAGADO') badgeClass = 'badge-pagado';
+      if (currentStatus === 'RECHAZADO') badgeClass = 'badge-rechazado';
+      if (currentStatus === 'CANCELADO') badgeClass = 'badge-cancelled';
 
-      // Los registros adicionales se muestran discretamente debajo del nombre,
-      // dentro de la misma celda y sin tarjetas que alteren la alineación.
-      const relatedOrders = getRelatedOrders(o).sort((a, b) =>
-        (parseInt(b.id) || 0) - (parseInt(a.id) || 0)
-      );
-      const relatedOrdersHTML = relatedOrders.length ? `
-        <div class="orders-related-inline">
-          <span class="orders-related-label">${relatedOrders.length === 1 ? 'Registro adicional:' : 'Registros adicionales:'}</span>
-          ${relatedOrders.map(related => {
-            const relatedTables = [...(related.tablas || [])].sort((a, b) =>
-              (parseInt(String(a).replace(/\D/g, '')) || 0) - (parseInt(String(b).replace(/\D/g, '')) || 0)
-            );
-            return `<span class="orders-related-entry">#${escapeOrderHtml(related.id || related.firestoreId)} · ${escapeOrderHtml(relatedTables.join(', '))}</span>`;
-          }).join('')}
-        </div>` : '';
+      const el = document.createElement('div');
+      el.className = 'order-item';
 
-      // Distribución real de tablas por forma de pago. Cada tabla se cuenta una vez.
-      const pagosPorTabla = o.destinoPorTabla || {};
-      const conteoPago = { 'CONSIGNACIÓN': 0, 'EFECTIVO': 0, 'GRATIS': 0, 'DEBEN': 0 };
-      tableList.forEach(tabla => {
-        const valorDirecto = pagosPorTabla[tabla];
-        const claveAlterna = Object.keys(pagosPorTabla).find(k =>
-          String(k).trim().toUpperCase() === String(tabla).trim().toUpperCase()
-        );
-        let forma = String(valorDirecto ?? (claveAlterna ? pagosPorTabla[claveAlterna] : (o.destino || 'DEBEN'))).trim().toUpperCase();
-        if (forma === 'CONSIGNACION') forma = 'CONSIGNACIÓN';
-        if (!Object.prototype.hasOwnProperty.call(conteoPago, forma)) forma = 'DEBEN';
-        conteoPago[forma]++;
+      const tableList = [...(o.tablas || [])].sort((a, b) => {
+        const numA = parseInt(String(a).replace(/\D/g, '')) || 0;
+        const numB = parseInt(String(b).replace(/\D/g, '')) || 0;
+        return numA - numB;
       });
-      const paymentSummaryHTML = tableList.length ? `
-        <div class="orders-payment-breakdown">
-          ${conteoPago['CONSIGNACIÓN'] ? `<span class="payment-count consignacion">Consignación: <b>${conteoPago['CONSIGNACIÓN']}</b></span>` : ''}
-          ${conteoPago.EFECTIVO ? `<span class="payment-count efectivo">Efectivo: <b>${conteoPago.EFECTIVO}</b></span>` : ''}
-          ${conteoPago.GRATIS ? `<span class="payment-count gratis">Gratis: <b>${conteoPago.GRATIS}</b></span>` : ''}
-          ${conteoPago.DEBEN ? `<span class="payment-count deben">Deben: <b>${conteoPago.DEBEN}</b></span>` : ''}
-          ${o.declaraTablaGratis === true ? '<span class="orders-free-note">Declara 1 tabla gratis</span>' : ''}
-        </div>` : '<span class="orders-muted">—</span>';
+      const clientName = typeof o.cliente === 'string' ? o.cliente : (o.cliente?.name || 'Cliente');
 
-      const proofHTML = (o.comprobanteURL || o.comprobante)
-        ? `<button class="btn btn-sm btn-dark btn-view-proof order-proof-btn" data-order="${escapeOrderHtml(o.firestoreId)}">Ver comprobante</button>`
-        : '<span class="orders-muted">Sin comprobante</span>';
+      // Los pedidos relacionados se detectan por WhatsApp, pero NO se mueven ni
+      // se agrupan. Cada tarjeta conserva su posición normal y solo informa qué
+      // otros registros activos pertenecen al mismo cliente.
+      const relatedOrders = getRelatedOrders(o);
+      const relatedOrdersHTML = relatedOrders.length > 0 ? `
+        <div class="related-orders-alert">
+          <div class="related-orders-title">⚠️ CLIENTE CON ${relatedOrders.length === 1 ? 'REGISTRO ADICIONAL' : 'REGISTROS ADICIONALES'}</div>
+          ${relatedOrders.map(related => {
+            const relatedTables = [...(related.tablas || [])].sort((a, b) => {
+              const numA = parseInt(String(a).replace(/\D/g, '')) || 0;
+              const numB = parseInt(String(b).replace(/\D/g, '')) || 0;
+              return numA - numB;
+            });
+            return `<div class="related-order-row"><b>Registro #${related.id || related.firestoreId}:</b> <span>${relatedTables.join(', ')}</span></div>`;
+          }).join('')}
+        </div>
+      ` : '';
 
-      const actionsHTML = tableList.length ? `
-        <button class="table-release-btn btn-release-order" data-order="${escapeOrderHtml(o.firestoreId)}">Liberar tablas</button>
-        <button class="btn btn-sm btn-warning btn-edit-client" data-order="${escapeOrderHtml(o.firestoreId)}">Editar</button>`
-        : '<span class="orders-muted">Sin tablas</span>';
+      const resumenPago = resumenFormaPago(o);
+      const porTablaEstado = Object.values(o.destinoPorTabla || {}).map(v => String(v || 'DEBEN').toUpperCase());
+      const totalTablasPedido = Array.isArray(o.tablas) ? o.tablas.length : 0;
+      const totalPagadas = porTablaEstado.filter(v => ['EFECTIVO','CONSIGNACIÓN','GRATIS'].includes(v)).length;
+      const totalPendientes = porTablaEstado.filter(v => v === 'DEBEN').length || 
+        (!porTablaEstado.length && String(o.estado || '').toUpperCase() !== 'PAGADO' ? totalTablasPedido : 0);
 
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td class="order-number">${escapeOrderHtml(o.id || '')}</td>
-        <td class="order-status-cell">
-          <span class="order-status-badge badge ${badgeClass}">${escapeOrderHtml(currentStatus)}</span>
-          ${tableList.length ? `<button class="payment-status-btn ${conteoPago.DEBEN === tableList.length ? 'pending' : (conteoPago.DEBEN ? 'partial' : 'paid')} btn-payment-status" data-order="${escapeOrderHtml(o.firestoreId)}" data-status="${escapeOrderHtml(currentStatus)}">Editar pagos</button>` : ''}
-        </td>
-        <td class="order-date">${escapeOrderHtml(o.fecha || '—')}</td>
-        <td class="order-name"><div class="orders-client-name">${escapeOrderHtml(clientName)}</div>${relatedOrdersHTML}</td>
-        <td class="order-reference">${escapeOrderHtml(reference)}</td>
-        <td class="order-phone">${escapeOrderHtml(phone)}</td>
-        <td class="order-count">${tableList.length}</td>
-        <td>${tableList.length ? `<div class="order-table-chips">${tableList.map(tabla => `<span class="order-table-chip">${escapeOrderHtml(tabla)}</span>`).join('')}</div>` : '<span class="orders-muted">—</span>'}</td>
-        <td>${paymentSummaryHTML}</td>
-        <td class="order-total">${escapeOrderHtml('$' + calcularTotalCobroPedido(o).toLocaleString('es-CO'))}</td>
-        <td>${proofHTML}</td>
-        <td><div class="order-actions-cell">${actionsHTML}</div></td>`;
+      let paymentButtonClass = 'payment-status-btn pending';
+      let paymentButtonText = 'Estado de pago pendiente';
 
-      tr.querySelectorAll('.btn-view-proof').forEach(btn => {
+      if (totalPagadas > 0 && totalPendientes > 0) {
+        paymentButtonClass = 'payment-status-btn partial';
+        paymentButtonText = 'Estado de pago parcial';
+      } else if (totalTablasPedido > 0 && totalPagadas === totalTablasPedido) {
+        paymentButtonClass = 'payment-status-btn paid';
+        paymentButtonText = 'Estado de pago completo';
+      }
+
+      let actionButtonsHTML = '';
+      if (tableList.length === 0) {
+        actionButtonsHTML = `<span style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; font-weight:600;">Registro sin tablas (Cancelado automáticamente)</span>`;
+      } else {
+        if (o.comprobanteURL || o.comprobante) {
+          actionButtonsHTML += `<button class="btn btn-sm btn-dark btn-view-proof" data-order="${o.firestoreId}">Ver Comprobante</button>`;
+        }
+        actionButtonsHTML += `<button class="${paymentButtonClass} btn-payment-status" data-order="${o.firestoreId}" data-status="${currentStatus}">${paymentButtonText}</button>`;
+        actionButtonsHTML += `<button class="table-release-btn btn-release-order" data-order="${o.firestoreId}">Liberar tablas</button>`;
+        actionButtonsHTML += `<button class="btn btn-sm btn-warning btn-edit-client" data-order="${o.firestoreId}">Editar datos</button>`;
+      }
+
+      el.innerHTML = `
+        <div class="order-header">
+          <span>Registro #${o.id || ''}</span>
+          <span>$${calcularTotalCobroPedido(o).toLocaleString()}</span>
+        </div>
+        ${tableList.length === 0 ? `<div class="order-badges"><span class="badge ${badgeClass}">CANCELADO</span></div>` : ''}
+        <div class="order-info">
+          <div><b>Nombre y Apellido:</b> ${clientName}</div>
+          <div><b>WhatsApp:</b> ${o.telefono || ''}</div>
+          <div><b>Referencia, Ciudad, Barrio:</b> ${o.referencia || 'N/A'}</div>
+          <div><b>Fecha/Hora:</b> ${o.fecha || ''}</div>
+          ${o.declaraTablaGratis === true ? '<div style="color:#92400e;font-weight:700;">🎁 Declara 1 tabla gratis</div>' : ''}
+          <div><b>Tablas (${tableList.length}):</b> ${tableList.length > 0 ? `<span style="color:var(--accent-gold); font-weight:700;">${tableList.join(', ')}</span>` : '<span style="color:var(--danger); font-style:italic;">Ninguna (Liberadas)</span>'}</div>
+          ${tableList.length > 0 ? relatedOrdersHTML : ''}
+          
+          ${tableList.length > 0 ? `<div class="payment-status" style="color:var(--accent-gold);">Forma de pago: ${resumenFormaPago(o)}</div>` : ''}
+        </div>
+        <div class="order-actions">
+          ${actionButtonsHTML}
+        </div>
+      `;
+
+      el.querySelectorAll('.btn-view-proof').forEach(btn => {
         btn.addEventListener('click', () => viewProof(btn.dataset.order));
       });
-      tr.querySelectorAll('.btn-payment-status').forEach(btn => {
+      el.querySelectorAll('.btn-payment-status').forEach(btn => {
         btn.addEventListener('click', async () => {
-          const order = allOrders.find(item => item.firestoreId === btn.dataset.order);
+          const order = allOrders.find(o => o.firestoreId === btn.dataset.order);
           if (!order) return;
+
+          // El botón de estado de pago funciona como edición,
+          // no como un borrado masivo de pagos.
+          // Siempre abre el detalle por tabla para modificar cada tabla individualmente.
           const formaPago = await seleccionarFormaPago(order);
+
           if (!formaPago) return;
+
           const valores = Object.values(formaPago.porTabla || {});
-          const nuevoEstado = valores.length && valores.every(v => ['EFECTIVO','CONSIGNACIÓN','GRATIS'].includes(String(v).toUpperCase()))
+          const nuevoEstado = valores.length && valores.every(v => ['EFECTIVO','CONSIGNACIÓN','GRATIS'].includes(v))
             ? 'PAGADO'
-            : (valores.some(v => ['EFECTIVO','CONSIGNACIÓN','GRATIS'].includes(String(v).toUpperCase())) ? 'PAGO PARCIAL' : 'PENDIENTE PAGO');
+            : (valores.some(v => ['EFECTIVO','CONSIGNACIÓN','GRATIS'].includes(v)) ? 'PAGO PARCIAL' : 'PENDIENTE PAGO');
+
           await updateOrderStatus(btn.dataset.order, nuevoEstado, formaPago.destino, formaPago.porTabla);
         });
       });
-      tr.querySelectorAll('.btn-release-order').forEach(btn => {
+
+      el.querySelectorAll('.btn-release-order').forEach(btn => {
         btn.addEventListener('click', () => openReleaseModal(btn.dataset.order));
       });
-      tr.querySelectorAll('.btn-edit-client').forEach(btn => {
+
+      el.querySelectorAll('.btn-edit-client').forEach(btn => {
         btn.addEventListener('click', () => editarDatosCliente(btn.dataset.order));
       });
-      tbody.appendChild(tr);
-    });
 
-    container.appendChild(table);
+      container.appendChild(el);
+    });
   }
 
   document.getElementById('search-input').addEventListener('keyup', filterOrders);
