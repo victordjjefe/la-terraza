@@ -919,7 +919,31 @@
     await setDoc(inventoryMetaRef, { schemaVersion: 2, tablesPerShard: 20, migratedAt: new Date().toISOString() }, { merge: true });
   }
   async function readAllInventoryShards() { return await getDocs(collection(db, INVENTORY_COLLECTION)); }
-  function occupiedEntriesFromSnapshot(snap) { return snap.docs.flatMap(d => Object.entries(d.data()?.occupied || {}).map(([code, data]) => ({ code, data, shardId: d.id }))); }
+
+  // Integridad solo necesita revisar los lotes comprendidos en el rango del bingo.
+  // Firestore admite hasta 30 valores en una consulta "in"; se consultan en paralelo.
+  async function readInventoryShardsForConfiguredRange() {
+    const desde = Math.max(1, Number(document.getElementById('cfg-desde')?.value) || 1);
+    const hasta = Math.max(desde, Number(document.getElementById('cfg-hasta')?.value) || desde);
+    const ids = [];
+    for (let n = desde; n <= hasta; n += TABLES_PER_SHARD) {
+      const id = tableShardId('T' + n);
+      if (!ids.includes(id)) ids.push(id);
+    }
+    if (!ids.length) return await readAllInventoryShards();
+
+    const grupos = [];
+    for (let i = 0; i < ids.length; i += 30) grupos.push(ids.slice(i, i + 30));
+    const snapshots = await Promise.all(grupos.map(grupo =>
+      getDocs(query(collection(db, INVENTORY_COLLECTION), where(documentId(), 'in', grupo)))
+    ));
+    const docs = snapshots.flatMap(snapshot => snapshot.docs);
+    return { docs, forEach(callback) { docs.forEach(callback); } };
+  }
+
+  function occupiedEntriesFromSnapshot(snap) {
+    return snap.docs.flatMap(d => Object.entries(d.data()?.occupied || {}).map(([code, data]) => ({ code, data, shardId: d.id })));
+  }
 
   function formatoTelefono(v){
     let n=String(v||'').replace(/\D/g,'');
@@ -1343,11 +1367,9 @@
       renderOrders();
       renderListado();
       loadMetrics();
-      if (pedidosSincronizados && configSincronizada) {
-        reconciliarInventarioConPedidos(allOrders).catch(error => {
-          console.error('No fue posible reconciliar pedidos e inventario:', error);
-        });
-      }
+      // La reconciliación completa se ejecuta una sola vez al iniciar el panel.
+      // Repetirla en cada snapshot podía volver a marcar como VENDIDA una tabla
+      // recién liberada y además generaba transacciones innecesarias.
     });
   }
 
@@ -1386,12 +1408,19 @@
         container.querySelectorAll('button').forEach(button => button.disabled = true);
 
         await runTransaction(db, async transaction => {
-          const ids = [...new Set(tablesToRelease.map(tableShardId))];
+          const codigosCanonicos = [...new Set(tablesToRelease.map(normalizarCodigoInventario))];
+          const ids = [...new Set(codigosCanonicos.map(tableShardId))];
           const refs = ids.map(id => doc(db, INVENTORY_COLLECTION, id));
           const snaps = [];
           for (const ref of refs) snaps.push(await transaction.get(ref));
           const maps = new Map(snaps.map((snap, i) => [ids[i], snap.exists() ? { ...(snap.data()?.occupied || {}) } : {}]));
-          tablesToRelease.forEach(code => { const map = maps.get(tableShardId(code)); if (map) delete map[code]; });
+          codigosCanonicos.forEach(codigo => {
+            const map = maps.get(tableShardId(codigo));
+            if (!map) return;
+            Object.keys(map).forEach(clave => {
+              if (normalizarCodigoInventario(clave) === codigo) delete map[clave];
+            });
+          });
           refs.forEach((ref, i) => transaction.set(ref, { occupied: maps.get(ids[i]), updatedAt: Date.now() }, { merge: true }));
           transaction.update(doc(db, 'pedidos', order.firestoreId), { tablas: [], total: 0, estado: 'CANCELADO', comprobanteURL: null, comprobante: null });
           tablesToRelease.forEach(tableCode => transaction.set(doc(collection(db, 'integridad_tablas')), {
@@ -1432,21 +1461,24 @@
           btn.disabled = true;
           btn.textContent = 'Liberando...';
 
-          const updatedTablas = order.tablas.filter(t => t !== tableCode);
+          const codigoCanonico = normalizarCodigoInventario(tableCode);
+          const updatedTablas = order.tablas.filter(t => normalizarCodigoInventario(t) !== codigoCanonico);
           const orderRef = doc(db, 'pedidos', order.firestoreId);
           const newTotal = updatedTablas.length * (configValor() || 0);
           await runTransaction(db, async transaction => {
-            const shardRef = tableShardRef(tableCode);
+            const shardRef = tableShardRef(codigoCanonico);
             const shardSnap = await transaction.get(shardRef);
             const occupied = shardSnap.exists() ? { ...(shardSnap.data()?.occupied || {}) } : {};
-            delete occupied[tableCode];
+            Object.keys(occupied).forEach(clave => {
+              if (normalizarCodigoInventario(clave) === codigoCanonico) delete occupied[clave];
+            });
             transaction.set(shardRef, { occupied, updatedAt: Date.now() }, { merge: true });
             if (updatedTablas.length === 0) transaction.update(orderRef, { tablas: [], total: 0, estado: 'CANCELADO', comprobanteURL: null, comprobante: null });
             else transaction.update(orderRef, { tablas: updatedTablas, total: newTotal });
           });
 
           await setDoc(doc(collection(db, 'integridad_tablas')), {
-            tabla: tableCode,
+            tabla: codigoCanonico,
             accion: 'LIBERACION_MANUAL',
             motivo: 'Cliente solicitó liberar tabla desde pedido',
             pedido: order.id || '',
@@ -2665,9 +2697,7 @@ Hola ${nombre}! 👋
 
   let tablasPerdidasActuales = [];
 
-  async function limpiarReservasVencidasAdministrador() {
-    await inventoryReady;
-    const tablasSnap = await readAllInventoryShards();
+  async function limpiarReservasVencidasAdministrador(tablasSnap) {
     const batch = writeBatch(db);
     let cambios = 0;
     const ahora = Date.now();
@@ -2675,55 +2705,177 @@ Hola ${nombre}! 👋
     tablasSnap.forEach(docSnap => {
       const occupied = { ...(docSnap.data()?.occupied || {}) };
       let changed = false;
-      Object.entries(occupied).forEach(([code, tabla]) => {
 
-      if (
-        tabla.status === 'RESERVADA' &&
-        tabla.reservedUntil &&
-        tabla.reservedUntil <= ahora
-      ) {
-        delete occupied[code]; changed = true; cambios++;
-      }
+      Object.entries(occupied).forEach(([code, tabla]) => {
+        if (
+          String(tabla.status || '').toUpperCase() === 'RESERVADA' &&
+          tabla.reservedUntil &&
+          Number(tabla.reservedUntil) <= ahora
+        ) {
+          delete occupied[code];
+          changed = true;
+          cambios++;
+        }
       });
+
       if (changed) batch.set(docSnap.ref, { occupied, updatedAt: Date.now() }, { merge: true });
     });
 
     if (cambios > 0) await batch.commit();
+    return cambios;
+  }
+
+  function pedidoPerteneceAlEventoActual(pedido) {
+    const idEvento = String(configEventoExportacion?.idBingo || document.getElementById('cfg-id-bingo')?.value || '');
+    return !idEvento || !pedido.idBingo || String(pedido.idBingo) === idEvento;
+  }
+
+  // Libera inventario y elimina también cualquier referencia activa en pedidos.
+  // Así la reconciliación de inicio no puede volver a vender una tabla liberada.
+  async function liberarCodigosDesdeIntegridad(codigos, accion, motivo) {
+    const codigosCanonicos = [...new Set(codigos.map(normalizarCodigoInventario).filter(code => tableNumber(code)))];
+    if (!codigosCanonicos.length) return;
+
+    const conjunto = new Set(codigosCanonicos);
+    const ids = [...new Set(codigosCanonicos.map(tableShardId))];
+    const shardRefs = ids.map(id => doc(db, INVENTORY_COLLECTION, id));
+
+    const pedidosARevisar = allOrders.filter(pedido =>
+      String(pedido.estado || '').toUpperCase() !== 'CANCELADO' &&
+      pedidoPerteneceAlEventoActual(pedido) &&
+      Array.isArray(pedido.tablas) &&
+      pedido.tablas.some(tabla => conjunto.has(normalizarCodigoInventario(tabla)))
+    );
+    const pedidoRefs = pedidosARevisar
+      .filter(pedido => pedido.firestoreId)
+      .map(pedido => doc(db, 'pedidos', pedido.firestoreId));
+
+    const logs = codigosCanonicos.map(codigo => ({
+      ref: doc(collection(db, 'integridad_tablas')),
+      codigo
+    }));
+
+    await runTransaction(db, async transaction => {
+      const shardSnaps = [];
+      for (const ref of shardRefs) shardSnaps.push(await transaction.get(ref));
+
+      const pedidoSnaps = [];
+      for (const ref of pedidoRefs) pedidoSnaps.push(await transaction.get(ref));
+
+      const occupiedByShard = new Map(shardSnaps.map((snap, index) => [
+        ids[index],
+        snap.exists() ? { ...(snap.data()?.occupied || {}) } : {}
+      ]));
+
+      codigosCanonicos.forEach(codigo => {
+        const occupied = occupiedByShard.get(tableShardId(codigo));
+        if (occupied) delete occupied[codigo];
+      });
+
+      shardRefs.forEach((ref, index) => {
+        transaction.set(ref, { occupied: occupiedByShard.get(ids[index]) || {}, updatedAt: Date.now() }, { merge: true });
+      });
+
+      pedidoSnaps.forEach((snap, index) => {
+        if (!snap.exists()) return;
+        const pedido = snap.data() || {};
+        const tablasActualizadas = (Array.isArray(pedido.tablas) ? pedido.tablas : [])
+          .filter(tabla => !conjunto.has(normalizarCodigoInventario(tabla)));
+        if (tablasActualizadas.length === (Array.isArray(pedido.tablas) ? pedido.tablas.length : 0)) return;
+
+        const destinoPorTabla = { ...(pedido.destinoPorTabla || {}) };
+        Object.keys(destinoPorTabla).forEach(clave => {
+          if (conjunto.has(normalizarCodigoInventario(clave))) delete destinoPorTabla[clave];
+        });
+
+        const pedidoActualizado = { ...pedido, tablas: tablasActualizadas, destinoPorTabla };
+        const cambiosPedido = {
+          tablas: tablasActualizadas,
+          destinoPorTabla,
+          total: calcularTotalCobroPedido(pedidoActualizado)
+        };
+        if (tablasActualizadas.length === 0) {
+          cambiosPedido.estado = 'CANCELADO';
+          cambiosPedido.comprobanteURL = null;
+          cambiosPedido.comprobante = null;
+        }
+        transaction.update(pedidoRefs[index], cambiosPedido);
+      });
+
+      logs.forEach(({ ref, codigo }) => transaction.set(ref, {
+        tabla: codigo,
+        accion,
+        motivo,
+        fecha: new Date().toISOString()
+      }));
+    });
+
+    // Refleja los cambios sin esperar el siguiente ciclo del listener.
+    allOrders.forEach(pedido => {
+      if (!pedidoPerteneceAlEventoActual(pedido) || !Array.isArray(pedido.tablas)) return;
+      const restantes = pedido.tablas.filter(tabla => !conjunto.has(normalizarCodigoInventario(tabla)));
+      if (restantes.length === pedido.tablas.length) return;
+      pedido.tablas = restantes;
+      if (pedido.destinoPorTabla) {
+        Object.keys(pedido.destinoPorTabla).forEach(clave => {
+          if (conjunto.has(normalizarCodigoInventario(clave))) delete pedido.destinoPorTabla[clave];
+        });
+      }
+      pedido.total = calcularTotalCobroPedido(pedido);
+      if (!restantes.length) pedido.estado = 'CANCELADO';
+    });
+    renderOrders();
+    renderListado();
+    loadMetrics();
   }
 
   window.verificarIntegridadTablas = async function() {
+    const boton = document.querySelector('#tab-pedidos .card-title button');
+    const textoOriginal = boton?.textContent || 'Verificar integridad';
     try {
+      if (boton) { boton.disabled = true; boton.textContent = 'Verificando...'; }
       await inventoryReady;
-      await limpiarReservasVencidasAdministrador();
 
       if (!pedidosSincronizados) {
         alert('Espera a que los pedidos terminen de actualizarse antes de verificar las tablas.');
         return;
       }
-      const tablasSnap = await readAllInventoryShards();
+
+      // Una sola lectura de los lotes del rango; el mismo resultado sirve para
+      // limpiar reservas vencidas y detectar tablas huérfanas.
+      const tablasSnap = await readInventoryShardsForConfiguredRange();
+      await limpiarReservasVencidasAdministrador(tablasSnap);
 
       const tablasConPedido = new Set();
       allOrders.forEach(pedido => {
+        if (String(pedido.estado || '').toUpperCase() === 'CANCELADO' || !pedidoPerteneceAlEventoActual(pedido)) return;
         if (Array.isArray(pedido.tablas)) {
-          pedido.tablas.forEach(t => tablasConPedido.add(String(t)));
+          pedido.tablas.forEach(tabla => tablasConPedido.add(normalizarCodigoInventario(tabla)));
         }
       });
 
       tablasPerdidasActuales = [];
-
-      occupiedEntriesFromSnapshot(tablasSnap).forEach(({ code: codigo, data: tabla }) => {
+      occupiedEntriesFromSnapshot(tablasSnap).forEach(({ code: codigoOriginal, data: tabla }) => {
+        const codigo = normalizarCodigoInventario(codigoOriginal);
         const estado = String(tabla.status || '').toUpperCase();
-        const reservaVencida = estado === 'RESERVADA' && tabla.reservedUntil && tabla.reservedUntil <= Date.now();
+        const reservaVencida = estado === 'RESERVADA' && tabla.reservedUntil && Number(tabla.reservedUntil) <= Date.now();
         if (estado !== 'DISPONIBLE' && !reservaVencida && !tablasConPedido.has(codigo)) {
-          tablasPerdidasActuales.push({ codigo, estado, motivo: tabla.reservedBy ? 'Cliente inició compra y quedó reservada sin pedido asociado' : 'Tabla ocupada sin relación con pedido. Posible fallo de liberación o sincronización' });
+          tablasPerdidasActuales.push({
+            codigo,
+            estado,
+            motivo: tabla.reservedBy
+              ? 'Cliente inició compra y quedó reservada sin pedido asociado'
+              : 'Tabla ocupada sin relación con pedido. Posible fallo de liberación o sincronización'
+          });
         }
       });
 
       mostrarTablasPerdidas();
-
     } catch (error) {
       console.error('Error verificando integridad:', error);
       alert('No se pudo realizar la verificación: ' + error.message);
+    } finally {
+      if (boton) { boton.disabled = false; boton.textContent = textoOriginal; }
     }
   };
 
@@ -2754,47 +2906,45 @@ Hola ${nombre}! 👋
   }
 
   window.liberarTablaPerdida = async function(codigo){
-    await inventoryReady;
-    const shardRef = tableShardRef(codigo);
-    await runTransaction(db, async transaction => {
-      const snap = await transaction.get(shardRef);
-      if (!snap.exists()) return;
-      const occupied = { ...(snap.data()?.occupied || {}) };
-      delete occupied[codigo];
-      transaction.set(shardRef, { occupied, updatedAt: Date.now() }, { merge: true });
-    });
-    await setDoc(doc(collection(db, 'integridad_tablas')), {
-      tabla: codigo,
-      accion: 'LIBERACION_INTEGRIDAD',
-      motivo: 'Tabla recuperada manualmente desde integridad',
-      fecha: new Date().toISOString()
-    });
-    tablasPerdidasActuales = tablasPerdidasActuales.filter(t=>t.codigo!==codigo);
-    mostrarTablasPerdidas();
+    const boton = [...document.querySelectorAll('#modal-integridad-tablas button')]
+      .find(elemento => elemento.textContent.includes('Liberar únicamente'));
+    try {
+      await inventoryReady;
+      if (boton) { boton.disabled = true; boton.textContent = 'Liberando...'; }
+      const codigoCanonico = normalizarCodigoInventario(codigo);
+      await liberarCodigosDesdeIntegridad(
+        [codigoCanonico],
+        'LIBERACION_INTEGRIDAD',
+        'Tabla recuperada manualmente desde integridad'
+      );
+      tablasPerdidasActuales = tablasPerdidasActuales.filter(tabla =>
+        normalizarCodigoInventario(tabla.codigo) !== codigoCanonico
+      );
+      mostrarTablasPerdidas();
+    } catch (error) {
+      console.error('Error liberando tabla desde integridad:', codigo, error);
+      alert('No fue posible liberar la tabla ' + codigo + ': ' + error.message);
+      if (boton) { boton.disabled = false; boton.textContent = 'Liberar únicamente esta tabla'; }
+    }
   };
 
   window.liberarTodasTablasPerdidas = async function(){
-    await inventoryReady;
-    await runTransaction(db, async transaction => {
-      const ids = [...new Set(tablasPerdidasActuales.map(item => tableShardId(item.codigo)))];
-      const refs = ids.map(id => doc(db, INVENTORY_COLLECTION, id));
-      const snaps = [];
-      for (const ref of refs) snaps.push(await transaction.get(ref));
-      const maps = new Map(snaps.map((snap, i) => [ids[i], snap.exists() ? { ...(snap.data()?.occupied || {}) } : {}]));
-      tablasPerdidasActuales.forEach(item => { const map = maps.get(tableShardId(item.codigo)); if (map) delete map[item.codigo]; });
-      refs.forEach((ref, i) => transaction.set(ref, { occupied: maps.get(ids[i]), updatedAt: Date.now() }, { merge: true }));
-    });
-    for (const item of tablasPerdidasActuales) {
-      await setDoc(doc(collection(db, 'integridad_tablas')), {
-        tabla:item.codigo,
-        accion:'LIBERACION_MASIVA_INTEGRIDAD',
-        motivo:'Tabla recuperada desde integridad',
-        fecha:new Date().toISOString()
-      });
+    const codigos = tablasPerdidasActuales.map(tabla => tabla.codigo);
+    if (!codigos.length) return;
+    try {
+      await inventoryReady;
+      await liberarCodigosDesdeIntegridad(
+        codigos,
+        'LIBERACION_MASIVA_INTEGRIDAD',
+        'Tablas recuperadas desde integridad'
+      );
+      tablasPerdidasActuales = [];
+      mostrarTablasPerdidas();
+      alert('Tablas recuperadas correctamente.');
+    } catch (error) {
+      console.error('Error en liberación masiva desde integridad:', error);
+      alert('No fue posible liberar todas las tablas: ' + error.message);
     }
-    tablasPerdidasActuales=[];
-    mostrarTablasPerdidas();
-    alert('Tablas recuperadas correctamente.');
   };
 
 </script>
