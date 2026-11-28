@@ -1764,6 +1764,19 @@
       .sort((a, b) => (parseInt(a.id) || 0) - (parseInt(b.id) || 0));
   }
 
+  // Escapa texto procedente de Firebase antes de insertarlo en la tabla HTML.
+  // Esta función es utilizada por las celdas del listado y evita que el renderizado
+  // se interrumpa cuando existen pedidos para mostrar.
+  function escapeOrderHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, character => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    })[character]);
+  }
+
   function filterOrders() {
     const queryStr = normalizeSearchText(document.getElementById('search-input').value);
     const statusFilter = document.getElementById('filter-status').value;
