@@ -2716,9 +2716,16 @@ Hola ${nombre}! 👋
       });
     });
     const cfgEvento = configEventoExportacion || {};
+    // Identifica cada exportación con el nombre solicitado y la fecha
+    // configurada para la realización del bingo, sin alterar los datos de ventas.
+    const fechaBingoArchivo = String(
+      document.getElementById('cfg-fecha')?.value || firestoreDateToInput(cfgEvento.fecha) || 'sin-fecha'
+    ).trim();
+    const nombreArchivo = `Mi Bingo - ${fechaBingoArchivo}.json`;
     const blob=new Blob([JSON.stringify({
       version:'tablas_bingo_v2',
-      fechaBingo: cfgEvento.fecha || '',
+      nombreBingo: 'Mi Bingo',
+      fechaBingo: cfgEvento.fecha || fechaBingoArchivo,
       horaBingo: cfgEvento.hora || '',
       linkTransmision: cfgEvento.linkTransmision || '',
       valorTabla: Number(cfgEvento.valor || 0),
@@ -2726,7 +2733,7 @@ Hola ${nombre}! 👋
     },null,2)],{type:'application/json'});
     const a=document.createElement('a');
     a.href=URL.createObjectURL(blob);
-    a.download='ventas_bingo_actualizacion.json';
+    a.download=nombreArchivo;
     a.click();
     URL.revokeObjectURL(a.href);
   });
